@@ -107,7 +107,7 @@ namespace DBClientFiles.NET.Internals.Serializers
         protected StorageOptions Options => Storage.Options;
 
         private Func<TValue, TValue> _memberwiseClone;
-        private Func<BinaryReader, TValue> _deserializer;
+        private Func<BaseReader<TValue>, TValue> _deserializer;
 
         protected BaseReader<TValue> Storage { get; }
 
@@ -116,6 +116,12 @@ namespace DBClientFiles.NET.Internals.Serializers
             Storage = storage;
         }
 
+        /// <summary>
+        /// Produces a deep copy of the provided object.
+        /// </summary>
+        /// <remarks>On the initial call, a generator function is emitted through <see cref="Linq.Expressions"/>.</remarks>
+        /// <param name="source"></param>
+        /// <returns></returns>
         public TValue Clone(TValue source)
         {
             if (_memberwiseClone == null)
@@ -147,9 +153,16 @@ namespace DBClientFiles.NET.Internals.Serializers
             return _memberwiseClone(source);
         }
 
-        protected virtual Func<BinaryReader, TValue> GenerateDeserializer()
+        /// <summary>
+        /// Generates the deserializer.
+        /// </summary>
+        /// <remarks>
+        /// Likely not to be overriden, but let's keep it safe.
+        /// </remarks>
+        /// <returns></returns>
+        protected virtual Func<BaseReader<TValue>, TValue> GenerateDeserializer()
         {
-            var readerArgExpr = Expression.Parameter(typeof(BinaryReader));
+            var binaryReaderExpr = Expression.Parameter(typeof(BaseReader<TValue>));
             var resultExpr = Expression.Variable(typeof(TValue));
 
             var instanceExpr = Expression.Assign(resultExpr, Expression.New(typeof(TValue)));
@@ -160,54 +173,92 @@ namespace DBClientFiles.NET.Internals.Serializers
             var memberIndex = 0;
             foreach (var memberInfo in typeof(TValue).GetMembers(BindingFlags.Public | BindingFlags.Instance))
             {
-                if (memberInfo.MemberType != Options.MemberType)
+                var extendedMemberInfo = ExtendedMemberInfo.Initialize(memberInfo);
+                if (memberInfo.MemberType != Options.MemberType || extendedMemberInfo == null)
                     continue;
-
-                var memberAccessExpr = memberInfo.MakeMemberAccess(resultExpr);
-                var memberType = memberInfo.GetMemberType();
 
                 if (!CanSerializeMember(memberIndex++, memberInfo))
                     continue;
 
-                var methodInfo = memberType.GetReaderMethod();
-                Expression methodCallExpr;
+                var memberAccessExpr = extendedMemberInfo.MakeMemberAccess(resultExpr);
+                var methodInfo = extendedMemberInfo.BinaryReader;
 
-                if (methodInfo == null)
-                {
-                    var ctorInfo = memberType.GetConstructor(new[] { typeof(BinaryReader) });
-                    if (ctorInfo == null)
-                        throw new InvalidOperationException($@"Type '{memberType.Name}' requires a ctor(BinaryReader) to be used in (de)serialization!");
-                    methodCallExpr = Expression.New(ctorInfo, readerArgExpr);
-                }
+                var isPalletData = IsPalletDataMember(memberIndex, memberInfo);
+                var isCommonData = IsCommonDataMember(memberIndex, memberInfo);
+                var isRelationshipData = IsRelationShipDataMember(memberIndex, memberInfo);
+
+                if (isPalletData)
+                    GeneratePalletDataReader(body, memberAccessExpr, binaryReaderExpr);
+                else if (isCommonData)
+                    GenerateCommonDataReader(body, memberAccessExpr, binaryReaderExpr);
+                else if (isRelationshipData)
+                    GenerateRelationshipDataReader(body, memberAccessExpr, binaryReaderExpr);
                 else
-                    methodCallExpr = Expression.Call(readerArgExpr, methodInfo);
-
-                if (!memberType.IsArray)
-                {
-                    body.Add(Expression.Assign(memberAccessExpr, methodCallExpr));
-                }
-                else
-                {
-                    var arraySize = memberInfo.GetArraySize();
-
-                    body.Add(Expression.Assign(memberAccessExpr, Expression.NewArrayBounds(memberType.GetElementType(), Expression.Constant(arraySize))));
-
-                    for (var i = 0; i < arraySize; ++i)
-                    {
-                        var arrayMember = Expression.ArrayAccess(memberAccessExpr, Expression.Constant(i));
-                        var assignment = Expression.Assign(arrayMember, methodCallExpr);
-                        body.Add(assignment);
-                    }
-                }
+                    GenerateStreamedMemberReader(body, memberAccessExpr, binaryReaderExpr);
             }
 
             body.Add(resultExpr);
 
             var bodyExpr = Expression.Block(new[] { resultExpr }, body);
-            var fnExpr = Expression.Lambda<Func<BinaryReader, TValue>>(bodyExpr, new[] { readerArgExpr });
+            var fnExpr = Expression.Lambda<Func<BaseReader<TValue>, TValue>>(bodyExpr, new[] { binaryReaderExpr });
             return fnExpr.Compile();
         }
 
+        protected virtual void GenerateCommonDataReader(List<Expression> body, MemberExpression memberExpression, Expression binaryReaderExpr)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected virtual void GeneratePalletDataReader(List<Expression> body, MemberExpression memberExpression, Expression binaryReaderExpr)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected virtual void GenerateRelationshipDataReader(List<Expression> body, MemberExpression memberExpression, Expression binaryReaderExpr)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Generates the basic property readers - this is used in almost all legacy code and just reads plain old data directly from the file.
+        ///
+        /// In short, it yields code similiar to <pre>structInstance.memberField = reader.ReadInt32()</pre>. Loops are unrolled.
+        /// </summary>
+        /// <param name="body"></param>
+        /// <param name="memberExpression"></param>
+        /// <param name="binaryReaderExpr"></param>
+        private void GenerateStreamedMemberReader(List<Expression> body, MemberExpression memberExpression, Expression binaryReaderExpr)
+        {
+            var simpleReadExpression = GetMemberBaseReadExpression(memberExpression.Member, binaryReaderExpr);
+
+            if (!memberExpression.Type.IsArray)
+            {
+                body.Add(Expression.Assign(memberExpression, simpleReadExpression));
+            }
+            else
+            {
+                var arraySize = memberExpression.Member.GetArraySize();
+
+                body.Add(Expression.Assign(memberExpression, Expression.NewArrayBounds(memberExpression.Type.GetElementType(), Expression.Constant(arraySize))));
+
+                for (var i = 0; i < arraySize; ++i)
+                {
+                    // TODO: Benchmark against expression loops.
+
+                    var arrayMember = Expression.ArrayAccess(memberExpression, Expression.Constant(i));
+                    var assignment = Expression.Assign(arrayMember, simpleReadExpression);
+                    body.Add(assignment);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Generates a basic in-stream reader expression, such as
+        /// <pre>reader.ReadInt32()</pre>.
+        /// </summary>
+        /// <param name="memberInfo"></param>
+        /// <param name="readerInstance"></param>
+        /// <returns></returns>
         protected virtual Expression GetMemberBaseReadExpression(MemberInfo memberInfo, Expression readerInstance)
         {
             var memberType = memberInfo.GetMemberType();
@@ -224,18 +275,38 @@ namespace DBClientFiles.NET.Internals.Serializers
                 return Expression.Call(readerInstance, methodInfo);
         }
 
-        protected virtual bool CanSerializeMember(int memberIndex, MemberInfo memberInfo) => memberInfo.GetCustomAttribute<IgnoreAttribute>() != null;
+        protected virtual bool CanSerializeMember(int memberIndex, MemberInfo memberInfo) => memberInfo.IsDefined(typeof(IgnoreAttribute), false);
 
+        /// <summary>
+        /// Returns true if this column's value is to be read from the common data block.
+        /// </summary>
+        /// <param name="memberIndex"></param>
+        /// <param name="memberInfo"></param>
+        /// <returns></returns>
         protected virtual bool IsCommonDataMember(int memberIndex, MemberInfo memberInfo) => false;
+
+        /// <summary>
+        /// Returns true if this column's value is to be read from the pallet data block.
+        /// </summary>
+        /// <param name="memberIndex"></param>
+        /// <param name="memberInfo"></param>
+        /// <returns></returns>
         protected virtual bool IsPalletDataMember(int memberIndex, MemberInfo memberInfo) => false;
+
+        /// <summary>
+        /// Returns true if this column's value is to be read from the relationship data block.
+        /// </summary>
+        /// <param name="memberIndex"></param>
+        /// <param name="memberInfo"></param>
+        /// <returns></returns>
         protected virtual bool IsRelationShipDataMember(int memberIndex, MemberInfo memberInfo) => false;
 
-        public virtual TValue Deserialize(BinaryReader reader)
+        public virtual TValue Deserialize()
         {
             if (_deserializer == null)
                 _deserializer = GenerateDeserializer();
 
-            return _deserializer(reader);
+            return _deserializer(Storage);
         }
     }
 }

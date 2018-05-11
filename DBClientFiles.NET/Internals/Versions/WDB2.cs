@@ -53,7 +53,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
             BaseStream.Position = _dataOffset;
             for (var i = 0; i < _recordCount; ++i)
-                yield return cache.Deserialize(this);
+                yield return cache.Deserialize();
         }
     }
 }

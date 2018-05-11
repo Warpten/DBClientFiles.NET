@@ -1,14 +1,13 @@
 ﻿using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Internals.Versions;
 using System;
-using System.IO;
 
 namespace DBClientFiles.NET.Internals.Segments
 {
-    internal struct Segment<TValue> : IDisposable, IEquatable<Segment<TValue>> where TValue : class, new()
+    internal class Segment<TValue> : IDisposable, IEquatable<Segment<TValue>> where TValue : class, new()
     {
-        public long StartOffset { get; set; }
-        public long Length { get; set; }
+        public long StartOffset;
+        public long Length;
 
         public long EndOffset => StartOffset + Length;
 
@@ -16,7 +15,6 @@ namespace DBClientFiles.NET.Internals.Segments
 
         public BaseReader<TValue> Reader { get; private set; }
         private StorageOptions Options { get; set; }
-
 
         public bool Exists
         {

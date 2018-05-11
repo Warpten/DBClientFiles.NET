@@ -55,13 +55,14 @@
     <Compile Include="IFileHeader.cs" />
     <Compile Include="Internals\IReader.cs" />
     <Compile Include="Internals\Segments\CommonTable.cs" />
+    <Compile Include="Internals\Segments\Readers\OffsetmapReader.cs" />
+    <Compile Include="Internals\Segments\Readers\SegmentReader.cs" />
     <Compile Include="Internals\Segments\Readers\StringTableReader.cs" />
     <Compile Include="Internals\Segments\Segment.cs" />
     <Compile Include="Internals\Segments\CopyTable.cs" />
     <Compile Include="Internals\Segments\IndexTable.cs" />
     <Compile Include="Internals\Segments\OffsetMap.cs" />
     <Compile Include="Internals\Segments\StringTable.cs" />
-    <Compile Include="Internals\Serializers\CommonTableAwareSerializer.cs" />
     <Compile Include="Internals\Serializers\LegacySerializer.cs" />
     <Compile Include="Internals\Serializers\StorageSerializer.cs" />
     <Compile Include="Internals\StringMarshaller.cs" />
@@ -75,6 +76,7 @@
     <Compile Include="IO\SegmentStream.cs" />
     <Compile Include="Signatures.cs" />
     <Compile Include="Utils\BinaryExtensions.cs" />
+    <Compile Include="Utils\ExtendedMemberInfo.cs" />
     <Compile Include="Utils\ReflectionUtils.cs" />
     <Compile Include="Utils\SizeCache.cs" />
   </ItemGroup>

@@ -35,7 +35,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
             BaseStream.Position = Records.StartOffset;
             while (BaseStream.Position < Records.EndOffset)
-                yield return cache.Deserialize(this);
+                yield return cache.Deserialize();
         }
     }
 }
