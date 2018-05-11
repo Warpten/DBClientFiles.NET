@@ -4,12 +4,12 @@ namespace DBClientFiles.NET.Utils
 {
     internal struct ExtendedMemberExpression
     {
-        public MemberExpression MemberExpression { get; set; }
-        public ExtendedMemberInfo MemberInfo { get; set; }
+        public MemberExpression Expression { get; }
+        public ExtendedMemberInfo MemberInfo { get; }
 
         public ExtendedMemberExpression(Expression expr, ExtendedMemberInfo memberInfo)
         {
-            MemberExpression = Expression.MakeMemberAccess(expr, memberInfo);
+            Expression = System.Linq.Expressions.Expression.MakeMemberAccess(expr, memberInfo);
             MemberInfo = memberInfo;
         }
     }

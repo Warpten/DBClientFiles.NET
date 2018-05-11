@@ -1,9 +1,11 @@
 ﻿using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.Internals.Segments.Readers;
+using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using BinaryReader = DBClientFiles.NET.IO.BinaryReader;
 
 namespace DBClientFiles.NET.Internals.Versions
@@ -29,13 +31,26 @@ namespace DBClientFiles.NET.Internals.Versions
         public int FieldCount { get; protected set; }
 
         public virtual Type ValueType { get; } = typeof(TValue);
+        public ExtendedMemberInfo[] ValueMembers { get; private set; };
 
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
         }
 
-        public StorageOptions Options { get; set; }
+        private StorageOptions _options;
+        public StorageOptions Options
+        {
+            get => _options;
+            set {
+                _options = value;
+
+                var members = typeof(TValue).GetMembers(BindingFlags.Public | BindingFlags.Instance);
+                ValueMembers = new ExtendedMemberInfo[members.Length];
+                for (var i = 0; i < members.Length; ++i)
+                    ValueMembers[i] = ExtendedMemberInfo.Initialize(members[i], i);
+            }
+        }
 
         public Segment<TValue> StringTable { get; private set; }
         private StringTableReader<TValue> StringTableReader { get; set; }

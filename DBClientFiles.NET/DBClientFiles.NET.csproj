@@ -76,8 +76,8 @@
     <Compile Include="IO\SegmentStream.cs" />
     <Compile Include="Signatures.cs" />
     <Compile Include="Utils\BinaryExtensions.cs" />
+    <Compile Include="Utils\ExtendedMemberExpression.cs" />
     <Compile Include="Utils\ExtendedMemberInfo.cs" />
-    <Compile Include="Utils\ReflectionUtils.cs" />
     <Compile Include="Utils\SizeCache.cs" />
   </ItemGroup>
   <ItemGroup>

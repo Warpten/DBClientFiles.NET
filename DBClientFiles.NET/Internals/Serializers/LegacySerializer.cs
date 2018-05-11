@@ -27,15 +27,15 @@ namespace DBClientFiles.NET.Internals.Serializers
 
         public LegacySerializer(BaseReader<TValue> storage) : base(storage) { }
 
-        protected virtual bool IsMemberKey(MemberInfo memberInfo) => memberInfo.CustomAttributes.Any(attr => attr.AttributeType == typeof(IndexAttribute));
+        protected virtual bool IsMemberKey(ExtendedMemberInfo memberInfo) => memberInfo.IsDefined(typeof(IndexAttribute), false);
 
         public void InsertKey(TValue value, TKey newKey)
         {
             if (_keySetter == null)
             {
-                MemberInfo keyMemberInfo = null;
+                ExtendedMemberInfo keyMemberInfo = null;
 
-                foreach (var memberInfo in typeof(TValue).GetMembers(BindingFlags.Public | BindingFlags.Instance))
+                foreach (var memberInfo in Storage.ValueMembers)
                 {
                     if (memberInfo.MemberType != Options.MemberType)
                         continue;
@@ -68,9 +68,9 @@ namespace DBClientFiles.NET.Internals.Serializers
         {
             if (_keyGetter == null)
             {
-                MemberInfo keyMemberInfo = null;
+                ExtendedMemberInfo keyMemberInfo = null;
 
-                foreach (var memberInfo in typeof(TValue).GetMembers(BindingFlags.Public | BindingFlags.Instance))
+                foreach (var memberInfo in Storage.ValueMembers)
                 {
                     if (memberInfo.MemberType != Options.MemberType)
                         continue;
@@ -134,14 +134,14 @@ namespace DBClientFiles.NET.Internals.Serializers
 
                 body.Add(Expression.Assign(outputNode, newNode));
 
-                foreach (var memberInfo in typeof(TValue).GetMembers(BindingFlags.Public | BindingFlags.Instance))
+                foreach (var memberInfo in Storage.ValueMembers)
                 {
                     if (memberInfo.MemberType != Options.MemberType)
                         continue;
 
-                    var oldMember = Expression.MakeMemberAccess(inputNode, memberInfo);
-                    var newMember = Expression.MakeMemberAccess(outputNode, memberInfo);
-                    body.Add(Expression.Assign(newMember, oldMember));
+                    var oldMember = memberInfo.MakeMemberAccess(inputNode);
+                    var newMember = memberInfo.MakeMemberAccess(outputNode);
+                    body.Add(Expression.Assign(newMember.Expression, oldMember.Expression));
                 }
 
                 body.Add(outputNode);
@@ -170,22 +170,20 @@ namespace DBClientFiles.NET.Internals.Serializers
                 instanceExpr
             };
 
-            var memberIndex = 0;
-            foreach (var memberInfo in typeof(TValue).GetMembers(BindingFlags.Public | BindingFlags.Instance))
+            foreach (var memberInfo in Storage.ValueMembers)
             {
                 if (memberInfo.MemberType != Options.MemberType)
                     continue;
 
-                var extendedMemberInfo = ExtendedMemberInfo.Initialize(memberInfo, memberIndex++);
-                if (extendedMemberInfo == null || !CanSerializeMember(extendedMemberInfo))
+                if (!CanSerializeMember(memberInfo))
                     continue;
 
-                var memberAccessExpr = extendedMemberInfo.MakeMemberAccess(resultExpr);
-                var methodInfo = extendedMemberInfo.BinaryReader;
+                var memberAccessExpr = memberInfo.MakeMemberAccess(resultExpr);
+                var methodInfo = memberInfo.BinaryReader;
 
-                var isPalletData = IsPalletDataMember(memberIndex, memberInfo);
-                var isCommonData = IsCommonDataMember(memberIndex, memberInfo);
-                var isRelationshipData = IsRelationShipDataMember(memberIndex, memberInfo);
+                var isPalletData = IsPalletDataMember(memberInfo.MemberIndex, memberInfo);
+                var isCommonData = IsCommonDataMember(memberInfo.MemberIndex, memberInfo);
+                var isRelationshipData = IsRelationShipDataMember(memberInfo.MemberIndex, memberInfo);
 
                 if (isPalletData)
                     GeneratePalletDataReader(body, ref memberAccessExpr, binaryReaderExpr);
@@ -233,19 +231,19 @@ namespace DBClientFiles.NET.Internals.Serializers
 
             if (!memberExpression.MemberInfo.IsArray)
             {
-                body.Add(Expression.Assign(memberExpression.MemberExpression, simpleReadExpression));
+                body.Add(Expression.Assign(memberExpression.Expression, simpleReadExpression));
             }
             else
             {
                 body.Add(Expression.Assign(
-                    memberExpression.MemberExpression,
+                    memberExpression.Expression,
                     Expression.NewArrayBounds(memberExpression.MemberInfo.ElementType.GetElementType(), Expression.Constant(memberExpression.MemberInfo.ArraySize))));
 
                 for (var i = 0; i < memberExpression.MemberInfo.ArraySize; ++i)
                 {
                     // TODO: Benchmark against expression loops.
 
-                    var arrayMember = Expression.ArrayAccess(memberExpression.MemberExpression, Expression.Constant(i));
+                    var arrayMember = Expression.ArrayAccess(memberExpression.Expression, Expression.Constant(i));
                     var assignment = Expression.Assign(arrayMember, simpleReadExpression);
                     body.Add(assignment);
                 }
