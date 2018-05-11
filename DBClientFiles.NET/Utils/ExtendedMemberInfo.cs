@@ -19,10 +19,12 @@ namespace DBClientFiles.NET.Utils
 
         public bool IsArray => ElementType.IsArray;
         public int ArraySize { get; private set; }
+        public int MemberIndex { get; }
 
-        public ExtendedMemberInfo(PropertyInfo member)
+        public ExtendedMemberInfo(PropertyInfo member, int memberIndex)
         {
             MemberInfo = member;
+            MemberIndex = memberIndex;
             ElementType = member.PropertyType;
 
             InitializeMemberHelpers();
@@ -33,9 +35,10 @@ namespace DBClientFiles.NET.Utils
             ReflectedType = member.ReflectedType;
         }
 
-        public ExtendedMemberInfo(FieldInfo member)
+        public ExtendedMemberInfo(FieldInfo member, int memberIndex)
         {
             MemberInfo = member;
+            MemberIndex = memberIndex;
             ElementType = member.FieldType;
 
             InitializeMemberHelpers();
@@ -46,12 +49,12 @@ namespace DBClientFiles.NET.Utils
             ReflectedType = member.ReflectedType;
         }
 
-        public static ExtendedMemberInfo Initialize(MemberInfo memberInfo)
+        public static ExtendedMemberInfo Initialize(MemberInfo memberInfo, int memberIndex)
         {
             if (memberInfo is PropertyInfo propInfo)
-                return new ExtendedMemberInfo(propInfo);
+                return new ExtendedMemberInfo(propInfo, memberIndex);
             else if (memberInfo is FieldInfo fieldInfo)
-                return new ExtendedMemberInfo(fieldInfo);
+                return new ExtendedMemberInfo(fieldInfo, memberIndex);
             return null;
         }
 
@@ -81,9 +84,9 @@ namespace DBClientFiles.NET.Utils
                 BinaryReader = binaryReaderMethodInfo;
         }
 
-        public MemberExpression MakeMemberAccess(Expression source)
+        public ExtendedMemberExpression MakeMemberAccess(Expression source)
         {
-            return Expression.MakeMemberAccess(source, MemberInfo);
+            return new ExtendedMemberExpression(source, this);
         }
 
         public MethodInfo BinaryReader { get; private set; }

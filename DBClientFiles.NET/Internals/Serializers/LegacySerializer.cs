@@ -173,11 +173,11 @@ namespace DBClientFiles.NET.Internals.Serializers
             var memberIndex = 0;
             foreach (var memberInfo in typeof(TValue).GetMembers(BindingFlags.Public | BindingFlags.Instance))
             {
-                var extendedMemberInfo = ExtendedMemberInfo.Initialize(memberInfo);
-                if (memberInfo.MemberType != Options.MemberType || extendedMemberInfo == null)
+                if (memberInfo.MemberType != Options.MemberType)
                     continue;
 
-                if (!CanSerializeMember(memberIndex++, memberInfo))
+                var extendedMemberInfo = ExtendedMemberInfo.Initialize(memberInfo, memberIndex++);
+                if (extendedMemberInfo == null || !CanSerializeMember(extendedMemberInfo))
                     continue;
 
                 var memberAccessExpr = extendedMemberInfo.MakeMemberAccess(resultExpr);
@@ -188,13 +188,13 @@ namespace DBClientFiles.NET.Internals.Serializers
                 var isRelationshipData = IsRelationShipDataMember(memberIndex, memberInfo);
 
                 if (isPalletData)
-                    GeneratePalletDataReader(body, memberAccessExpr, binaryReaderExpr);
+                    GeneratePalletDataReader(body, ref memberAccessExpr, binaryReaderExpr);
                 else if (isCommonData)
-                    GenerateCommonDataReader(body, memberAccessExpr, binaryReaderExpr);
+                    GenerateCommonDataReader(body, ref memberAccessExpr, binaryReaderExpr);
                 else if (isRelationshipData)
-                    GenerateRelationshipDataReader(body, memberAccessExpr, binaryReaderExpr);
+                    GenerateRelationshipDataReader(body, ref memberAccessExpr, binaryReaderExpr);
                 else
-                    GenerateStreamedMemberReader(body, memberAccessExpr, binaryReaderExpr);
+                    GenerateStreamedMemberReader(body, ref memberAccessExpr, binaryReaderExpr);
             }
 
             body.Add(resultExpr);
@@ -204,17 +204,17 @@ namespace DBClientFiles.NET.Internals.Serializers
             return fnExpr.Compile();
         }
 
-        protected virtual void GenerateCommonDataReader(List<Expression> body, MemberExpression memberExpression, Expression binaryReaderExpr)
+        protected virtual void GenerateCommonDataReader(List<Expression> body, ref ExtendedMemberExpression memberExpression, Expression binaryReaderExpr)
         {
             throw new NotImplementedException();
         }
 
-        protected virtual void GeneratePalletDataReader(List<Expression> body, MemberExpression memberExpression, Expression binaryReaderExpr)
+        protected virtual void GeneratePalletDataReader(List<Expression> body, ref ExtendedMemberExpression memberExpression, Expression binaryReaderExpr)
         {
             throw new NotImplementedException();
         }
 
-        protected virtual void GenerateRelationshipDataReader(List<Expression> body, MemberExpression memberExpression, Expression binaryReaderExpr)
+        protected virtual void GenerateRelationshipDataReader(List<Expression> body, ref ExtendedMemberExpression memberExpression, Expression binaryReaderExpr)
         {
             throw new NotImplementedException();
         }
@@ -227,25 +227,25 @@ namespace DBClientFiles.NET.Internals.Serializers
         /// <param name="body"></param>
         /// <param name="memberExpression"></param>
         /// <param name="binaryReaderExpr"></param>
-        private void GenerateStreamedMemberReader(List<Expression> body, MemberExpression memberExpression, Expression binaryReaderExpr)
+        private void GenerateStreamedMemberReader(List<Expression> body, ref ExtendedMemberExpression memberExpression, Expression binaryReaderExpr)
         {
-            var simpleReadExpression = GetMemberBaseReadExpression(memberExpression.Member, binaryReaderExpr);
+            var simpleReadExpression = GetMemberBaseReadExpression(memberExpression.MemberInfo, binaryReaderExpr);
 
-            if (!memberExpression.Type.IsArray)
+            if (!memberExpression.MemberInfo.IsArray)
             {
-                body.Add(Expression.Assign(memberExpression, simpleReadExpression));
+                body.Add(Expression.Assign(memberExpression.MemberExpression, simpleReadExpression));
             }
             else
             {
-                var arraySize = memberExpression.Member.GetArraySize();
+                body.Add(Expression.Assign(
+                    memberExpression.MemberExpression,
+                    Expression.NewArrayBounds(memberExpression.MemberInfo.ElementType.GetElementType(), Expression.Constant(memberExpression.MemberInfo.ArraySize))));
 
-                body.Add(Expression.Assign(memberExpression, Expression.NewArrayBounds(memberExpression.Type.GetElementType(), Expression.Constant(arraySize))));
-
-                for (var i = 0; i < arraySize; ++i)
+                for (var i = 0; i < memberExpression.MemberInfo.ArraySize; ++i)
                 {
                     // TODO: Benchmark against expression loops.
 
-                    var arrayMember = Expression.ArrayAccess(memberExpression, Expression.Constant(i));
+                    var arrayMember = Expression.ArrayAccess(memberExpression.MemberExpression, Expression.Constant(i));
                     var assignment = Expression.Assign(arrayMember, simpleReadExpression);
                     body.Add(assignment);
                 }
@@ -259,10 +259,10 @@ namespace DBClientFiles.NET.Internals.Serializers
         /// <param name="memberInfo"></param>
         /// <param name="readerInstance"></param>
         /// <returns></returns>
-        protected virtual Expression GetMemberBaseReadExpression(MemberInfo memberInfo, Expression readerInstance)
+        protected virtual Expression GetMemberBaseReadExpression(ExtendedMemberInfo memberInfo, Expression readerInstance)
         {
-            var memberType = memberInfo.GetMemberType();
-            var methodInfo = memberType.GetReaderMethod();
+            var memberType = memberInfo.ElementType;
+            var methodInfo = memberInfo.BinaryReader;
 
             if (methodInfo == null)
             {
@@ -275,7 +275,7 @@ namespace DBClientFiles.NET.Internals.Serializers
                 return Expression.Call(readerInstance, methodInfo);
         }
 
-        protected virtual bool CanSerializeMember(int memberIndex, MemberInfo memberInfo) => memberInfo.IsDefined(typeof(IgnoreAttribute), false);
+        protected virtual bool CanSerializeMember(ExtendedMemberInfo memberInfo) => memberInfo.IsDefined(typeof(IgnoreAttribute), false);
 
         /// <summary>
         /// Returns true if this column's value is to be read from the common data block.
