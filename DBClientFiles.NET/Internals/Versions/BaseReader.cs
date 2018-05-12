@@ -17,15 +17,16 @@ namespace DBClientFiles.NET.Internals.Versions
         }
     }
 
-    internal abstract class BaseReader<TValue> : BaseReader, IReader<TValue> where TValue : class, new()
+    internal abstract class BaseReader<TValue> : BinaryReader, IReader<TValue> where TValue : class, new()
     {
         protected BaseReader(Stream strm, bool keepOpen) : base(strm, keepOpen)
         {
         }
 
         public int FieldCount { get; protected set; }
+        public ExtendedMemberInfo[] ValueMembers { get; protected set; }
 
-        public sealed override Type ValueType { get; } = typeof(TValue);
+        public Type ValueType { get; } = typeof(TValue);
 
         protected override void Dispose(bool disposing)
         {
@@ -102,22 +103,5 @@ namespace DBClientFiles.NET.Internals.Versions
         }
 
         internal string ReadStringDirect() => base.ReadString();
-    }
-
-    internal abstract class BaseReader : BinaryReader
-    {
-        public virtual Type ValueType { get; } = typeof(object);
-
-        public ExtendedMemberInfo[] ValueMembers { get; protected set; }
-
-        protected BaseReader(Stream strm, bool keepOpen) : base(strm, keepOpen)
-        {
-        }
-
-        public override unsafe float ReadSingle()
-        {
-            int intValue = ReadInt32();
-            return *(float*)&intValue;
-        }
     }
 }

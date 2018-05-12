@@ -89,7 +89,7 @@ namespace DBClientFiles.NET.IO
             return base.ReadSByte();
         }
 
-        public override unsafe float ReadSingle()
+        public override float ReadSingle()
         {
             ResetBitReader();
             return base.ReadSingle();
