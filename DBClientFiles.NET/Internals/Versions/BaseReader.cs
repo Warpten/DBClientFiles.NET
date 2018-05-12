@@ -17,21 +17,15 @@ namespace DBClientFiles.NET.Internals.Versions
         }
     }
 
-    internal abstract class BaseReader<TValue> : BinaryReader, IReader<TValue> where TValue : class, new()
+    internal abstract class BaseReader<TValue> : BaseReader, IReader<TValue> where TValue : class, new()
     {
         protected BaseReader(Stream strm, bool keepOpen) : base(strm, keepOpen)
         {
         }
 
-        public BaseReader() : base(null)
-        {
-
-        }
-
         public int FieldCount { get; protected set; }
 
-        public virtual Type ValueType { get; } = typeof(TValue);
-        public ExtendedMemberInfo[] ValueMembers { get; private set; };
+        public sealed override Type ValueType { get; } = typeof(TValue);
 
         protected override void Dispose(bool disposing)
         {
@@ -42,13 +36,18 @@ namespace DBClientFiles.NET.Internals.Versions
         public StorageOptions Options
         {
             get => _options;
-            set {
+            set
+            {
+                var oldOptions = _options;
                 _options = value;
 
-                var members = typeof(TValue).GetMembers(BindingFlags.Public | BindingFlags.Instance);
-                ValueMembers = new ExtendedMemberInfo[members.Length];
-                for (var i = 0; i < members.Length; ++i)
-                    ValueMembers[i] = ExtendedMemberInfo.Initialize(members[i], i);
+                if (oldOptions.MemberType != _options.MemberType)
+                {
+                    var members = typeof(TValue).GetMembers(BindingFlags.Public | BindingFlags.Instance);
+                    ValueMembers = new ExtendedMemberInfo[members.Length];
+                    for (var i = 0; i < members.Length; ++i)
+                        ValueMembers[i] = ExtendedMemberInfo.Initialize(members[i], i);
+                }
             }
         }
 
@@ -56,6 +55,8 @@ namespace DBClientFiles.NET.Internals.Versions
         private StringTableReader<TValue> StringTableReader { get; set; }
 
         public Segment<TValue> OffsetMap { get; private set; }
+        private OffsetmapReader<TValue> offsetmapReader { get; set; }
+
         public Segment<TValue> Records { get; private set; }
         public Segment<TValue> CopyTable { get; private set; }
         public Segment<TValue> CommonTable { get; protected set; }
@@ -79,17 +80,11 @@ namespace DBClientFiles.NET.Internals.Versions
 
             if (OffsetMap.Exists)
             {
-                var offsetmapReader = new OffsetmapReader<TValue>(OffsetMap);
+                offsetmapReader = new OffsetmapReader<TValue>(OffsetMap);
                 offsetmapReader.MinIndex = Header.MinIndex;
                 offsetmapReader.MaxIndex = Header.MaxIndex;
                 offsetmapReader.Read();
             }
-
-            if (CommonTable.Exists)
-                CommonTable.Read(this);
-
-            if (IndexTable.Exists)
-                IndexTable.Read(this);
         }
 
         public override string ReadString()
@@ -104,6 +99,17 @@ namespace DBClientFiles.NET.Internals.Versions
         }
 
         internal string ReadStringDirect() => base.ReadString();
+    }
+
+    internal abstract class BaseReader : BinaryReader
+    {
+        public virtual Type ValueType { get; } = typeof(object);
+
+        public ExtendedMemberInfo[] ValueMembers { get; protected set; }
+
+        protected BaseReader(Stream strm, bool keepOpen) : base(strm, keepOpen)
+        {
+        }
 
         public override unsafe float ReadSingle()
         {

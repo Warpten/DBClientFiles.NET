@@ -5,6 +5,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 {
     internal sealed class OffsetmapReader<TValue> : SegmentReader<(int, long), TValue> where TValue : class, new()
     {
+        public OffsetmapReader() : base() { }
         public OffsetmapReader(Segment<TValue> segment) : base(segment)
         {
         }
@@ -20,11 +21,11 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
                 yield break;
 
             int i = 0;
-            Reader.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
-            while (Reader.BaseStream.Position < Segment.EndOffset)
+            Storage.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
+            while (Storage.BaseStream.Position < Segment.EndOffset)
             {
-                long offset = Reader.ReadInt32();
-                Reader.BaseStream.Seek(2, SeekOrigin.Current);
+                long offset = Storage.ReadInt32();
+                Storage.BaseStream.Seek(2, SeekOrigin.Current);
 
                 ++i;
 
@@ -42,11 +43,11 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
                 return;
 
             int i = 0;
-            Reader.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
-            while (Reader.BaseStream.Position < Segment.EndOffset)
+            Storage.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
+            while (Storage.BaseStream.Position < Segment.EndOffset)
             {
-                long offset = Reader.ReadInt32();
-                Reader.BaseStream.Seek(2, SeekOrigin.Current);
+                long offset = Storage.ReadInt32();
+                Storage.BaseStream.Seek(2, SeekOrigin.Current);
 
                 ++i;
 

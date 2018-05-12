@@ -3,11 +3,22 @@ using System.Collections.Generic;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
-    internal abstract class SegmentReader<T, TValue> where TValue : class, new()
+    internal interface ISegmentReader<TValue> where TValue : class, new()
+    {
+        Segment<TValue> Segment { get; }
+        void Read();
+    }
+
+    internal abstract class SegmentReader<T, TValue> : ISegmentReader<TValue> where TValue : class, new()
     {
         private Segment<TValue> _segment;
-        protected Segment<TValue> Segment => _segment;
-        protected BaseReader<TValue> Reader => _segment.Reader;
+        public Segment<TValue> Segment => _segment;
+        protected BaseReader<TValue> Storage => _segment.Storage;
+
+        protected SegmentReader()
+        {
+
+        }
 
         protected SegmentReader(Segment<TValue> segment)
         {

@@ -4,8 +4,10 @@ using System.IO;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
-    internal sealed class StringTableReader<TValue> : SegmentReader<string, TValue> where TValue : class, new()
+    internal sealed class StringTableReader<TValue> : SegmentReader<string, TValue>
+        where TValue : class, new()
     {
+        public StringTableReader() : base() { }
         public StringTableReader(Segment<TValue> segment) : base(segment)
         {
         }
@@ -19,11 +21,11 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             if (Segment.Length == 0)
                 yield break;
 
-            Reader.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
-            while (Reader.BaseStream.Position < Segment.EndOffset)
+            Storage.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
+            while (Storage.BaseStream.Position < Segment.EndOffset)
             {
-                var stringPosition = Reader.BaseStream.Position;
-                var @string = Reader.ReadStringDirect();
+                var stringPosition = Storage.BaseStream.Position;
+                var @string = Storage.ReadStringDirect();
 
                 OnStringRead?.Invoke(stringPosition, @string);
 
@@ -38,11 +40,11 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             if (Segment.Length == 0 || OnStringRead == null)
                 return;
 
-            Reader.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
-            while (Reader.BaseStream.Position < Segment.EndOffset)
+            Storage.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
+            while (Storage.BaseStream.Position < Segment.EndOffset)
             {
-                var stringPosition = Reader.BaseStream.Position;
-                var @string = Reader.ReadStringDirect();
+                var stringPosition = Storage.BaseStream.Position;
+                var @string = Storage.ReadStringDirect();
 
                 OnStringRead?.Invoke(stringPosition, @string);
 
