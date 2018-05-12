@@ -65,7 +65,7 @@ namespace DBClientFiles.NET.Utils
             GetUnsafePtr = (GetUnsafePtrDelegate)method.CreateDelegate(typeof(GetUnsafePtrDelegate));
         }
 
-        private static int GetSizeOf(Type t)
+        public static int GetSizeOf(Type t)
         {
             // Strings are most of the time handled as a string table, so we use the underlying pointer size
             if (t == typeof(string))
@@ -76,8 +76,8 @@ namespace DBClientFiles.NET.Utils
                 // Try letting the marshaler handle getting the size.
                 // It can *sometimes* do it correctly
                 // If it can't, fall back to our own methods.
-                var o = Activator.CreateInstance(t);
-                return Marshal.SizeOf(o);
+                /// var o = Activator.CreateInstance(t);
+                return Marshal.SizeOf(t);
             }
             catch
             {

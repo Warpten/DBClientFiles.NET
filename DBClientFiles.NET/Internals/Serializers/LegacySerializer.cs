@@ -181,18 +181,18 @@ namespace DBClientFiles.NET.Internals.Serializers
                 var memberAccessExpr = memberInfo.MakeMemberAccess(resultExpr);
                 var methodInfo = memberInfo.BinaryReader;
 
-                var isPalletData = IsPalletDataMember(memberInfo.MemberIndex, memberInfo);
-                var isCommonData = IsCommonDataMember(memberInfo.MemberIndex, memberInfo);
-                var isRelationshipData = IsRelationShipDataMember(memberInfo.MemberIndex, memberInfo);
+                var isPalletData = IsPalletDataMember(memberInfo);
+                var isCommonData = IsCommonDataMember(memberInfo);
+                var isRelationshipData = IsRelationShipDataMember(memberInfo);
 
                 if (isPalletData)
-                    GeneratePalletDataReader(body, ref memberAccessExpr, binaryReaderExpr);
+                    LoadFromPallet(body, ref memberAccessExpr, binaryReaderExpr);
                 else if (isCommonData)
-                    GenerateCommonDataReader(body, ref memberAccessExpr, binaryReaderExpr);
+                    LoadFromCommonData(body, ref memberAccessExpr, binaryReaderExpr);
                 else if (isRelationshipData)
-                    GenerateRelationshipDataReader(body, ref memberAccessExpr, binaryReaderExpr);
+                    LoadFromRelationshipData(body, ref memberAccessExpr, binaryReaderExpr);
                 else
-                    GenerateStreamedMemberReader(body, ref memberAccessExpr, binaryReaderExpr);
+                    LoadFromStream(body, ref memberAccessExpr, binaryReaderExpr);
             }
 
             body.Add(resultExpr);
@@ -202,18 +202,27 @@ namespace DBClientFiles.NET.Internals.Serializers
             return fnExpr.Compile();
         }
 
-        protected virtual void GenerateCommonDataReader(List<Expression> body, ref ExtendedMemberExpression memberExpression, Expression binaryReaderExpr)
+        protected virtual void LoadFromCommonData(List<Expression> body, ref ExtendedMemberExpression memberExpression, Expression binaryReaderExpr)
         {
+            if (memberExpression.MemberInfo.CompressionType != MemberCompressionType.CommonData)
+                throw new InvalidOperationException();
+
             throw new NotImplementedException();
         }
 
-        protected virtual void GeneratePalletDataReader(List<Expression> body, ref ExtendedMemberExpression memberExpression, Expression binaryReaderExpr)
+        protected virtual void LoadFromPallet(List<Expression> body, ref ExtendedMemberExpression memberExpression, Expression binaryReaderExpr)
         {
+            if (memberExpression.MemberInfo.CompressionType != MemberCompressionType.CommonData)
+                throw new InvalidOperationException();
+
             throw new NotImplementedException();
         }
 
-        protected virtual void GenerateRelationshipDataReader(List<Expression> body, ref ExtendedMemberExpression memberExpression, Expression binaryReaderExpr)
+        protected virtual void LoadFromRelationshipData(List<Expression> body, ref ExtendedMemberExpression memberExpression, Expression binaryReaderExpr)
         {
+            if (memberExpression.MemberInfo.CompressionType != MemberCompressionType.RelationshipData)
+                throw new InvalidOperationException();
+
             throw new NotImplementedException();
         }
 
@@ -225,7 +234,7 @@ namespace DBClientFiles.NET.Internals.Serializers
         /// <param name="body"></param>
         /// <param name="memberExpression"></param>
         /// <param name="binaryReaderExpr"></param>
-        private void GenerateStreamedMemberReader(List<Expression> body, ref ExtendedMemberExpression memberExpression, Expression binaryReaderExpr)
+        private void LoadFromStream(List<Expression> body, ref ExtendedMemberExpression memberExpression, Expression binaryReaderExpr)
         {
             var simpleReadExpression = GetMemberBaseReadExpression(memberExpression.MemberInfo, binaryReaderExpr);
 
@@ -278,10 +287,9 @@ namespace DBClientFiles.NET.Internals.Serializers
         /// <summary>
         /// Returns true if this column's value is to be read from the common data block.
         /// </summary>
-        /// <param name="memberIndex"></param>
         /// <param name="memberInfo"></param>
         /// <returns></returns>
-        protected virtual bool IsCommonDataMember(int memberIndex, MemberInfo memberInfo) => false;
+        protected virtual bool IsCommonDataMember(ExtendedMemberInfo memberInfo) => memberInfo.CompressionType == MemberCompressionType.CommonData;
 
         /// <summary>
         /// Returns true if this column's value is to be read from the pallet data block.
@@ -289,7 +297,7 @@ namespace DBClientFiles.NET.Internals.Serializers
         /// <param name="memberIndex"></param>
         /// <param name="memberInfo"></param>
         /// <returns></returns>
-        protected virtual bool IsPalletDataMember(int memberIndex, MemberInfo memberInfo) => false;
+        protected virtual bool IsPalletDataMember(ExtendedMemberInfo memberInfo) => false;
 
         /// <summary>
         /// Returns true if this column's value is to be read from the relationship data block.
@@ -297,7 +305,7 @@ namespace DBClientFiles.NET.Internals.Serializers
         /// <param name="memberIndex"></param>
         /// <param name="memberInfo"></param>
         /// <returns></returns>
-        protected virtual bool IsRelationShipDataMember(int memberIndex, MemberInfo memberInfo) => false;
+        protected virtual bool IsRelationShipDataMember(ExtendedMemberInfo memberInfo) => memberInfo.CompressionType == MemberCompressionType.RelationshipData;
 
         public virtual TValue Deserialize()
         {

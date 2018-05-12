@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
-    internal class WDB6<TKey, TValue> : BaseReader where TKey : struct
+    /*internal class WDB6<TKey, TValue> : BaseReader where TKey : struct
     {
         public WDB6(Stream strm) : base(strm, true)
         {
@@ -18,9 +18,9 @@ namespace DBClientFiles.NET.Internals.Versions
         }
 
 
-        public override IEnumerable<T> ReadRecords<T>()
+        public override IEnumerable<TValue> ReadRecords()
         {
-            var cache = new LegacySerializer<TKey, T>(this);
+            var cache = new LegacySerializer<TKey, TValue>(this);
 
             var copyTable = new Dictionary<TKey, List<TKey>>();
             if (CopyTable.Exists)
@@ -119,5 +119,5 @@ namespace DBClientFiles.NET.Internals.Versions
 
             return true;
         }
-    }
+    }*/
 }

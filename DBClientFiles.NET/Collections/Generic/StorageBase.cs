@@ -6,7 +6,7 @@ using BinaryReader = DBClientFiles.NET.IO.BinaryReader;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
-    public abstract class StorageBase<TValue>
+    public abstract class StorageBase<TValue> where TValue : class, new()
     {
         internal StorageOptions Options { get; set; }
 
@@ -14,7 +14,7 @@ namespace DBClientFiles.NET.Collections.Generic
         {
             Options = options;
 
-            IReader fileReader = null;
+            IReader<TValue> fileReader = null;
             Signatures signature;
 
             using (var reader = new BinaryReader(fileStream, true))
@@ -23,14 +23,14 @@ namespace DBClientFiles.NET.Collections.Generic
                 switch (signature)
                 {
                     case Signatures.WDBC:
-                        fileReader = new WDBC(fileStream);
+                        fileReader = new WDBC<TValue>(fileStream);
                         break;
                     case Signatures.WDB2:
-                        fileReader = new WDB2(fileStream);
+                        fileReader = new WDB2<TValue>(fileStream);
                         break;
-                    case Signatures.WDB5:
-                        fileReader = new WDB5<TKey>(fileStream);
-                        break;
+                    // case Signatures.WDB5:
+                    //     fileReader = new WDB5<TKey>(fileStream);
+                    //     break;
                     case Signatures.WDB3:
                     case Signatures.WDB4:
                         throw new NotSupportedVersionException($"{signature} files cannot be read without client metadata.");
@@ -52,6 +52,6 @@ namespace DBClientFiles.NET.Collections.Generic
             FromStream<int>(fileStream, options);
         }
 
-        internal abstract void LoadRecords(IReader reader);
+        internal abstract void LoadRecords(IReader<TValue> reader);
     }
 }

@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
-    public class StorageDictionary<TValue> : StorageDictionary<int, TValue>
+    /*public class StorageDictionary<TValue> : StorageDictionary<int, TValue>
     {
         public StorageDictionary(Stream fileStream, StorageOptions options) : base(fileStream, options)
         {
@@ -58,5 +58,5 @@ namespace DBClientFiles.NET.Collections.Generic
         public bool Remove(KeyValuePair<TKey, TValue> item) => ((IDictionary<TKey, TValue>)_container).Remove(item);
         public bool TryGetValue(TKey key, out TValue value) => _container.TryGetValue(key, out value);
         IEnumerator IEnumerable.GetEnumerator() => ((IDictionary<TKey, TValue>)_container).GetEnumerator();
-    }
+    }*/
 }

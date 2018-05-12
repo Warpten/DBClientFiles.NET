@@ -5,7 +5,7 @@ using System.IO;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
-    public sealed class StorageList<TKey, TValue> : StorageList<TValue> where TKey : struct
+    public sealed class StorageList<TKey, TValue> : StorageList<TValue> where TKey : struct where TValue : class, new()
     {
         public StorageList(Stream fileStream, StorageOptions options) : base(fileStream, options)
         {
@@ -18,7 +18,7 @@ namespace DBClientFiles.NET.Collections.Generic
         }
     }
 
-    public class StorageList<TValue> : StorageBase<TValue>, IList<TValue>
+    public class StorageList<TValue> : StorageBase<TValue>, IList<TValue> where TValue : class, new()
     {
         private List<TValue> _container = new List<TValue>();
 
@@ -27,9 +27,9 @@ namespace DBClientFiles.NET.Collections.Generic
             FromStream(fileStream, options);
         }
 
-        internal override void LoadRecords(IReader reader)
+        internal override void LoadRecords(IReader<TValue> reader)
         {
-            foreach (var record in reader.ReadRecords<TValue>())
+            foreach (var record in reader.ReadRecords())
                 _container.Add(record);
         }
 

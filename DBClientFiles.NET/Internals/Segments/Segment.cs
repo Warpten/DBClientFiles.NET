@@ -7,7 +7,7 @@ namespace DBClientFiles.NET.Internals.Segments
 {
     internal class Segment<TValue, TReader> : Segment<TValue>
         where TValue : class, new()
-        where TReader : ISegmentReader<TValue>, class, new()
+        where TReader : class, ISegmentReader<TValue>, new()
     {
         public TReader Reader { get; }
 
