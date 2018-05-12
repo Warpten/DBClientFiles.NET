@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using BinaryReader = DBClientFiles.NET.IO.BinaryReader;
 
 namespace DBClientFiles.NET.Internals.Versions
@@ -70,24 +71,21 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public virtual void ReadSegments()
         {
-            if (Options.LoadMask.HasFlag(LoadMask.StringTable) && StringTable.Exists)
+            if (Options.LoadMask.HasFlag(LoadMask.StringTable) && StringTable.Exists && !StringTable.Deserialized)
             {
                 StringTable.Reader.OnStringRead += OnStringTableEntry;
                 StringTable.Reader.Read();
                 StringTable.Reader.OnStringRead -= OnStringTableEntry;
             }
 
-            if (OffsetMap.Exists)
-            {
-                OffsetMap.Reader.MinIndex = Header.MinIndex;
-                OffsetMap.Reader.MaxIndex = Header.MaxIndex;
-                OffsetMap.Reader.Read();
-            }
+            // This is shoddy design (It relies on execution flow when calling base method in children) but meh. Let's keep it for safety purposes.
+            if (OffsetMap.Exists && !OffsetMap.Deserialized)
+                throw new InvalidOperationException("Offset map needs to be deserialized in children classes!");
 
-            if (CopyTable.Exists)
+            if (CopyTable.Exists && !CopyTable.Deserialized)
                 CopyTable.Reader.Read();
 
-            if (IndexTable.Exists)
+            if (IndexTable.Exists && !IndexTable.Deserialized)
                 IndexTable.Reader.Read();
         }
 
@@ -99,9 +97,16 @@ namespace DBClientFiles.NET.Internals.Versions
                 return StringTable.Reader[ReadInt32()];
             }
 
-            return base.ReadString();
+            return ReadStringDirect();
         }
 
-        internal string ReadStringDirect() => base.ReadString();
+        internal string ReadStringDirect()
+        {
+            var byteList = new List<byte>();
+            while (PeekChar() != '\0')
+                byteList.Add(ReadByte());
+
+            return Encoding.UTF8.GetString(byteList.ToArray());
+        }
     }
 }

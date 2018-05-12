@@ -33,6 +33,8 @@ namespace DBClientFiles.NET.Internals.Segments
         public BaseReader<TValue> Storage { get; private set; }
         private StorageOptions Options { get; set; }
 
+        public bool Deserialized { get; protected set; } = false;
+
         public bool Exists
         {
             set => _existsOverride = value;
