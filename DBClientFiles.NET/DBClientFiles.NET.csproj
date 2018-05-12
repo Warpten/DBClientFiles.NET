@@ -56,7 +56,9 @@
     <Compile Include="Internals\IHeader.cs" />
     <Compile Include="Internals\IReader.cs" />
     <Compile Include="Internals\MemberCompressionType.cs" />
-    <Compile Include="Internals\Segments\Readers\OffsetmapReader.cs" />
+    <Compile Include="Internals\Segments\Readers\CopyTableReader.cs" />
+    <Compile Include="Internals\Segments\Readers\IndexTableReader.cs" />
+    <Compile Include="Internals\Segments\Readers\OffsetMapReader.cs" />
     <Compile Include="Internals\Segments\Readers\SegmentReader.cs" />
     <Compile Include="Internals\Segments\Readers\StringTableReader.cs" />
     <Compile Include="Internals\Segments\Segment.cs" />

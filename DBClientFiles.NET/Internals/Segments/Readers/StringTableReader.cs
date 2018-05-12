@@ -8,9 +8,6 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
         where TValue : class, new()
     {
         public StringTableReader() : base() { }
-        public StringTableReader(Segment<TValue> segment) : base(segment)
-        {
-        }
 
         private Dictionary<long, string> _stringTable = new Dictionary<long, string>();
 
@@ -43,7 +40,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             Storage.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
             while (Storage.BaseStream.Position < Segment.EndOffset)
             {
-                var stringPosition = Storage.BaseStream.Position;
+                var stringPosition = Storage.BaseStream.Position - Segment.StartOffset;
                 var @string = Storage.ReadStringDirect();
 
                 OnStringRead?.Invoke(stringPosition, @string);

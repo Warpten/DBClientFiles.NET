@@ -20,7 +20,7 @@ namespace DBClientFiles.NET.Internals
     internal interface IHeader<TValue> : IHeader where TValue : class, new()
     {
         Segment<TValue, StringTableReader<TValue>> StringTable { get; }
-        Segment<TValue, OffsetmapReader<TValue>> OffsetMap { get; }
+        Segment<TValue, OffsetMapReader<TValue>> OffsetMap { get; }
         Segment<TValue> CopyTable { get; }
         Segment<TValue> IndexTable { get; }
         Segment<TValue> CommonTable { get; }

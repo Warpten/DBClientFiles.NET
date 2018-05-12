@@ -13,7 +13,10 @@ namespace DBClientFiles.NET.Internals.Segments
 
         internal Segment(BaseReader<TValue> storage) : base(storage)
         {
-            Reader = new TReader();
+            Reader = new TReader
+            {
+                Segment = this
+            };
         }
     }
 

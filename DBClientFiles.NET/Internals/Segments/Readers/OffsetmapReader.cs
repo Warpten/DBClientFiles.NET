@@ -3,12 +3,10 @@ using System.IO;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
-    internal sealed class OffsetmapReader<TValue> : SegmentReader<(int, long), TValue> where TValue : class, new()
+    internal sealed class OffsetMapReader<TValue> : SegmentReader<(int, long), TValue>
+        where TValue : class, new()
     {
-        public OffsetmapReader() : base() { }
-        public OffsetmapReader(Segment<TValue> segment) : base(segment)
-        {
-        }
+        public OffsetMapReader() { }
 
         private Dictionary<int, long> _parsedContent = new Dictionary<int, long>();
 

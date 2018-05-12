@@ -51,16 +51,15 @@ namespace DBClientFiles.NET.Internals.Versions
             }
         }
 
-        public Segment<TValue> StringTable { get; private set; }
-        private StringTableReader<TValue> StringTableReader { get; set; }
-
-        public Segment<TValue> OffsetMap { get; private set; }
-        private OffsetmapReader<TValue> offsetmapReader { get; set; }
+        public Segment<TValue, StringTableReader<TValue>> StringTable { get; private set; }
+        public Segment<TValue, OffsetMapReader<TValue>> OffsetMap { get; private set; }
 
         public Segment<TValue> Records { get; private set; }
-        public Segment<TValue> CopyTable { get; private set; }
+
+        public Segment<TValue, CopyTableReader<TValue>> CopyTable { get; private set; }
+
         public Segment<TValue> CommonTable { get; protected set; }
-        public Segment<TValue> IndexTable { get; private set; }
+        public Segment<TValue, IndexTableReader<TValue>> IndexTable { get; private set; }
 
         public event Action<long, string> OnStringTableEntry;
 
@@ -72,19 +71,23 @@ namespace DBClientFiles.NET.Internals.Versions
         {
             if (Options.LoadMask.HasFlag(LoadMask.StringTable) && StringTable.Exists)
             {
-                StringTableReader = new StringTableReader<TValue>(StringTable);
-                StringTableReader.OnStringRead += OnStringTableEntry;
-                StringTableReader.Read();
-                StringTableReader.OnStringRead -= OnStringTableEntry;
+                StringTable.Reader.OnStringRead += OnStringTableEntry;
+                StringTable.Reader.Read();
+                StringTable.Reader.OnStringRead -= OnStringTableEntry;
             }
 
             if (OffsetMap.Exists)
             {
-                offsetmapReader = new OffsetmapReader<TValue>(OffsetMap);
-                offsetmapReader.MinIndex = Header.MinIndex;
-                offsetmapReader.MaxIndex = Header.MaxIndex;
-                offsetmapReader.Read();
+                OffsetMap.Reader.MinIndex = Header.MinIndex;
+                OffsetMap.Reader.MaxIndex = Header.MaxIndex;
+                OffsetMap.Reader.Read();
             }
+
+            if (CopyTable.Exists)
+                CopyTable.Reader.Read();
+
+            if (IndexTable.Exists)
+                IndexTable.Reader.Read();
         }
 
         public override string ReadString()
@@ -92,7 +95,7 @@ namespace DBClientFiles.NET.Internals.Versions
             if (StringTable.Exists)
             {
                 var offset = ReadInt32();
-                return StringTableReader[(int)(ReadInt32() + StringTable.StartOffset)];
+                return StringTable.Reader[ReadInt32()];
             }
 
             return base.ReadString();
