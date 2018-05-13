@@ -16,12 +16,26 @@ namespace DBClientFiles.NET.Internals.Versions
         protected BaseReader(Stream strm, bool keepOpen) : base(strm, keepOpen)
         {
         }
+
+        public override void ReadSegments()
+        {
+            if (CopyTable.Exists && !CopyTable.Deserialized)
+            {
+                CopyTable = new Segment<TValue, CopyTableReader<TKey, TValue>>(this);
+            }
+
+            base.ReadSegments();
+        }
     }
 
     internal abstract class BaseReader<TValue> : BinaryReader, IReader<TValue> where TValue : class, new()
     {
         protected BaseReader(Stream strm, bool keepOpen) : base(strm, keepOpen)
         {
+            StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
+            OffsetMap = new Segment<TValue, OffsetMapReader<TValue>>(this);
+            Records = new Segment<TValue>(this);
+            CopyTable = new Segment<TValue>(this);
         }
 
         public int FieldCount { get; protected set; }
@@ -32,6 +46,10 @@ namespace DBClientFiles.NET.Internals.Versions
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
+            StringTable.Dispose();
+            OffsetMap.Dispose();
+            Records.Dispose();
+            CopyTable.Dispose();
         }
 
         private StorageOptions _options;
@@ -53,15 +71,15 @@ namespace DBClientFiles.NET.Internals.Versions
             }
         }
 
-        public Segment<TValue, StringTableReader<TValue>> StringTable { get; private set; }
-        public Segment<TValue, OffsetMapReader<TValue>> OffsetMap { get; private set; }
+        public virtual Segment<TValue, StringTableReader<TValue>> StringTable { get; protected set; }
+        public virtual Segment<TValue, OffsetMapReader<TValue>> OffsetMap { get; protected set; }
 
-        public Segment<TValue> Records { get; private set; }
+        public virtual Segment<TValue> Records { get; protected set; }
 
-        public Segment<TValue, CopyTableReader<TValue>> CopyTable { get; private set; }
+        public virtual Segment<TValue> CopyTable { get; protected set; }
 
-        public Segment<TValue> CommonTable { get; protected set; }
-        public Segment<TValue, IndexTableReader<TValue>> IndexTable { get; private set; }
+        public virtual Segment<TValue> CommonTable { get; protected set; }
+        public virtual Segment<TValue, IndexTableReader<TValue>> IndexTable { get; protected set; }
 
         public event Action<long, string> OnStringTableEntry;
 
@@ -81,9 +99,6 @@ namespace DBClientFiles.NET.Internals.Versions
             // This is shoddy design (It relies on execution flow when calling base method in children) but meh. Let's keep it for safety purposes.
             if (OffsetMap.Exists && !OffsetMap.Deserialized)
                 throw new InvalidOperationException("Offset map needs to be deserialized in children classes!");
-
-            if (CopyTable.Exists && !CopyTable.Deserialized)
-                CopyTable.Reader.Read();
 
             if (IndexTable.Exists && !IndexTable.Deserialized)
                 IndexTable.Reader.Read();

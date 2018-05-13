@@ -13,28 +13,6 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
         public int MinIndex { get; set; }
         public int MaxIndex { get; set; }
 
-        public override IEnumerable<(int, long)> Enumerate()
-        {
-            if (!Segment.Exists)
-                yield break;
-
-            int i = 0;
-            Storage.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
-            while (Storage.BaseStream.Position < Segment.EndOffset)
-            {
-                long offset = Storage.ReadInt32();
-                Storage.BaseStream.Seek(2, SeekOrigin.Current);
-
-                ++i;
-
-                if (offset == 0)
-                    continue;
-
-                _parsedContent.Add(MinIndex + i - 1, offset);
-                yield return (MinIndex + i - 1, offset);
-            }
-        }
-
         public override void Read()
         {
             if (!Segment.Exists)
@@ -59,6 +37,11 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
         public long this[int index]
         {
             get => _parsedContent[index];
+        }
+
+        protected override void Release()
+        {
+            _parsedContent.Clear();
         }
     }
 }

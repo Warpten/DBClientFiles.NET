@@ -16,5 +16,10 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
         {
             throw new System.NotImplementedException();
         }
+
+        protected override void Release()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

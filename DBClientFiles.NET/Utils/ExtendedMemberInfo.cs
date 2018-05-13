@@ -16,7 +16,7 @@ namespace DBClientFiles.NET.Utils
 {
     internal sealed class ExtendedMemberInfo : MemberInfo
     {
-        private static MethodInfo _bitReader = typeof(BaseReader).GetMethod("ReadBits", new[] { typeof(int) });
+        private static MethodInfo _bitReader = typeof(BinaryReader).GetMethod("ReadBits", new[] { typeof(int) });
         private static Dictionary<TypeCode, MethodInfo> _binaryReaders = new Dictionary<TypeCode, MethodInfo>()
         {
             { TypeCode.UInt64, typeof(BinaryReader).GetMethod("ReadUInt64", Type.EmptyTypes) },

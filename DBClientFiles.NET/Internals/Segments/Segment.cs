@@ -9,7 +9,7 @@ namespace DBClientFiles.NET.Internals.Segments
         where TValue : class, new()
         where TReader : class, ISegmentReader<TValue>, new()
     {
-        public TReader Reader { get; }
+        public TReader Reader { get; private set; }
 
         internal Segment(BaseReader<TValue> storage) : base(storage)
         {
@@ -18,22 +18,29 @@ namespace DBClientFiles.NET.Internals.Segments
                 Segment = this
             };
         }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            Reader.Dispose();
+        }
     }
 
-    internal class Segment<TValue> : IDisposable, IEquatable<Segment<TValue>>
+    internal class Segment<TValue> : IEquatable<Segment<TValue>>, IDisposable
         where TValue : class, new()
     {
         public long StartOffset { get; set; }
         public long Length { get; set; }
 
-        public long EndOffset => StartOffset + Length;
+        public long EndOffset => Exists ? (StartOffset + Length) : StartOffset;
 
         private bool _existsOverride;
 
         public BaseReader<TValue> Storage { get; private set; }
         private StorageOptions Options { get; set; }
 
-        public bool Deserialized { get; protected set; } = false;
+        public bool Deserialized { get; set; } = false;
 
         public bool Exists
         {
@@ -55,11 +62,32 @@ namespace DBClientFiles.NET.Internals.Segments
             _existsOverride = false;
         }
 
+
+        #region IDisposable Support
+        private bool _disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    Options = null;
+                    Storage = null;
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // TODO: set large fields to null.
+
+                _disposedValue = true;
+            }
+        }
+
         public void Dispose()
         {
-            Options = null;
-            Storage = null;
+            Dispose(true);
         }
+        #endregion
 
         public bool Equals(Segment<TValue> other)
         {

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace DBClientFiles.NET.Internals.Serializers
 {
-    internal class StorageSerializer<TValue> where TValue : struct
+    /*internal class StorageSerializer<TValue> where TValue : class, new()
     {
         public int ValueSize { get; } = SizeCache<TValue>.Size;
 
@@ -18,5 +18,5 @@ namespace DBClientFiles.NET.Internals.Serializers
         public void Serialize(Stream targetStream, StorageBase<TValue> storage)
         {
         }
-    }
+    }*/
 }

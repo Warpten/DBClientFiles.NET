@@ -1,4 +1,5 @@
 ﻿using DBClientFiles.NET.Internals.Segments;
+using DBClientFiles.NET.Internals.Segments.Readers;
 using DBClientFiles.NET.Internals.Serializers;
 using DBClientFiles.NET.Utils;
 using System;
@@ -8,60 +9,13 @@ using System.Text;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
-    internal class WDB5<TKey, TValue> : WDB5<TValue> where TKey : struct where TValue : class, new()
+    internal class WDB5<TKey, TValue> : BaseReader<TKey, TValue>
+        where TKey : struct
+        where TValue : class, new()
     {
-        public WDB5(Stream strm) : base(strm)
+        public WDB5(Stream strm) : base(strm, true)
         {
-
-        }
-
-
-        public override IEnumerable<TValue> ReadRecords()
-        {
-            var cache = new LegacySerializer<TKey, TValue>(this);
-
-            var copyTable = new Dictionary<TKey, List<TKey>>();
-            if (CopyTable.Exists)
-            {
-                BaseStream.Position = CopyTable.StartOffset;
-                foreach (var pair in CopyTable.Enumerate<TKey, TValue>(this))
-                {
-                    if (!copyTable.TryGetValue(pair.Key, out var node))
-                        node = copyTable[pair.Key] = new List<TKey>();
-
-                    node.Add(pair.Value);
-                }
-            }
-
-            var i = 0;
-            BaseStream.Position = Records.StartOffset;
-            while (BaseStream.Position < Records.EndOffset)
-            {
-                var oldStructure = cache.Deserialize(this);
-
-                BaseStream.Position = OffsetMap[i++];
-                var currentKey = cache.ExtractKey(oldStructure);
-
-                if (copyTable.TryGetValue(currentKey, out var nodes))
-                {
-                    for (var itr = 0; itr < nodes.Count; ++itr)
-                    {
-                        var clone = cache.Clone(oldStructure);
-                        cache.InsertKey(clone, nodes[itr]);
-                        yield return clone;
-                    }
-                }
-
-                yield return oldStructure;
-            }
-        }
-    }
-
-    internal abstract class WDB5<TValue> : BaseReader<TValue> where TValue : class, new()
-    {
-        protected WDB5(Stream strm) : base(strm, true)
-        {
-
+            CopyTable = new Segment<TValue, CopyTableReader<TKey, TValue>>(this);
         }
 
         public override bool ReadHeader()
@@ -92,9 +46,43 @@ namespace DBClientFiles.NET.Internals.Versions
             if (OffsetMap.Exists)
                 OffsetMap.StartOffset = StringTable.Length;
 
+            IndexTable.Exists = (flags & 0x04) != 0;
+            IndexTable.StartOffset = OffsetMap.EndOffset;
+            IndexTable.Length = recordCount * 4;
+
+            CopyTable = new Segment<TValue, CopyTableReader<TKey, TValue>>(this);
+            CopyTable.Exists = copyTableSize != 0;
+            CopyTable.Length = copyTableSize;
+            CopyTable.StartOffset = IndexTable.EndOffset;
+
             // TODO: Check that the mapped index column corresponds to metadata
 
             return true;
+        }
+
+        public override IEnumerable<TValue> ReadRecords()
+        {
+            var cache = new LegacySerializer<TKey, TValue>(this);
+            var cp = (Segment<TValue, CopyTableReader<TKey, TValue>>)CopyTable;
+
+            var i = 0;
+            BaseStream.Position = Records.StartOffset;
+            while (BaseStream.Position < Records.EndOffset)
+            {
+                var oldStructure = cache.Deserialize();
+
+                BaseStream.Position = OffsetMap.Reader[i++];
+                var currentKey = cache.ExtractKey(oldStructure);
+
+                foreach (var copyEntry in cp.Reader[currentKey])
+                {
+                    var clone = cache.Clone(oldStructure);
+                    cache.InsertKey(clone, copyEntry);
+                    yield return clone;
+                }
+
+                yield return oldStructure;
+            }
         }
     }
 }

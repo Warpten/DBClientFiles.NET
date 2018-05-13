@@ -13,25 +13,6 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
         public event Action<long, string> OnStringRead;
 
-        public override IEnumerable<string> Enumerate()
-        {
-            if (Segment.Length == 0)
-                yield break;
-
-            Storage.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
-            while (Storage.BaseStream.Position < Segment.EndOffset)
-            {
-                var stringPosition = Storage.BaseStream.Position;
-                var @string = Storage.ReadStringDirect();
-
-                OnStringRead?.Invoke(stringPosition, @string);
-
-                _stringTable.Add(stringPosition, @string);
-
-                yield return @string;
-            }
-        }
-
         public override void Read()
         {
             if (Segment.Length == 0 || OnStringRead == null)
@@ -47,6 +28,11 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
                 _stringTable.Add(stringPosition, @string);
             }
+        }
+
+        protected override void Release()
+        {
+            _stringTable.Clear();
         }
 
         public string this[int offset] => _stringTable[offset];
