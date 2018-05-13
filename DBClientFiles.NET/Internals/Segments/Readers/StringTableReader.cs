@@ -15,7 +15,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
         public override void Read()
         {
-            if (Segment.Length == 0 || OnStringRead == null)
+            if (Segment.Length == 0)
                 return;
 
             Storage.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);

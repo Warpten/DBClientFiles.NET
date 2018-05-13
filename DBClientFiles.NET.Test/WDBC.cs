@@ -15,7 +15,7 @@ namespace DBClientFiles.NET.Test
         {
             using (var fs = File.OpenRead(@"D:\Repositories\DBFilesClient.NET\Tests\WDBC\Files\Achievement.dbc"))
             {
-                var reader = new StorageDictionary<int, AchievementEntry>(fs, StorageOptions.Default);
+                var reader = new StorageList<AchievementEntry>(fs, StorageOptions.Default);
                 Console.WriteLine(reader.Count);
             }
         }

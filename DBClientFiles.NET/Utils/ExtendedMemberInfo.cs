@@ -34,6 +34,7 @@ namespace DBClientFiles.NET.Utils
         };
 
         private readonly MemberInfo _memberInfo;
+        public MemberInfo MemberInfo => _memberInfo;
 
         public MemberCompressionType CompressionType { get; private set; } = MemberCompressionType.None;
 

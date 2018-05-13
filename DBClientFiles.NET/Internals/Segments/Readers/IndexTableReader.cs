@@ -7,11 +7,6 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     {
         public IndexTableReader() { }
 
-        public override IEnumerable<int> Enumerate()
-        {
-            throw new System.NotImplementedException();
-        }
-
         public override void Read()
         {
             throw new System.NotImplementedException();

@@ -37,9 +37,6 @@ namespace DBClientFiles.NET.Internals.Serializers
 
                 foreach (var memberInfo in Storage.ValueMembers)
                 {
-                    if (memberInfo.MemberType != Options.MemberType)
-                        continue;
-
                     // Get the first member available as a fallback for some implementations
                     if (keyMemberInfo == null)
                         keyMemberInfo = memberInfo;
@@ -72,9 +69,6 @@ namespace DBClientFiles.NET.Internals.Serializers
 
                 foreach (var memberInfo in Storage.ValueMembers)
                 {
-                    if (memberInfo.MemberType != Options.MemberType)
-                        continue;
-
                     // Get the first member available as a fallback for some implementations
                     if (keyMemberInfo == null)
                         keyMemberInfo = memberInfo;
@@ -172,9 +166,6 @@ namespace DBClientFiles.NET.Internals.Serializers
 
             foreach (var memberInfo in Storage.ValueMembers)
             {
-                if (memberInfo.MemberType != Options.MemberType)
-                    continue;
-
                 if (!CanSerializeMember(memberInfo))
                     continue;
 
@@ -282,7 +273,7 @@ namespace DBClientFiles.NET.Internals.Serializers
                 return Expression.Call(readerInstance, methodInfo);
         }
 
-        protected virtual bool CanSerializeMember(ExtendedMemberInfo memberInfo) => memberInfo.IsDefined(typeof(IgnoreAttribute), false);
+        protected virtual bool CanSerializeMember(ExtendedMemberInfo memberInfo) => !memberInfo.IsDefined(typeof(IgnoreAttribute), false);
 
         /// <summary>
         /// Returns true if this column's value is to be read from the common data block.

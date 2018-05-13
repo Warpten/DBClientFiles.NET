@@ -22,35 +22,13 @@ namespace DBClientFiles.NET.Test
         public TimeSpan MinDictionaryTime => _dictionaryTimes.Min();
         public TimeSpan MinListTime => _listTimes.Min();
 
-        public void TestDictionaryStorages(string fileName, int iterationCount = 100)
+        public void TestStorages(string fileName, int iterationCount = 100)
         {
             using (var fs = File.OpenRead(fileName))
-                TestDictionaryStorages(fs, iterationCount);
+                TestStorages(fs, iterationCount);
         }
 
-        public void TestDictionaryStorages(Stream fs, int iterationCount = 100)
-        {
-            for (var i = 0; i < iterationCount; ++i)
-            {
-                var sw = new Stopwatch();
-
-                var storeType = typeof(StorageDictionary<,>).MakeGenericType(typeof(TKey), typeof(TValue));
-
-                sw.Start();
-                var instance = Activator.CreateInstance(storeType, fs, StorageOptions.Default);
-                sw.Stop();
-
-                _dictionaryTimes.Add(sw.Elapsed);
-            }
-        }
-
-        public void TestListStorages(string fileName, int iterationCount = 100)
-        {
-            using (var fs = File.OpenRead(fileName))
-                TestListStorages(fs, iterationCount);
-        }
-
-        public void TestListStorages(Stream fs, int iterationCount = 100)
+        public void TestStorages(Stream fs, int iterationCount = 100)
         {
             for (var i = 0; i < iterationCount; ++i)
             {

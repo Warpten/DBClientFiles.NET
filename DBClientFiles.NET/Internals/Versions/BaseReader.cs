@@ -5,6 +5,7 @@ using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using BinaryReader = DBClientFiles.NET.IO.BinaryReader;
@@ -35,7 +36,9 @@ namespace DBClientFiles.NET.Internals.Versions
             StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
             OffsetMap = new Segment<TValue, OffsetMapReader<TValue>>(this);
             Records = new Segment<TValue>(this);
+            CommonTable = new Segment<TValue>(this);
             CopyTable = new Segment<TValue>(this);
+            IndexTable = new Segment<TValue, IndexTableReader<TValue>>(this);
         }
 
         public int FieldCount { get; protected set; }
@@ -50,6 +53,8 @@ namespace DBClientFiles.NET.Internals.Versions
             OffsetMap.Dispose();
             Records.Dispose();
             CopyTable.Dispose();
+            IndexTable.Dispose();
+            CommonTable.Dispose();
         }
 
         private StorageOptions _options;
@@ -61,9 +66,9 @@ namespace DBClientFiles.NET.Internals.Versions
                 var oldOptions = _options;
                 _options = value;
 
-                if (oldOptions.MemberType != _options.MemberType)
+                if (oldOptions == null || oldOptions.MemberType != _options.MemberType)
                 {
-                    var members = typeof(TValue).GetMembers(BindingFlags.Public | BindingFlags.Instance);
+                    var members = typeof(TValue).GetMembers(BindingFlags.Public | BindingFlags.Instance).Where(m => m.MemberType == _options.MemberType).ToArray();
                     ValueMembers = new ExtendedMemberInfo[members.Length];
                     for (var i = 0; i < members.Length; ++i)
                         ValueMembers[i] = ExtendedMemberInfo.Initialize(members[i], i);
@@ -89,11 +94,15 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public virtual void ReadSegments()
         {
-            if (Options.LoadMask.HasFlag(LoadMask.StringTable) && StringTable.Exists && !StringTable.Deserialized)
+            if (StringTable.Exists && !StringTable.Deserialized)
             {
-                StringTable.Reader.OnStringRead += OnStringTableEntry;
+                if (Options.LoadMask.HasFlag(LoadMask.StringTable))
+                    StringTable.Reader.OnStringRead += OnStringTableEntry;
+
                 StringTable.Reader.Read();
-                StringTable.Reader.OnStringRead -= OnStringTableEntry;
+
+                if (Options.LoadMask.HasFlag(LoadMask.StringTable))
+                    StringTable.Reader.OnStringRead -= OnStringTableEntry;
             }
 
             // This is shoddy design (It relies on execution flow when calling base method in children) but meh. Let's keep it for safety purposes.
@@ -118,8 +127,9 @@ namespace DBClientFiles.NET.Internals.Versions
         internal string ReadStringDirect()
         {
             var byteList = new List<byte>();
-            while (PeekChar() != '\0')
-                byteList.Add(ReadByte());
+            byte currChar;
+            while ((currChar = ReadByte()) != '\0')
+                byteList.Add(currChar);
 
             return Encoding.UTF8.GetString(byteList.ToArray());
         }

@@ -47,7 +47,10 @@ namespace DBClientFiles.NET.Internals.Segments
             set => _existsOverride = value;
             get
             {
-                return _existsOverride && Length != 0;
+                if (Length == 0)
+                    return false;
+
+                return _existsOverride || true;
             }
         }
 

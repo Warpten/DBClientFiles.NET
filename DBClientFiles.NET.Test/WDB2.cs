@@ -11,7 +11,7 @@ namespace DBClientFiles.NET.Test
         public void Item()
         {
             var tester = new StorageTester<int, ItemEntry>();
-            tester.TestListStorages(@"D:\Repositories\DBFilesClient.NET\Tests\WDB2\Files\Item.db2", 500);
+            tester.TestStorages(@"D:\Repositories\DBFilesClient.NET\Tests\WDB2\Files\Item.db2", 500);
             Console.WriteLine("File name                                                        Average                  Max                      Min");
             Console.WriteLine("--------------------------------------------------------------------------------------------------------------------------------------------");
             Console.WriteLine("{0}{1}{2}{3}",

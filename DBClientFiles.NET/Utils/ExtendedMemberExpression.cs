@@ -9,7 +9,7 @@ namespace DBClientFiles.NET.Utils
 
         public ExtendedMemberExpression(Expression expr, ExtendedMemberInfo memberInfo)
         {
-            Expression = System.Linq.Expressions.Expression.MakeMemberAccess(expr, memberInfo);
+            Expression = System.Linq.Expressions.Expression.MakeMemberAccess(expr, memberInfo.MemberInfo);
             MemberInfo = memberInfo;
         }
     }
