@@ -7,6 +7,11 @@ namespace DBClientFiles.NET.Collections.Generic
 {
     public sealed class StorageList<TKey, TValue> : StorageList<TValue> where TKey : struct where TValue : class, new()
     {
+        public StorageList(Stream fileStream) : this(fileStream, StorageOptions.Default)
+        {
+
+        }
+
         public StorageList(Stream fileStream, StorageOptions options) : base(fileStream, options)
         {
 
@@ -21,6 +26,10 @@ namespace DBClientFiles.NET.Collections.Generic
     public class StorageList<TValue> : StorageBase<TValue>, IList<TValue> where TValue : class, new()
     {
         private List<TValue> _container = new List<TValue>();
+
+        public StorageList(Stream fileStream) : this(fileStream, StorageOptions.Default)
+        {
+        }
 
         public StorageList(Stream fileStream, StorageOptions options)
         {

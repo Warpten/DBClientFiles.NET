@@ -1,4 +1,6 @@
 ﻿using DBClientFiles.NET.Internals;
+using DBClientFiles.NET.Internals.Serializers;
+using DBClientFiles.NET.Internals.Versions;
 using DBClientFiles.NET.Utils;
 using System;
 using System.Collections;
@@ -8,36 +10,75 @@ using System.Linq;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
-    /*public class StorageDictionary<TValue> : StorageDictionary<int, TValue>
-    {
-        public StorageDictionary(Stream fileStream, StorageOptions options) : base(fileStream, options)
-        {
-        }
-    }
-
-    public class StorageDictionary<TKey, TValue> : StorageBase<TValue>, IDictionary<TKey, TValue> where TKey : struct
+    public class StorageDictionary<TKey, TValue> : StorageBase<TValue>, IDictionary<TKey, TValue>
+        where TKey : struct, IEquatable<TKey>, IComparable
+        where TValue : class, new()
     {
         private Func<TValue, TKey> _keyGetter;
-
         private Dictionary<TKey, TValue> _container = new Dictionary<TKey, TValue>();
 
-        public StorageDictionary(Stream fileStream, StorageOptions options)
+        /// <summary>
+        /// Create a new dictionary keyed by a specific column.
+        /// </summary>
+        /// <param name="dataStream">The stream from which to load data.</param>
+        /// <param name="options">The storage options to use.</param>
+        /// <param name="keyGetter">A custom function used to select the key from the record.</param>
+        public StorageDictionary(Stream dataStream, StorageOptions options, Func<TValue, TKey> keyGetter) : this(dataStream, options)
         {
-            _keyGetter = SerializationUtils<TKey, TValue>.GenerateKeyGetter(options);
-
-            if (SizeCache<TKey>.Size != 4)
-                throw new InvalidOperationException($@"Type {typeof(TKey).Name} must be 4 bytes of binary data!");
-
-            FromStream<TKey>(fileStream, options);
+            _keyGetter = keyGetter;
         }
 
-        internal override void LoadRecords(IReader reader)
+        /// <summary>
+        /// Create a new dictionary keyed by a specific column. This constructor uses <see cref="StorageOptions.Default"/>.
+        /// </summary>
+        /// <param name="dataStream">The stream from which to load data.</param>
+        /// <param name="keyGetter">A custom function used to select the key from the record.</param>
+        public StorageDictionary(Stream dataStream, Func<TValue, TKey> keyGetter) : this(dataStream, StorageOptions.Default, keyGetter)
         {
-            foreach (var record in reader.ReadRecords<TValue>())
-                Add(_keyGetter(record), record);
         }
 
-        public TValue this[TKey key] {
+        /// <summary>
+        /// Create a new dictionary keyed by a specific column.
+        /// 
+        /// This constructor uses <see cref="StorageOptions.Default"/>.
+        /// They key is selected from <see cref="TValue"/>'s <see cref="PropertyInfo"/> or <see cref="FieldInfo"/> which is decorated by <see cref="IndexAttribute"/>.
+        /// If no member is decorated with <see cref="IndexAttribute"/>, the code assumes the key to be first in the record.
+        /// </summary>
+        /// <param name="dataStream">The stream from which to load data.</param>
+        public StorageDictionary(Stream dataStream) : this(dataStream, StorageOptions.Default)
+        {
+        }
+
+        /// <summary>
+        /// Create a new dictionary keyed by a specific column.
+        /// 
+        /// This constructor uses <see cref="StorageOptions.Default"/>.
+        /// They key is selected from <see cref="TValue"/>'s <see cref="PropertyInfo"/> or <see cref="FieldInfo"/> which is decorated by <see cref="IndexAttribute"/>.
+        /// If no member is decorated with <see cref="IndexAttribute"/>, the code assumes the key to be first in the record.
+        /// </summary>
+        /// <param name="dataStream">The stream from which to load data.</param>
+        /// <param name="options">The options with which to load the file.</param>
+        public StorageDictionary(Stream dataStream, StorageOptions options)
+        {
+            FromStream<TKey>(dataStream, options);
+        }
+
+        internal override void LoadRecords(IReader<TValue> reader)
+        {
+            // TODO Avoid instanciating a new serializer here, use a global application cache instead
+            var legacySerializer = new LegacySerializer<TKey, TValue>((BaseReader<TKey, TValue>)reader);
+
+            foreach (var record in reader.ReadRecords())
+            {
+                var recordKey = _keyGetter != null ? _keyGetter(record) : legacySerializer.ExtractKey(record);
+
+                _container.Add(recordKey, record);
+            }
+        }
+
+        /// <inheritdoc/>
+        public TValue this[TKey key]
+        {
             get => _container[key];
             set => _container[key] = value;
         }
@@ -58,5 +99,5 @@ namespace DBClientFiles.NET.Collections.Generic
         public bool Remove(KeyValuePair<TKey, TValue> item) => ((IDictionary<TKey, TValue>)_container).Remove(item);
         public bool TryGetValue(TKey key, out TValue value) => _container.TryGetValue(key, out value);
         IEnumerator IEnumerable.GetEnumerator() => ((IDictionary<TKey, TValue>)_container).GetEnumerator();
-    }*/
+    }
 }

@@ -22,8 +22,8 @@ namespace DBClientFiles.NET.Internals.Serializers
     /// <typeparam name="TValue"></typeparam>
     internal class LegacySerializer<TKey, TValue> : LegacySerializer<TValue> where TValue : class, new()
     {
-        private static Action<TValue, TKey> _keySetter;
-        private static Func<TValue, TKey> _keyGetter;
+        private Action<TValue, TKey> _keySetter;
+        private Func<TValue, TKey> _keyGetter;
 
         public LegacySerializer(BaseReader<TValue> storage) : base(storage) { }
 
@@ -98,6 +98,10 @@ namespace DBClientFiles.NET.Internals.Serializers
     /// <typeparam name="TValue"></typeparam>
     internal class LegacySerializer<TValue> where TValue : class, new()
     {
+#if DEBUG
+        private static MethodInfo WriteLineMethod = typeof(Console).GetMethod("WriteLine", new[] { typeof(string) });
+#endif
+
         protected StorageOptions Options => Storage.Options;
 
         private Func<TValue, TValue> _memberwiseClone;
@@ -231,6 +235,11 @@ namespace DBClientFiles.NET.Internals.Serializers
 
             if (!memberExpression.MemberInfo.IsArray)
             {
+
+//#if DEBUG
+//                body.Add(Expression.Call(WriteLineMethod, Expression.Constant($"Reading column '{memberExpression.MemberInfo.Name}' for type {typeof(TValue).Name}")));
+//#endif
+
                 body.Add(Expression.Assign(memberExpression.Expression, simpleReadExpression));
             }
             else
@@ -241,6 +250,10 @@ namespace DBClientFiles.NET.Internals.Serializers
 
                 for (var i = 0; i < memberExpression.MemberInfo.ArraySize; ++i)
                 {
+//#if DEBUG
+//                    body.Add(Expression.Call(WriteLineMethod, Expression.Constant($"Reading column '{memberExpression.MemberInfo.Name}[{i}]' for type {typeof(TValue).Name}")));
+//#endif
+
                     // TODO: Benchmark against expression loops.
 
                     var arrayMember = Expression.ArrayAccess(memberExpression.Expression, Expression.Constant(i));

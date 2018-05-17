@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.Internals.Serializers;
 
 namespace DBClientFiles.NET.Internals.Versions
@@ -31,11 +30,11 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override IEnumerable<TValue> ReadRecords()
         {
-            var cache = new LegacySerializer<TValue>(this);
+            var serializer = new LegacySerializer<TValue>(this);
 
             BaseStream.Position = Records.StartOffset;
             while (BaseStream.Position < Records.EndOffset)
-                yield return cache.Deserialize();
+                yield return serializer.Deserialize();
         }
     }
 }

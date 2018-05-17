@@ -118,7 +118,10 @@ namespace DBClientFiles.NET.Internals.Versions
             if (StringTable.Exists)
             {
                 var offset = ReadInt32();
-                return StringTable.Reader[ReadInt32()];
+//#if DEBUG
+//                Console.WriteLine($"Found string at offset {offset} : {StringTable.Reader[offset]}");
+//#endif
+                return StringTable.Reader[offset];
             }
 
             return ReadStringDirect();
