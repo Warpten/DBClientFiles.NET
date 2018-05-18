@@ -4,16 +4,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>DBClientFiles.NET.ConsoleTests</RootNamespace>
-    <AssemblyName>DBClientFiles.NET.ConsoleTests</AssemblyName>
+    <ProjectGuid>{8EF65DF8-D079-4826-A2A7-620DE05CF484}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>DBClientFiles.NET.Data</RootNamespace>
+    <AssemblyName>DBClientFiles.NET.Data</AssemblyName>
     <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -23,7 +22,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -34,24 +32,17 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WDB2\ItemEntry.cs" />
+    <Compile Include="WDBC\AchievementEntry.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\DBClientFiles.NET.Data\DBClientFiles.NET.Data.csproj">
-      <Project>{8ef65df8-d079-4826-a2a7-620de05cf484}</Project>
-      <Name>DBClientFiles.NET.Data</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\DBClientFiles.NET.Test\DBClientFiles.NET.Test.csproj">
-      <Project>{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}</Project>
-      <Name>DBClientFiles.NET.Test</Name>
-    </ProjectReference>
     <ProjectReference Include="..\DBClientFiles.NET\DBClientFiles.NET.csproj">
       <Project>{884B23C7-A165-4090-880C-1DAAAF9A1C51}</Project>
       <Name>DBClientFiles.NET</Name>

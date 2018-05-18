@@ -2,7 +2,6 @@
 using System.IO;
 using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Collections.Generic;
-using DBClientFiles.NET.Test.Structures.WDBC;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace DBClientFiles.NET.Test
@@ -13,11 +12,11 @@ namespace DBClientFiles.NET.Test
         [TestMethod]
         public void Achievement()
         {
-            using (var fs = File.OpenRead(@"D:\Repositories\DBFilesClient.NET\Tests\WDBC\Files\Achievement.dbc"))
-            {
-                var reader = new StorageList<AchievementEntry>(fs, StorageOptions.Default);
-                Console.WriteLine(reader.Count);
-            }
+            //using (var fs = File.OpenRead(@"D:\Repositories\DBFilesClient.NET\Tests\WDBC\Files\Achievement.dbc"))
+            //{
+            //    var reader = new StorageList<AchievementEntry>(fs, StorageOptions.Default);
+            //    Console.WriteLine(reader.Count);
+            //}
         }
     }
 }

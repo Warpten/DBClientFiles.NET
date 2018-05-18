@@ -50,9 +50,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Structures\WDB2\ItemEntry.cs" />
-    <Compile Include="Structures\WDBC\AchievementEntry.cs" />
     <Compile Include="StructureTester.cs" />
+    <Compile Include="TypeExtensions.cs" />
     <Compile Include="WDB2.cs" />
     <Compile Include="WDBC.cs" />
   </ItemGroup>

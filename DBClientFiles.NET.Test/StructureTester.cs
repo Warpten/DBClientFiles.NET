@@ -23,7 +23,7 @@ namespace DBClientFiles.NET.Test
                 else
                 {
                     var value = (Array)memberInfo.GetValue(instance);
-                    Console.WriteLine($"{memberInfo.Name}: {{");
+                    Console.WriteLine($"{memberInfo.Name}: [{value.Length}] {{");
                     if (memberInfo.PropertyType == typeof(string[]))
                     {
                         for (var i = 0; i < value.Length; ++i)
@@ -56,7 +56,7 @@ namespace DBClientFiles.NET.Test
                 else
                 {
                     var value = (Array)memberInfo.GetValue(instance);
-                    Console.WriteLine($"{memberInfo.Name}: {{");
+                    Console.WriteLine($"{memberInfo.Name}: [{value.Length}] {{");
                     if (memberInfo.PropertyType == typeof(string[]))
                     {
                         for (var i = 0; i < value.Length; ++i)
@@ -72,13 +72,18 @@ namespace DBClientFiles.NET.Test
             }
         }
 
-        public static TimeSpan AccumulateList(Stream dataStream, StorageOptions options) => Accumulate<StorageList<TValue>>(dataStream, options);
-        public static TimeSpan AccumulateList(Stream dataStream) => Accumulate<StorageList<TValue>>(dataStream, StorageOptions.Default);
+        public TimeSpan AccumulateList(Stream dataStream, StorageOptions options) => Accumulate<StorageList<TValue>>(dataStream, options);
+        public TimeSpan AccumulateList(Stream dataStream) => AccumulateList(dataStream, StorageOptions.Default);
 
-        public static TimeSpan Accumulate<TStorage>(Stream dataStream) where TStorage : StorageBase<TValue>
+        public TimeSpan AccumulateDictionary<TKey>(Stream dataStream, StorageOptions options) where TKey : struct
+            => Accumulate<StorageDictionary<TKey, TValue>>(dataStream, options);
+        public TimeSpan AccumulateDictionary<TKey>(Stream dataStream) where TKey : struct
+            => AccumulateDictionary<TKey>(dataStream, StorageOptions.Default);
+
+        public TimeSpan Accumulate<TStorage>(Stream dataStream) where TStorage : StorageBase<TValue>
             => Accumulate<TStorage>(dataStream, StorageOptions.Default);
 
-        public static TimeSpan Accumulate<TStorage>(Stream dataStream, StorageOptions options) where TStorage : StorageBase<TValue>
+        public TimeSpan Accumulate<TStorage>(Stream dataStream, StorageOptions options) where TStorage : StorageBase<TValue>
         {
             var timer = Stopwatch.StartNew();
             typeof(TStorage).CreateInstance(dataStream, options);
@@ -87,31 +92,84 @@ namespace DBClientFiles.NET.Test
             return timer.Elapsed - TypeExtensions.LambdaGenerationTime;
         }
 
-        public static double Benchmark<TStorage>(Stream dataStream, int iterationCount = 100) where TStorage : StorageBase<TValue>
-            => Benchmark<TStorage>(dataStream, StorageOptions.Default, iterationCount);
-
-        public static double Benchmark<TStorage>(Stream dataStream, StorageOptions options, int iterationCount = 100) where TStorage : StorageBase<TValue>
+        public TimeSpan Accumulate<TStorage>(out TStorage instance, Stream dataStream, StorageOptions options) where TStorage : StorageBase<TValue>
         {
-            var averageDuration = Accumulate<TStorage>(dataStream, StorageOptions.Default);
-            var lambdaGenerationTime = TypeExtensions.LambdaGenerationTime;
-            for (var i = 1; i < iterationCount; ++i)
-                averageDuration += Accumulate<TStorage>(dataStream, options);
-            
-            return (averageDuration - lambdaGenerationTime).TotalMilliseconds / iterationCount;
+            var timer = Stopwatch.StartNew();
+            instance = (TStorage)typeof(TStorage).CreateInstance(dataStream, options);
+            timer.Stop();
+
+            return timer.Elapsed - TypeExtensions.LambdaGenerationTime;
         }
 
-        public static double Benchmark<TStorage>(Stream dataStream, out TimeSpan lambdaGenerationTime, int iterationCount = 100) where TStorage : StorageBase<TValue>
-            => Benchmark<TStorage>(dataStream, out lambdaGenerationTime, StorageOptions.Default, iterationCount);
+        public TimeSpan Benchmark<TStorage>(out TStorage instance, Stream dataStream, int iterationCount = 100) where TStorage : StorageBase<TValue>
+            => Benchmark(out instance, dataStream, StorageOptions.Default, iterationCount);
 
-        public static double Benchmark<TStorage>(Stream dataStream, out TimeSpan lambdaGenerationTime, StorageOptions options, int iterationCount = 100) where TStorage : StorageBase<TValue>
+        public TimeSpan Benchmark<TStorage>(out TStorage instance, Stream dataStream, StorageOptions options, int iterationCount = 100) where TStorage : StorageBase<TValue>
         {
-            var averageDuration = Accumulate<TStorage>(dataStream, StorageOptions.Default);
+            var averageDuration = Accumulate(out instance, dataStream, StorageOptions.Default);
+            dataStream.Position = 0;
+
+            var lambdaGenerationTime = TypeExtensions.LambdaGenerationTime;
+            for (var i = 1; i < iterationCount; ++i)
+            {
+                averageDuration += Accumulate<TStorage>(dataStream, options);
+                dataStream.Position = 0;
+            }
+
+            return TimeSpan.FromMilliseconds((averageDuration - lambdaGenerationTime).TotalMilliseconds / iterationCount);
+        }
+
+        public TimeSpan Benchmark<TStorage>(out TStorage instance, Stream dataStream, out TimeSpan lambdaGenerationTime, int iterationCount = 100) where TStorage : StorageBase<TValue>
+            => Benchmark(out instance, dataStream, StorageOptions.Default, out lambdaGenerationTime, iterationCount);
+
+        public TimeSpan Benchmark<TStorage>(out TStorage instance, Stream dataStream, StorageOptions options, out TimeSpan lambdaGenerationTime, int iterationCount = 100) where TStorage : StorageBase<TValue>
+        {
+            var averageDuration = Accumulate(out instance, dataStream, StorageOptions.Default);
+            dataStream.Position = 0;
 
             lambdaGenerationTime = TypeExtensions.LambdaGenerationTime;
             for (var i = 1; i < iterationCount; ++i)
+            {
                 averageDuration += Accumulate<TStorage>(dataStream, options);
+                dataStream.Position = 0;
+            }
 
-            return (averageDuration - lambdaGenerationTime).TotalMilliseconds / iterationCount;
+            return TimeSpan.FromMilliseconds((averageDuration - lambdaGenerationTime).TotalMilliseconds / iterationCount);
+        }
+
+        public TimeSpan Benchmark<TStorage>(Stream dataStream, int iterationCount = 100) where TStorage : StorageBase<TValue>
+            => Benchmark<TStorage>(dataStream, StorageOptions.Default, iterationCount);
+
+        public TimeSpan Benchmark<TStorage>(Stream dataStream, StorageOptions options, int iterationCount = 100) where TStorage : StorageBase<TValue>
+        {
+            var averageDuration = Accumulate<TStorage>(dataStream, StorageOptions.Default);
+            dataStream.Position = 0;
+
+            var lambdaGenerationTime = TypeExtensions.LambdaGenerationTime;
+            for (var i = 1; i < iterationCount; ++i)
+            {
+                averageDuration += Accumulate<TStorage>(dataStream, options);
+                dataStream.Position = 0;
+            }
+
+            return TimeSpan.FromMilliseconds((averageDuration - lambdaGenerationTime).TotalMilliseconds / iterationCount);
+        }
+
+        public TimeSpan Benchmark<TStorage>(Stream dataStream, out TimeSpan lambdaGenerationTime, int iterationCount = 100) where TStorage : StorageBase<TValue>
+            => Benchmark<TStorage>(dataStream, out lambdaGenerationTime, StorageOptions.Default, iterationCount);
+
+        public TimeSpan Benchmark<TStorage>(Stream dataStream, out TimeSpan lambdaGenerationTime, StorageOptions options, int iterationCount = 100) where TStorage : StorageBase<TValue>
+        {
+            var averageDuration = Accumulate<TStorage>(dataStream, StorageOptions.Default);
+            dataStream.Position = 0;
+
+            lambdaGenerationTime = TypeExtensions.LambdaGenerationTime;
+            for (var i = 1; i < iterationCount; ++i)
+            {
+                averageDuration += Accumulate<TStorage>(dataStream, options);
+                dataStream.Position = 0;
+            }
+            return TimeSpan.FromMilliseconds((averageDuration - lambdaGenerationTime).TotalMilliseconds / iterationCount);
         }
     }
 }

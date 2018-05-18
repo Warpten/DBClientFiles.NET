@@ -1,13 +1,8 @@
 ﻿using DBClientFiles.NET.Attributes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace DBClientFiles.NET.ConsoleTests
+namespace DBClientFiles.NET.Data.WDBC
 {
-    public sealed class WDBCAchievementEntry
+    public sealed class AchievementEntry
     {
         [Index]
         public int ID { get; set; }
@@ -30,18 +25,5 @@ namespace DBClientFiles.NET.ConsoleTests
         public uint RewardFlags { get; set; }
         public uint MinimumCriteria { get; set; }
         public uint SharesCriteria { get; set; }
-    }
-
-    public sealed class WDB2ItemEntry
-    {
-        [Index]
-        public uint ID { get; set; }
-        public uint Class { get; set; }
-        public uint SubClass { get; set; }
-        public int SoundOverrideSubclass { get; set; }
-        public int Material { get; set; }
-        public uint DisplayId { get; set; }
-        public uint InventoryType { get; set; }
-        public uint Sheath { get; set; }
     }
 }

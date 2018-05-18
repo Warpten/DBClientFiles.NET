@@ -1,11 +1,11 @@
 ﻿using DBClientFiles.NET.Attributes;
 
-namespace DBClientFiles.NET.Test.Structures.WDB2
+namespace DBClientFiles.NET.Data.WDB2
 {
     public sealed class ItemEntry
     {
         [Index]
-        public int Id { get; set; }
+        public uint ID { get; set; }
         public uint Class { get; set; }
         public uint SubClass { get; set; }
         public int SoundOverrideSubclass { get; set; }
