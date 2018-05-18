@@ -62,22 +62,22 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override IEnumerable<TValue> ReadRecords()
         {
-            var cache = new LegacySerializer<TKey, TValue>(this);
+            var serializer = new LegacySerializer<TKey, TValue>(this);
             var cp = (Segment<TValue, CopyTableReader<TKey, TValue>>)CopyTable;
 
             var i = 0;
             BaseStream.Position = Records.StartOffset;
             while (BaseStream.Position < Records.EndOffset)
             {
-                var oldStructure = cache.Deserialize();
+                var oldStructure = serializer.Deserialize();
 
                 BaseStream.Position = OffsetMap.Reader[i++];
-                var currentKey = cache.ExtractKey(oldStructure);
+                var currentKey = serializer.ExtractKey(oldStructure);
 
                 foreach (var copyEntry in cp.Reader[currentKey])
                 {
-                    var clone = cache.Clone(oldStructure);
-                    cache.InsertKey(clone, copyEntry);
+                    var clone = serializer.Clone(oldStructure);
+                    serializer.InsertKey(clone, copyEntry);
                     yield return clone;
                 }
 

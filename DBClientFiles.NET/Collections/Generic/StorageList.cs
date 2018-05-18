@@ -1,4 +1,5 @@
 ﻿using DBClientFiles.NET.Internals;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -23,7 +24,7 @@ namespace DBClientFiles.NET.Collections.Generic
         }
     }
 
-    public class StorageList<TValue> : StorageBase<TValue>, IList<TValue> where TValue : class, new()
+    public class StorageList<TValue> : StorageBase<TValue>, IList<TValue>, IList where TValue : class, new()
     {
         private List<TValue> _container = new List<TValue>();
 
@@ -42,6 +43,7 @@ namespace DBClientFiles.NET.Collections.Generic
                 _container.Add(record);
         }
 
+        #region IList<TValue> implementation
         public TValue this[int index] {
             get => _container[index];
             set => _container[index] = value;
@@ -59,5 +61,24 @@ namespace DBClientFiles.NET.Collections.Generic
         public bool Remove(TValue item) => _container.Remove(item);
         public void RemoveAt(int index) => _container.RemoveAt(index);
         IEnumerator IEnumerable.GetEnumerator() => ((IList<TValue>)_container).GetEnumerator();
+        #endregion
+
+        #region IList implementation
+        public bool IsFixedSize => ((IList)_container).IsFixedSize;
+        public object SyncRoot => ((IList)_container).SyncRoot;
+        public bool IsSynchronized => ((IList)_container).IsSynchronized;
+
+        object IList.this[int index] {
+            get => ((IList)_container)[index];
+            set => ((IList)_container)[index] = value;
+        }
+
+        public int Add(object value) => ((IList)_container).Add(value);
+        public bool Contains(object value) => ((IList)_container).Contains(value);
+        public int IndexOf(object value) => ((IList)_container).IndexOf(value);
+        public void Insert(int index, object value) => ((IList)_container).Insert(index, value);
+        public void Remove(object value) => ((IList)_container).Remove(value);
+        public void CopyTo(Array array, int index) => ((IList)_container).CopyTo(array, index);
+        #endregion
     }
 }

@@ -53,7 +53,7 @@ namespace DBClientFiles.NET.Internals.Serializers
 
                 var newKeyArgExpr = Expression.Parameter(typeof(TKey), "key");
                 var recordArgExpr = Expression.Parameter(typeof(TValue), "record");
-                var memberAccessExpr = Expression.MakeMemberAccess(recordArgExpr, keyMemberInfo);
+                var memberAccessExpr = Expression.MakeMemberAccess(recordArgExpr, keyMemberInfo.MemberInfo);
                 var assignmentExpr = Expression.Assign(memberAccessExpr, newKeyArgExpr);
                 _keySetter = Expression.Lambda<Action<TValue, TKey>>(assignmentExpr, new[] { recordArgExpr, newKeyArgExpr }).Compile();
             }
@@ -84,7 +84,7 @@ namespace DBClientFiles.NET.Internals.Serializers
                     throw new InvalidOperationException("Unable to find a key column for type `" + typeof(TValue).Name + "`.");
 
                 var recordArgExpr = Expression.Parameter(typeof(TValue), "record");
-                var memberAccessExpr = Expression.MakeMemberAccess(recordArgExpr, keyMemberInfo);
+                var memberAccessExpr = Expression.MakeMemberAccess(recordArgExpr, keyMemberInfo.MemberInfo);
                 _keyGetter = Expression.Lambda<Func<TValue, TKey>>(memberAccessExpr, new[] { recordArgExpr }).Compile();
             }
 

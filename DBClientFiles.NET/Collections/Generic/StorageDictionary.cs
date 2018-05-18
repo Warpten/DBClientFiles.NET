@@ -1,7 +1,6 @@
 ﻿using DBClientFiles.NET.Internals;
 using DBClientFiles.NET.Internals.Serializers;
 using DBClientFiles.NET.Internals.Versions;
-using DBClientFiles.NET.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -11,7 +10,7 @@ using System.Linq;
 namespace DBClientFiles.NET.Collections.Generic
 {
     public class StorageDictionary<TKey, TValue> : StorageBase<TValue>, IDictionary<TKey, TValue>
-        where TKey : struct, IEquatable<TKey>, IComparable
+        where TKey : struct
         where TValue : class, new()
     {
         private Func<TValue, TKey> _keyGetter;
@@ -41,8 +40,8 @@ namespace DBClientFiles.NET.Collections.Generic
         /// Create a new dictionary keyed by a specific column.
         /// 
         /// This constructor uses <see cref="StorageOptions.Default"/>.
-        /// They key is selected from <see cref="TValue"/>'s <see cref="PropertyInfo"/> or <see cref="FieldInfo"/> which is decorated by <see cref="IndexAttribute"/>.
-        /// If no member is decorated with <see cref="IndexAttribute"/>, the code assumes the key to be first in the record.
+        /// They key is selected from <see cref="TValue"/>'s <see cref="System.Reflection.PropertyInfo"/> or <see cref="System.Reflection.FieldInfo"/> which is decorated by <see cref="Attributes.IndexAttribute"/>.
+        /// If no member is decorated with <see cref="Attributes.IndexAttribute"/>, it is assumed for the key to be the first declared & used member of the record type.
         /// </summary>
         /// <param name="dataStream">The stream from which to load data.</param>
         public StorageDictionary(Stream dataStream) : this(dataStream, StorageOptions.Default)
@@ -53,8 +52,8 @@ namespace DBClientFiles.NET.Collections.Generic
         /// Create a new dictionary keyed by a specific column.
         /// 
         /// This constructor uses <see cref="StorageOptions.Default"/>.
-        /// They key is selected from <see cref="TValue"/>'s <see cref="PropertyInfo"/> or <see cref="FieldInfo"/> which is decorated by <see cref="IndexAttribute"/>.
-        /// If no member is decorated with <see cref="IndexAttribute"/>, the code assumes the key to be first in the record.
+        /// They key is selected from <see cref="TValue"/>'s <see cref="PropertyInfo"/> or <see cref="FieldInfo"/> which is decorated by <see cref="Attributes.IndexAttribute"/>.
+        /// If no member is decorated with <see cref="Attributes.IndexAttribute"/>, it is assumed for the key to be the first declared & used member of the record type.
         /// </summary>
         /// <param name="dataStream">The stream from which to load data.</param>
         /// <param name="options">The options with which to load the file.</param>
@@ -66,7 +65,7 @@ namespace DBClientFiles.NET.Collections.Generic
         internal override void LoadRecords(IReader<TValue> reader)
         {
             // TODO Avoid instanciating a new serializer here, use a global application cache instead
-            var legacySerializer = new LegacySerializer<TKey, TValue>((BaseReader<TKey, TValue>)reader);
+            var legacySerializer = new LegacySerializer<TKey, TValue>((BaseReader<TValue>)reader);
 
             foreach (var record in reader.ReadRecords())
             {

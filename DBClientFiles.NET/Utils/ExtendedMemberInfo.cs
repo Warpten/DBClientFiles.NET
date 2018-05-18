@@ -14,7 +14,7 @@ using DBClientFiles.NET.Internals.Versions;
 
 namespace DBClientFiles.NET.Utils
 {
-    internal sealed class ExtendedMemberInfo : MemberInfo
+    internal sealed class ExtendedMemberInfo
     {
         private static MethodInfo _bitReader = typeof(BinaryReader).GetMethod("ReadBits", new[] { typeof(int) });
         private static Dictionary<TypeCode, MethodInfo> _binaryReaders = new Dictionary<TypeCode, MethodInfo>()
@@ -68,11 +68,6 @@ namespace DBClientFiles.NET.Utils
             ElementType = member.PropertyType;
 
             InitializeMemberHelpers();
-
-            MemberType = member.MemberType;
-            Name = member.Name;
-            DeclaringType = member.DeclaringType;
-            ReflectedType = member.ReflectedType;
         }
 
         public ExtendedMemberInfo(FieldInfo member, int memberIndex)
@@ -82,11 +77,6 @@ namespace DBClientFiles.NET.Utils
             ElementType = member.FieldType;
 
             InitializeMemberHelpers();
-
-            MemberType = member.MemberType;
-            Name = member.Name;
-            DeclaringType = member.DeclaringType;
-            ReflectedType = member.ReflectedType;
         }
 
         public static ExtendedMemberInfo Initialize(MemberInfo memberInfo, int memberIndex)
@@ -102,17 +92,17 @@ namespace DBClientFiles.NET.Utils
         {
             if (IsArray)
             {
-                var marshalAttr = this.GetCustomAttribute<MarshalAsAttribute>();
+                var marshalAttr = MemberInfo.GetCustomAttribute<MarshalAsAttribute>();
                 if (marshalAttr != null)
                     ArraySize = marshalAttr.SizeConst;
                 else
                 {
-                    var arraySizeAttribute = this.GetCustomAttribute<CardinalityAttribute>();
+                    var arraySizeAttribute = MemberInfo.GetCustomAttribute<CardinalityAttribute>();
                     if (arraySizeAttribute != null)
                         ArraySize = arraySizeAttribute.SizeConst;
                     else
                     {
-                        var storageAttribute = this.GetCustomAttribute<StoragePresenceAttribute>();
+                        var storageAttribute = MemberInfo.GetCustomAttribute<StoragePresenceAttribute>();
                         if (storageAttribute != null)
                             ArraySize = storageAttribute.SizeConst;
                     }
@@ -131,13 +121,11 @@ namespace DBClientFiles.NET.Utils
 
         public MethodInfo BinaryReader { get; private set; }
 
-        public override MemberTypes MemberType { get; }
-        public override string Name { get; }
-        public override Type DeclaringType { get; }
-        public override Type ReflectedType { get; }
+        public MemberTypes MemberType => _memberInfo.MemberType;
+        public string Name => _memberInfo.Name;
 
-        public override object[] GetCustomAttributes(bool inherit) => _memberInfo.GetCustomAttributes(inherit);
-        public override object[] GetCustomAttributes(Type attributeType, bool inherit) => _memberInfo.GetCustomAttributes(attributeType, inherit);
-        public override bool IsDefined(Type attributeType, bool inherit) => _memberInfo.IsDefined(attributeType, inherit);
+        public object[] GetCustomAttributes(bool inherit) => _memberInfo.GetCustomAttributes(inherit);
+        public object[] GetCustomAttributes(Type attributeType, bool inherit) => _memberInfo.GetCustomAttributes(attributeType, inherit);
+        public bool IsDefined(Type attributeType, bool inherit) => _memberInfo.IsDefined(attributeType, inherit);
     }
 }

@@ -28,9 +28,9 @@ namespace DBClientFiles.NET.Collections.Generic
                     case Signatures.WDB2:
                         fileReader = new WDB2<TValue>(fileStream);
                         break;
-                    // case Signatures.WDB5:
-                    //     fileReader = new WDB5<TKey>(fileStream);
-                    //     break;
+                    case Signatures.WDB5:
+                        fileReader = new WDB5<TKey, TValue>(fileStream);
+                        break;
                     case Signatures.WDB3:
                     case Signatures.WDB4:
                         throw new NotSupportedVersionException($"{signature} files cannot be read without client metadata.");
