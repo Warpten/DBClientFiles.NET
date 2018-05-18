@@ -15,7 +15,6 @@ namespace DBClientFiles.NET.ConsoleTests
         static void Main(string[] args)
         {
             TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC");
-
             TestStructuresInNamespace("DBClientFiles.NET.Data.WDB2");
 
             Console.ReadKey();
@@ -36,9 +35,14 @@ namespace DBClientFiles.NET.ConsoleTests
 
         private static void TestStructuresInNamespace(string @namespace)
         {
+            _dataStores.Clear();
+
             var fileType = @namespace.Split('.').Last();
 
-            var types = Assembly.GetExecutingAssembly().GetReferencedAssemblies().Where(a => a.Name.Contains("DBClientFiles")).Select(a => Assembly.Load(a)).SelectMany(a => a.GetTypes());
+            var types = Assembly.GetExecutingAssembly().GetReferencedAssemblies()
+                .Where(a => a.Name.Contains("DBClientFiles"))
+                .Select(a => Assembly.Load(a))
+                .SelectMany(a => a.GetTypes());
 
             foreach (var typeInfo in types.Where(t => t.Namespace == @namespace))
             {
@@ -53,6 +57,7 @@ namespace DBClientFiles.NET.ConsoleTests
                 Console.WriteLine($@"{kv.Key.Name.PadRight(40)}{kv.Value.AverageTime.ToString().PadRight(20)}{kv.Value.AverageTime.TotalMilliseconds / kv.Value.Container.Count:F5} ms");
 
             Console.WriteLine();
+
         }
 
         private static void BenchmarkStructure<TValue>(string resourcePath) where TValue : class, new()
