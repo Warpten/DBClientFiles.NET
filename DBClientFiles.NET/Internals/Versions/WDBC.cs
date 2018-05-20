@@ -35,6 +35,10 @@ namespace DBClientFiles.NET.Internals.Versions
             BaseStream.Position = Records.StartOffset;
             while (BaseStream.Position < Records.EndOffset)
                 yield return serializer.Deserialize();
+
+#if PERFORMANCE
+            DeserializeGeneration = serializer.DeserializerGeneration;
+#endif
         }
     }
 }

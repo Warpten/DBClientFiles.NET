@@ -1,16 +1,12 @@
 ﻿using DBClientFiles.NET.Attributes;
 using DBClientFiles.NET.Collections;
-using DBClientFiles.NET.Collections.Generic;
 using DBClientFiles.NET.Internals.Versions;
 using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DBClientFiles.NET.Internals.Serializers
 {
@@ -98,9 +94,9 @@ namespace DBClientFiles.NET.Internals.Serializers
     /// <typeparam name="TValue"></typeparam>
     internal class LegacySerializer<TValue> where TValue : class, new()
     {
-#if DEBUG
-        private static MethodInfo WriteLineMethod = typeof(Console).GetMethod("WriteLine", new[] { typeof(string) });
-#endif
+//#if DEBUG
+//        private static MethodInfo WriteLineMethod = typeof(Console).GetMethod("WriteLine", new[] { typeof(string) });
+//#endif
 
         protected StorageOptions Options => Storage.Options;
 
@@ -114,6 +110,11 @@ namespace DBClientFiles.NET.Internals.Serializers
             Storage = storage;
         }
 
+#if PERFORMANCE
+        public TimeSpan CloneGeneration { get; private set; } = TimeSpan.Zero;
+        public TimeSpan DeserializerGeneration { get; private set; } = TimeSpan.Zero;
+#endif
+
         /// <summary>
         /// Produces a deep copy of the provided object.
         /// </summary>
@@ -124,6 +125,9 @@ namespace DBClientFiles.NET.Internals.Serializers
         {
             if (_memberwiseClone == null)
             {
+#if PERFORMANCE
+                var stopwatch = Stopwatch.StartNew();
+#endif
                 var body = new List<Expression>();
 
                 var inputNode = Expression.Parameter(typeof(TValue));
@@ -146,6 +150,11 @@ namespace DBClientFiles.NET.Internals.Serializers
                 var block = Expression.Block(new[] { outputNode }, body);
                 var lmbda = Expression.Lambda<Func<TValue, TValue>>(block, inputNode);
                 _memberwiseClone = lmbda.Compile();
+
+#if PERFORMANCE
+                stopwatch.Stop();
+                CloneGeneration = stopwatch.Elapsed;
+#endif
             }
 
             return _memberwiseClone(source);
@@ -160,6 +169,10 @@ namespace DBClientFiles.NET.Internals.Serializers
         /// <returns></returns>
         protected virtual Func<BaseReader<TValue>, TValue> GenerateDeserializer()
         {
+#if PERFORMANCE
+            var stopwatch = Stopwatch.StartNew();
+#endif
+
             var binaryReaderExpr = Expression.Parameter(typeof(BaseReader<TValue>));
             var resultExpr = Expression.Variable(typeof(TValue));
 
@@ -194,7 +207,14 @@ namespace DBClientFiles.NET.Internals.Serializers
 
             var bodyExpr = Expression.Block(new[] { resultExpr }, body);
             var fnExpr = Expression.Lambda<Func<BaseReader<TValue>, TValue>>(bodyExpr, new[] { binaryReaderExpr });
-            return fnExpr.Compile();
+            var lambdaExpression = fnExpr.Compile();
+
+#if PERFORMANCE
+            stopwatch.Stop();
+            DeserializerGeneration = stopwatch.Elapsed;
+#endif
+
+            return lambdaExpression;
         }
 
         protected virtual void LoadFromCommonData(List<Expression> body, ref ExtendedMemberExpression memberExpression, Expression binaryReaderExpr)

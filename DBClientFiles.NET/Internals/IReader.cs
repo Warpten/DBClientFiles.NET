@@ -16,5 +16,9 @@ namespace DBClientFiles.NET.Internals
         event Action<long, string> OnStringTableEntry;
 
         StorageOptions Options { get; set; }
+
+#if PERFORMANCE
+        TimeSpan DeserializeGeneration { get; }
+#endif
     }
 }

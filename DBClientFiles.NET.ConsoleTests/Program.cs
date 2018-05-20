@@ -1,4 +1,5 @@
 ﻿using DBClientFiles.NET.Collections.Generic;
+using DBClientFiles.NET.Data;
 using DBClientFiles.NET.Data.WDBC;
 using DBClientFiles.NET.Test;
 using System;
@@ -20,13 +21,7 @@ namespace DBClientFiles.NET.ConsoleTests
             Console.ReadKey();
         }
 
-        private struct PerformanceNode
-        {
-            public IList Container;
-            public TimeSpan AverageTime;
-        }
-
-        private static Dictionary<Type, PerformanceNode> _dataStores = new Dictionary<Type, PerformanceNode>();
+        private static Dictionary<Type, BenchmarkResult> _dataStores = new Dictionary<Type, BenchmarkResult>();
 
         private static MethodInfo methodInfo = typeof(Program).GetMethod("BenchmarkStructure", BindingFlags.NonPublic | BindingFlags.Static);
 
@@ -47,14 +42,29 @@ namespace DBClientFiles.NET.ConsoleTests
             foreach (var typeInfo in types.Where(t => t.Namespace == @namespace))
             {
                 var genericMethodInfo = methodInfo.MakeGenericMethod(typeInfo);
-                var resourcePath = $@"D:\Repositories\DBFilesClient.NET\Tests\{fileType}\Files\{typeInfo.Name.Replace("Entry", "")}.dbc";
+                var fileName = typeInfo.Name.Replace("Entry", "");
+                var nameAttr = typeInfo.GetCustomAttribute<DBFileNameAttribute>();
+                if (nameAttr != null)
+                {
+                    fileName = nameAttr.Name + "." + (nameAttr.Extension == FileExtension.DB2 ? "db2" : "dbc");
+                }
+                else
+                {
+                    fileName += ".dbc";
+                }
+
+                var resourcePath = $@"D:\Repositories\DBFilesClient.NET\Tests\{fileType}\Files\{fileName}";
                 genericMethodInfo.Invoke(null, new object[] { resourcePath });
             }
 
-            Console.WriteLine($"{fileType}                                    Total Average       Total Average per record");
-            Console.WriteLine( "==========================================================================================");
+            Console.WriteLine(BenchmarkResult.Header);
+            Console.WriteLine(BenchmarkResult.HeaderSep);
             foreach (var kv in _dataStores)
-                Console.WriteLine($@"{kv.Key.Name.PadRight(40)}{kv.Value.AverageTime.ToString().PadRight(20)}{kv.Value.AverageTime.TotalMilliseconds / kv.Value.Container.Count:F5} ms");
+            {
+                Console.WriteLine(kv.Value.ToString());
+                using (var writer  = new StreamWriter($"./perf_{kv.Value.RecordType.Name.Replace("Entry","").ToLower()}.csv"))
+                    kv.Value.WriteCSV(writer);
+            }
 
             Console.WriteLine();
 
@@ -62,15 +72,17 @@ namespace DBClientFiles.NET.ConsoleTests
 
         private static void BenchmarkStructure<TValue>(string resourcePath) where TValue : class, new()
         {
-            using (var fs = File.OpenRead(File.Exists(resourcePath) ? resourcePath : resourcePath.Replace(".dbc", ".db2")))
+            var correctedPath = File.Exists(resourcePath) ? resourcePath : resourcePath.Replace(".dbc", ".db2");
+
+            using (var fs = File.OpenRead(correctedPath))
+            using (var ms = new MemoryStream())
             {
+                fs.CopyTo(ms);
+                ms.Position = 0;
+
                 var structureTester = new StructureTester<TValue>();
-                var averageTime = structureTester.Benchmark<StorageList<TValue>>(out var dataStore, fs, 100);
-                _dataStores[typeof(TValue)] = new PerformanceNode()
-                {
-                    Container = dataStore,
-                    AverageTime = averageTime
-                };
+                var benchmarkResult = structureTester.Benchmark<StorageList<TValue>>(out var dataStore, ms, 5000);
+                _dataStores[typeof(TValue)] = benchmarkResult;
             }
         }
     }

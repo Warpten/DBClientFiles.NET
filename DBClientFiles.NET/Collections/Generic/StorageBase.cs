@@ -9,6 +9,11 @@ namespace DBClientFiles.NET.Collections.Generic
     public abstract class StorageBase<TValue> where TValue : class, new()
     {
         internal StorageOptions Options { get; set; }
+#if PERFORMANCE
+        public System.TimeSpan LambdaGeneration { get; private set; }
+#endif
+
+        public Signatures Signature { get; private set; }
 
         protected virtual void FromStream<TKey>(Stream fileStream, StorageOptions options) where TKey : struct
         {
@@ -19,8 +24,8 @@ namespace DBClientFiles.NET.Collections.Generic
 
             using (var reader = new BinaryReader(fileStream, true))
             {
-                signature = (Signatures)reader.ReadUInt32();
-                switch (signature)
+                Signature = (Signatures)reader.ReadUInt32();
+                switch (Signature)
                 {
                     case Signatures.WDBC:
                         fileReader = new WDBC<TValue>(fileStream);
@@ -33,9 +38,9 @@ namespace DBClientFiles.NET.Collections.Generic
                         break;
                     case Signatures.WDB3:
                     case Signatures.WDB4:
-                        throw new NotSupportedVersionException($"{signature} files cannot be read without client metadata.");
+                        throw new NotSupportedVersionException($"{Signature} files cannot be read without client metadata.");
                     default:
-                        throw new NotSupportedVersionException($"Unknown signature 0x{(int)signature:X8}!");
+                        throw new NotSupportedVersionException($"Unknown signature 0x{(int)Signature:X8}!");
                 }
             }
 
@@ -45,6 +50,10 @@ namespace DBClientFiles.NET.Collections.Generic
 
             fileReader.ReadSegments();
             LoadRecords(fileReader);
+
+#if PERFORMANCE
+            LambdaGeneration = fileReader.DeserializeGeneration;
+#endif
         }
 
         protected virtual void FromStream(Stream fileStream, StorageOptions options)

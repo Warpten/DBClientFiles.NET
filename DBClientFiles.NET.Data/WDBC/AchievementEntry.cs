@@ -1,7 +1,11 @@
 ﻿using DBClientFiles.NET.Attributes;
 
+/// <summary>
+/// Generated for 3.3.5.12340
+/// </summary>
 namespace DBClientFiles.NET.Data.WDBC
 {
+    [DBFileName(Name = "Achievement", Extension = FileExtension.DBC)]
     public sealed class AchievementEntry
     {
         [Index]
@@ -25,5 +29,38 @@ namespace DBClientFiles.NET.Data.WDBC
         public uint RewardFlags { get; set; }
         public uint MinimumCriteria { get; set; }
         public uint SharesCriteria { get; set; }
+    }
+
+    [DBFileName(Name = "AreaTrigger", Extension = FileExtension.DBC)]
+    public sealed class AreaTriggerEntry
+    {
+        public uint ID { get; set; }
+        public uint MapID { get; set; }
+        public float x { get; set; }
+        public float y { get; set; }
+        public float z { get; set; }
+        public float radius { get; set; }
+        public float box_x { get; set; }
+        public float box_y { get; set; }
+        public float box_z { get; set; }
+        public float box_orientation { get; set; }
+    }
+
+    [DBFileName(Name = "AuctionHouse", Extension = FileExtension.DBC)]
+    public sealed class AuctionHouseEntry
+    {
+        public uint ID { get; set; }
+        public uint FactionID { get; set; }
+        public uint DepositPercent { get; set; }
+        public uint CutPercent { get; set; }
+        public string[] Name { get; set; }
+        public uint NameFlags { get; set; }
+    }
+
+    [DBFileName(Name = "BankBagSlotPrices", Extension = FileExtension.DBC)]
+    public sealed class BankBagSlotPricesEntry
+    {
+        public uint ID { get; set; }
+        public uint Price { get; set; }
     }
 }

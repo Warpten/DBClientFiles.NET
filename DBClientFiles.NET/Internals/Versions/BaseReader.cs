@@ -92,6 +92,12 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public abstract IEnumerable<TValue> ReadRecords();
 
+#if PERFORMANCE
+        public TimeSpan CloneGeneration { get; protected set; }
+        public TimeSpan DeserializeGeneration { get; protected set; }
+#endif
+
+
         public virtual void ReadSegments()
         {
             if (StringTable.Exists && !StringTable.Deserialized)
