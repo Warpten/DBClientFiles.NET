@@ -1,63 +1,75 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using DBClientFiles.NET.Collections;
-using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.Internals.Serializers;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
-    internal class WDB2<TValue> : BaseReader<TValue> where TValue : class, new()
+    internal class WDB2<TValue> : BaseFileReader<TValue> where TValue : class, new()
     {
-        private long _stringBlockOffset;
-        private int _stringBlockSize;
-        private int _recordSize;
-        private int _recordCount;
-        private long _dataOffset;
-
         public WDB2(Stream fileStream) : base(fileStream, true)
         {
         }
 
         public override bool ReadHeader()
         {
-            _recordCount = ReadInt32();
-            if (_recordCount == 0)
+            var recordCount = ReadInt32();
+            if (recordCount == 0)
                 return false;
 
             FieldCount = ReadInt32();
-            _recordSize = ReadInt32();
-            _stringBlockSize = ReadInt32();
-            var tableHash = ReadInt32();
-            var build = ReadInt32();
-            var lastWrittenTime = ReadInt32();
+            var recordSize = ReadInt32();
+            var stringBlockSize = ReadInt32();
+            BaseStream.Seek(4 + 4 + 4, SeekOrigin.Begin); // TableHash, Build, TimeStamp (last written, unused)
             var minId = ReadInt32();
             var maxId = ReadInt32();
-            var locale = ReadInt32();
-            var copyTableSize = ReadInt32();
+            BaseStream.Seek(4 + 4, SeekOrigin.Current); // Locale, CopyTable.Length
 
             // Skip string length information (unused by nearly everyone)
             if (maxId != 0)
                 BaseStream.Position += (maxId - minId + 1) * (4 + 2);
 
-            _dataOffset = BaseStream.Position;
+            // Set up segments
+            Records.StartOffset = BaseStream.Position;
+            Records.Length = recordSize * recordCount;
 
-            _stringBlockOffset = BaseStream.Position + _recordSize * _recordCount;
+            StringTable.StartOffset = Records.EndOffset;
+            StringTable.Length = stringBlockSize;
 
             return true;
         }
 
         public override IEnumerable<TValue> ReadRecords()
         {
-            var cache = new LegacySerializer<TValue>(this);
+            var serializer = new CodeGenerator<TValue>(ValueMembers);
 
-            BaseStream.Position = _dataOffset;
-            for (var i = 0; i < _recordCount; ++i)
-                yield return cache.Deserialize();
+            BaseStream.Position = Records.StartOffset;
+            while (BaseStream.Position < Records.EndOffset)
+                yield return serializer.Deserialize(this);
 
-#if PERFORMANCE
-            DeserializeGeneration = cache.DeserializerGeneration;
-#endif
+//#if PERFORMANCE
+//            DeserializeGeneration = _serializer.DeserializerGeneration;
+//#endif
+        }
+
+        public override T ReadPalletMember<T>(int memberIndex)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public override T ReadCommonMember<T>(int memberIndex)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public override T ReadForeignKeyMember<T>(int memberIndex)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public override T[] ReadPalletArrayMember<T>(int memberIndex)
+        {
+            throw new InvalidOperationException();
         }
     }
 }

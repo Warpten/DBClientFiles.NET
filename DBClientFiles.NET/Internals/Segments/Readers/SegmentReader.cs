@@ -1,26 +1,21 @@
 ﻿using DBClientFiles.NET.Internals.Versions;
 using System;
-using System.Collections.Generic;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
     internal interface ISegmentReader<TValue> : IDisposable
         where TValue : class, new()
     {
+        BaseFileReader<TValue> Storage { get; }
         Segment<TValue> Segment { get; set; }
         void Read();
     }
 
     internal abstract class SegmentReader<T, TValue> : ISegmentReader<TValue> where TValue : class, new()
     {
-        private Segment<TValue> _segment;
-        public Segment<TValue> Segment
-        {
-            get => _segment;
-            set => _segment = value;
-        }
+        public Segment<TValue> Segment { get; set; }
 
-        internal BaseReader<TValue> Storage => _segment.Storage;
+        public BaseFileReader<TValue> Storage => Segment.Storage;
 
         protected SegmentReader()
         {

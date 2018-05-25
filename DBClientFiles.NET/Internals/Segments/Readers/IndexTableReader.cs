@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace DBClientFiles.NET.Internals.Segments.Readers
+﻿namespace DBClientFiles.NET.Internals.Segments.Readers
 {
     internal sealed class IndexTableReader<TValue> : SegmentReader<int, TValue>
         where TValue : class, new()

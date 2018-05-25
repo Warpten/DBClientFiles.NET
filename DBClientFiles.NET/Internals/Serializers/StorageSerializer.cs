@@ -1,13 +1,4 @@
-﻿using DBClientFiles.NET.Collections.Generic;
-using DBClientFiles.NET.Utils;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DBClientFiles.NET.Internals.Serializers
+﻿namespace DBClientFiles.NET.Internals.Serializers
 {
     /*internal class StorageSerializer<TValue> where TValue : class, new()
     {

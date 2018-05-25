@@ -6,6 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
@@ -25,6 +26,7 @@ namespace DBClientFiles.NET.Collections.Generic
         public StorageDictionary(Stream dataStream, StorageOptions options, Func<TValue, TKey> keyGetter) : this(dataStream, options)
         {
             _keyGetter = keyGetter;
+
         }
 
         /// <summary>
@@ -65,7 +67,7 @@ namespace DBClientFiles.NET.Collections.Generic
         internal override void LoadRecords(IReader<TValue> reader)
         {
             // TODO Avoid instanciating a new serializer here, use a global application cache instead
-            var legacySerializer = new LegacySerializer<TKey, TValue>((BaseReader<TValue>)reader);
+            var legacySerializer = new LegacySerializer<TKey, TValue>((BaseFileReader<TValue>)reader);
 
             foreach (var record in reader.ReadRecords())
             {

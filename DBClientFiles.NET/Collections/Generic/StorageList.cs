@@ -24,9 +24,10 @@ namespace DBClientFiles.NET.Collections.Generic
         }
     }
 
-    public class StorageList<TValue> : StorageBase<TValue>, IList<TValue>, IList where TValue : class, new()
+    public class StorageList<T> : StorageBase<T>, IList<T>, IList, IReadOnlyList<T>, IReadOnlyCollection<T>
+        where T : class, new()
     {
-        private List<TValue> _container = new List<TValue>();
+        private List<T> _container = new List<T>();
 
         public StorageList(Stream fileStream) : this(fileStream, StorageOptions.Default)
         {
@@ -37,30 +38,30 @@ namespace DBClientFiles.NET.Collections.Generic
             FromStream(fileStream, options);
         }
 
-        internal override void LoadRecords(IReader<TValue> reader)
+        internal override void LoadRecords(IReader<T> reader)
         {
             foreach (var record in reader.ReadRecords())
                 _container.Add(record);
         }
 
-        #region IList<TValue> implementation
-        public TValue this[int index] {
+        #region IList<T> implementation
+        public T this[int index] {
             get => _container[index];
             set => _container[index] = value;
         }
 
-        public bool IsReadOnly => ((IList<TValue>)_container).IsReadOnly;
+        public bool IsReadOnly => ((IList<T>)_container).IsReadOnly;
         public int Count => _container.Count;
-        public void Add(TValue item) => _container.Add(item);
+        public void Add(T item) => _container.Add(item);
         public void Clear() => _container.Clear();
-        public bool Contains(TValue item) => _container.Contains(item);
-        public void CopyTo(TValue[] array, int arrayIndex) => _container.CopyTo(array, arrayIndex);
-        public IEnumerator<TValue> GetEnumerator() => _container.GetEnumerator();
-        public int IndexOf(TValue item) => _container.IndexOf(item);
-        public void Insert(int index, TValue item) => _container.Insert(index, item);
-        public bool Remove(TValue item) => _container.Remove(item);
+        public bool Contains(T item) => _container.Contains(item);
+        public void CopyTo(T[] array, int arrayIndex) => _container.CopyTo(array, arrayIndex);
+        public IEnumerator<T> GetEnumerator() => _container.GetEnumerator();
+        public int IndexOf(T item) => _container.IndexOf(item);
+        public void Insert(int index, T item) => _container.Insert(index, item);
+        public bool Remove(T item) => _container.Remove(item);
         public void RemoveAt(int index) => _container.RemoveAt(index);
-        IEnumerator IEnumerable.GetEnumerator() => ((IList<TValue>)_container).GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => ((IList<T>)_container).GetEnumerator();
         #endregion
 
         #region IList implementation

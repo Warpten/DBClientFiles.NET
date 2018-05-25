@@ -11,7 +11,7 @@ namespace DBClientFiles.NET.Internals.Segments
     {
         public TReader Reader { get; private set; }
 
-        internal Segment(BaseReader<TValue> storage) : base(storage)
+        internal Segment(BaseFileReader<TValue> storage) : base(storage)
         {
             Reader = new TReader
             {
@@ -37,7 +37,7 @@ namespace DBClientFiles.NET.Internals.Segments
 
         private bool _existsOverride;
 
-        public BaseReader<TValue> Storage { get; private set; }
+        public BaseFileReader<TValue> Storage { get; private set; }
         private StorageOptions Options { get; set; }
 
         public bool Deserialized { get; set; } = false;
@@ -54,7 +54,7 @@ namespace DBClientFiles.NET.Internals.Segments
             }
         }
 
-        internal Segment(BaseReader<TValue> storage)
+        internal Segment(BaseFileReader<TValue> storage)
         {
             Options = storage.Options;
             Storage = storage;

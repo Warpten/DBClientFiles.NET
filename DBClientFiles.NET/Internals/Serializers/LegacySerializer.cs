@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace DBClientFiles.NET.Internals.Serializers
 {
@@ -21,7 +22,7 @@ namespace DBClientFiles.NET.Internals.Serializers
         private Action<TValue, TKey> _keySetter;
         private Func<TValue, TKey> _keyGetter;
 
-        public LegacySerializer(BaseReader<TValue> storage) : base(storage) { }
+        public LegacySerializer(BaseFileReader<TValue> storage) : base(storage) { }
 
         protected virtual bool IsMemberKey(ExtendedMemberInfo memberInfo) => memberInfo.IsDefined(typeof(IndexAttribute), false);
 
@@ -101,11 +102,11 @@ namespace DBClientFiles.NET.Internals.Serializers
         protected StorageOptions Options => Storage.Options;
 
         private Func<TValue, TValue> _memberwiseClone;
-        private Func<BaseReader<TValue>, TValue> _deserializer;
+        private Func<BaseFileReader<TValue>, TValue> _deserializer;
 
-        protected BaseReader<TValue> Storage { get; }
+        protected BaseFileReader<TValue> Storage { get; }
 
-        public LegacySerializer(BaseReader<TValue> storage)
+        public LegacySerializer(BaseFileReader<TValue> storage)
         {
             Storage = storage;
         }
@@ -167,13 +168,13 @@ namespace DBClientFiles.NET.Internals.Serializers
         /// Likely not to be overriden, but let's keep it safe.
         /// </remarks>
         /// <returns></returns>
-        protected virtual Func<BaseReader<TValue>, TValue> GenerateDeserializer()
+        protected virtual Func<BaseFileReader<TValue>, TValue> GenerateDeserializer()
         {
 #if PERFORMANCE
             var stopwatch = Stopwatch.StartNew();
 #endif
 
-            var binaryReaderExpr = Expression.Parameter(typeof(BaseReader<TValue>));
+            var binaryReaderExpr = Expression.Parameter(typeof(BaseFileReader<TValue>));
             var resultExpr = Expression.Variable(typeof(TValue));
 
             var instanceExpr = Expression.Assign(resultExpr, Expression.New(typeof(TValue)));
@@ -187,7 +188,7 @@ namespace DBClientFiles.NET.Internals.Serializers
                     continue;
 
                 var memberAccessExpr = memberInfo.MakeMemberAccess(resultExpr);
-                var methodInfo = memberInfo.BinaryReader;
+                MethodInfo methodInfo = null;
 
                 var isPalletData = IsPalletDataMember(memberInfo);
                 var isCommonData = IsCommonDataMember(memberInfo);
@@ -206,7 +207,7 @@ namespace DBClientFiles.NET.Internals.Serializers
             body.Add(resultExpr);
 
             var bodyExpr = Expression.Block(new[] { resultExpr }, body);
-            var fnExpr = Expression.Lambda<Func<BaseReader<TValue>, TValue>>(bodyExpr, new[] { binaryReaderExpr });
+            var fnExpr = Expression.Lambda<Func<BaseFileReader<TValue>, TValue>>(bodyExpr, new[] { binaryReaderExpr });
             var lambdaExpression = fnExpr.Compile();
 
 #if PERFORMANCE
@@ -253,27 +254,18 @@ namespace DBClientFiles.NET.Internals.Serializers
         {
             var simpleReadExpression = GetMemberBaseReadExpression(memberExpression.MemberInfo, binaryReaderExpr);
 
-            if (!memberExpression.MemberInfo.IsArray)
+            if (!memberExpression.MemberInfo.Type.IsArray)
             {
-
-//#if DEBUG
-//                body.Add(Expression.Call(WriteLineMethod, Expression.Constant($"Reading column '{memberExpression.MemberInfo.Name}' for type {typeof(TValue).Name}")));
-//#endif
-
                 body.Add(Expression.Assign(memberExpression.Expression, simpleReadExpression));
             }
             else
             {
                 body.Add(Expression.Assign(
                     memberExpression.Expression,
-                    Expression.NewArrayBounds(memberExpression.MemberInfo.ElementType.GetElementType(), Expression.Constant(memberExpression.MemberInfo.ArraySize))));
+                    Expression.NewArrayBounds(memberExpression.MemberInfo.Type.GetElementType(), Expression.Constant(memberExpression.MemberInfo.ArraySize))));
 
                 for (var i = 0; i < memberExpression.MemberInfo.ArraySize; ++i)
                 {
-//#if DEBUG
-//                    body.Add(Expression.Call(WriteLineMethod, Expression.Constant($"Reading column '{memberExpression.MemberInfo.Name}[{i}]' for type {typeof(TValue).Name}")));
-//#endif
-
                     // TODO: Benchmark against expression loops.
 
                     var arrayMember = Expression.ArrayAccess(memberExpression.Expression, Expression.Constant(i));
@@ -292,14 +284,20 @@ namespace DBClientFiles.NET.Internals.Serializers
         /// <returns></returns>
         protected virtual Expression GetMemberBaseReadExpression(ExtendedMemberInfo memberInfo, Expression readerInstance)
         {
-            var memberType = memberInfo.ElementType;
-            var methodInfo = memberInfo.BinaryReader;
+            var memberType = memberInfo.Type;
+            MethodInfo methodInfo = null;
 
             if (methodInfo == null)
             {
                 var ctorInfo = memberType.GetConstructor(new[] { typeof(BinaryReader) });
                 if (ctorInfo == null)
+                {
+                    if (!memberType.IsRequiringMarshalling())
+                    {
+                    }
+
                     throw new InvalidOperationException($@"Type '{memberType.Name}' requires a ctor(BinaryReader) to be used in (de)serialization!");
+                }
                 return Expression.New(ctorInfo, readerInstance);
             }
             else

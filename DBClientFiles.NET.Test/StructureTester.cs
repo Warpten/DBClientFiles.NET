@@ -136,6 +136,8 @@ namespace DBClientFiles.NET.Test
             {
                 benchmarkResult.TotalTimes.Add(Accumulate<TStorage>(dataStream, options, out lambdaTime));
                 benchmarkResult.LambdaGenerationTimes.Add(lambdaTime);
+
+                GC.Collect();
             }
 
             benchmarkResult.Container = (IList)instance;
@@ -239,9 +241,9 @@ namespace DBClientFiles.NET.Test
         }
 
 #if PERFORMANCE
-        public static string HeaderSep => new string('=', 45 + (15 + 15 + 20) + (15 + 15 + 20));
+        public static string HeaderSep => new string('=', 45 + (15 + 15 + 20) + (15 + 15 + 20) + 7);
 #else
-        public static string HeaderSep => new string('=', 45 + (15 + 15 + 20));
+        public static string HeaderSep => new string('=', 45 + (15 + 15 + 20) + 4);
 #endif
     }
 }

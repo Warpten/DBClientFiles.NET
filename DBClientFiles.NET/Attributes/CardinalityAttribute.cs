@@ -13,6 +13,12 @@ namespace DBClientFiles.NET.Attributes
     /// serialize to, say, <pre>int[5]</pre> while it would serialize to <pre>int[3]</pre> because that's just how many
     /// elements you allocated.
     /// </summary>
+    /// <remarks>
+    /// This attribute is designed as a replacement for <see cref="MarshalAsAttribute"/>, which has the side-effect
+    /// of causing the library to deserialize simple types using the marshaller instead of fast pointer copies.
+    /// 
+    /// <see cref="MarshalAsAttribute"/> being handled is a backwards-compatibility feature.
+    /// </remarks>
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
     public sealed class CardinalityAttribute : Attribute
     {

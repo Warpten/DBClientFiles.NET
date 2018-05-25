@@ -1,8 +1,4 @@
-﻿using System;
-using System.IO;
-using DBClientFiles.NET.Collections;
-using DBClientFiles.NET.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace DBClientFiles.NET.Test
 {

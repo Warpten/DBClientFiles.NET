@@ -26,7 +26,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
                 OnStringRead?.Invoke(stringPosition, @string);
 
-                _stringTable.Add(stringPosition, @string);
+                _stringTable.Add(stringPosition, Storage.Options.InternStrings ? string.Intern(@string) : @string);
             }
         }
 

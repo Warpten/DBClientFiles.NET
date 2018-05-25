@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace DBClientFiles.NET.Utils
 {
@@ -11,7 +8,7 @@ namespace DBClientFiles.NET.Utils
     ///     Also provides a way to get the pointer of a generic type (useful for fast memcpy and other operations)
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public static class SizeCache<T> where T : struct
+    public static class SizeCache<T> // where T : struct
     {
         /// <summary> The size of the Type </summary>
         public static readonly int Size;
@@ -37,16 +34,16 @@ namespace DBClientFiles.NET.Utils
             }
             else if (typeof(T).IsEnum)
             {
-                Type = typeof(T).GetEnumUnderlyingType();
-                UnmanagedSize = Size = GetSizeOf(Type);
+                Type = Type.GetEnumUnderlyingType();
+                UnmanagedSize = Size = Type.GetBinarySize();
             }
             else
-                Size = GetSizeOf(Type);
+                Size = Type.GetBinarySize();
 
             if (typeof(T) == typeof(string))
                 UnmanagedSize = IntPtr.Size;
 
-            TypeRequiresMarshal = GetRequiresMarshal(Type);
+            TypeRequiresMarshal = Type.IsRequiringMarshalling();
 
             // Generate a method to get the address of a generic type. We'll be using this for RtlMoveMemory later for much faster structure reads.
             var method = new DynamicMethod(string.Format("GetPinnedPtr<{0}>", typeof(T).FullName.Replace(".", "<>")),
@@ -63,61 +60,6 @@ namespace DBClientFiles.NET.Utils
             // ret arg0
             generator.Emit(OpCodes.Ret);
             GetUnsafePtr = (GetUnsafePtrDelegate)method.CreateDelegate(typeof(GetUnsafePtrDelegate));
-        }
-
-        public static int GetSizeOf(Type t)
-        {
-            // Strings are most of the time handled as a string table, so we use the underlying pointer size
-            if (t == typeof(string))
-                return 4;
-
-            try
-            {
-                // Try letting the marshaler handle getting the size.
-                // It can *sometimes* do it correctly
-                // If it can't, fall back to our own methods.
-                /// var o = Activator.CreateInstance(t);
-                return Marshal.SizeOf(t);
-            }
-            catch
-            {
-                int totalSize = 0;
-                var fields = t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-
-                foreach (var field in fields)
-                {
-                    var fba = field.GetCustomAttribute<FixedBufferAttribute>(false);
-                    if (fba != null)
-                    {
-                        totalSize += GetSizeOf(fba.ElementType) * fba.Length;
-                        continue;
-                    }
-
-                    totalSize += GetSizeOf(field.FieldType);
-                }
-                return totalSize;
-            }
-        }
-
-        private static bool GetRequiresMarshal(Type t)
-        {
-            var fields = t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            foreach (var field in fields)
-            {
-                var requires = field.GetCustomAttributes(typeof(MarshalAsAttribute), true).Length != 0;
-
-                if (requires)
-                    return true;
-
-                if (t == typeof(IntPtr))
-                    continue;
-
-                if (Type.GetTypeCode(t) == TypeCode.Object)
-                    requires |= GetRequiresMarshal(field.FieldType);
-
-                return requires;
-            }
-            return false;
         }
 
         #region Nested type: GetUnsafePtrDelegate

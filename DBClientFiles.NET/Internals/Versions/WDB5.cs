@@ -1,21 +1,22 @@
 ﻿using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.Internals.Segments.Readers;
 using DBClientFiles.NET.Internals.Serializers;
-using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
-    internal class WDB5<TKey, TValue> : BaseReader<TKey, TValue>
+    internal class WDB5<TKey, TValue> : BaseFileReader<TKey, TValue>
         where TKey : struct
         where TValue : class, new()
     {
+        private Segment<TValue, CopyTableReader<TKey, TValue>> _copyTable;
+        public override Segment<TValue> CopyTable => _copyTable;
+
         public WDB5(Stream strm) : base(strm, true)
         {
-            CopyTable = new Segment<TValue, CopyTableReader<TKey, TValue>>(this);
+            _copyTable = new Segment<TValue, CopyTableReader<TKey, TValue>>(this);
         }
 
         public override bool ReadHeader()
@@ -50,8 +51,6 @@ namespace DBClientFiles.NET.Internals.Versions
             IndexTable.StartOffset = OffsetMap.EndOffset;
             IndexTable.Length = recordCount * 4;
 
-            CopyTable = new Segment<TValue, CopyTableReader<TKey, TValue>>(this);
-            CopyTable.Exists = copyTableSize != 0;
             CopyTable.Length = copyTableSize;
             CopyTable.StartOffset = IndexTable.EndOffset;
 
@@ -62,27 +61,47 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override IEnumerable<TValue> ReadRecords()
         {
-            var serializer = new LegacySerializer<TKey, TValue>(this);
-            var cp = (Segment<TValue, CopyTableReader<TKey, TValue>>)CopyTable;
+            var serializer = new CodeGenerator<TValue, TKey>(ValueMembers);
 
             var i = 0;
             BaseStream.Position = Records.StartOffset;
             while (BaseStream.Position < Records.EndOffset)
             {
-                var oldStructure = serializer.Deserialize();
+                var oldStructure = serializer.Deserialize(this);
 
                 BaseStream.Position = OffsetMap.Reader[i++];
-                var currentKey = serializer.ExtractKey(oldStructure);
+                var currentKey = serializer.ExtractKey(ref oldStructure);
 
-                foreach (var copyEntry in cp.Reader[currentKey])
+                foreach (var copyEntry in _copyTable.Reader[currentKey])
                 {
                     var clone = serializer.Clone(oldStructure);
-                    serializer.InsertKey(clone, copyEntry);
+                    serializer.InsertKey(ref clone, copyEntry);
+
                     yield return clone;
                 }
 
                 yield return oldStructure;
             }
+        }
+
+        public override T ReadPalletMember<T>(int memberIndex)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public override T ReadCommonMember<T>(int memberIndex)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public override T ReadForeignKeyMember<T>(int memberIndex)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public override T[] ReadPalletArrayMember<T>(int memberIndex)
+        {
+            throw new InvalidOperationException();
         }
     }
 }

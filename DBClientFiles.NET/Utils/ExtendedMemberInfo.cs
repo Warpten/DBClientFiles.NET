@@ -2,79 +2,74 @@
 using System;
 using System.Collections.Generic;
 using DBClientFiles.NET.IO;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using DBClientFiles.NET.Internals;
 using static System.Reflection.CustomAttributeExtensions;
-using DBClientFiles.NET.Internals.Versions;
 
 namespace DBClientFiles.NET.Utils
 {
     internal sealed class ExtendedMemberInfo
     {
-        private static MethodInfo _bitReader = typeof(BinaryReader).GetMethod("ReadBits", new[] { typeof(int) });
-        private static Dictionary<TypeCode, MethodInfo> _binaryReaders = new Dictionary<TypeCode, MethodInfo>()
-        {
-            { TypeCode.UInt64, typeof(BinaryReader).GetMethod("ReadUInt64", Type.EmptyTypes) },
-            { TypeCode.UInt32, typeof(BinaryReader).GetMethod("ReadUInt32", Type.EmptyTypes) },
-            { TypeCode.UInt16, typeof(BinaryReader).GetMethod("ReadUInt16", Type.EmptyTypes) },
-            { TypeCode.Byte,   typeof(BinaryReader).GetMethod("ReadByte", Type.EmptyTypes) },
-
-            { TypeCode.Int64,  typeof(BinaryReader).GetMethod("ReadInt64", Type.EmptyTypes) },
-            { TypeCode.Int32,  typeof(BinaryReader).GetMethod("ReadInt32", Type.EmptyTypes) },
-            { TypeCode.Int16,  typeof(BinaryReader).GetMethod("ReadInt16", Type.EmptyTypes) },
-            { TypeCode.SByte,  typeof(BinaryReader).GetMethod("ReadSByte", Type.EmptyTypes) },
-
-            { TypeCode.String, typeof(BinaryReader).GetMethod("ReadString", Type.EmptyTypes) },
-            { TypeCode.Single, typeof(BinaryReader).GetMethod("ReadSingle", Type.EmptyTypes) }
-        };
-
-        private readonly MemberInfo _memberInfo;
-        public MemberInfo MemberInfo => _memberInfo;
-
+        public MemberInfo MemberInfo { get; }
         public MemberCompressionType CompressionType { get; private set; } = MemberCompressionType.None;
 
         // TODO: Figure out a better name for this member.
-        public Type ElementType { get; }
+        public Type Type { get; }
 
-        public bool IsArray => ElementType.IsArray;
+        /// <summary>
+        /// Returns true if the associated member has a getter.
+        /// </summary>
+        public bool HasGetter { get; }
 
+        /// <summary>
+        /// Returns true if the associated member has a setter.
+        /// </summary>
+        public bool HasSetter { get; }
+
+        /// <summary>
+        /// Returns true if the associated member is read-only.
+        /// </summary>
+        public bool IsInitOnly { get; }
+
+        /// <summary>
+        /// The size of the array, assuming it is one; 0 otherwise.
+        /// </summary>
         public int ArraySize { get; private set; }
 
         /// <summary>
         /// Index of the member in the declaring type.
         /// </summary>
         public int MemberIndex { get; }
-
-        private int _bitSize;
-        private int BitSize
-        {
-            get => _bitSize;
-            set {
-                _bitSize = value;
-                if ((value & 7) != 0)
-                    BinaryReader = _bitReader;
-            }
-        }
+        
+        /// <summary>
+        /// The bit size of this field - this is used only if <see cref="CompressionType"/>
+        /// is set to <see cref="MemberCompressionType.Bitpacked"/>, <see cref="MemberCompressionType.BitpackedPalletData"/>
+        /// or <see cref="MemberCompressionType.BitpackedPalletArrayData"/>.
+        /// </summary>
+        public int BitSize { get; set; }
 
         public ExtendedMemberInfo(PropertyInfo member, int memberIndex)
         {
-            _memberInfo = member;
+            MemberInfo = member;
             MemberIndex = memberIndex;
-            ElementType = member.PropertyType;
+            Type = member.PropertyType;
+
+            IsInitOnly = false;
+            HasGetter = member.GetGetMethod() != null;
+            HasSetter = member.GetSetMethod() != null;
 
             InitializeMemberHelpers();
         }
 
         public ExtendedMemberInfo(FieldInfo member, int memberIndex)
         {
-            _memberInfo = member;
+            MemberInfo = member;
             MemberIndex = memberIndex;
-            ElementType = member.FieldType;
+            Type = member.FieldType;
+
+            IsInitOnly = member.IsInitOnly;
 
             InitializeMemberHelpers();
         }
@@ -90,7 +85,7 @@ namespace DBClientFiles.NET.Utils
 
         private void InitializeMemberHelpers()
         {
-            if (IsArray)
+            if (Type.IsArray)
             {
                 var marshalAttr = MemberInfo.GetCustomAttribute<MarshalAsAttribute>();
                 if (marshalAttr != null)
@@ -108,24 +103,20 @@ namespace DBClientFiles.NET.Utils
                     }
                 }
             }
-
-            var simpleType = IsArray ? ElementType.GetElementType() : ElementType;
-            if (_binaryReaders.TryGetValue(Type.GetTypeCode(simpleType), out var binaryReaderMethodInfo))
-                BinaryReader = binaryReaderMethodInfo;
         }
 
         public ExtendedMemberExpression MakeMemberAccess(Expression source)
         {
             return new ExtendedMemberExpression(source, this);
         }
+        
+        public MemberTypes MemberType => MemberInfo.MemberType;
+        public string Name => MemberInfo.Name;
 
-        public MethodInfo BinaryReader { get; private set; }
-
-        public MemberTypes MemberType => _memberInfo.MemberType;
-        public string Name => _memberInfo.Name;
-
-        public object[] GetCustomAttributes(bool inherit) => _memberInfo.GetCustomAttributes(inherit);
-        public object[] GetCustomAttributes(Type attributeType, bool inherit) => _memberInfo.GetCustomAttributes(attributeType, inherit);
-        public bool IsDefined(Type attributeType, bool inherit) => _memberInfo.IsDefined(attributeType, inherit);
+        public object[] GetCustomAttributes(bool inherit = false) => MemberInfo.GetCustomAttributes(inherit);
+        public object[] GetCustomAttributes(Type attributeType, bool inherit = false) => MemberInfo.GetCustomAttributes(attributeType, inherit);
+        public T GetCustomAttribute<T>(bool inherit = false) where T : Attribute
+            => MemberInfo.GetCustomAttribute<T>(inherit);
+        public bool IsDefined(Type attributeType, bool inherit = false) => MemberInfo.IsDefined(attributeType, inherit);
     }
 }

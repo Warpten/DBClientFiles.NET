@@ -1,37 +1,25 @@
 ﻿using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.Internals.Segments.Readers;
+using DBClientFiles.NET.IO;
 using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 using System.Text;
-using BinaryReader = DBClientFiles.NET.IO.BinaryReader;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
-    internal abstract class BaseReader<TKey, TValue> : BaseReader<TValue> where TKey : struct where TValue : class, new()
+    internal abstract class BaseFileReader<TKey, TValue> : BaseFileReader<TValue> where TKey : struct where TValue : class, new()
     {
-        protected BaseReader(Stream strm, bool keepOpen) : base(strm, keepOpen)
+        protected BaseFileReader(Stream strm, bool keepOpen) : base(strm, keepOpen)
         {
-        }
-
-        public override void ReadSegments()
-        {
-            if (CopyTable.Exists && !CopyTable.Deserialized)
-            {
-                CopyTable = new Segment<TValue, CopyTableReader<TKey, TValue>>(this);
-            }
-
-            base.ReadSegments();
         }
     }
 
-    internal abstract class BaseReader<TValue> : BinaryReader, IReader<TValue> where TValue : class, new()
+    internal abstract class BaseFileReader<TValue> : FileReader, IReader<TValue> where TValue : class, new()
     {
-        protected BaseReader(Stream strm, bool keepOpen) : base(strm, keepOpen)
+        protected BaseFileReader(Stream strm, bool keepOpen) : base(strm, keepOpen)
         {
             StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
             OffsetMap = new Segment<TValue, OffsetMapReader<TValue>>(this);
@@ -67,24 +55,19 @@ namespace DBClientFiles.NET.Internals.Versions
                 _options = value;
 
                 if (oldOptions == null || oldOptions.MemberType != _options.MemberType)
-                {
-                    var members = typeof(TValue).GetMembers(BindingFlags.Public | BindingFlags.Instance).Where(m => m.MemberType == _options.MemberType).ToArray();
-                    ValueMembers = new ExtendedMemberInfo[members.Length];
-                    for (var i = 0; i < members.Length; ++i)
-                        ValueMembers[i] = ExtendedMemberInfo.Initialize(members[i], i);
-                }
+                    ValueMembers = typeof(TValue).GetMemberInfos(_options);
             }
         }
 
-        public virtual Segment<TValue, StringTableReader<TValue>> StringTable { get; protected set; }
-        public virtual Segment<TValue, OffsetMapReader<TValue>> OffsetMap { get; protected set; }
+        public virtual Segment<TValue, StringTableReader<TValue>> StringTable { get; }
+        public virtual Segment<TValue, OffsetMapReader<TValue>> OffsetMap { get; }
 
-        public virtual Segment<TValue> Records { get; protected set; }
+        public virtual Segment<TValue> Records { get; }
 
-        public virtual Segment<TValue> CopyTable { get; protected set; }
+        public virtual Segment<TValue> CopyTable { get; }
 
-        public virtual Segment<TValue> CommonTable { get; protected set; }
-        public virtual Segment<TValue, IndexTableReader<TValue>> IndexTable { get; protected set; }
+        public virtual Segment<TValue> CommonTable { get; }
+        public virtual Segment<TValue, IndexTableReader<TValue>> IndexTable { get; }
 
         public event Action<long, string> OnStringTableEntry;
 
@@ -122,13 +105,7 @@ namespace DBClientFiles.NET.Internals.Versions
         public override string ReadString()
         {
             if (StringTable.Exists)
-            {
-                var offset = ReadInt32();
-//#if DEBUG
-//                Console.WriteLine($"Found string at offset {offset} : {StringTable.Reader[offset]}");
-//#endif
-                return StringTable.Reader[offset];
-            }
+                return StringTable.Reader[ReadInt32()];
 
             return ReadStringDirect();
         }

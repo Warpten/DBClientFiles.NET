@@ -2,7 +2,7 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Security;
-using BinaryReader = DBClientFiles.NET.IO.BinaryReader;
+using FileReader = DBClientFiles.NET.IO.FileReader;
 
 namespace DBClientFiles.NET.Utils
 {
@@ -22,7 +22,7 @@ namespace DBClientFiles.NET.Utils
         /// <typeparam name="T"></typeparam>
         /// <param name="br"></param>
         /// <returns></returns>
-        public static T ReadStruct<T>(this BinaryReader br) where T : struct
+        public static T ReadStruct<T>(this FileReader br)
         {
             if (SizeCache<T>.TypeRequiresMarshal)
             {
@@ -34,7 +34,7 @@ namespace DBClientFiles.NET.Utils
             }
 
             // OPTIMIZATION!
-            var ret = new T();
+            var ret = default(T);
             fixed (byte* b = br.ReadBytes(SizeCache<T>.Size))
             {
                 var tPtr = (byte*)SizeCache<T>.GetUnsafePtr(ref ret);
@@ -49,7 +49,7 @@ namespace DBClientFiles.NET.Utils
         /// <typeparam name="T"></typeparam>
         /// <param name="br"></param>
         /// <returns></returns>
-        public static T ReadUsingRefType<T>(this BinaryReader br) where T : struct
+        public static T ReadUsingRefType<T>(this FileReader br) where T : struct
         {
             T result = default(T);
             TypedReference refResult = __makeref(result);
@@ -60,7 +60,7 @@ namespace DBClientFiles.NET.Utils
             }
         }
 
-        public static T[] ReadStructs<T>(this BinaryReader br, int count) where T : struct
+        public static T[] ReadStructs<T>(this FileReader br, int count)
         {
             if (SizeCache<T>.TypeRequiresMarshal)
             {
@@ -91,7 +91,7 @@ namespace DBClientFiles.NET.Utils
             return ret;
         }
 
-        public static void WriteStruct<T>(this BinaryWriter bw, T value) where T : struct
+        public static void WriteStruct<T>(this BinaryWriter bw, T value)
         {
             if (SizeCache<T>.TypeRequiresMarshal)
             {

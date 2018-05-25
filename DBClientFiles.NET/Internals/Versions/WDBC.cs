@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using DBClientFiles.NET.Internals.Serializers;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
-    internal class WDBC<TValue> : BaseReader<TValue> where TValue : class, new()
+    internal class WDBC<TValue> : BaseFileReader<TValue> where TValue : class, new()
     {
         public WDBC(Stream fileStream): base(fileStream, true)
         {
@@ -30,15 +31,35 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override IEnumerable<TValue> ReadRecords()
         {
-            var serializer = new LegacySerializer<TValue>(this);
+            var serializer = new CodeGenerator<TValue>(ValueMembers);
 
             BaseStream.Position = Records.StartOffset;
             while (BaseStream.Position < Records.EndOffset)
-                yield return serializer.Deserialize();
+                yield return serializer.Deserialize(this);
 
-#if PERFORMANCE
-            DeserializeGeneration = serializer.DeserializerGeneration;
-#endif
+//#if PERFORMANCE
+//            DeserializeGeneration = _serializer.DeserializerGeneration;
+//#endif
+        }
+
+        public override T ReadPalletMember<T>(int memberIndex)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public override T ReadCommonMember<T>(int memberIndex)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public override T ReadForeignKeyMember<T>(int memberIndex)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public override T[] ReadPalletArrayMember<T>(int memberIndex)
+        {
+            throw new InvalidOperationException();
         }
     }
 }

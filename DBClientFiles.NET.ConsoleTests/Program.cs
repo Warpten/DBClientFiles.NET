@@ -3,7 +3,6 @@ using DBClientFiles.NET.Data;
 using DBClientFiles.NET.Data.WDBC;
 using DBClientFiles.NET.Test;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
