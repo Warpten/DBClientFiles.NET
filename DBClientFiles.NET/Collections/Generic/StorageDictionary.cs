@@ -66,7 +66,7 @@ namespace DBClientFiles.NET.Collections.Generic
         internal override void LoadRecords(IReader<TValue> reader)
         {
             // TODO Avoid instanciating a new serializer here, use a global application cache instead
-            var legacySerializer = new LegacySerializer<TKey, TValue>((BaseFileReader<TValue>)reader);
+            var legacySerializer = new CodeGenerator<TValue, TKey>(reader.ValueMembers);
 
             foreach (var record in reader.ReadRecords())
             {

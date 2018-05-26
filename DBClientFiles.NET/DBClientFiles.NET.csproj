@@ -79,7 +79,6 @@
     <Compile Include="Internals\Segments\Readers\StringTableReader.cs" />
     <Compile Include="Internals\Segments\Segment.cs" />
     <Compile Include="Internals\Serializers\CodeGenerator.cs" />
-    <Compile Include="Internals\Serializers\LegacySerializer.cs" />
     <Compile Include="Internals\Serializers\SerializationUtils.cs" />
     <Compile Include="Internals\Serializers\Serializer.cs" />
     <Compile Include="Internals\Serializers\StorageSerializer.cs" />

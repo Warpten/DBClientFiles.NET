@@ -1,4 +1,5 @@
 ﻿using DBClientFiles.NET.Collections;
+using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
 
@@ -16,6 +17,7 @@ namespace DBClientFiles.NET.Internals
 
         StorageOptions Options { get; set; }
 
+        ExtendedMemberInfo[] ValueMembers { get; }
 
 
 #if PERFORMANCE

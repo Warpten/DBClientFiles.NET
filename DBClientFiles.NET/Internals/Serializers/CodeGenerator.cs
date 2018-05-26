@@ -26,7 +26,7 @@ namespace DBClientFiles.NET.Internals.Serializers
         /// <typeparam name="TKey"></typeparam>
         /// <param name="instance"></param>
         /// <returns></returns>
-        public TKey ExtractKey(ref T instance)
+        public TKey ExtractKey(T instance)
         {
             if (_keyGetter == null)
                 _keyGetter = GenerateKeyGetter();
@@ -39,7 +39,7 @@ namespace DBClientFiles.NET.Internals.Serializers
         /// </summary>
         /// <param name="instance">The target instance of <see cref="{T}"/></param>
         /// <param name="key">The value to assign to the member representating a key.</param>
-        public void InsertKey(ref T instance, TKey key)
+        public void InsertKey(T instance, TKey key)
         {
             if (_keySetter != null)
                 _keySetter = GenerateKeySetter();
@@ -300,8 +300,8 @@ namespace DBClientFiles.NET.Internals.Serializers
             {
                 bodyBlock.Add(Expression.Assign(
                     memberAccess.Expression,
-                    Expression.NewArrayBounds(memberAccess.MemberInfo.Type.GetElementType(), Expression.Constant(memberAccess.MemberInfo.ArraySize))));
-                for (var i = 0; i < memberAccess.MemberInfo.ArraySize; ++i)
+                    Expression.NewArrayBounds(memberAccess.MemberInfo.Type.GetElementType(), Expression.Constant(memberAccess.MemberInfo.Cardinality))));
+                for (var i = 0; i < memberAccess.MemberInfo.Cardinality; ++i)
                 {
                     var itemAccess = Expression.ArrayAccess(memberAccess.Expression, Expression.Constant(i));
 

@@ -70,12 +70,12 @@ namespace DBClientFiles.NET.Internals.Versions
                 var oldStructure = serializer.Deserialize(this);
 
                 BaseStream.Position = OffsetMap.Reader[i++];
-                var currentKey = serializer.ExtractKey(ref oldStructure);
+                var currentKey = serializer.ExtractKey(oldStructure);
 
                 foreach (var copyEntry in _copyTable.Reader[currentKey])
                 {
                     var clone = serializer.Clone(oldStructure);
-                    serializer.InsertKey(ref clone, copyEntry);
+                    serializer.InsertKey(clone, copyEntry);
 
                     yield return clone;
                 }

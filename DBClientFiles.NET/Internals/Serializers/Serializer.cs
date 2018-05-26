@@ -58,9 +58,9 @@ namespace DBClientFiles.NET.Internals.Serializers
 
             if (memberInfo.Type.IsArray)
             {
-                body.Add(Expression.Assign(memberAccessExpr.Expression, Expression.NewArrayBounds(memberType, Expression.Constant(memberInfo.ArraySize))));
+                body.Add(Expression.Assign(memberAccessExpr.Expression, Expression.NewArrayBounds(memberType, Expression.Constant(memberInfo.Cardinality))));
 
-                for (var i = 0; i < memberInfo.ArraySize; ++i)
+                for (var i = 0; i < memberInfo.Cardinality; ++i)
                 {
                     var itemAccessExpr = Expression.ArrayIndex(memberAccessExpr.Expression, Expression.Constant(i));
                     body.Add(Expression.Assign(itemAccessExpr, podReader));

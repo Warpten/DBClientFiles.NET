@@ -34,12 +34,22 @@ namespace DBClientFiles.NET.Utils
         /// <summary>
         /// The size of the array, assuming it is one; 0 otherwise.
         /// </summary>
-        public int ArraySize { get; private set; }
+        public int Cardinality { get; set; }
 
         /// <summary>
         /// Index of the member in the declaring type.
         /// </summary>
         public int MemberIndex { get; }
+
+        /// <summary>
+        /// Indicates wether or not the member is flagged as signed in file metadata.
+        /// </summary>
+        public bool IsSigned { get; set; }
+
+        /// <summary>
+        /// The default value as specified in file metadata, if any. This could also be a float.
+        /// </summary>
+        public byte[] DefaultValue { get; set; }
         
         /// <summary>
         /// The bit size of this field - this is used only if <see cref="CompressionType"/>
@@ -87,17 +97,17 @@ namespace DBClientFiles.NET.Utils
             {
                 var marshalAttr = MemberInfo.GetCustomAttribute<MarshalAsAttribute>();
                 if (marshalAttr != null)
-                    ArraySize = marshalAttr.SizeConst;
+                    Cardinality = marshalAttr.SizeConst;
                 else
                 {
                     var arraySizeAttribute = MemberInfo.GetCustomAttribute<CardinalityAttribute>();
                     if (arraySizeAttribute != null)
-                        ArraySize = arraySizeAttribute.SizeConst;
+                        Cardinality = arraySizeAttribute.SizeConst;
                     else
                     {
                         var storageAttribute = MemberInfo.GetCustomAttribute<StoragePresenceAttribute>();
                         if (storageAttribute != null)
-                            ArraySize = storageAttribute.SizeConst;
+                            Cardinality = storageAttribute.SizeConst;
                     }
                 }
             }
