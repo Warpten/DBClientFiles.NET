@@ -122,7 +122,7 @@ namespace DBClientFiles.NET.Internals.Serializers
 
         public ExtendedMemberInfo[] Members { get; }
 
-        private Func<FileReader, T> _deserializationMethod;
+        private Func<FileReader<T>, T> _deserializationMethod;
         private Func<T, T> _memberwiseClone;
 
         public CodeGenerator(ExtendedMemberInfo[] memberInfos)
@@ -150,7 +150,7 @@ namespace DBClientFiles.NET.Internals.Serializers
         /// </summary>
         /// <param name="fileReader"></param>
         /// <returns></returns>
-        public T Deserialize(FileReader fileReader)
+        public T Deserialize(FileReader<T> fileReader)
         {
             if (_deserializationMethod == null)
                 _deserializationMethod = GenerateDeserializationMethod();
@@ -204,12 +204,12 @@ namespace DBClientFiles.NET.Internals.Serializers
         /// Generates the deserialization method.
         /// </summary>
         /// <returns></returns>
-        public Func<FileReader, T> GenerateDeserializationMethod()
+        public Func<FileReader<T>, T> GenerateDeserializationMethod()
         {
             if (Members == null)
                 throw new InvalidOperationException("Missing member informations in CodeGenerator<T>");
 
-            var binaryReader = Expression.Parameter(typeof(FileReader));
+            var binaryReader = Expression.Parameter(typeof(FileReader<T>));
 
             var bodyBlock = new List<Expression>() {
                 Expression.Assign(_instance, CreateTypeInitializer())
@@ -224,7 +224,7 @@ namespace DBClientFiles.NET.Internals.Serializers
             bodyBlock.Add(_instance);
 
             var expressionBody = Expression.Block(new[] { _instance }, bodyBlock);
-            var expressionLambda = Expression.Lambda<Func<FileReader, T>>(expressionBody, binaryReader);
+            var expressionLambda = Expression.Lambda<Func<FileReader<T>, T>>(expressionBody, binaryReader);
 
             var stringView = new ExpressionStringBuilder();
             stringView.Visit(expressionLambda);
@@ -314,20 +314,20 @@ namespace DBClientFiles.NET.Internals.Serializers
 
         protected virtual Expression GenerateForeignKeyReader(Expression binaryReaderInstance, ExtendedMemberInfo memberInfo)
         {
-            return Expression.Call(binaryReaderInstance, _FileReader.ReadForeignKeyMember, Expression.Constant(memberInfo.MemberIndex));
+            return Expression.Call(binaryReaderInstance, _FileReader<T>.ReadForeignKeyMember, Expression.Constant(memberInfo.MemberIndex));
         }
 
         protected virtual Expression GenerateCommonReader(Expression binaryReaderInstance, ExtendedMemberInfo memberInfo)
         {
-            return Expression.Call(binaryReaderInstance, _FileReader.ReadCommonMember, Expression.Constant(memberInfo.MemberIndex));
+            return Expression.Call(binaryReaderInstance, _FileReader<T>.ReadCommonMember, Expression.Constant(memberInfo.MemberIndex));
         }
 
         protected virtual Expression GeneratePalletReader(Expression binaryReaderInstance, ExtendedMemberInfo memberInfo)
         {
             if (memberInfo.Type.IsArray)
-                return Expression.Call(binaryReaderInstance, _FileReader.ReadPalletArrayMember, Expression.Constant(memberInfo.MemberIndex));
+                return Expression.Call(binaryReaderInstance, _FileReader<T>.ReadPalletArrayMember, Expression.Constant(memberInfo.MemberIndex));
 
-            return Expression.Call(binaryReaderInstance, _FileReader.ReadPalletMember, Expression.Constant(memberInfo.MemberIndex));
+            return Expression.Call(binaryReaderInstance, _FileReader<T>.ReadPalletMember, Expression.Constant(memberInfo.MemberIndex));
         }
 
         protected virtual Expression GenerateBinaryReader(Expression binaryReaderInstance, ExtendedMemberInfo memberInfo)
@@ -338,7 +338,7 @@ namespace DBClientFiles.NET.Internals.Serializers
 
             if (memberInfo.BitSize != 0)
             {
-                var methodCall = Expression.Call(binaryReaderInstance, _FileReader.ReadBits, Expression.Constant(memberInfo.BitSize));
+                var methodCall = Expression.Call(binaryReaderInstance, _FileReader<T>.ReadBits, Expression.Constant(memberInfo.BitSize));
                 return Expression.Convert(methodCall, memberType);
             }
 
@@ -351,16 +351,16 @@ namespace DBClientFiles.NET.Internals.Serializers
 
             switch (memberCode)
             {
-                case TypeCode.UInt64: return Expression.Call(binaryReaderInstance, _FileReader.ReadUInt64);
-                case TypeCode.UInt32: return Expression.Call(binaryReaderInstance, _FileReader.ReadUInt32);
-                case TypeCode.UInt16: return Expression.Call(binaryReaderInstance, _FileReader.ReadUInt16);
-                case TypeCode.Byte:   return Expression.Call(binaryReaderInstance, _FileReader.ReadByte);
-                case TypeCode.Int64:  return Expression.Call(binaryReaderInstance, _FileReader.ReadInt64);
-                case TypeCode.Int32:  return Expression.Call(binaryReaderInstance, _FileReader.ReadInt32);
-                case TypeCode.Int16:  return Expression.Call(binaryReaderInstance, _FileReader.ReadInt16);
-                case TypeCode.SByte:  return Expression.Call(binaryReaderInstance, _FileReader.ReadSByte);
-                case TypeCode.String: return Expression.Call(binaryReaderInstance, _FileReader.ReadString);
-                case TypeCode.Single: return Expression.Call(binaryReaderInstance, _FileReader.ReadSingle);
+                case TypeCode.UInt64: return Expression.Call(binaryReaderInstance, _FileReader<T>.ReadUInt64);
+                case TypeCode.UInt32: return Expression.Call(binaryReaderInstance, _FileReader<T>.ReadUInt32);
+                case TypeCode.UInt16: return Expression.Call(binaryReaderInstance, _FileReader<T>.ReadUInt16);
+                case TypeCode.Byte:   return Expression.Call(binaryReaderInstance, _FileReader<T>.ReadByte);
+                case TypeCode.Int64:  return Expression.Call(binaryReaderInstance, _FileReader<T>.ReadInt64);
+                case TypeCode.Int32:  return Expression.Call(binaryReaderInstance, _FileReader<T>.ReadInt32);
+                case TypeCode.Int16:  return Expression.Call(binaryReaderInstance, _FileReader<T>.ReadInt16);
+                case TypeCode.SByte:  return Expression.Call(binaryReaderInstance, _FileReader<T>.ReadSByte);
+                case TypeCode.String: return Expression.Call(binaryReaderInstance, _FileReader<T>.ReadString);
+                case TypeCode.Single: return Expression.Call(binaryReaderInstance, _FileReader<T>.ReadSingle);
             }
 
             throw new NotImplementedException();

@@ -84,22 +84,22 @@ namespace DBClientFiles.NET.Internals.Versions
             }
         }
 
-        public override T ReadPalletMember<T>(int memberIndex)
+        public override T ReadCommonMember<T, U>(int memberIndex, U key)
         {
             throw new InvalidOperationException();
         }
 
-        public override T ReadCommonMember<T>(int memberIndex)
+        public override T ReadForeignKeyMember<T, U>(int memberIndex, U key)
         {
             throw new InvalidOperationException();
         }
 
-        public override T ReadForeignKeyMember<T>(int memberIndex)
+        public override T[] ReadPalletArrayMember<T, U>(int memberIndex, U key)
         {
             throw new InvalidOperationException();
         }
 
-        public override T[] ReadPalletArrayMember<T>(int memberIndex)
+        public override T ReadPalletMember<T, U>(int memberIndex, U key)
         {
             throw new InvalidOperationException();
         }

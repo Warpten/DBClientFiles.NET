@@ -66,6 +66,26 @@ namespace DBClientFiles.NET.Internals.Versions
             return true;
         }
 
+        public override T ReadCommonMember<T, U>(int memberIndex, U key)
+        {
+            return _commonTable.Reader.ReadStructValue<T, TKey>(memberIndex, (TKey)key);
+        }
+
+        public override T ReadForeignKeyMember<T, U>(int memberIndex, U key)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public override T[] ReadPalletArrayMember<T, U>(int memberIndex, U key)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public override T ReadPalletMember<T, U>(int memberIndex, U key)
+        {
+            throw new InvalidOperationException();
+        }
+
         public override T ReadCommonMember<T>(int memberIndex)
         {
             return _commonTable.Reader.ReadStructValue<T>(memberIndex /* adjust to base-0 for the first column in common */, default /* fixme */);

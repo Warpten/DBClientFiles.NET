@@ -5,36 +5,36 @@ using System.Text;
 
 namespace DBClientFiles.NET.IO
 {
-    internal static class _FileReader
+    internal static class _FileReader<TKey>
     {
-        public static MethodInfo ReadUInt64 { get; } = typeof(FileReader).GetMethod("ReadUInt64", Type.EmptyTypes);
-        public static MethodInfo ReadUInt32 { get; } = typeof(FileReader).GetMethod("ReadUInt32", Type.EmptyTypes);
-        public static MethodInfo ReadUInt16 { get; } = typeof(FileReader).GetMethod("ReadUInt16", Type.EmptyTypes);
-        public static MethodInfo ReadSByte  { get; } = typeof(FileReader).GetMethod("ReadSByte", Type.EmptyTypes);
+        public static MethodInfo ReadUInt64 { get; } = typeof(FileReader<TKey>).GetMethod("ReadUInt64", Type.EmptyTypes);
+        public static MethodInfo ReadUInt32 { get; } = typeof(FileReader<TKey>).GetMethod("ReadUInt32", Type.EmptyTypes);
+        public static MethodInfo ReadUInt16 { get; } = typeof(FileReader<TKey>).GetMethod("ReadUInt16", Type.EmptyTypes);
+        public static MethodInfo ReadSByte  { get; } = typeof(FileReader<TKey>).GetMethod("ReadSByte", Type.EmptyTypes);
 
-        public static MethodInfo ReadInt64  { get; } = typeof(FileReader).GetMethod("ReadInt64", Type.EmptyTypes);
-        public static MethodInfo ReadInt32  { get; } = typeof(FileReader).GetMethod("ReadInt32", Type.EmptyTypes);
-        public static MethodInfo ReadInt16  { get; } = typeof(FileReader).GetMethod("ReadInt16", Type.EmptyTypes);
-        public static MethodInfo ReadByte   { get; } = typeof(FileReader).GetMethod("ReadByte", Type.EmptyTypes);
+        public static MethodInfo ReadInt64  { get; } = typeof(FileReader<TKey>).GetMethod("ReadInt64", Type.EmptyTypes);
+        public static MethodInfo ReadInt32  { get; } = typeof(FileReader<TKey>).GetMethod("ReadInt32", Type.EmptyTypes);
+        public static MethodInfo ReadInt16  { get; } = typeof(FileReader<TKey>).GetMethod("ReadInt16", Type.EmptyTypes);
+        public static MethodInfo ReadByte   { get; } = typeof(FileReader<TKey>).GetMethod("ReadByte", Type.EmptyTypes);
         
-        public static MethodInfo ReadSingle { get; } = typeof(FileReader).GetMethod("ReadSingle", Type.EmptyTypes);
-        public static MethodInfo ReadBit    { get; } = typeof(FileReader).GetMethod("ReadBit", Type.EmptyTypes);
-        public static MethodInfo ReadString { get; } = typeof(FileReader).GetMethod("ReadString", Type.EmptyTypes);
+        public static MethodInfo ReadSingle { get; } = typeof(FileReader<TKey>).GetMethod("ReadSingle", Type.EmptyTypes);
+        public static MethodInfo ReadBit    { get; } = typeof(FileReader<TKey>).GetMethod("ReadBit", Type.EmptyTypes);
+        public static MethodInfo ReadString { get; } = typeof(FileReader<TKey>).GetMethod("ReadString", Type.EmptyTypes);
 
-        public static MethodInfo ReadBits   { get; } = typeof(FileReader).GetMethod("ReadBits", new[] { typeof(int) });
+        public static MethodInfo ReadBits   { get; } = typeof(FileReader<TKey>).GetMethod("ReadBits", new[] { typeof(int) });
 
-        public static MethodInfo ReadPalletMember      { get; } = typeof(FileReader).GetMethod("ReadPalletMember", new[] { typeof(int) });
-        public static MethodInfo ReadPalletArrayMember { get; } = typeof(FileReader).GetMethod("ReadPalletArrayMember", new[] { typeof(int) });
-        public static MethodInfo ReadCommonMember      { get; } = typeof(FileReader).GetMethod("ReadCommonMember", new[] { typeof(int) });
-        public static MethodInfo ReadForeignKeyMember  { get; } = typeof(FileReader).GetMethod("ReadForeignKeyMember", new[] { typeof(int) });
+        public static MethodInfo ReadPalletMember      { get; } = typeof(FileReader<TKey>).GetMethod("ReadPalletMember", new[] { typeof(int), typeof(TKey) });
+        public static MethodInfo ReadPalletArrayMember { get; } = typeof(FileReader<TKey>).GetMethod("ReadPalletArrayMember", new[] { typeof(int), typeof(TKey) });
+        public static MethodInfo ReadCommonMember      { get; } = typeof(FileReader<TKey>).GetMethod("ReadCommonMember", new[] { typeof(int), typeof(TKey) });
+        public static MethodInfo ReadForeignKeyMember  { get; } = typeof(FileReader<TKey>).GetMethod("ReadForeignKeyMember", new[] { typeof(int), typeof(TKey) });
 
-        public static MethodInfo ResetBitReader { get; } = typeof(FileReader).GetMethod("ResetBitReader", Type.EmptyTypes);
+        public static MethodInfo ResetBitReader { get; } = typeof(FileReader<TKey>).GetMethod("ResetBitReader", Type.EmptyTypes);
     }
 
     /// <summary>
     /// The basic class in charge of processing <code>.dbc</code> and <code>.db2</code> files.
     /// </summary>
-    internal abstract class FileReader : BinaryReader
+    internal abstract class FileReader<U> : BinaryReader
     {
         private int _bitIndex;
 
@@ -42,10 +42,10 @@ namespace DBClientFiles.NET.IO
         {
         }
 
-        public abstract T ReadPalletMember<T>(int memberIndex);
-        public abstract T ReadCommonMember<T>(int memberIndex);
-        public abstract T ReadForeignKeyMember<T>(int memberIndex);
-        public abstract T[] ReadPalletArrayMember<T>(int memberIndex);
+        public abstract T ReadPalletMember<T>(int memberIndex, U key);
+        public abstract T ReadCommonMember<T>(int memberIndex, U key);
+        public abstract T ReadForeignKeyMember<T>(int memberIndex, U key);
+        public abstract T[] ReadPalletArrayMember<T>(int memberIndex, U key);
 
         public override byte[] ReadBytes(int byteCount)
         {
