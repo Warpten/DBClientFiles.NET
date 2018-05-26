@@ -1,7 +1,6 @@
 ﻿using DBClientFiles.NET.Exceptions;
 using DBClientFiles.NET.Internals;
 using DBClientFiles.NET.Internals.Versions;
-using DBClientFiles.NET.IO;
 using System.IO;
 
 namespace DBClientFiles.NET.Collections.Generic

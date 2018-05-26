@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.InteropServices;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
