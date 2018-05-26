@@ -1,4 +1,6 @@
 ﻿using DBClientFiles.NET.Internals.Segments;
+using DBClientFiles.NET.Internals.Segments.Readers;
+using DBClientFiles.NET.Internals.Serializers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,14 +11,35 @@ namespace DBClientFiles.NET.Internals.Versions
         where TValue : class, new()
         where TKey : struct
     {
-        protected WDC1(Stream strm, bool keepOpen) : base(strm, keepOpen)
+        private Segment<TValue, RawDataSegmentReader<TValue>> _palletTable;
+        private Segment<TValue, IndexTableReader<TKey, TValue>> _indexTable;
+        private Segment<TValue, CopyTableReader<TKey, TValue>> _copyTable;
+        public override Segment<TValue> IndexTable => _indexTable;
+
+        public override Segment<TValue> Records { get; }
+        public override Segment<TValue, StringTableReader<TValue>> StringTable { get; }
+        public override Segment<TValue, OffsetMapReader<TValue>> OffsetMap { get; }
+        public override Segment<TValue> CopyTable => _copyTable;
+        public override Segment<TValue> CommonTable { get; }
+        private Segment<TValue> RelationshipData { get; set; }
+        private Segment<TValue> Pallet => _palletTable;
+
+        public WDC1(Stream strm) : base(strm, true)
         {
-            Pallet = new Segment<TValue>(this);
+
+            _indexTable = new Segment<TValue, IndexTableReader<TKey, TValue>>(this);
+            _palletTable = new Segment<TValue, RawDataSegmentReader<TValue>>(this);
+            _copyTable = new Segment<TValue, CopyTableReader<TKey, TValue>>(this);
+
+            Records = new Segment<TValue>();
+            StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
+            OffsetMap = new Segment<TValue, OffsetMapReader<TValue>>(this);
+            CommonTable = new Segment<TValue>();
             RelationshipData = new Segment<TValue>(this);
         }
 
-        private Segment<TValue> RelationshipData { get; set; }
-        private Segment<TValue> Pallet { get; set; }
+
+        private CodeGenerator<TValue, TKey> _codeGenerator;
 
         public override bool ReadHeader()
         {
@@ -45,18 +68,20 @@ namespace DBClientFiles.NET.Internals.Versions
             var palletDataSize       = ReadInt32();
             var relationshipDataSize = ReadInt32();
 
-            if (ValueMembers.Length != totalFieldCount)
-                throw new InvalidOperationException($"Missing column(s) in definition: found {ValueMembers.Length}, expected {totalFieldCount}");
+            // if (ValueMembers.Length != totalFieldCount)
+            //     throw new InvalidOperationException($"Missing column(s) in definition: found {ValueMembers.Length}, expected {totalFieldCount}");
 
             var previousPosition = 0;
             for (var i = 0; i < totalFieldCount; ++i)
             {
+                var columnOffset = (IndexTable.Exists && i >= indexColumn) ? (i + 1) : i;
+
                 var bitSize = ReadInt16();
                 var recordPosition = ReadInt16();
-
-                ValueMembers[i].BitSize = 4 - bitSize / 8;
-                if (i > 0)
-                    ValueMembers[i - 1].Cardinality = (recordPosition - previousPosition) / ValueMembers[i - 1].BitSize;
+                
+                ValueMembers[columnOffset].BitSize = 32 - bitSize;
+                if (columnOffset > 0 && ValueMembers[columnOffset - 1].BitSize != 0)
+                    ValueMembers[columnOffset - 1].Cardinality = (recordPosition - previousPosition) / ValueMembers[columnOffset - 1].BitSize;
 
                 previousPosition = recordPosition;
             }
@@ -88,32 +113,38 @@ namespace DBClientFiles.NET.Internals.Versions
             CopyTable.StartOffset = IndexTable.EndOffset;
             CopyTable.Length = copyTableSize;
 
+            BaseStream.Position = CopyTable.EndOffset;
+
             for (var i = 0; i < (fieldStorageInfoSize / (2 + 2 + 4 + 4 + 3 * 4)); ++i)
             {
+                var columnOffset = (IndexTable.Exists && i >= indexColumn) ? (i + 1) : i;
+
                 var fieldOffsetBits = ReadInt16();
                 var fieldSizeBits = ReadInt16(); // size is the sum of all array pieces in bits - for example, uint32[3] will appear here as '96'
+                if (ValueMembers[columnOffset].BitSize == 0)
+                    ValueMembers[columnOffset].BitSize = fieldSizeBits;
 
                 var additionalDataSize = ReadInt32();
-                var compressionType = (MemberCompressionType)ReadInt32();
-                switch (compressionType)
+                ValueMembers[columnOffset].CompressionType = (MemberCompressionType)ReadInt32();
+                switch (ValueMembers[columnOffset].CompressionType)
                 {
                     case MemberCompressionType.Bitpacked:
                         {
                             BaseStream.Seek(4 + 4, SeekOrigin.Current);
                             var memberFlags = ReadInt32();
-                            ValueMembers[i].IsSigned = (memberFlags & 0x01) != 0;
+                            ValueMembers[columnOffset].IsSigned = (memberFlags & 0x01) != 0;
                             break;
                         }
                     case MemberCompressionType.CommonData:
-                        ValueMembers[i].DefaultValue = ReadBytes(4);
+                        ValueMembers[columnOffset].DefaultValue = ReadBytes(4);
                         BaseStream.Seek(4 + 4, SeekOrigin.Current);
                         break;
                     case MemberCompressionType.BitpackedPalletData:
                     case MemberCompressionType.BitpackedPalletArrayData:
                         {
                             BaseStream.Seek(4 + 4, SeekOrigin.Current);
-                            if (compressionType == MemberCompressionType.BitpackedPalletArrayData)
-                                ValueMembers[i].Cardinality = ReadInt32();
+                            if (ValueMembers[columnOffset].CompressionType == MemberCompressionType.BitpackedPalletArrayData)
+                                ValueMembers[columnOffset].Cardinality = ReadInt32();
                             else
                                 BaseStream.Seek(4, SeekOrigin.Current);
                             break;
@@ -122,7 +153,9 @@ namespace DBClientFiles.NET.Internals.Versions
                         BaseStream.Seek(4 + 4 + 4, SeekOrigin.Current);
                         break;
                 }
-                ValueMembers[i].Cardinality = fieldSizeBits / ValueMembers[i].BitSize;
+
+                if (ValueMembers[columnOffset].BitSize != 0)
+                    ValueMembers[columnOffset].Cardinality = fieldSizeBits / ValueMembers[columnOffset].BitSize;
             }
 
             Pallet.StartOffset = BaseStream.Position;
@@ -133,7 +166,10 @@ namespace DBClientFiles.NET.Internals.Versions
 
             RelationshipData.StartOffset = CommonTable.EndOffset;
             RelationshipData.Length = relationshipDataSize;
-
+            
+            _codeGenerator = new CodeGenerator<TValue, TKey>(ValueMembers);
+            _codeGenerator.IndexColumn = indexColumn;
+            _codeGenerator.IsIndexStreamed = false;
             return true;
         }
 
@@ -141,32 +177,45 @@ namespace DBClientFiles.NET.Internals.Versions
         {
             base.ReadSegments();
 
-            // read pallet, common, and relationship
+            _palletTable.Reader.Read();
+            _indexTable.Reader.Read();
+
+            // common, relationship...
         }
 
-        public override T ReadCommonMember<T>(int memberIndex)
+        public override T ReadCommonMember<T>(int memberIndex, TValue value)
         {
             throw new NotImplementedException();
         }
 
-        public override T ReadForeignKeyMember<T>(int memberIndex)
+        public override T ReadForeignKeyMember<T>(int memberIndex, TValue value)
         {
             throw new NotImplementedException();
         }
 
-        public override T[] ReadPalletArrayMember<T>(int memberIndex)
+        public override T[] ReadPalletArrayMember<T>(int memberIndex, TValue value)
         {
-            throw new NotImplementedException();
+            var palletOffset = ReadBits(ValueMembers[memberIndex].BitSize);
+            return _palletTable.Reader.ReadArray<T>(palletOffset, ValueMembers[memberIndex].Cardinality);
         }
 
-        public override T ReadPalletMember<T>(int memberIndex)
+        public override T ReadPalletMember<T>(int memberIndex, TValue value)
         {
-            throw new NotImplementedException();
+            var palletOffset = ReadBits(ValueMembers[memberIndex].BitSize);
+            return _palletTable.Reader.Read<T>(palletOffset);
         }
 
         public override IEnumerable<TValue> ReadRecords()
         {
-            throw new NotImplementedException();
+            BaseStream.Seek(Records.StartOffset, SeekOrigin.Begin);
+            var itemIndex = 0;
+            while (BaseStream.Position < Records.EndOffset)
+            {
+                if (IndexTable.Exists)
+                    yield return _codeGenerator.Deserialize(this, _indexTable.Reader[itemIndex++]);
+                else
+                    yield return _codeGenerator.Deserialize(this);
+            }
         }
     }
 }

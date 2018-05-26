@@ -1,4 +1,5 @@
-﻿using DBClientFiles.NET.Internals.Segments;
+﻿using DBClientFiles.NET.Exceptions;
+using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.Internals.Segments.Readers;
 using DBClientFiles.NET.Internals.Serializers;
 using System;
@@ -12,11 +13,24 @@ namespace DBClientFiles.NET.Internals.Versions
         where TValue : class, new()
     {
         private Segment<TValue, CopyTableReader<TKey, TValue>> _copyTable;
+        private Segment<TValue, IndexTableReader<TKey, TValue>> _indexTable;
+
+        public override Segment<TValue> Records { get; }
+        public override Segment<TValue, StringTableReader<TValue>> StringTable { get; }
+        public override Segment<TValue> IndexTable => _indexTable;
         public override Segment<TValue> CopyTable => _copyTable;
+
+        protected CodeGenerator<TValue, TKey> _serializer;
 
         public WDB5(Stream strm) : base(strm, true)
         {
             _copyTable = new Segment<TValue, CopyTableReader<TKey, TValue>>(this);
+            _indexTable = new Segment<TValue, IndexTableReader<TKey, TValue>>(this);
+
+            Records = new Segment<TValue>();
+            StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
+
+            _serializer = new CodeGenerator<TValue, TKey>(ValueMembers);
         }
 
         public override bool ReadHeader()
@@ -25,83 +39,99 @@ namespace DBClientFiles.NET.Internals.Versions
             if (recordCount == 0)
                 return false;
 
-            FieldCount = ReadInt32();
-            var recordSize = ReadInt32();
-            StringTable.Length = ReadInt32();
+            var fieldCount       = ReadInt32();
+            var recordSize       = ReadInt32();
+            var stringTableSize  = ReadInt32();
+            var tableHash        = ReadInt32();
+            var layoutHash       = ReadInt32();
+            var minIndex         = ReadInt32();
+            var maxIndex         = ReadInt32();
+            var locale           = ReadInt32();
+            var copyTableSize    = ReadInt32();
+            var flags            = ReadInt16();
+            var indexColumn      = ReadInt16();
 
-            // Table hash; Layout hash
-            BaseStream.Position += 4 + 4;
+            _serializer.IndexColumn = indexColumn;
+            _serializer.IsIndexStreamed = (flags & 0x04) == 0;
 
-            var minIndex = ReadInt32();
-            var maxIndex = ReadInt32();
+            var previousPosition = 0;
+            for (var i = 0; i < fieldCount; ++i)
+            {
+                var bitSize = 32 - ReadInt16();
+                var position = ReadInt16();
 
-            BaseStream.Position += 4; // Locale
+                ValueMembers[i].BitSize = bitSize;
+                if (i > 0)
+                    ValueMembers[i - 1].Cardinality = (position - previousPosition) / ValueMembers[i - 1].BitSize;
 
-            var copyTableSize = ReadInt32();
-            var flags = ReadInt16();
-            var indexColumn = ReadInt16();
+                previousPosition = position;
+            }
+
+            Records.StartOffset = BaseStream.Position;
+            Records.Length = recordSize * recordCount;
 
             StringTable.Exists = (flags & 0x01) == 0;
+            StringTable.StartOffset = Records.EndOffset;
+            StringTable.Length = stringTableSize;
+            
             OffsetMap.Exists = (flags & 0x01) != 0;
+            OffsetMap.StartOffset = stringTableSize;
             OffsetMap.Length = (maxIndex - minIndex + 1) * (4 + 2);
-            if (OffsetMap.Exists)
-                OffsetMap.StartOffset = StringTable.Length;
-
+            
             IndexTable.Exists = (flags & 0x04) != 0;
             IndexTable.StartOffset = OffsetMap.EndOffset;
             IndexTable.Length = recordCount * 4;
 
-            CopyTable.Length = copyTableSize;
             CopyTable.StartOffset = IndexTable.EndOffset;
+            CopyTable.Length = copyTableSize;
 
-            // TODO: Check that the mapped index column corresponds to metadata
-
+            FieldCount = fieldCount;
             return true;
         }
 
         public override IEnumerable<TValue> ReadRecords()
         {
-            var serializer = new CodeGenerator<TValue, TKey>(ValueMembers);
-
             var i = 0;
             BaseStream.Position = Records.StartOffset;
             while (BaseStream.Position < Records.EndOffset)
             {
-                var oldStructure = serializer.Deserialize(this);
+                var oldStructure = IndexTable.Exists ? _serializer.Deserialize(this, _indexTable.Reader[i]) : _serializer.Deserialize(this);
 
-                BaseStream.Position = OffsetMap.Reader[i++];
-                var currentKey = serializer.ExtractKey(oldStructure);
+                BaseStream.Position = OffsetMap.Reader[i];
+                var currentKey = _serializer.ExtractKey(oldStructure);
 
                 foreach (var copyEntry in _copyTable.Reader[currentKey])
                 {
-                    var clone = serializer.Clone(oldStructure);
-                    serializer.InsertKey(clone, copyEntry);
+                    var clone = _serializer.Clone(oldStructure);
+                    _serializer.InsertKey(clone, copyEntry);
 
                     yield return clone;
                 }
 
                 yield return oldStructure;
+
+                ++i;
             }
         }
 
-        public override T ReadPalletMember<T>(int memberIndex)
+        public override T ReadPalletMember<T>(int memberIndex, TValue value)
         {
-            throw new InvalidOperationException();
+            throw new UnreachableCodeException("WDB5 does not need to implement ReadPalletMember.");
         }
 
-        public override T ReadCommonMember<T>(int memberIndex)
+        public override T ReadCommonMember<T>(int memberIndex, TValue value)
         {
-            throw new InvalidOperationException();
+            throw new UnreachableCodeException("WDB5 does not need to implement ReadPalletMember.");
         }
 
-        public override T ReadForeignKeyMember<T>(int memberIndex)
+        public override T ReadForeignKeyMember<T>(int memberIndex, TValue value)
         {
-            throw new InvalidOperationException();
+            throw new UnreachableCodeException("WDB5 does not need to implement ReadForeignKeyMember.");
         }
 
-        public override T[] ReadPalletArrayMember<T>(int memberIndex)
+        public override T[] ReadPalletArrayMember<T>(int memberIndex, TValue value)
         {
-            throw new InvalidOperationException();
+            throw new UnreachableCodeException("WDB5 does not need to implement ReadPalletArrayMember.");
         }
     }
 }

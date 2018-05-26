@@ -22,7 +22,7 @@ namespace DBClientFiles.NET.Utils
         /// <typeparam name="T"></typeparam>
         /// <param name="br"></param>
         /// <returns></returns>
-        public static T ReadStruct<T>(this FileReader br)
+        public static T ReadStruct<T>(this BinaryReader br)
         {
             if (SizeCache<T>.TypeRequiresMarshal)
             {
@@ -49,7 +49,7 @@ namespace DBClientFiles.NET.Utils
         /// <typeparam name="T"></typeparam>
         /// <param name="br"></param>
         /// <returns></returns>
-        public static T ReadUsingRefType<T>(this FileReader br) where T : struct
+        public static T ReadUsingRefType<T>(this BinaryReader br) where T : struct
         {
             T result = default(T);
             TypedReference refResult = __makeref(result);
@@ -60,7 +60,7 @@ namespace DBClientFiles.NET.Utils
             }
         }
 
-        public static T[] ReadStructs<T>(this FileReader br, int count)
+        public static T[] ReadStructs<T>(this BinaryReader br, int count)
         {
             if (SizeCache<T>.TypeRequiresMarshal)
             {

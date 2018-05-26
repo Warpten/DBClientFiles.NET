@@ -1,14 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using DBClientFiles.NET.Exceptions;
+using DBClientFiles.NET.Internals.Segments;
+using DBClientFiles.NET.Internals.Segments.Readers;
 using DBClientFiles.NET.Internals.Serializers;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
     internal class WDB2<TValue> : BaseFileReader<TValue> where TValue : class, new()
     {
+        public override Segment<TValue, StringTableReader<TValue>> StringTable { get; }
+        public override Segment<TValue> Records { get; }
+
         public WDB2(Stream fileStream) : base(fileStream, true)
         {
+            StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
+            Records = new Segment<TValue>();
         }
 
         public override bool ReadHeader()
@@ -17,17 +25,20 @@ namespace DBClientFiles.NET.Internals.Versions
             if (recordCount == 0)
                 return false;
 
-            FieldCount = ReadInt32();
+            var fieldCount = ReadInt32();
             var recordSize = ReadInt32();
             var stringBlockSize = ReadInt32();
-            BaseStream.Seek(4 + 4 + 4, SeekOrigin.Begin); // TableHash, Build, TimeStamp (last written, unused)
-            var minId = ReadInt32();
-            var maxId = ReadInt32();
-            BaseStream.Seek(4 + 4, SeekOrigin.Current); // Locale, CopyTable.Length
+            var tableHash = ReadInt32();
+            var buildHash = ReadInt32();
+            var timeStampLastWritten = ReadInt32();
+            var minIndex = ReadInt32();
+            var maxIndex = ReadInt32();
+            var locale = ReadInt32();
+            var copyTableSize = ReadInt32(); // Unused
 
             // Skip string length information (unused by nearly everyone)
-            if (maxId != 0)
-                BaseStream.Position += (maxId - minId + 1) * (4 + 2);
+            if (maxIndex != 0)
+                BaseStream.Position += (maxIndex - minIndex + 1) * (4 + 2);
 
             // Set up segments
             Records.StartOffset = BaseStream.Position;
@@ -35,6 +46,8 @@ namespace DBClientFiles.NET.Internals.Versions
 
             StringTable.StartOffset = Records.EndOffset;
             StringTable.Length = stringBlockSize;
+
+            FieldCount = fieldCount;
 
             return true;
         }
@@ -46,30 +59,26 @@ namespace DBClientFiles.NET.Internals.Versions
             BaseStream.Position = Records.StartOffset;
             while (BaseStream.Position < Records.EndOffset)
                 yield return serializer.Deserialize(this);
-
-//#if PERFORMANCE
-//            DeserializeGeneration = _serializer.DeserializerGeneration;
-//#endif
         }
 
-        public override T ReadPalletMember<T>(int memberIndex)
+        public override T ReadPalletMember<T>(int memberIndex, TValue value)
         {
-            throw new InvalidOperationException();
+            throw new UnreachableCodeException("WDB2 does not need to implement ReadPalletMember.");
         }
 
-        public override T ReadCommonMember<T>(int memberIndex)
+        public override T ReadCommonMember<T>(int memberIndex, TValue value)
         {
-            throw new InvalidOperationException();
+            throw new UnreachableCodeException("WDB2 does not need to implement ReadPalletMember.");
         }
 
-        public override T ReadForeignKeyMember<T>(int memberIndex)
+        public override T ReadForeignKeyMember<T>(int memberIndex, TValue value)
         {
-            throw new InvalidOperationException();
+            throw new UnreachableCodeException("WDB2 does not need to implement ReadForeignKeyMember.");
         }
 
-        public override T[] ReadPalletArrayMember<T>(int memberIndex)
+        public override T[] ReadPalletArrayMember<T>(int memberIndex, TValue value)
         {
-            throw new InvalidOperationException();
+            throw new UnreachableCodeException("WDB2 does not need to implement ReadPalletArrayMember.");
         }
     }
 }

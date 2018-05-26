@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DBClientFiles.NET.Internals.Versions;
+using System;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -23,11 +24,6 @@ namespace DBClientFiles.NET.IO
 
         public static MethodInfo ReadBits   { get; } = typeof(FileReader).GetMethod("ReadBits", new[] { typeof(int) });
 
-        public static MethodInfo ReadPalletMember      { get; } = typeof(FileReader).GetMethod("ReadPalletMember", new[] { typeof(int) });
-        public static MethodInfo ReadPalletArrayMember { get; } = typeof(FileReader).GetMethod("ReadPalletArrayMember", new[] { typeof(int) });
-        public static MethodInfo ReadCommonMember      { get; } = typeof(FileReader).GetMethod("ReadCommonMember", new[] { typeof(int) });
-        public static MethodInfo ReadForeignKeyMember  { get; } = typeof(FileReader).GetMethod("ReadForeignKeyMember", new[] { typeof(int) });
-
         public static MethodInfo ResetBitReader { get; } = typeof(FileReader).GetMethod("ResetBitReader", Type.EmptyTypes);
     }
 
@@ -41,11 +37,6 @@ namespace DBClientFiles.NET.IO
         public FileReader(Stream strm, bool keepOpen = false) : base(strm, Encoding.UTF8, keepOpen)
         {
         }
-
-        public abstract T ReadPalletMember<T>(int memberIndex);
-        public abstract T ReadCommonMember<T>(int memberIndex);
-        public abstract T ReadForeignKeyMember<T>(int memberIndex);
-        public abstract T[] ReadPalletArrayMember<T>(int memberIndex);
 
         public override byte[] ReadBytes(int byteCount)
         {

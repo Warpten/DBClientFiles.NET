@@ -65,6 +65,14 @@ namespace DBClientFiles.NET.Internals.Segments
             _existsOverride = false;
         }
 
+        internal Segment()
+        {
+            StartOffset = 0;
+            Length = 0;
+
+            _existsOverride = false;
+        }
+
 
         #region IDisposable Support
         private bool _disposedValue = false; // To detect redundant calls

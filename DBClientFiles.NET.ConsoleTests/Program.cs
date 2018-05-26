@@ -14,6 +14,8 @@ namespace DBClientFiles.NET.ConsoleTests
     {
         static void Main(string[] args)
         {
+            BenchmarkStructure<Data.WDC1.ItemSearchNameEntry>(@"D:\Repositories\DBFilesClient.NET\Tests\WDC1\Files\ItemSearchName.db2");
+
             TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC");
             TestStructuresInNamespace("DBClientFiles.NET.Data.WDB2");
 

@@ -66,7 +66,9 @@
     <Compile Include="Collections\Generic\StorageDictionary.cs" />
     <Compile Include="Collections\Generic\StorageList.cs" />
     <Compile Include="Collections\StorageOptions.cs" />
+    <Compile Include="Exceptions\UnreachableCodeException.cs" />
     <Compile Include="IFileHeader.cs" />
+    <Compile Include="Internals\Segments\Readers\RawDataSegmentReader.cs" />
     <Compile Include="Utils\ExpressionStringBuilder.cs" />
     <Compile Include="Internals\IHeader.cs" />
     <Compile Include="Internals\IReader.cs" />
@@ -97,6 +99,7 @@
     <Compile Include="Utils\ExtendedMemberExpression.cs" />
     <Compile Include="Utils\ExtendedMemberInfo.cs" />
     <Compile Include="Utils\SizeCache.cs" />
+    <Compile Include="Utils\TypeExtensions.cs" />
     <Compile Include="Utils\TypeUtils.cs" />
   </ItemGroup>
   <ItemGroup>

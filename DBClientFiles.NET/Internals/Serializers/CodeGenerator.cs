@@ -1,14 +1,17 @@
 ﻿using DBClientFiles.NET.Attributes;
+using DBClientFiles.NET.Internals.Versions;
 using DBClientFiles.NET.IO;
 using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace DBClientFiles.NET.Internals.Serializers
 {
     internal class CodeGenerator<T, TKey> : CodeGenerator<T>
+        where T : class, new()
     {
         private Func<T, TKey> _keyGetter;
         private Action<T, TKey> _keySetter;
@@ -55,7 +58,7 @@ namespace DBClientFiles.NET.Internals.Serializers
         /// </summary>
         /// <param name="memberInfo"></param>
         /// <returns></returns>
-        public virtual bool IsMemberKey(ExtendedMemberInfo memberInfo) => memberInfo.IsDefined(typeof(IndexAttribute), false);
+        public virtual bool IsMemberKey(ExtendedMemberInfo memberInfo) => memberInfo.IsDefined(typeof(IndexAttribute), false) || (memberInfo.MemberIndex == IndexColumn);
 
         /// <summary>
         /// Generates a key extractor method.
@@ -67,10 +70,6 @@ namespace DBClientFiles.NET.Internals.Serializers
 
             foreach (var memberInfo in Members)
             {
-                // Get the first member available as a fallback for some implementations
-                if (keyMemberInfo == null)
-                    keyMemberInfo = memberInfo;
-
                 if (IsMemberKey(memberInfo))
                 {
                     keyMemberInfo = memberInfo;
@@ -87,16 +86,23 @@ namespace DBClientFiles.NET.Internals.Serializers
             return _keyGetter;
         }
 
+        public T Deserialize(BaseFileReader<T> reader, TKey valueOfKey)
+        {
+            if (_keySetter == null)
+                _keySetter = GenerateKeySetter();
+
+            var instance = CreateInstance();
+            _keySetter(instance, valueOfKey);
+            Deserialize(reader);
+            return instance;
+        }
+
         public Action<T, TKey> GenerateKeySetter()
         {
             ExtendedMemberInfo keyMemberInfo = null;
 
             foreach (var memberInfo in Members)
             {
-                // Get the first member available as a fallback for some implementations
-                if (keyMemberInfo == null)
-                    keyMemberInfo = memberInfo;
-
                 if (IsMemberKey(memberInfo))
                 {
                     keyMemberInfo = memberInfo;
@@ -117,13 +123,17 @@ namespace DBClientFiles.NET.Internals.Serializers
     }
 
     internal class CodeGenerator<T>
+        where T : class, new()
     {
         private ParameterExpression _instance;
 
         public ExtendedMemberInfo[] Members { get; }
 
-        private Func<FileReader, T> _deserializationMethod;
+        private Action<BaseFileReader<T>, T> _deserializationMethod;
         private Func<T, T> _memberwiseClone;
+
+        public bool IsIndexStreamed { get; set; }
+        public int IndexColumn { get; set; }
 
         public CodeGenerator(ExtendedMemberInfo[] memberInfos)
         {
@@ -145,17 +155,43 @@ namespace DBClientFiles.NET.Internals.Serializers
                 throw new InvalidOperationException("Type mismatch");
         }
 
+        public virtual T CreateInstance()
+        {
+            return (T) typeof(T).CreateInstance();
+        }
+
+        public virtual T CreateInstance<TArg>(TArg arg1)
+        {
+            return (T) typeof(T).CreateInstance(arg1);
+        }
+
+        public virtual T CreateInstance<T1, T2>(T1 arg1, T2 arg2)
+        {
+            return (T) typeof(T).CreateInstance(arg1, arg2);
+        }
+
         /// <summary>
         /// Given the provided <see cref="FileReader"/>, deserializes the record into a structure.
         /// </summary>
         /// <param name="fileReader"></param>
         /// <returns></returns>
-        public T Deserialize(FileReader fileReader)
+        public virtual T Deserialize(BaseFileReader<T> fileReader)
         {
             if (_deserializationMethod == null)
                 _deserializationMethod = GenerateDeserializationMethod();
 
-            return _deserializationMethod(fileReader);
+            var instanceOfT = Activator.CreateInstance<T>();
+            _deserializationMethod(fileReader, instanceOfT);
+            return instanceOfT;
+        }
+
+        protected T Deserialize(BaseFileReader<T> fileReader, T instance)
+        {
+            if (_deserializationMethod == null)
+                _deserializationMethod = GenerateDeserializationMethod();
+
+            _deserializationMethod(fileReader, instance);
+            return instance;
         }
 
         /// <summary>
@@ -204,27 +240,31 @@ namespace DBClientFiles.NET.Internals.Serializers
         /// Generates the deserialization method.
         /// </summary>
         /// <returns></returns>
-        public Func<FileReader, T> GenerateDeserializationMethod()
+        public Action<BaseFileReader<T>, T> GenerateDeserializationMethod()
         {
             if (Members == null)
                 throw new InvalidOperationException("Missing member informations in CodeGenerator<T>");
 
-            var binaryReader = Expression.Parameter(typeof(FileReader));
+            var binaryReader = Expression.Parameter(typeof(BaseFileReader<T>));
 
             var bodyBlock = new List<Expression>() {
-                Expression.Assign(_instance, CreateTypeInitializer())
+                // Expression.Assign(_instance, CreateTypeInitializer())
             };
 
             foreach (var memberInfo in Members)
             {
+                if (memberInfo.MemberIndex == IndexColumn)
+                    if (!IsIndexStreamed)
+                        continue;
+
                 var memberAccess = memberInfo.MakeMemberAccess(_instance);
                 InsertMemberAssignment(bodyBlock, binaryReader, memberAccess);
             }
 
-            bodyBlock.Add(_instance);
+            // bodyBlock.Add(_instance);
 
-            var expressionBody = Expression.Block(new[] { _instance }, bodyBlock);
-            var expressionLambda = Expression.Lambda<Func<FileReader, T>>(expressionBody, binaryReader);
+            var expressionBody = Expression.Block(/* new[] { _instance }, */bodyBlock);
+            var expressionLambda = Expression.Lambda<Action<BaseFileReader<T>, T>>(expressionBody, binaryReader, _instance);
 
             var stringView = new ExpressionStringBuilder();
             stringView.Visit(expressionLambda);
@@ -314,20 +354,28 @@ namespace DBClientFiles.NET.Internals.Serializers
 
         protected virtual Expression GenerateForeignKeyReader(Expression binaryReaderInstance, ExtendedMemberInfo memberInfo)
         {
-            return Expression.Call(binaryReaderInstance, _FileReader.ReadForeignKeyMember, Expression.Constant(memberInfo.MemberIndex));
+            // TODO Fix this
+            var methodInfo = binaryReaderInstance.Type.GetMethod("ReadForeignKeyMember").MakeGenericMethod(memberInfo.Type);
+            return Expression.Call(binaryReaderInstance, methodInfo, Expression.Constant(memberInfo.MemberIndex), _instance);
         }
 
         protected virtual Expression GenerateCommonReader(Expression binaryReaderInstance, ExtendedMemberInfo memberInfo)
         {
-            return Expression.Call(binaryReaderInstance, _FileReader.ReadCommonMember, Expression.Constant(memberInfo.MemberIndex));
+            // TODO Fix this
+            var methodInfo = binaryReaderInstance.Type.GetMethod("ReadCommonMember").MakeGenericMethod(memberInfo.Type);
+            return Expression.Call(binaryReaderInstance, methodInfo, Expression.Constant(memberInfo.MemberIndex), _instance);
         }
 
         protected virtual Expression GeneratePalletReader(Expression binaryReaderInstance, ExtendedMemberInfo memberInfo)
         {
+            // TODO Fix this
+            MethodInfo methodInfo;
             if (memberInfo.Type.IsArray)
-                return Expression.Call(binaryReaderInstance, _FileReader.ReadPalletArrayMember, Expression.Constant(memberInfo.MemberIndex));
+                methodInfo = binaryReaderInstance.Type.GetMethod("ReadPalletArrayMember").MakeGenericMethod(memberInfo.Type);
+            else
+                methodInfo = binaryReaderInstance.Type.GetMethod("ReadPalletMember").MakeGenericMethod(memberInfo.Type);
 
-            return Expression.Call(binaryReaderInstance, _FileReader.ReadPalletMember, Expression.Constant(memberInfo.MemberIndex));
+            return Expression.Call(binaryReaderInstance, methodInfo, Expression.Constant(memberInfo.MemberIndex), _instance);
         }
 
         protected virtual Expression GenerateBinaryReader(Expression binaryReaderInstance, ExtendedMemberInfo memberInfo)
@@ -336,7 +384,7 @@ namespace DBClientFiles.NET.Internals.Serializers
             if (memberType.IsArray)
                 memberType = memberType.GetElementType();
 
-            if (memberInfo.BitSize != 0)
+            if ((memberInfo.BitSize & 7) != 0) // Same as (x % 8) != 0
             {
                 var methodCall = Expression.Call(binaryReaderInstance, _FileReader.ReadBits, Expression.Constant(memberInfo.BitSize));
                 return Expression.Convert(methodCall, memberType);

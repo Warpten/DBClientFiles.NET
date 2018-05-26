@@ -76,7 +76,7 @@ namespace DBClientFiles.NET.Test
             }
         }
 
-        public TimeSpan AccumulateList(Stream dataStream, StorageOptions options) => Accumulate<StorageList<TValue>>(dataStream, options, out var _);
+        public TimeSpan AccumulateList(Stream dataStream, StorageOptions options) => Accumulate<StorageList<TValue>>(dataStream, options);
         public TimeSpan AccumulateList(Stream dataStream) => AccumulateList(dataStream, StorageOptions.Default);
 
         public TimeSpan AccumulateDictionary<TKey>(Stream dataStream, StorageOptions options) where TKey : struct
@@ -85,18 +85,12 @@ namespace DBClientFiles.NET.Test
             => AccumulateDictionary<TKey>(dataStream, StorageOptions.Default);
 
         public TimeSpan Accumulate<TStorage>(Stream dataStream) where TStorage : StorageBase<TValue>
-            => Accumulate<TStorage>(dataStream, out var _);
-    
+            => Accumulate<TStorage>(dataStream);
+
         public TimeSpan Accumulate<TStorage>(Stream dataStream, StorageOptions options) where TStorage : StorageBase<TValue>
-            => Accumulate<TStorage>(out var instance, dataStream, options, out var _);
+            => Accumulate<TStorage>(out var instance, dataStream, options);
 
-        public TimeSpan Accumulate<TStorage>(Stream dataStream, out TimeSpan deserializerGenerationTime) where TStorage : StorageBase<TValue>
-            => Accumulate<TStorage>(dataStream, out deserializerGenerationTime);
-
-        public TimeSpan Accumulate<TStorage>(Stream dataStream, StorageOptions options, out TimeSpan deserializerGenerationTime) where TStorage : StorageBase<TValue>
-            => Accumulate<TStorage>(out var instance, dataStream, options, out deserializerGenerationTime);
-
-        public TimeSpan Accumulate<TStorage>(out TStorage instance, Stream dataStream, StorageOptions options, out TimeSpan deserializerGenerationTime)
+        public TimeSpan Accumulate<TStorage>(out TStorage instance, Stream dataStream, StorageOptions options)
             where TStorage : StorageBase<TValue>
         {
             dataStream.Position = 0;
@@ -107,12 +101,6 @@ namespace DBClientFiles.NET.Test
                 instance = (TStorage)typeof(TStorage).CreateInstance(dataStream, options);
                 timer.Stop();
             }
-
-#if PERFORMANCE
-            deserializerGenerationTime = instance.LambdaGeneration;
-#else
-            deserializerGenerationTime = TimeSpan.Zero;
-#endif
 
             return timer.Elapsed - TypeExtensions.LambdaGenerationTime;
         }
@@ -129,13 +117,11 @@ namespace DBClientFiles.NET.Test
             benchmarkResult.RecordType = typeof(TValue);
 
             // Stupid workaround for the compiler not picking up assignment of instance in the loop
-            benchmarkResult.TotalTimes.Add(Accumulate(out instance, dataStream, options, out var lambdaTime));
-            benchmarkResult.LambdaGenerationTimes.Add(lambdaTime);
+            benchmarkResult.TotalTimes.Add(Accumulate(out instance, dataStream, options));
 
             for (var i = 1; i < iterationCount; ++i)
             {
-                benchmarkResult.TotalTimes.Add(Accumulate<TStorage>(dataStream, options, out lambdaTime));
-                benchmarkResult.LambdaGenerationTimes.Add(lambdaTime);
+                benchmarkResult.TotalTimes.Add(Accumulate<TStorage>(dataStream, options));
 
                 GC.Collect();
             }
@@ -157,7 +143,6 @@ namespace DBClientFiles.NET.Test
         public BenchmarkResult()
         {
             TotalTimes = new List<TimeSpan>();
-            LambdaGenerationTimes = new List<TimeSpan>();
 
             RecordType = typeof(object);
             Signature = Signatures.WDBC;
@@ -188,11 +173,6 @@ namespace DBClientFiles.NET.Test
 
         }
 
-        public List<TimeSpan> LambdaGenerationTimes { get; }
-        public TimeSpan BestLambdaGenerationTime => LambdaGenerationTimes.Min();
-        public TimeSpan WorstLambdaGenerationTime => LambdaGenerationTimes.Max();
-        public TimeSpan AverageLambdaGenerationTime => new TimeSpan(Convert.ToInt64(LambdaGenerationTimes.Average(t => t.Ticks)));
-
         public override string ToString()
         {
             var stringBuilder = new StringBuilder();
@@ -201,22 +181,16 @@ namespace DBClientFiles.NET.Test
             stringBuilder.Append(AverageTime.ToString(@"ss\.ffffff").PadRight(15) + "|");
             stringBuilder.Append(BestTime.ToString(@"ss\.ffffff").PadRight(15) + "|");
             stringBuilder.Append(WorstTime.ToString(@"ss\.ffffff").PadRight(20) + "|");
-#if PERFORMANCE
-            stringBuilder.Append(AverageLambdaGenerationTime.ToString(@"ss\.ffffff").PadRight(15) + "|");
-            stringBuilder.Append(BestLambdaGenerationTime.ToString(@"ss\.ffffff").PadRight(15) + "|");
-            stringBuilder.Append(WorstLambdaGenerationTime.ToString(@"ss\.ffffff") + "|");
-#endif
             return stringBuilder.ToString();
         }
 
         public void WriteCSV(StreamWriter writer)
         {
-            // writer.WriteLine("\""+RecordType.Name.ToString().Replace("Entry", "") + "\"," + Signature.ToString() + "," + Container.Count);
             for (var i = 0; i < TotalTimes.Count; ++i)
-                writer.WriteLine("{0},{1},{2},,{3},{4}",
+                writer.WriteLine("{0},{1},{2}",
                     i,
-                    TotalTimes[i].TotalMilliseconds, LambdaGenerationTimes[i].TotalMilliseconds,
-                    TotalTimes[i].TotalMilliseconds / Container.Count, LambdaGenerationTimes[i].TotalMilliseconds / Container.Count);
+                    TotalTimes[i].TotalMilliseconds,
+                    TotalTimes[i].TotalMilliseconds / Container.Count);
             writer.WriteLine();
         }
 
@@ -230,20 +204,9 @@ namespace DBClientFiles.NET.Test
                 stringBuilder.Append("Avg".PadRight(15) + "|");
                 stringBuilder.Append("Best".PadRight(15) + "|");
                 stringBuilder.Append("Worst".PadRight(20) + "|");
-
-#if PERFORMANCE
-                stringBuilder.Append("Avg Lambda".PadRight(15) + "|");
-                stringBuilder.Append("Best Lambda ".PadRight(15) + "|");
-                stringBuilder.Append("Worst Lambda".PadRight(20) + "|");
-#endif
                 return stringBuilder.ToString();
             }
         }
-
-#if PERFORMANCE
-        public static string HeaderSep => new string('=', 45 + (15 + 15 + 20) + (15 + 15 + 20) + 7);
-#else
         public static string HeaderSep => new string('=', 45 + (15 + 15 + 20) + 4);
-#endif
     }
 }

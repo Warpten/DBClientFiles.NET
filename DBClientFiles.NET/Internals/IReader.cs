@@ -18,10 +18,5 @@ namespace DBClientFiles.NET.Internals
         StorageOptions Options { get; set; }
 
         ExtendedMemberInfo[] ValueMembers { get; }
-
-
-#if PERFORMANCE
-        TimeSpan DeserializeGeneration { get; }
-#endif
     }
 }

@@ -11,7 +11,7 @@ namespace DBClientFiles.NET.Utils
     internal sealed class ExtendedMemberInfo
     {
         public MemberInfo MemberInfo { get; }
-        public MemberCompressionType CompressionType { get; private set; } = MemberCompressionType.None;
+        public MemberCompressionType CompressionType { get; set; } = MemberCompressionType.None;
 
         // TODO: Figure out a better name for this member.
         public Type Type { get; }

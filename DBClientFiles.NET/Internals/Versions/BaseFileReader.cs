@@ -21,12 +21,6 @@ namespace DBClientFiles.NET.Internals.Versions
     {
         protected BaseFileReader(Stream strm, bool keepOpen) : base(strm, keepOpen)
         {
-            StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
-            OffsetMap = new Segment<TValue, OffsetMapReader<TValue>>(this);
-            Records = new Segment<TValue>(this);
-            CommonTable = new Segment<TValue>(this);
-            CopyTable = new Segment<TValue>(this);
-            IndexTable = new Segment<TValue, IndexTableReader<TValue>>(this);
         }
 
         public int FieldCount { get; protected set; }
@@ -34,16 +28,10 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public Type ValueType { get; } = typeof(TValue);
 
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-            StringTable.Dispose();
-            OffsetMap.Dispose();
-            Records.Dispose();
-            CopyTable.Dispose();
-            IndexTable.Dispose();
-            CommonTable.Dispose();
-        }
+        public abstract T ReadPalletMember<T>(int memberIndex, TValue value);
+        public abstract T ReadCommonMember<T>(int memberIndex, TValue value);
+        public abstract T ReadForeignKeyMember<T>(int memberIndex, TValue value);
+        public abstract T[] ReadPalletArrayMember<T>(int memberIndex, TValue value);
 
         private StorageOptions _options;
         public StorageOptions Options
@@ -59,27 +47,18 @@ namespace DBClientFiles.NET.Internals.Versions
             }
         }
 
-        public virtual Segment<TValue, StringTableReader<TValue>> StringTable { get; }
-        public virtual Segment<TValue, OffsetMapReader<TValue>> OffsetMap { get; }
-
-        public virtual Segment<TValue> Records { get; }
-
-        public virtual Segment<TValue> CopyTable { get; }
-
-        public virtual Segment<TValue> CommonTable { get; }
-        public virtual Segment<TValue, IndexTableReader<TValue>> IndexTable { get; }
+        public virtual Segment<TValue, StringTableReader<TValue>> StringTable { get { throw new NotImplementedException(); } }
+        public virtual Segment<TValue, OffsetMapReader<TValue>> OffsetMap { get { throw new NotImplementedException(); } }
+        public virtual Segment<TValue> Records { get { throw new NotImplementedException(); } }
+        public virtual Segment<TValue> CopyTable { get { throw new NotImplementedException(); } }
+        public virtual Segment<TValue> CommonTable { get { throw new NotImplementedException(); } }
+        public virtual Segment<TValue> IndexTable { get { throw new NotImplementedException(); } }
 
         public event Action<long, string> OnStringTableEntry;
 
         public abstract bool ReadHeader();
 
         public abstract IEnumerable<TValue> ReadRecords();
-
-#if PERFORMANCE
-        public TimeSpan CloneGeneration { get; protected set; }
-        public TimeSpan DeserializeGeneration { get; protected set; }
-#endif
-
 
         public virtual void ReadSegments()
         {
@@ -97,9 +76,6 @@ namespace DBClientFiles.NET.Internals.Versions
             // This is shoddy design (It relies on execution flow when calling base method in children) but meh. Let's keep it for safety purposes.
             if (OffsetMap.Exists && !OffsetMap.Deserialized)
                 throw new InvalidOperationException("Offset map needs to be deserialized in children classes!");
-
-            if (IndexTable.Exists && !IndexTable.Deserialized)
-                IndexTable.Reader.Read();
         }
 
         public override string ReadString()

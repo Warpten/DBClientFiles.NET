@@ -354,7 +354,6 @@ namespace DBClientFiles.NET.Utils
                     case ExpressionType.Power: op = "^"; break;
                     case ExpressionType.PowerAssign: op = "**="; break;
                     case ExpressionType.Coalesce: op = "??"; break;
-
                     default:
                         throw new InvalidOperationException();
                 }
