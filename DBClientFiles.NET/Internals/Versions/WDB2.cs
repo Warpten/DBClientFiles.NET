@@ -60,6 +60,8 @@ namespace DBClientFiles.NET.Internals.Versions
         public override IEnumerable<TValue> ReadRecords()
         {
             var serializer = new CodeGenerator<TValue>(ValueMembers);
+            serializer.IndexColumn = 0;
+            serializer.IsIndexStreamed = true;
 
             BaseStream.Position = Records.StartOffset;
             while (BaseStream.Position < Records.EndOffset)

@@ -90,6 +90,8 @@ namespace DBClientFiles.NET.Internals.Versions
             FieldCount = fieldCount;
 
             _recordSize = recordSize;
+            _serializer.IsIndexStreamed = IndexTable.Exists;
+            _serializer.IndexColumn = indexColumn;
             return true;
         }
 
