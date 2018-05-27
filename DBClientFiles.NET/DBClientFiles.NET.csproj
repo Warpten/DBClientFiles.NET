@@ -70,6 +70,7 @@
     <Compile Include="Exceptions\UnreachableCodeException.cs" />
     <Compile Include="IFileHeader.cs" />
     <Compile Include="Internals\Segments\Readers\RawDataSegmentReader.cs" />
+    <Compile Include="Internals\Segments\Readers\RelationShipSegmentReader.cs" />
     <Compile Include="IO\RecordReader.cs" />
     <Compile Include="Utils\ExpressionStringBuilder.cs" />
     <Compile Include="Internals\IHeader.cs" />

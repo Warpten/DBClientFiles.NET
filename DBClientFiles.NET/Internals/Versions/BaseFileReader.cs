@@ -31,7 +31,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public abstract T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value);
         public abstract T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value);
-        public abstract T ReadForeignKeyMember<T>(int memberIndex, RecordReader recordReader, TValue value);
+        public abstract T ReadForeignKeyMember<T>() where T : unmanaged;
         public abstract T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value);
 
         private StorageOptions _options;

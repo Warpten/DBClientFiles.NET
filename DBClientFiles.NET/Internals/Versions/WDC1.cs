@@ -15,6 +15,7 @@ namespace DBClientFiles.NET.Internals.Versions
         private Segment<TValue, RawDataSegmentReader<TValue>> _palletTable;
         private Segment<TValue, IndexTableReader<TKey, TValue>> _indexTable;
         private Segment<TValue, CopyTableReader<TKey, TValue>> _copyTable;
+        private Segment<TValue, RelationShipSegmentReader<TKey, TValue>> _relationshipData;
         public override Segment<TValue> IndexTable => _indexTable;
 
         public override Segment<TValue> Records { get; }
@@ -22,26 +23,25 @@ namespace DBClientFiles.NET.Internals.Versions
         public override Segment<TValue, OffsetMapReader<TValue>> OffsetMap { get; }
         public override Segment<TValue> CopyTable => _copyTable;
         public override Segment<TValue> CommonTable { get; }
-        private Segment<TValue> RelationshipData { get; set; }
+        private Segment<TValue> RelationshipData => _relationshipData;
         private Segment<TValue> Pallet => _palletTable;
 
         private int _recordSize;
 
         public WDC1(Stream strm) : base(strm, true)
         {
-
             _indexTable = new Segment<TValue, IndexTableReader<TKey, TValue>>(this);
             _palletTable = new Segment<TValue, RawDataSegmentReader<TValue>>(this);
             _copyTable = new Segment<TValue, CopyTableReader<TKey, TValue>>(this);
+            _relationshipData = new Segment<TValue, RelationShipSegmentReader<TKey, TValue>>(this);
 
             Records = new Segment<TValue>();
             StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
             OffsetMap = new Segment<TValue, OffsetMapReader<TValue>>(this);
             CommonTable = new Segment<TValue>();
-            RelationshipData = new Segment<TValue>(this);
         }
 
-
+        private int _currentlyIteratedIndex = 0;
         private CodeGenerator<TValue, TKey> _codeGenerator;
 
         public override bool ReadHeader()
@@ -160,8 +160,6 @@ namespace DBClientFiles.NET.Internals.Versions
 
                 if (memberInfo.BitSize != 0)
                     memberInfo.Cardinality = fieldSizeBits / memberInfo.BitSize;
-
-                Console.WriteLine($"{memberInfo.MemberInfo.Name} is at bit {memberInfo.OffsetInRecord} and occupies {fieldSizeBits} bits");
             }
 
             Pallet.StartOffset = BaseStream.Position;
@@ -187,6 +185,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
             _palletTable.Reader.Read();
             _indexTable.Reader.Read();
+            _relationshipData.Reader.Read();
 
             // common, relationship...
         }
@@ -196,9 +195,9 @@ namespace DBClientFiles.NET.Internals.Versions
             throw new NotImplementedException();
         }
 
-        public override T ReadForeignKeyMember<T>(int memberIndex, RecordReader recordReader, TValue value)
+        public override T ReadForeignKeyMember<T>()
         {
-            throw new NotImplementedException();
+            return _relationshipData.Reader.GetForeignKey<T>(_currentlyIteratedIndex);
         }
 
         public override T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value)
@@ -220,18 +219,17 @@ namespace DBClientFiles.NET.Internals.Versions
         public override IEnumerable<TValue> ReadRecords()
         {
             BaseStream.Seek(Records.StartOffset, SeekOrigin.Begin);
-            var itemIndex = 0;
             while (BaseStream.Position < Records.EndOffset)
             {
                 if (OffsetMap.Exists)
-                    BaseStream.Seek(OffsetMap.Reader[itemIndex], SeekOrigin.Begin);
+                    BaseStream.Seek(OffsetMap.Reader[_currentlyIteratedIndex], SeekOrigin.Begin);
 
                 using (var recordReader = new RecordReader(this, StringTable.Exists, _recordSize))
                 {
                     TValue instance;
 
                     if (IndexTable.Exists)
-                        instance = _codeGenerator.Deserialize(this, recordReader, _indexTable.Reader[itemIndex++]);
+                        instance = _codeGenerator.Deserialize(this, recordReader, _indexTable.Reader[_currentlyIteratedIndex++]);
                     else
                         instance = _codeGenerator.Deserialize(this, recordReader);
 

@@ -45,7 +45,7 @@ namespace DBClientFiles.NET.Internals.Serializers
         /// <param name="key">The value to assign to the member representating a key.</param>
         public void InsertKey(T instance, TKey key)
         {
-            if (_keySetter != null)
+            if (_keySetter == null)
                 _keySetter = GenerateKeySetter();
 
             _keySetter(instance, key);
@@ -341,7 +341,7 @@ namespace DBClientFiles.NET.Internals.Serializers
         {
             // TODO Fix this
             var methodInfo = binaryReaderInstance.Type.GetMethod("ReadForeignKeyMember").MakeGenericMethod(memberInfo.Type);
-            return Expression.Call(binaryReaderInstance, methodInfo, Expression.Constant(memberInfo.MemberIndex), recordReaderInstance, _instance);
+            return Expression.Call(binaryReaderInstance, methodInfo); // , Expression.Constant(memberInfo.MemberIndex), recordReaderInstance, _instance);
         }
 
         protected virtual Expression GenerateCommonReader(Expression binaryReaderInstance, Expression recordReaderInstance, ExtendedMemberInfo memberInfo)
@@ -372,8 +372,12 @@ namespace DBClientFiles.NET.Internals.Serializers
             {
                 if (memberInfo.Type.IsArray)
                 {
-                    var methodInfo = elementCode == TypeCode.String ? _RecordReader.ReadPackedStrings : _RecordReader.ReadPackedArray;
+                    var methodInfo = elementCode == TypeCode.String ? _RecordReader.ReadPackedStrings : _RecordReader.ReadPackedArray.MakeGenericMethod(elementType);
                     return Expression.Call(recordReader, methodInfo, Expression.Constant(memberInfo.Cardinality), Expression.Constant(memberInfo.OffsetInRecord), Expression.Constant(memberInfo.BitSize));
+                }
+                else if (elementCode == TypeCode.Single) // This is an ugly hack because they are not yet dumb enough to pack floats. God bless.
+                {
+                    return Expression.Call(recordReader, _RecordReader.ReadSingle);
                 }
                 else
                 {
@@ -385,7 +389,7 @@ namespace DBClientFiles.NET.Internals.Serializers
             {
                 if (memberInfo.Type.IsArray)
                 {
-                    var methodInfo = elementCode == TypeCode.String ? _RecordReader.ReadStrings : _RecordReader.ReadArray;
+                    var methodInfo = elementCode == TypeCode.String ? _RecordReader.ReadStrings : _RecordReader.ReadArray.MakeGenericMethod(elementType);
                     return Expression.Call(recordReader, methodInfo, Expression.Constant(memberInfo.Cardinality));
                 }
                 else
