@@ -11,12 +11,12 @@ namespace DBClientFiles.NET.Internals.Versions
     internal class WDBC<TValue> : BaseFileReader<TValue> where TValue : class, new()
     {
         public override Segment<TValue, StringTableReader<TValue>> StringTable { get; }
-
-        private CodeGenerator<TValue> _deserializer;
+        public override Segment<TValue> Records { get; }
 
         public WDBC(Stream fileStream): base(fileStream, true)
         {
             StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
+            Records = new Segment<TValue>();
         }
 
         public override bool ReadHeader()
@@ -37,15 +37,16 @@ namespace DBClientFiles.NET.Internals.Versions
 
             FieldCount = fieldCount;
 
-            _deserializer = new CodeGenerator<TValue>(ValueMembers);
-
             return true;
         }
 
-        public override IEnumerable<TValue> HandleRecord(UnmanagedMemoryStream memoryStream)
+        public override IEnumerable<TValue> ReadRecords()
         {
-            using (var reader = new BitReader(memoryStream))
-                yield return _deserializer.Deserialize(reader);
+            var serializer = new CodeGenerator<TValue>(ValueMembers);
+
+            BaseStream.Position = Records.StartOffset;
+            while (BaseStream.Position < Records.EndOffset)
+                yield return serializer.Deserialize(this);
         }
 
         public override T ReadPalletMember<T>(int memberIndex, TValue value)

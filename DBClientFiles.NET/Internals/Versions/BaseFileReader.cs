@@ -49,7 +49,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public virtual Segment<TValue, StringTableReader<TValue>> StringTable { get { throw new NotImplementedException(); } }
         public virtual Segment<TValue, OffsetMapReader<TValue>> OffsetMap { get { throw new NotImplementedException(); } }
-        public Segment<TValue, RecordReader<TValue>> Records { get; }
+        public virtual Segment<TValue> Records { get { throw new NotImplementedException(); } }
         public virtual Segment<TValue> CopyTable { get { throw new NotImplementedException(); } }
         public virtual Segment<TValue> CommonTable { get { throw new NotImplementedException(); } }
         public virtual Segment<TValue> IndexTable { get { throw new NotImplementedException(); } }
@@ -58,18 +58,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public abstract bool ReadHeader();
 
-        public abstract IEnumerable<TValue> HandleRecord(UnmanagedMemoryStream memoryStream);
-
-        public IEnumerable<TValue> ReadRecords()
-        {
-            if (!Records.Exists)
-                throw new InvalidOperationException("No records in file");
-
-            for (var i = 0; i < Records.Reader.RecordCount; ++i)
-                using (var recordStream = Records.Reader.GetRecord(i))
-                    foreach (var record in HandleRecord(recordStream))
-                        yield return record;
-        }
+        public abstract IEnumerable<TValue> ReadRecords();
 
         public virtual void ReadSegments()
         {
@@ -105,16 +94,6 @@ namespace DBClientFiles.NET.Internals.Versions
                 byteList.Add(currChar);
 
             return Encoding.UTF8.GetString(byteList.ToArray());
-        }
-
-        public T ReadDirectMember<T>(int memberIndex)
-        {
-            var memberInfo = ValueMembers[memberIndex];
-            switch (memberInfo.CompressionType)
-            {
-                case MemberCompressionType.None:
-                    return this.ReadStruct<T>();
-            }
         }
     }
 }
