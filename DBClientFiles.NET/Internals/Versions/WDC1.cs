@@ -156,6 +156,8 @@ namespace DBClientFiles.NET.Internals.Versions
 
                 if (ValueMembers[columnOffset].BitSize != 0)
                     ValueMembers[columnOffset].Cardinality = fieldSizeBits / ValueMembers[columnOffset].BitSize;
+
+                Console.WriteLine($"{ValueMembers[columnOffset].MemberInfo.Name} is at bit {fieldOffsetBits} and occupies {fieldSizeBits} bits");
             }
 
             Pallet.StartOffset = BaseStream.Position;
@@ -195,8 +197,10 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override T[] ReadPalletArrayMember<T>(int memberIndex, TValue value)
         {
-            var palletOffset = ReadBits(ValueMembers[memberIndex].BitSize);
-            return _palletTable.Reader.ReadArray<T>(palletOffset, ValueMembers[memberIndex].Cardinality);
+            var memberInfo = ValueMembers[memberIndex];
+
+            var palletOffset = ReadBits(memberInfo.BitSize);
+            return _palletTable.Reader.ReadArray<T>(palletOffset, memberInfo.Cardinality);
         }
 
         public override T ReadPalletMember<T>(int memberIndex, TValue value)
@@ -211,10 +215,15 @@ namespace DBClientFiles.NET.Internals.Versions
             var itemIndex = 0;
             while (BaseStream.Position < Records.EndOffset)
             {
+                if (OffsetMap.Exists)
+                    BaseStream.Seek(OffsetMap.Reader[itemIndex], SeekOrigin.Begin);
+
                 if (IndexTable.Exists)
                     yield return _codeGenerator.Deserialize(this, _indexTable.Reader[itemIndex++]);
                 else
                     yield return _codeGenerator.Deserialize(this);
+
+                ResetBitReader();
             }
         }
     }

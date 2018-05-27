@@ -50,6 +50,11 @@ namespace DBClientFiles.NET.Utils
         /// The default value as specified in file metadata, if any. This could also be a float.
         /// </summary>
         public byte[] DefaultValue { get; set; }
+
+        /// <summary>
+        /// Offset, in bits, of this member in the record.
+        /// </summary>
+        public long OffsetInRecord { get; set; }
         
         /// <summary>
         /// The bit size of this field - this is used only if <see cref="CompressionType"/>
