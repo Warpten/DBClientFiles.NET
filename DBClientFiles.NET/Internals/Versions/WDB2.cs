@@ -5,6 +5,7 @@ using DBClientFiles.NET.Exceptions;
 using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.Internals.Segments.Readers;
 using DBClientFiles.NET.Internals.Serializers;
+using DBClientFiles.NET.IO;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
@@ -12,6 +13,8 @@ namespace DBClientFiles.NET.Internals.Versions
     {
         public override Segment<TValue, StringTableReader<TValue>> StringTable { get; }
         public override Segment<TValue> Records { get; }
+
+        private int _recordSize;
 
         public WDB2(Stream fileStream) : base(fileStream, true)
         {
@@ -49,6 +52,8 @@ namespace DBClientFiles.NET.Internals.Versions
 
             FieldCount = fieldCount;
 
+            _recordSize = recordSize;
+
             return true;
         }
 
@@ -58,25 +63,26 @@ namespace DBClientFiles.NET.Internals.Versions
 
             BaseStream.Position = Records.StartOffset;
             while (BaseStream.Position < Records.EndOffset)
-                yield return serializer.Deserialize(this);
+                using (var segmentReader = new RecordReader(BaseStream, _recordSize))
+                    yield return serializer.Deserialize(this, segmentReader);
         }
 
-        public override T ReadPalletMember<T>(int memberIndex, TValue value)
+        public override T ReadPalletMember<T>(int memberIndex, RecordReader segmentReader, TValue value)
         {
             throw new UnreachableCodeException("WDB2 does not need to implement ReadPalletMember.");
         }
 
-        public override T ReadCommonMember<T>(int memberIndex, TValue value)
+        public override T ReadCommonMember<T>(int memberIndex, RecordReader segmentReader, TValue value)
         {
             throw new UnreachableCodeException("WDB2 does not need to implement ReadPalletMember.");
         }
 
-        public override T ReadForeignKeyMember<T>(int memberIndex, TValue value)
+        public override T ReadForeignKeyMember<T>(int memberIndex, RecordReader segmentReader, TValue value)
         {
             throw new UnreachableCodeException("WDB2 does not need to implement ReadForeignKeyMember.");
         }
 
-        public override T[] ReadPalletArrayMember<T>(int memberIndex, TValue value)
+        public override T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader segmentReader, TValue value)
         {
             throw new UnreachableCodeException("WDB2 does not need to implement ReadPalletArrayMember.");
         }

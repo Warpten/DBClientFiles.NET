@@ -28,10 +28,10 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public Type ValueType { get; } = typeof(TValue);
 
-        public abstract T ReadPalletMember<T>(int memberIndex, TValue value);
-        public abstract T ReadCommonMember<T>(int memberIndex, TValue value);
-        public abstract T ReadForeignKeyMember<T>(int memberIndex, TValue value);
-        public abstract T[] ReadPalletArrayMember<T>(int memberIndex, TValue value);
+        public abstract T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value);
+        public abstract T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value);
+        public abstract T ReadForeignKeyMember<T>(int memberIndex, RecordReader recordReader, TValue value);
+        public abstract T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value);
 
         private StorageOptions _options;
         public StorageOptions Options
@@ -78,22 +78,9 @@ namespace DBClientFiles.NET.Internals.Versions
                 throw new InvalidOperationException("Offset map needs to be deserialized in children classes!");
         }
 
-        public override string ReadString()
+        public override string ReadString(int tableOffset)
         {
-            if (StringTable.Exists)
-                return StringTable.Reader[ReadInt32()];
-
-            return ReadStringDirect();
-        }
-
-        internal string ReadStringDirect()
-        {
-            var byteList = new List<byte>();
-            byte currChar;
-            while ((currChar = ReadByte()) != '\0')
-                byteList.Add(currChar);
-
-            return Encoding.UTF8.GetString(byteList.ToArray());
+            return StringTable.Reader[tableOffset];
         }
     }
 }

@@ -14,7 +14,16 @@ namespace DBClientFiles.NET.ConsoleTests
     {
         static void Main(string[] args)
         {
-            BenchmarkStructure<Data.WDC1.ItemSearchNameEntry>(@"D:\Repositories\DBFilesClient.NET\Tests\WDC1\Files\ItemSearchName.db2");
+            using (var fs = File.OpenRead(@"D:\Repositories\DBFilesClient.NET\Tests\WDC1\Files\ItemSearchName.db2"))
+            {
+                var tester = new StructureTester<Data.WDC1.ItemSearchNameEntry>();
+
+                var itemSearchName = new StorageList<Data.WDC1.ItemSearchNameEntry>(fs);
+                for (var i = 0; i < itemSearchName.Count; ++i)
+                    tester.InspectInstance(itemSearchName[i]);
+            }
+
+            Console.ReadKey();
 
             TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC");
             TestStructuresInNamespace("DBClientFiles.NET.Data.WDB2");

@@ -1,7 +1,11 @@
-﻿namespace DBClientFiles.NET.Data
+﻿using System.Reflection;
+
+namespace DBClientFiles.NET.Data
 {
-    public interface ISimpleMember
+    public static class _ISimpleMember<T>
+        where T : struct
     {
+        public static PropertyInfo Value { get; } = typeof(ISimpleMember<T>).GetProperty("Value");
     }
 
     /// <summary>
@@ -13,12 +17,10 @@
     /// This interface alleviates the need to declare that constructor by enforcing the presence of an underlying
     /// value type that contains the masked value. As such, you can forget about declaring a constructor.
     /// </summary>
-    /// <typeparam name="T">The POD type to use. To keep it fast, avoid marshalling.</typeparam>
-    public interface ISimpleMember<T> : ISimpleMember
+    /// <typeparam name="T">The POD type to use. To keep it fast, avoid marshalling whenever possible.</typeparam>
+    public interface ISimpleMember<T>
         where T : struct
     {
         T Value { get; set; }
-
-        T2 GetValue<T2>();
     }
 }

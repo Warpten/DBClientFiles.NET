@@ -22,7 +22,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <LangVersion>7.2</LangVersion>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -32,7 +32,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <LangVersion>7.2</LangVersion>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'RelWithPerformance|AnyCPU'">
     <OutputPath>bin\RelWithPerformance\</OutputPath>
@@ -43,7 +43,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <LangVersion>7.2</LangVersion>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -69,6 +69,7 @@
     <Compile Include="Exceptions\UnreachableCodeException.cs" />
     <Compile Include="IFileHeader.cs" />
     <Compile Include="Internals\Segments\Readers\RawDataSegmentReader.cs" />
+    <Compile Include="IO\RecordReader.cs" />
     <Compile Include="Utils\ExpressionStringBuilder.cs" />
     <Compile Include="Internals\IHeader.cs" />
     <Compile Include="Internals\IReader.cs" />
@@ -82,7 +83,6 @@
     <Compile Include="Internals\Segments\Segment.cs" />
     <Compile Include="Internals\Serializers\CodeGenerator.cs" />
     <Compile Include="Internals\Serializers\SerializationUtils.cs" />
-    <Compile Include="Internals\Serializers\Serializer.cs" />
     <Compile Include="Internals\Serializers\StorageSerializer.cs" />
     <Compile Include="Internals\StringMarshaller.cs" />
     <Compile Include="Internals\Versions\BaseFileReader.cs" />

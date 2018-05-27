@@ -1,5 +1,6 @@
 ﻿using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.Internals.Segments.Readers;
+using DBClientFiles.NET.IO;
 using DBClientFiles.NET.Utils;
 using System.IO;
 
@@ -97,7 +98,7 @@ namespace DBClientFiles.NET.Internals.Versions
             return true;
         }
 
-        public override T ReadCommonMember<T>(int memberIndex, TValue value)
+        public override T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
             return _commonTable.Reader.ReadStructValue<T>(memberIndex /* adjust to base-0 for the first column in common */, default /* fixme */);
         }

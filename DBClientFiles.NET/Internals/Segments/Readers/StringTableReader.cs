@@ -22,7 +22,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             while (Storage.BaseStream.Position < Segment.EndOffset)
             {
                 var stringPosition = Storage.BaseStream.Position - Segment.StartOffset;
-                var @string = Storage.ReadStringDirect();
+                var @string = Storage.ReadString();
 
                 OnStringRead?.Invoke(stringPosition, @string);
 

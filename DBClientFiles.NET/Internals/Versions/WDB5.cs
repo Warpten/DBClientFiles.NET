@@ -2,6 +2,7 @@
 using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.Internals.Segments.Readers;
 using DBClientFiles.NET.Internals.Serializers;
+using DBClientFiles.NET.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -21,6 +22,7 @@ namespace DBClientFiles.NET.Internals.Versions
         public override Segment<TValue> CopyTable => _copyTable;
 
         protected CodeGenerator<TValue, TKey> _serializer;
+        private int _recordSize;
 
         public WDB5(Stream strm) : base(strm, true)
         {
@@ -86,6 +88,8 @@ namespace DBClientFiles.NET.Internals.Versions
             CopyTable.Length = copyTableSize;
 
             FieldCount = fieldCount;
+
+            _recordSize = recordSize;
             return true;
         }
 
@@ -95,7 +99,9 @@ namespace DBClientFiles.NET.Internals.Versions
             BaseStream.Position = Records.StartOffset;
             while (BaseStream.Position < Records.EndOffset)
             {
-                var oldStructure = IndexTable.Exists ? _serializer.Deserialize(this, _indexTable.Reader[i]) : _serializer.Deserialize(this);
+                TValue oldStructure;
+                using (var recordReader = new RecordReader(BaseStream, _recordSize))
+                    oldStructure = IndexTable.Exists ? _serializer.Deserialize(this, recordReader, _indexTable.Reader[i]) : _serializer.Deserialize(this, recordReader);
 
                 BaseStream.Position = OffsetMap.Reader[i];
                 var currentKey = _serializer.ExtractKey(oldStructure);
@@ -114,22 +120,22 @@ namespace DBClientFiles.NET.Internals.Versions
             }
         }
 
-        public override T ReadPalletMember<T>(int memberIndex, TValue value)
+        public override T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
             throw new UnreachableCodeException("WDB5 does not need to implement ReadPalletMember.");
         }
 
-        public override T ReadCommonMember<T>(int memberIndex, TValue value)
+        public override T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
             throw new UnreachableCodeException("WDB5 does not need to implement ReadPalletMember.");
         }
 
-        public override T ReadForeignKeyMember<T>(int memberIndex, TValue value)
+        public override T ReadForeignKeyMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
             throw new UnreachableCodeException("WDB5 does not need to implement ReadForeignKeyMember.");
         }
 
-        public override T[] ReadPalletArrayMember<T>(int memberIndex, TValue value)
+        public override T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
             throw new UnreachableCodeException("WDB5 does not need to implement ReadPalletArrayMember.");
         }

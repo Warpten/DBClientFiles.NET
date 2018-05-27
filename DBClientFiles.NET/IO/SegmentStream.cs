@@ -6,17 +6,16 @@ namespace DBClientFiles.NET.IO
     internal class SegmentStream : Stream
     {
         private Stream _underlyingStream;
-
-        private long _offset;
         private long _length;
 
-        private long StartOffset => _offset;
-        private long EndOffset => _offset + _length;
+        private long StartOffset { get; }
+
+        private long EndOffset => StartOffset + _length;
 
         public SegmentStream(Stream underlyingStream, long offset, long length)
         {
             _underlyingStream = underlyingStream;
-            _offset = offset;
+            StartOffset = offset;
             _length = length;
         }
 
@@ -37,6 +36,8 @@ namespace DBClientFiles.NET.IO
 
         public override int Read(byte[] buffer, int offset, int count)
         {
+            _underlyingStream.Seek(StartOffset, SeekOrigin.Begin);
+
             count = (int)Math.Min(Length - Position, count);
             return _underlyingStream.Read(buffer, offset, count);
         }

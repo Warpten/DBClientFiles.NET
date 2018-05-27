@@ -54,7 +54,7 @@ namespace DBClientFiles.NET.Utils
         /// <summary>
         /// Offset, in bits, of this member in the record.
         /// </summary>
-        public long OffsetInRecord { get; set; }
+        public int OffsetInRecord { get; set; }
         
         /// <summary>
         /// The bit size of this field - this is used only if <see cref="CompressionType"/>
@@ -62,7 +62,7 @@ namespace DBClientFiles.NET.Utils
         /// or <see cref="MemberCompressionType.BitpackedPalletArrayData"/>.
         /// </summary>
         public int BitSize { get; set; }
-
+        
         public ExtendedMemberInfo(PropertyInfo member, int memberIndex)
         {
             MemberInfo = member;
