@@ -228,10 +228,21 @@ namespace DBClientFiles.NET.Internals.Versions
 
                 using (var recordReader = new RecordReader(this, StringTable.Exists, _recordSize))
                 {
+                    TValue instance;
+
                     if (IndexTable.Exists)
-                        yield return _codeGenerator.Deserialize(this, recordReader, _indexTable.Reader[itemIndex++]);
+                        instance = _codeGenerator.Deserialize(this, recordReader, _indexTable.Reader[itemIndex++]);
                     else
-                        yield return _codeGenerator.Deserialize(this, recordReader);
+                        instance =  _codeGenerator.Deserialize(this, recordReader);
+
+                    yield return instance;
+
+                    foreach (var copyInstanceIDs in _copyTable.Reader[_codeGenerator.ExtractKey(instance)])
+                    {
+                        var cloneInstance = _codeGenerator.Clone(instance);
+                        _codeGenerator.InsertKey(cloneInstance, copyInstanceIDs);
+                        yield return cloneInstance;
+                    }
                 }
             }
         }
