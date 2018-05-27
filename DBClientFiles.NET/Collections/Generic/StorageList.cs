@@ -36,6 +36,7 @@ namespace DBClientFiles.NET.Collections.Generic
         public StorageList(Stream fileStream, StorageOptions options)
         {
             FromStream(fileStream, options);
+            LoadRecords();
         }
 
         internal override void LoadRecords(IReader<T> reader)

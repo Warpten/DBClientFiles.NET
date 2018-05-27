@@ -233,7 +233,7 @@ namespace DBClientFiles.NET.Internals.Versions
                     if (IndexTable.Exists)
                         instance = _codeGenerator.Deserialize(this, recordReader, _indexTable.Reader[itemIndex++]);
                     else
-                        instance =  _codeGenerator.Deserialize(this, recordReader);
+                        instance = _codeGenerator.Deserialize(this, recordReader);
 
                     yield return instance;
 

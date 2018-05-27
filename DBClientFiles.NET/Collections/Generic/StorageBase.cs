@@ -14,44 +14,43 @@ namespace DBClientFiles.NET.Collections.Generic
         internal StorageOptions Options { get; set; }
 
         public Signatures Signature { get; private set; }
+        private IReader<TValue> _fileReader;
 
         protected virtual void FromStream<TKey>(Stream fileStream, StorageOptions options) where TKey : struct
         {
             Options = options;
 
-            IReader<TValue> fileReader = null;
             Signature = (Signatures)((fileStream.ReadByte()) | (fileStream.ReadByte() << 8) | (fileStream.ReadByte() << 16) | (fileStream.ReadByte() << 24));
 
             switch (Signature)
             {
                 case Signatures.WDBC:
-                    fileReader = new WDBC<TValue>(fileStream);
+                    _fileReader = new WDBC<TValue>(fileStream);
                     break;
                 case Signatures.WDB2:
-                    fileReader = new WDB2<TValue>(fileStream);
+                    _fileReader = new WDB2<TValue>(fileStream);
                     break;
                 case Signatures.WDB5:
-                    fileReader = new WDB5<TKey, TValue>(fileStream);
+                    _fileReader = new WDB5<TKey, TValue>(fileStream);
                     break;
                 case Signatures.WDB6:
-                    fileReader = new WDB6<TKey, TValue>(fileStream);
+                    _fileReader = new WDB6<TKey, TValue>(fileStream);
                     break;
                 case Signatures.WDB3:
                 case Signatures.WDB4:
                     throw new NotSupportedVersionException($"{Signature} files cannot be read without client metadata.");
                 case Signatures.WDC1:
-                    fileReader = new WDC1<TKey, TValue>(fileStream);
+                    _fileReader = new WDC1<TKey, TValue>(fileStream);
                     break;
                 default:
                     throw new NotSupportedVersionException($"Unknown signature 0x{(int)Signature:X8}!");
             }
 
-            fileReader.Options = options;
-            if (fileReader == null || !fileReader.ReadHeader())
+            _fileReader.Options = options;
+            if (!_fileReader.ReadHeader())
                 return;
 
-            fileReader.ReadSegments();
-            LoadRecords(fileReader);
+            _fileReader.ReadSegments();
         }
 
         protected virtual void FromStream(Stream fileStream, StorageOptions options)
@@ -60,5 +59,10 @@ namespace DBClientFiles.NET.Collections.Generic
         }
 
         internal abstract void LoadRecords(IReader<TValue> reader);
+
+        protected void LoadRecords()
+        {
+            LoadRecords(_fileReader);
+        }
     }
 }
