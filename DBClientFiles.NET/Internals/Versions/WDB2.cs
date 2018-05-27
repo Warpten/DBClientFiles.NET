@@ -63,7 +63,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
             BaseStream.Position = Records.StartOffset;
             while (BaseStream.Position < Records.EndOffset)
-                using (var segmentReader = new RecordReader(BaseStream, _recordSize))
+                using (var segmentReader = new RecordReader(this, StringTable.Exists, _recordSize))
                     yield return serializer.Deserialize(this, segmentReader);
         }
 

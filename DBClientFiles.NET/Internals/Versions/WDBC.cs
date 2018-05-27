@@ -48,11 +48,13 @@ namespace DBClientFiles.NET.Internals.Versions
         public override IEnumerable<TValue> ReadRecords()
         {
             var serializer = new CodeGenerator<TValue>(ValueMembers);
+            serializer.IndexColumn = 0;
+            serializer.IsIndexStreamed = true;
 
             BaseStream.Position = Records.StartOffset;
             while (BaseStream.Position < Records.EndOffset)
             {
-                using (var segmentStream = new RecordReader(BaseStream, _recordSize))
+                using (var segmentStream = new RecordReader(this, StringTable.Exists, _recordSize))
                     yield return serializer.Deserialize(this, segmentStream);
             }
         }

@@ -226,7 +226,7 @@ namespace DBClientFiles.NET.Internals.Versions
                 if (OffsetMap.Exists)
                     BaseStream.Seek(OffsetMap.Reader[itemIndex], SeekOrigin.Begin);
 
-                using (var recordReader = new RecordReader(BaseStream, _recordSize))
+                using (var recordReader = new RecordReader(this, StringTable.Exists, _recordSize))
                 {
                     if (IndexTable.Exists)
                         yield return _codeGenerator.Deserialize(this, recordReader, _indexTable.Reader[itemIndex++]);

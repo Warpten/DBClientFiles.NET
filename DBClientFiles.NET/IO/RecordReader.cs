@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DBClientFiles.NET.Utils;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,36 +13,100 @@ namespace DBClientFiles.NET.IO
     {
         private static Type[] argTypes { get; } = new[] { typeof(int), typeof(int) };
 
-        public static MethodInfo ReadUInt64 { get; } = typeof(RecordReader).GetMethod("ReadUInt64", argTypes);
-        public static MethodInfo ReadUInt32 { get; } = typeof(RecordReader).GetMethod("ReadUInt32", argTypes);
-        public static MethodInfo ReadUInt16 { get; } = typeof(RecordReader).GetMethod("ReadUInt16", argTypes);
-        public static MethodInfo ReadSByte  { get; } = typeof(RecordReader).GetMethod("ReadSByte",  argTypes);
+        public static MethodInfo ReadPackedUInt64  { get; } = typeof(RecordReader).GetMethod("ReadUInt64", argTypes);
+        public static MethodInfo ReadPackedUInt32  { get; } = typeof(RecordReader).GetMethod("ReadUInt32", argTypes);
+        public static MethodInfo ReadPackedUInt16  { get; } = typeof(RecordReader).GetMethod("ReadUInt16", argTypes);
+        public static MethodInfo ReadPackedSByte   { get; } = typeof(RecordReader).GetMethod("ReadSByte",  argTypes);
 
-        public static MethodInfo ReadInt64  { get; } = typeof(RecordReader).GetMethod("ReadInt64", argTypes);
-        public static MethodInfo ReadInt32  { get; } = typeof(RecordReader).GetMethod("ReadInt32", argTypes);
-        public static MethodInfo ReadInt16  { get; } = typeof(RecordReader).GetMethod("ReadInt16", argTypes);
-        public static MethodInfo ReadByte   { get; } = typeof(RecordReader).GetMethod("ReadByte",  argTypes);
-        
-        public static MethodInfo ReadSingle { get; } = typeof(RecordReader).GetMethod("ReadSingle", new[] { typeof(int) });
+        public static MethodInfo ReadPackedInt64   { get; } = typeof(RecordReader).GetMethod("ReadInt64", argTypes);
+        public static MethodInfo ReadPackedInt32   { get; } = typeof(RecordReader).GetMethod("ReadInt32", argTypes);
+        public static MethodInfo ReadPackedInt16   { get; } = typeof(RecordReader).GetMethod("ReadInt16", argTypes);
+        public static MethodInfo ReadPackedByte    { get; } = typeof(RecordReader).GetMethod("ReadByte",  argTypes);
 
-        public static MethodInfo ReadArray { get; } = typeof(RecordReader).GetMethod("ReadArray");
+        public static MethodInfo ReadPackedString  { get; } = typeof(RecordReader).GetMethod("ReadString", argTypes);
+        public static MethodInfo ReadPackedStrings { get; } = typeof(RecordReader).GetMethod("ReadStrings", new[] { typeof(int), typeof(int), typeof(int) });
+        public static MethodInfo ReadPackedArray   { get; } = typeof(RecordReader).GetMethod("ReadArray", new[] { typeof(int), typeof(int), typeof(int) });
+
+        public static MethodInfo ReadUInt64        { get; } = typeof(RecordReader).GetMethod("ReadUInt64", Type.EmptyTypes);
+        public static MethodInfo ReadUInt32        { get; } = typeof(RecordReader).GetMethod("ReadUInt32", Type.EmptyTypes);
+        public static MethodInfo ReadUInt16        { get; } = typeof(RecordReader).GetMethod("ReadUInt16", Type.EmptyTypes);
+        public static MethodInfo ReadSByte         { get; } = typeof(RecordReader).GetMethod("ReadSByte", Type.EmptyTypes);
+
+        public static MethodInfo ReadInt64         { get; } = typeof(RecordReader).GetMethod("ReadInt64", Type.EmptyTypes);
+        public static MethodInfo ReadInt32         { get; } = typeof(RecordReader).GetMethod("ReadInt32", Type.EmptyTypes);
+        public static MethodInfo ReadInt16         { get; } = typeof(RecordReader).GetMethod("ReadInt16", Type.EmptyTypes);
+        public static MethodInfo ReadByte          { get; } = typeof(RecordReader).GetMethod("ReadByte", Type.EmptyTypes);
+
+        public static MethodInfo ReadSingle        { get; } = typeof(RecordReader).GetMethod("ReadSingle", Type.EmptyTypes);
+        public static MethodInfo ReadString        { get; } = typeof(RecordReader).GetMethod("ReadString", Type.EmptyTypes);
+        public static MethodInfo ReadStrings       { get; } = typeof(RecordReader).GetMethod("ReadStrings", new[] { typeof(int) });
+        public static MethodInfo ReadArray         { get; } = typeof(RecordReader).GetMethod("ReadArray", new[] { typeof(int) });
+
+        public static Dictionary<TypeCode, MethodInfo> PackedReaders { get; } = new Dictionary<TypeCode, MethodInfo>()
+        {
+            { TypeCode.UInt64, ReadPackedUInt64 },
+            { TypeCode.UInt32, ReadPackedUInt32 },
+            { TypeCode.UInt16, ReadPackedUInt16 },
+            { TypeCode.SByte, ReadPackedSByte },
+
+            { TypeCode.Int64, ReadPackedInt64 },
+            { TypeCode.Int32, ReadPackedInt32 },
+            { TypeCode.Int16, ReadPackedInt16 },
+            { TypeCode.Byte, ReadPackedByte },
+
+            { TypeCode.String, ReadPackedString },
+        };
+
+        public static Dictionary<TypeCode, MethodInfo> Readers { get; } = new Dictionary<TypeCode, MethodInfo>()
+        {
+            { TypeCode.UInt64, ReadUInt64 },
+            { TypeCode.UInt32, ReadUInt32 },
+            { TypeCode.UInt16, ReadUInt16 },
+            { TypeCode.SByte, ReadSByte },
+
+            { TypeCode.Int64, ReadInt64 },
+            { TypeCode.Int32, ReadInt32 },
+            { TypeCode.Int16, ReadInt16 },
+            { TypeCode.Byte, ReadByte },
+
+            { TypeCode.String, ReadString },
+            { TypeCode.Single, ReadSingle },
+        };
     }
 
     internal sealed unsafe class RecordReader : IDisposable
     {
         private byte[] _recordData;
+
         private int _byteCursor = 0;
 
+        public long ReadInt64() => Read<long>(_byteCursor, true);
+        public int ReadInt32() => Read<int>(_byteCursor, true);
+        public short ReadInt16() => Read<short>(_byteCursor, true);
+        public byte ReadByte() => Read<byte>(_byteCursor, true);
+        
+        public ulong ReadUInt64() => Read<ulong>(_byteCursor, true);
+        public uint ReadUInt32() => Read<uint>(_byteCursor, true);
+        public ushort ReadUInt16() => Read<ushort>(_byteCursor, true);
+        public sbyte ReadSByte() => Read<sbyte>(_byteCursor, true);
 
-        public RecordReader(Stream input, int recordSize)
+        public float ReadSingle() => Read<float>(_byteCursor, true);
+
+        private FileReader _fileReader;
+        private bool _usesStringTable;
+
+        public RecordReader(FileReader fileReader, bool usesStringTable, int recordSize)
         {
-            using (var reader = new BinaryReader(input, Encoding.UTF8, true))
+            _usesStringTable = usesStringTable;
+            _fileReader = fileReader;
+            using (var reader = new BinaryReader(fileReader.BaseStream, Encoding.UTF8, true))
                 _recordData = reader.ReadBytes(recordSize);
         }
 
         public long ReadInt64(int bitOffset, int bitCount)
         {
             _byteCursor = bitOffset + bitCount;
+
             var longValue = Read<long>(bitOffset) >> (bitOffset & 7);
             if (bitCount != 64)
                 longValue &= (1L << bitCount) - 1;
@@ -52,6 +117,7 @@ namespace DBClientFiles.NET.IO
         public ulong ReadUInt64(int bitOffset, int bitCount)
         {
             _byteCursor = bitOffset + bitCount;
+
             var longValue = Read<ulong>(bitOffset) >> (bitOffset & 7);
             if (bitCount != 64)
                 longValue &= (1uL << bitCount) - 1;
@@ -62,6 +128,7 @@ namespace DBClientFiles.NET.IO
         public int ReadInt32(int bitOffset, int bitCount)
         {
             _byteCursor = bitOffset + bitCount;
+
             var intValue = Read<int>(bitOffset) >> (bitOffset & 7);
             if (bitCount != 32)
                 intValue &= (1 << bitCount) - 1;
@@ -72,6 +139,7 @@ namespace DBClientFiles.NET.IO
         public uint ReadUInt32(int bitOffset, int bitCount)
         {
             _byteCursor = bitOffset + bitCount;
+
             var intValue = Read<uint>(bitOffset) >> (bitOffset & 7);
             if (bitCount != 32)
                 intValue &= (1u << bitCount) - 1;
@@ -82,6 +150,7 @@ namespace DBClientFiles.NET.IO
         public short ReadInt16(int bitOffset, int bitCount)
         {
             _byteCursor = bitOffset + bitCount;
+
             var shortValue = Read<short>(bitOffset) >> (bitOffset & 7);
             if (bitCount != 16)
                 shortValue &= (1 << bitCount) - 1;
@@ -92,6 +161,7 @@ namespace DBClientFiles.NET.IO
         public ushort ReadUInt16(int bitOffset, int bitCount)
         {
             _byteCursor = bitOffset + bitCount;
+
             var shortValue = Read<short>(bitOffset) >> (bitOffset & 7);
             if (bitCount != 16)
                 shortValue &= (1 << bitCount) - 1;
@@ -102,6 +172,7 @@ namespace DBClientFiles.NET.IO
         public byte ReadByte(int bitOffset, int bitCount)
         {
             _byteCursor = bitOffset + bitCount;
+
             var byteValue = Read<byte>(bitOffset) >> (bitOffset & 7);
             if (bitCount != 8)
                 byteValue &= (1 << bitCount) - 1;
@@ -112,6 +183,7 @@ namespace DBClientFiles.NET.IO
         public sbyte ReadSByte(int bitOffset, int bitCount)
         {
             _byteCursor = bitOffset + bitCount;
+
             var byteValue = Read<sbyte>(bitOffset) >> (bitOffset & 7);
             if (bitCount != 8)
                 byteValue &= (1 << bitCount) - 1;
@@ -125,7 +197,17 @@ namespace DBClientFiles.NET.IO
             return Read<float>(bitOffset);
         }
 
-        private T Read<T>(int bitOffset) where T : unmanaged
+        /// <summary>
+        /// Returns an instance of the unmanaged type <see cref="{T}"/>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="bitOffset">The offset (in bits) at which the type to read is. If set to zero, <see cref="RecordReader"/> assumes to be sequentially reading from the previous call.</param>
+        /// <returns></returns>
+        /// <remarks>
+        /// While this may look fine, it will return a value that will be unaccurate unless properly shifted to the right by <code><paramref name="bitOffset"/> & 7</code>.
+        /// 
+        /// </remarks>
+        private T Read<T>(int bitOffset, bool advanceCursor = false) where T : unmanaged
         {
             T v;
             fixed (byte* b = _recordData)
@@ -133,11 +215,26 @@ namespace DBClientFiles.NET.IO
                 var data = b + bitOffset / 8;
                 v = *(T*)&data[0];
             }
+
+            if (advanceCursor)
+                _byteCursor += SizeCache<T>.Size * 8;
+
             return v;
+        }
+
+        public string ReadString()
+        {
+            if (_usesStringTable)
+                return _fileReader.FindStringByOffset(ReadInt32());
+
+            return _fileReader.ReadString();
         }
 
         public string ReadString(int bitOffset, int bitCount)
         {
+            if (_usesStringTable)
+                return _fileReader.FindStringByOffset(ReadInt32(bitOffset, bitCount));
+
             var byteList = new List<byte>();
             byte currChar;
             while ((currChar = ReadByte()) != '\0')
@@ -145,26 +242,9 @@ namespace DBClientFiles.NET.IO
 
             return Encoding.UTF8.GetString(byteList.ToArray());
         }
-
-        private byte ReadByte()
-        {
-            var currentNode = _recordData[_byteCursor / 8];
-            _byteCursor += 8;
-            return currentNode;
-        }
         
         public long ReadBits(int bitOffset, int bitCount)
         {
-            // This is how the client reads stuff
-            //    var value = 0b0110 1010 1111 0000;
-            // Given field_size_bits = 13
-            // and   field_offset_bits = 0
-            //    var x = (field_size_bits + (field_offset_bits & 7) + 7) / 8 = 2
-            // Bytes are read little-endian, meaning we get
-            //    var value = 0b1111 0000 0110 1010
-            // And then we shift and mask:
-            //    value = (value >> (field_offset_bits & 7)) & ((1ull << field_size_bits) - 1)) = 4202 = 0b1 0000 0110 1010
-            
             var byteOffset = bitOffset / 8;
             var byteCount = (bitCount + (bitOffset & 7) + 7) / 8;
                 
@@ -173,6 +253,8 @@ namespace DBClientFiles.NET.IO
                 value |= (long)(_recordData[i + byteOffset] << (8 * i));
 
             value = (value >> (bitOffset & 7));
+
+            // Prevent possible masking overflows from clamping the actual result.
             if (bitCount != 64)
                 value &= ((1L << bitCount) - 1);
 
@@ -190,8 +272,40 @@ namespace DBClientFiles.NET.IO
             return arr;
         }
 
+        public T[] ReadArray<T>(int arraySize) where T : unmanaged
+        {
+            var nodeSize = SizeCache<T>.Size;
+
+            var arr = new T[arraySize];
+            for (var i = 0; i < arraySize; ++i)
+            {
+                var itemBitOffset = _byteCursor + nodeSize * i;
+                arr[i] = Read<T>(itemBitOffset, false);
+            }
+
+            _byteCursor += nodeSize * arraySize;
+            return arr;
+        }
+
+        public string[] ReadStrings(int arraySize, int bitOffset, int bitCount)
+        {
+            var arr = new string[arraySize];
+            for (var i = 0; i < arraySize; ++i)
+                arr[i] = ReadString(bitOffset + i * 4, bitCount);
+            return arr;
+        }
+
+        public string[] ReadStrings(int arraySize)
+        {
+            var arr = new string[arraySize];
+            for (var i = 0; i < arraySize; ++i)
+                arr[i] = ReadString();
+            return arr;
+        }
+
         public void Dispose()
         {
+            _fileReader = null;
             _recordData = null;
         }
     }

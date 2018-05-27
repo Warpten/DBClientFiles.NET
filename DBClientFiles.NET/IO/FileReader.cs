@@ -10,6 +10,7 @@ namespace DBClientFiles.NET.IO
     internal static class _FileReader
     {
         public static MethodInfo ReadString { get; } = typeof(FileReader).GetMethod("ReadString", new[] { typeof(int) });
+        public static MethodInfo ReadStringArray { get; } = typeof(FileReader).GetMethod("ReadStringArray", new[] { typeof(int[]) });
     }
 
     /// <summary>
@@ -31,6 +32,8 @@ namespace DBClientFiles.NET.IO
             return Encoding.UTF8.GetString(byteList.ToArray());
         }
 
-        public abstract string ReadString(int tableOffset);
+        public abstract string FindStringByOffset(int tableOffset);
+
+        public abstract string[] ReadStringArray(int[] tableOffsets);
     }
 }

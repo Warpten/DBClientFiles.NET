@@ -6,6 +6,7 @@ using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace DBClientFiles.NET.Internals.Versions
@@ -72,15 +73,16 @@ namespace DBClientFiles.NET.Internals.Versions
                 if (Options.LoadMask.HasFlag(LoadMask.StringTable))
                     StringTable.Reader.OnStringRead -= OnStringTableEntry;
             }
-
-            // This is shoddy design (It relies on execution flow when calling base method in children) but meh. Let's keep it for safety purposes.
-            if (OffsetMap.Exists && !OffsetMap.Deserialized)
-                throw new InvalidOperationException("Offset map needs to be deserialized in children classes!");
         }
 
-        public override string ReadString(int tableOffset)
+        public override string FindStringByOffset(int tableOffset)
         {
             return StringTable.Reader[tableOffset];
+        }
+
+        public override string[] ReadStringArray(int[] tableOffsets)
+        {
+            return tableOffsets.Select(tableOffset => StringTable.Reader[tableOffset]).ToArray();
         }
     }
 }

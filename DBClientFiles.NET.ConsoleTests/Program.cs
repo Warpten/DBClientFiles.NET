@@ -14,16 +14,16 @@ namespace DBClientFiles.NET.ConsoleTests
     {
         static void Main(string[] args)
         {
-            using (var fs = File.OpenRead(@"D:\Repositories\DBFilesClient.NET\Tests\WDC1\Files\ItemSearchName.db2"))
-            {
-                var tester = new StructureTester<Data.WDC1.ItemSearchNameEntry>();
+            //using (var fs = File.OpenRead(@"D:\Repositories\DBFilesClient.NET\Tests\WDC1\Files\ItemSearchName.db2"))
+            //{
+            //    var tester = new StructureTester<Data.WDC1.ItemSearchNameEntry>();
 
-                var itemSearchName = new StorageList<Data.WDC1.ItemSearchNameEntry>(fs);
-                for (var i = 0; i < itemSearchName.Count; ++i)
-                    tester.InspectInstance(itemSearchName[i]);
-            }
+            //    var itemSearchName = new StorageList<Data.WDC1.ItemSearchNameEntry>(fs);
+            //    for (var i = 0; i < itemSearchName.Count; ++i)
+            //        tester.InspectInstance(itemSearchName[i]);
+            //}
 
-            Console.ReadKey();
+            // Console.ReadKey();
 
             TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC");
             TestStructuresInNamespace("DBClientFiles.NET.Data.WDB2");
@@ -91,7 +91,7 @@ namespace DBClientFiles.NET.ConsoleTests
                 ms.Position = 0;
 
                 var structureTester = new StructureTester<TValue>();
-                var benchmarkResult = structureTester.Benchmark<StorageList<TValue>>(out var dataStore, ms, 5000);
+                var benchmarkResult = structureTester.Benchmark<StorageList<TValue>>(out var dataStore, ms, 1);
                 _dataStores[typeof(TValue)] = benchmarkResult;
             }
         }

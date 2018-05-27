@@ -100,7 +100,7 @@ namespace DBClientFiles.NET.Internals.Versions
             while (BaseStream.Position < Records.EndOffset)
             {
                 TValue oldStructure;
-                using (var recordReader = new RecordReader(BaseStream, _recordSize))
+                using (var recordReader = new RecordReader(this, StringTable.Exists, _recordSize))
                     oldStructure = IndexTable.Exists ? _serializer.Deserialize(this, recordReader, _indexTable.Reader[i]) : _serializer.Deserialize(this, recordReader);
 
                 BaseStream.Position = OffsetMap.Reader[i];
