@@ -140,6 +140,7 @@ namespace DBClientFiles.NET.IO
                 if (ReadBit())
                     value |= 1L << i;
 
+            ResetBitReader();
             return value;
         }
     }

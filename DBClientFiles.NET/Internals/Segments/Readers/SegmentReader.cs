@@ -11,7 +11,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
         void Read();
     }
 
-    internal abstract class SegmentReader<T, TValue> : ISegmentReader<TValue> where TValue : class, new()
+    internal abstract class SegmentReader<TValue> : ISegmentReader<TValue> where TValue : class, new()
     {
         public Segment<TValue> Segment { get; set; }
 

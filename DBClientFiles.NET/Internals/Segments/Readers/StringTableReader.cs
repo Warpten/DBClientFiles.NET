@@ -4,7 +4,7 @@ using System.IO;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
-    internal sealed class StringTableReader<TValue> : SegmentReader<string, TValue>
+    internal sealed class StringTableReader<TValue> : SegmentReader<TValue>
         where TValue : class, new()
     {
         public StringTableReader() : base() { }
