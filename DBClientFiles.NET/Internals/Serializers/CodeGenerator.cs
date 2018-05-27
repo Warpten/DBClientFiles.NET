@@ -288,7 +288,8 @@ namespace DBClientFiles.NET.Internals.Serializers
                     InsertCommonMemberAssignment(bodyBlock, binaryReaderInstance, recordReaderInstance, memberAccess);
                     break;
                 case MemberCompressionType.RelationshipData:
-                    InsertRelationshipMemberAssignment(bodyBlock, binaryReaderInstance, recordReaderInstance, memberAccess);
+                    if (!_instance.Type.IsDefined(typeof(IgnoreRelationshipDataAttribute), false))
+                        InsertRelationshipMemberAssignment(bodyBlock, binaryReaderInstance, recordReaderInstance, memberAccess);
                     break;
                 default:
                     throw new NotImplementedException();

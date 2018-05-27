@@ -29,10 +29,10 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public Type ValueType { get; } = typeof(TValue);
 
-        public abstract T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value);
-        public abstract T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value);
+        public abstract T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : unmanaged;
+        public abstract T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : unmanaged;
         public abstract T ReadForeignKeyMember<T>() where T : unmanaged;
-        public abstract T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value);
+        public abstract T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : unmanaged;
 
         private StorageOptions _options;
         public StorageOptions Options
