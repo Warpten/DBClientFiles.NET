@@ -21,7 +21,7 @@ namespace DBClientFiles.NET.Internals.Versions
         public override Segment<TValue> IndexTable => _indexTable;
         public override Segment<TValue> CopyTable => _copyTable;
 
-        protected CodeGenerator<TValue, TKey> _serializer;
+        protected CodeGenerator<TValue, TKey> _codeGenerator;
         private int _recordSize;
 
         public WDB5(Stream strm) : base(strm, true)
@@ -32,7 +32,19 @@ namespace DBClientFiles.NET.Internals.Versions
             Records = new Segment<TValue>();
             StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
 
-            _serializer = new CodeGenerator<TValue, TKey>(ValueMembers);
+            _codeGenerator = new CodeGenerator<TValue, TKey>(ValueMembers);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            _codeGenerator = null;
+
+            Records.Dispose();
+            StringTable.Dispose();
+            IndexTable.Dispose();
+            CopyTable.Dispose();
         }
 
         public override bool ReadHeader()
@@ -52,9 +64,6 @@ namespace DBClientFiles.NET.Internals.Versions
             var copyTableSize    = ReadInt32();
             var flags            = ReadInt16();
             var indexColumn      = ReadInt16();
-
-            _serializer.IndexColumn = indexColumn;
-            _serializer.IsIndexStreamed = (flags & 0x04) == 0;
 
             var previousPosition = 0;
             for (var i = 0; i < fieldCount; ++i)
@@ -90,8 +99,8 @@ namespace DBClientFiles.NET.Internals.Versions
             FieldCount = fieldCount;
 
             _recordSize = recordSize;
-            _serializer.IsIndexStreamed = IndexTable.Exists;
-            _serializer.IndexColumn = indexColumn;
+            _codeGenerator.IsIndexStreamed = IndexTable.Exists;
+            _codeGenerator.IndexColumn = indexColumn;
             return true;
         }
 
@@ -103,15 +112,15 @@ namespace DBClientFiles.NET.Internals.Versions
             {
                 TValue oldStructure;
                 using (var recordReader = new RecordReader(this, StringTable.Exists, _recordSize))
-                    oldStructure = IndexTable.Exists ? _serializer.Deserialize(this, recordReader, _indexTable.Reader[i]) : _serializer.Deserialize(this, recordReader);
+                    oldStructure = IndexTable.Exists ? _codeGenerator.Deserialize(this, recordReader, _indexTable.Reader[i]) : _codeGenerator.Deserialize(this, recordReader);
 
                 BaseStream.Position = OffsetMap.Reader[i];
-                var currentKey = _serializer.ExtractKey(oldStructure);
+                var currentKey = _codeGenerator.ExtractKey(oldStructure);
 
                 foreach (var copyEntry in _copyTable.Reader[currentKey])
                 {
-                    var clone = _serializer.Clone(oldStructure);
-                    _serializer.InsertKey(clone, copyEntry);
+                    var clone = _codeGenerator.Clone(oldStructure);
+                    _codeGenerator.InsertKey(clone, copyEntry);
 
                     yield return clone;
                 }

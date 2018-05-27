@@ -16,12 +16,12 @@ namespace DBClientFiles.NET.Internals.Versions
         private Segment<TValue, IndexTableReader<TKey, TValue>> _indexTable;
         private Segment<TValue, CopyTableReader<TKey, TValue>> _copyTable;
         private Segment<TValue, RelationShipSegmentReader<TKey, TValue>> _relationshipData;
-        public override Segment<TValue> IndexTable => _indexTable;
 
         public override Segment<TValue> Records { get; }
         public override Segment<TValue, StringTableReader<TValue>> StringTable { get; }
         public override Segment<TValue, OffsetMapReader<TValue>> OffsetMap { get; }
         public override Segment<TValue> CopyTable => _copyTable;
+        public override Segment<TValue> IndexTable => _indexTable;
         public override Segment<TValue> CommonTable { get; }
         private Segment<TValue> RelationshipData => _relationshipData;
         private Segment<TValue> Pallet => _palletTable;
@@ -39,6 +39,22 @@ namespace DBClientFiles.NET.Internals.Versions
             StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
             OffsetMap = new Segment<TValue, OffsetMapReader<TValue>>(this);
             CommonTable = new Segment<TValue>();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            _codeGenerator = null;
+
+            Records.Dispose();
+            StringTable.Dispose();
+            OffsetMap.Dispose();
+            CopyTable.Dispose();
+            IndexTable.Dispose();
+            CommonTable.Dispose();
+            RelationshipData.Dispose();
+            Pallet.Dispose();
         }
 
         private int _currentlyIteratedIndex = 0;
@@ -227,7 +243,7 @@ namespace DBClientFiles.NET.Internals.Versions
                     TValue instance;
 
                     if (IndexTable.Exists)
-                        instance = _codeGenerator.Deserialize(this, recordReader, _indexTable.Reader[_currentlyIteratedIndex++]);
+                        instance = _codeGenerator.Deserialize(this, recordReader, _indexTable.Reader[_currentlyIteratedIndex]);
                     else
                         instance = _codeGenerator.Deserialize(this, recordReader);
 
@@ -239,6 +255,8 @@ namespace DBClientFiles.NET.Internals.Versions
                         _codeGenerator.InsertKey(cloneInstance, copyInstanceIDs);
                         yield return cloneInstance;
                     }
+
+                    ++_currentlyIteratedIndex;
                 }
             }
         }

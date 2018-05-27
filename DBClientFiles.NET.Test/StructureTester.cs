@@ -118,11 +118,11 @@ namespace DBClientFiles.NET.Test
 
             // Stupid workaround for the compiler not picking up assignment of instance in the loop
             benchmarkResult.TotalTimes.Add(Accumulate(out instance, dataStream, options));
+            GC.Collect();
 
             for (var i = 1; i < iterationCount; ++i)
             {
                 benchmarkResult.TotalTimes.Add(Accumulate<TStorage>(dataStream, options));
-
                 GC.Collect();
             }
 

@@ -75,7 +75,7 @@ namespace DBClientFiles.NET.ConsoleTests
             var correctedPath = File.Exists(resourcePath) ? resourcePath : resourcePath.Replace(".dbc", ".db2");
 
             using (var fs = File.OpenRead(correctedPath))
-            using (var ms = new MemoryStream())
+            using (var ms = new MemoryStream((int)fs.Length))
             {
                 fs.CopyTo(ms);
                 ms.Position = 0;

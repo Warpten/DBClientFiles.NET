@@ -18,7 +18,9 @@ namespace DBClientFiles.NET.Internals.Versions
         public override Segment<TValue, StringTableReader<TValue>> StringTable { get; }
         public override Segment<TValue> IndexTable => _indexTable;
         public override Segment<TValue> CopyTable => _copyTable;
-        public override Segment<TValue> CommonTable => _commonTable; 
+        public override Segment<TValue> CommonTable => _commonTable;
+
+        private int _commonTableStartColumn;
 
         public WDB6(Stream dataStream) : base(dataStream)
         {
@@ -33,7 +35,12 @@ namespace DBClientFiles.NET.Internals.Versions
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            _commonTable.Dispose();
+
+            Records.Dispose();
+            StringTable.Dispose();
+            IndexTable.Dispose();
+            CopyTable.Dispose();
+            CommonTable.Dispose();
         }
 
         public override bool ReadHeader()
@@ -56,8 +63,7 @@ namespace DBClientFiles.NET.Internals.Versions
             var totalFieldCount = ReadInt32();
             var commonDataTableSize = ReadInt32();
 
-            _serializer.IndexColumn = indexColumn;
-            _serializer.IsIndexStreamed = (flags & 0x04) == 0;
+            _commonTableStartColumn = fieldCount;
 
             var previousPosition = 0;
             for (var i = 0; i < fieldCount; ++i)
@@ -95,12 +101,15 @@ namespace DBClientFiles.NET.Internals.Versions
 
             // TODO: Check that the mapped index column corresponds to metadata
 
+            _codeGenerator.IndexColumn = indexColumn;
+            _codeGenerator.IsIndexStreamed = !IndexTable.Exists;
+
             return true;
         }
 
         public override T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
-            return _commonTable.Reader.ExtractValue<T>(memberIndex /* adjust to base-0 for the first column in common */, default /* fixme */);
+            return _commonTable.Reader.ExtractValue<T>(memberIndex - _commonTableStartColumn, _codeGenerator.ExtractKey(value));
         }
     }
 }
