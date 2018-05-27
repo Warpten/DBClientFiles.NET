@@ -1,6 +1,6 @@
 ﻿using DBClientFiles.NET.Internals;
 using DBClientFiles.NET.Internals.Serializers;
-using DBClientFiles.NET.Internals.Versions;
+using DBClientFiles.NET.Attributes;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -22,6 +22,12 @@ namespace DBClientFiles.NET.Collections.Generic
         /// <param name="dataStream">The stream from which to load data.</param>
         /// <param name="options">The storage options to use.</param>
         /// <param name="keyGetter">A custom function used to select the key from the record.</param>
+        /// <remarks><paramref name="keyGetter"/> is not to be confused with <see cref="IndexAttribute"/>, which is a decoration purely reserved 
+        /// to the metadata parsing and not related to actual data storage.
+        /// 
+        /// Also note that it is <b>however</b> mandatory (for now) for the key provided by <paramref name="keyGetter"/> to be of the same type than 
+        /// the member decoared with <see cref="IndexAttribute"/>. This limitation will hopefully be raised in a later version.
+        /// </remarks>
         public StorageDictionary(Stream dataStream, StorageOptions options, Func<TValue, TKey> keyGetter) : this(dataStream, options)
         {
             _keyGetter = keyGetter;
@@ -33,6 +39,12 @@ namespace DBClientFiles.NET.Collections.Generic
         /// </summary>
         /// <param name="dataStream">The stream from which to load data.</param>
         /// <param name="keyGetter">A custom function used to select the key from the record.</param>
+        /// <remarks><paramref name="keyGetter"/> is not to be confused with <see cref="IndexAttribute"/>, which is a decoration purely reserved 
+        /// to the metadata parsing and not related to actual data storage.
+        /// 
+        /// Also note that it is <b>however</b> mandatory (for now) for the key provided by <paramref name="keyGetter"/> to be of the same type than 
+        /// the member decoared with <see cref="IndexAttribute"/>. This limitation will hopefully be raised in a later version.
+        /// </remarks>
         public StorageDictionary(Stream dataStream, Func<TValue, TKey> keyGetter) : this(dataStream, StorageOptions.Default, keyGetter)
         {
         }
@@ -66,7 +78,7 @@ namespace DBClientFiles.NET.Collections.Generic
         internal override void LoadRecords(IReader<TValue> reader)
         {
             // TODO Avoid instanciating a new serializer here, use a global application cache instead
-            var legacySerializer = new CodeGenerator<TValue, TKey>(reader.ValueMembers);
+            var legacySerializer = new CodeGenerator<TValue, TKey>(reader.Members);
 
             foreach (var record in reader.ReadRecords())
             {

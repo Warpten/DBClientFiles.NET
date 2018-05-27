@@ -3,7 +3,7 @@
     internal enum MemberCompressionType
     {
         None,
-        Bitpacked,
+        Immediate,
         CommonData,
         BitpackedPalletData,
         BitpackedPalletArrayData,

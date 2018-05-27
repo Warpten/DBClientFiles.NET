@@ -24,7 +24,7 @@ namespace DBClientFiles.NET.Internals.Versions
         }
 
         public int FieldCount { get; protected set; }
-        public ExtendedMemberInfo[] ValueMembers { get; protected set; }
+        public ExtendedMemberInfo[] Members { get; protected set; }
 
         public Type ValueType { get; } = typeof(TValue);
 
@@ -43,7 +43,7 @@ namespace DBClientFiles.NET.Internals.Versions
                 _options = value;
 
                 if (oldOptions == null || oldOptions.MemberType != _options.MemberType)
-                    ValueMembers = typeof(TValue).GetMemberInfos(_options);
+                    Members = typeof(TValue).GetMemberInfos(_options);
             }
         }
 

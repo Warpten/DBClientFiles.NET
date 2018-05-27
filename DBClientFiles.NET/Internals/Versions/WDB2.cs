@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using DBClientFiles.NET.Exceptions;
 using DBClientFiles.NET.Internals.Segments;
@@ -59,7 +58,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override IEnumerable<TValue> ReadRecords()
         {
-            var serializer = new CodeGenerator<TValue>(ValueMembers);
+            var serializer = new CodeGenerator<TValue>(Members);
             serializer.IndexColumn = 0;
             serializer.IsIndexStreamed = true;
 

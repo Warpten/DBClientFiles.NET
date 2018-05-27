@@ -8,22 +8,29 @@ using static System.Reflection.CustomAttributeExtensions;
 
 namespace DBClientFiles.NET.Utils
 {
+    /// <summary>
+    /// A convenient class that is used to store metadata information about fields in the record.
+    /// </summary>
     internal sealed class ExtendedMemberInfo
     {
         public MemberInfo MemberInfo { get; }
         public MemberCompressionType CompressionType { get; set; } = MemberCompressionType.None;
-
-        // TODO: Figure out a better name for this member.
+        
+        /// <summary>
+        /// The type of the target property, as declared in the structure.
+        /// </summary>
         public Type Type { get; }
 
         /// <summary>
         /// Returns true if the associated member has a getter.
         /// </summary>
+        /// <remarks>Always <code>false</code> if <see cref="MemberType"/> is not <see cref="MemberTypes.Property"/>.</remarks>
         public bool HasGetter { get; }
 
         /// <summary>
         /// Returns true if the associated member has a setter.
         /// </summary>
+        /// <remarks>Always <code>false</code> if <see cref="MemberType"/> is not <see cref="MemberTypes.Property"/>.</remarks>
         public bool HasSetter { get; }
 
         /// <summary>
@@ -58,7 +65,7 @@ namespace DBClientFiles.NET.Utils
         
         /// <summary>
         /// The bit size of this field - this is used only if <see cref="CompressionType"/>
-        /// is set to <see cref="MemberCompressionType.Bitpacked"/>, <see cref="MemberCompressionType.BitpackedPalletData"/>
+        /// is set to <see cref="MemberCompressionType.Immediate"/>, <see cref="MemberCompressionType.BitpackedPalletData"/>
         /// or <see cref="MemberCompressionType.BitpackedPalletArrayData"/>.
         /// </summary>
         public int BitSize { get; set; }

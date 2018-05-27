@@ -3,7 +3,6 @@ using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.Internals.Segments.Readers;
 using DBClientFiles.NET.Internals.Serializers;
 using DBClientFiles.NET.IO;
-using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -32,7 +31,7 @@ namespace DBClientFiles.NET.Internals.Versions
             Records = new Segment<TValue>();
             StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
 
-            _codeGenerator = new CodeGenerator<TValue, TKey>(ValueMembers);
+            _codeGenerator = new CodeGenerator<TValue, TKey>(Members);
         }
 
         protected override void Dispose(bool disposing)
@@ -71,9 +70,9 @@ namespace DBClientFiles.NET.Internals.Versions
                 var bitSize = 32 - ReadInt16();
                 var position = ReadInt16();
 
-                ValueMembers[i].BitSize = bitSize;
+                Members[i].BitSize = bitSize;
                 if (i > 0)
-                    ValueMembers[i - 1].Cardinality = (position - previousPosition) / ValueMembers[i - 1].BitSize;
+                    Members[i - 1].Cardinality = (position - previousPosition) / Members[i - 1].BitSize;
 
                 previousPosition = position;
             }

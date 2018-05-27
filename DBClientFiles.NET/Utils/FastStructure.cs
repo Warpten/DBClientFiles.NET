@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection.Emit;
-using System.Text;
-using System.Threading.Tasks;
 
+/// <remarks>
+/// The entirety of this file was shamelessly stolen from <a href="https://www.nuget.org/packages/SharedMemory">SharpMemory</a>.
+/// </remarks>
 namespace DBClientFiles.NET.Utils
 {
     /// <summary>

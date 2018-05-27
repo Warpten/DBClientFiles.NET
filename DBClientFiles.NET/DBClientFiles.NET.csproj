@@ -69,12 +69,10 @@
     <Compile Include="Collections\Generic\StorageList.cs" />
     <Compile Include="Collections\StorageOptions.cs" />
     <Compile Include="Exceptions\UnreachableCodeException.cs" />
-    <Compile Include="IFileHeader.cs" />
     <Compile Include="Internals\Segments\Readers\BinarySegmentReader.cs" />
     <Compile Include="Internals\Segments\Readers\RelationShipSegmentReader.cs" />
     <Compile Include="IO\RecordReader.cs" />
     <Compile Include="Utils\ExpressionStringBuilder.cs" />
-    <Compile Include="Internals\IHeader.cs" />
     <Compile Include="Internals\IReader.cs" />
     <Compile Include="Internals\MemberCompressionType.cs" />
     <Compile Include="Internals\Segments\Readers\CopyTableReader.cs" />
@@ -87,7 +85,6 @@
     <Compile Include="Internals\Serializers\CodeGenerator.cs" />
     <Compile Include="Internals\Serializers\SerializationUtils.cs" />
     <Compile Include="Internals\Serializers\StorageSerializer.cs" />
-    <Compile Include="Internals\StringMarshaller.cs" />
     <Compile Include="Internals\Versions\BaseFileReader.cs" />
     <Compile Include="Internals\Versions\WDB2.cs" />
     <Compile Include="Internals\Versions\WDB5.cs" />
@@ -96,13 +93,11 @@
     <Compile Include="Internals\Versions\WDC1.cs" />
     <Compile Include="IO\FileReader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="IO\SegmentStream.cs" />
     <Compile Include="Signatures.cs" />
     <Compile Include="Utils\BinaryExtensions.cs" />
     <Compile Include="Utils\ExtendedMemberExpression.cs" />
     <Compile Include="Utils\ExtendedMemberInfo.cs" />
     <Compile Include="Utils\FastStructure.cs" />
-    <Compile Include="Utils\MiscExtensions.cs" />
     <Compile Include="Utils\SizeCache.cs" />
     <Compile Include="Utils\TypeExtensions.cs" />
     <Compile Include="Utils\TypeUtils.cs" />

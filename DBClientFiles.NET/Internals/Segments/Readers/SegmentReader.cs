@@ -1,5 +1,4 @@
-﻿using DBClientFiles.NET.Internals.Versions;
-using DBClientFiles.NET.IO;
+﻿using DBClientFiles.NET.IO;
 using System;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers

@@ -87,8 +87,8 @@ namespace DBClientFiles.NET.Internals.Versions
             var palletDataSize       = ReadInt32();
             var relationshipDataSize = ReadInt32();
 
-            // if (ValueMembers.Length != totalFieldCount)
-            //     throw new InvalidOperationException($"Missing column(s) in definition: found {ValueMembers.Length}, expected {totalFieldCount}");
+            // if (Members.Length != totalFieldCount)
+            //     throw new InvalidOperationException($"Missing column(s) in definition: found {Members.Length}, expected {totalFieldCount}");
 
             var previousPosition = 0;
             for (var i = 0; i < totalFieldCount; ++i)
@@ -98,9 +98,9 @@ namespace DBClientFiles.NET.Internals.Versions
                 var bitSize = ReadInt16();
                 var recordPosition = ReadInt16();
                 
-                ValueMembers[columnOffset].BitSize = 32 - bitSize;
-                if (columnOffset > 0 && ValueMembers[columnOffset - 1].BitSize != 0)
-                    ValueMembers[columnOffset - 1].Cardinality = (recordPosition - previousPosition) / ValueMembers[columnOffset - 1].BitSize;
+                Members[columnOffset].BitSize = 32 - bitSize;
+                if (columnOffset > 0 && Members[columnOffset - 1].BitSize != 0)
+                    Members[columnOffset - 1].Cardinality = (recordPosition - previousPosition) / Members[columnOffset - 1].BitSize;
 
                 previousPosition = recordPosition;
             }
@@ -137,7 +137,7 @@ namespace DBClientFiles.NET.Internals.Versions
             for (var i = 0; i < (fieldStorageInfoSize / (2 + 2 + 4 + 4 + 3 * 4)); ++i)
             {
                 var columnOffset = (IndexTable.Exists && i >= indexColumn) ? (i + 1) : i;
-                var memberInfo = ValueMembers[columnOffset];
+                var memberInfo = Members[columnOffset];
 
                 memberInfo.OffsetInRecord = ReadInt16();
                 var fieldSizeBits = ReadInt16(); // size is the sum of all array pieces in bits - for example, uint32[3] will appear here as '96'
@@ -148,7 +148,7 @@ namespace DBClientFiles.NET.Internals.Versions
                 memberInfo.CompressionType = (MemberCompressionType)ReadInt32();
                 switch (memberInfo.CompressionType)
                 {
-                    case MemberCompressionType.Bitpacked:
+                    case MemberCompressionType.Immediate:
                         {
                             BaseStream.Seek(4 + 4, SeekOrigin.Current);
                             var memberFlags = ReadInt32();
@@ -187,7 +187,7 @@ namespace DBClientFiles.NET.Internals.Versions
             RelationshipData.StartOffset = CommonTable.EndOffset;
             RelationshipData.Length = relationshipDataSize;
             
-            _codeGenerator = new CodeGenerator<TValue, TKey>(ValueMembers);
+            _codeGenerator = new CodeGenerator<TValue, TKey>(Members);
             _codeGenerator.IndexColumn = indexColumn;
             _codeGenerator.IsIndexStreamed = !IndexTable.Exists;
 
@@ -216,7 +216,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
-            var memberInfo = ValueMembers[memberIndex];
+            var memberInfo = Members[memberIndex];
 
             var palletOffset = recordReader.ReadBits(memberInfo.OffsetInRecord, memberInfo.BitSize);
             return _palletTable.Reader.ReadArray<T>(palletOffset, memberInfo.Cardinality);
@@ -224,7 +224,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
-            var memberInfo = ValueMembers[memberIndex];
+            var memberInfo = Members[memberIndex];
 
             var palletOffset = recordReader.ReadBits(memberInfo.OffsetInRecord, memberInfo.BitSize);
             return _palletTable.Reader.Read<T>(palletOffset);

@@ -1,12 +1,8 @@
-﻿using DBClientFiles.NET.Collections.Generic;
-using DBClientFiles.NET.Internals.Versions;
-using DBClientFiles.NET.IO;
+﻿using DBClientFiles.NET.IO;
 using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq.Expressions;
-using System.Reflection;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {

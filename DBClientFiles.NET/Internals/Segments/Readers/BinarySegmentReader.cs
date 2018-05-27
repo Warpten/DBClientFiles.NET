@@ -1,6 +1,4 @@
 ﻿using System;
-using System.IO;
-using DBClientFiles.NET.Internals.Versions;
 using DBClientFiles.NET.IO;
 using DBClientFiles.NET.Utils;
 

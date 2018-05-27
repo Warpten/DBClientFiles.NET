@@ -7,6 +7,9 @@ using System.Runtime.InteropServices;
 
 namespace DBClientFiles.NET.Utils
 {
+    /// <summary>
+    /// Inspired by Apoc's SizeCache, but tailored to runtime type informations instead of compile-time.
+    /// </summary>
     internal static class TypeUtils
     {
         private static Dictionary<Type, int> _typeSizes = new Dictionary<Type, int>();

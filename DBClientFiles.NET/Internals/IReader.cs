@@ -17,6 +17,6 @@ namespace DBClientFiles.NET.Internals
 
         StorageOptions Options { get; set; }
 
-        ExtendedMemberInfo[] ValueMembers { get; }
+        ExtendedMemberInfo[] Members { get; }
     }
 }

@@ -2,6 +2,9 @@
 
 namespace DBClientFiles.NET.Utils
 {
+    /// <summary>
+    /// A simple wrapper around <see cref="MemberExpression"/> and <see cref="ExtendedMemberInfo"/>.
+    /// </summary>
     internal struct ExtendedMemberExpression
     {
         public MemberExpression Expression { get; }
@@ -11,6 +14,11 @@ namespace DBClientFiles.NET.Utils
         {
             Expression = System.Linq.Expressions.Expression.MakeMemberAccess(expr, memberInfo.MemberInfo);
             MemberInfo = memberInfo;
+        }
+
+        public override string ToString()
+        {
+            return Expression.ToString();
         }
     }
 }

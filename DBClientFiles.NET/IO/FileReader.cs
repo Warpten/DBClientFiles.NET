@@ -1,13 +1,14 @@
 ﻿using DBClientFiles.NET.Collections;
 using System.IO;
-using DBClientFiles.NET.Internals.Versions;
-using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 
 namespace DBClientFiles.NET.IO
 {
+    /// <summary>
+    /// Metainformation holder for <see cref="FileReader"/>.
+    /// </summary>
     internal static class _FileReader
     {
         public static MethodInfo ReadString { get; } = typeof(FileReader).GetMethod("ReadString", new[] { typeof(int) });

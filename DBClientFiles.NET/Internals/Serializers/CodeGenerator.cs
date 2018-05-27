@@ -1,5 +1,4 @@
 ﻿using DBClientFiles.NET.Attributes;
-using DBClientFiles.NET.Data;
 using DBClientFiles.NET.Internals.Versions;
 using DBClientFiles.NET.IO;
 using DBClientFiles.NET.Utils;
@@ -277,7 +276,7 @@ namespace DBClientFiles.NET.Internals.Serializers
                 case MemberCompressionType.None:
                     InsertSimpleMemberAssignment(bodyBlock, binaryReaderInstance, recordReaderInstance, memberAccess);
                     break;
-                case MemberCompressionType.Bitpacked:
+                case MemberCompressionType.Immediate:
                     InsertBitpackedMemberAssignment(bodyBlock, binaryReaderInstance, recordReaderInstance, memberAccess);
                     break;
                 case MemberCompressionType.BitpackedPalletData:

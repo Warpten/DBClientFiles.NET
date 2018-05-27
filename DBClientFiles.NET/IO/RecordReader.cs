@@ -2,30 +2,33 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace DBClientFiles.NET.IO
 {
+    /// <summary>
+    /// Metainformation for <see cref="RecordReader"/>.
+    /// </summary>
     public static class _RecordReader
     {
-        private static Type[] argTypes { get; } = new[] { typeof(int), typeof(int) };
+        private static Type[] arrayArgs { get; } = new[] { typeof(int) };
+        private static Type[] arrayPackedArgs { get; } = new[] { typeof(int), typeof(int), typeof(int) };
+        private static Type[] packedArgs { get; } = new[] { typeof(int), typeof(int) };
 
-        public static MethodInfo ReadPackedUInt64  { get; } = typeof(RecordReader).GetMethod("ReadUInt64", argTypes);
-        public static MethodInfo ReadPackedUInt32  { get; } = typeof(RecordReader).GetMethod("ReadUInt32", argTypes);
-        public static MethodInfo ReadPackedUInt16  { get; } = typeof(RecordReader).GetMethod("ReadUInt16", argTypes);
-        public static MethodInfo ReadPackedSByte   { get; } = typeof(RecordReader).GetMethod("ReadSByte",  argTypes);
+        public static MethodInfo ReadPackedUInt64  { get; } = typeof(RecordReader).GetMethod("ReadUInt64", packedArgs);
+        public static MethodInfo ReadPackedUInt32  { get; } = typeof(RecordReader).GetMethod("ReadUInt32", packedArgs);
+        public static MethodInfo ReadPackedUInt16  { get; } = typeof(RecordReader).GetMethod("ReadUInt16", packedArgs);
+        public static MethodInfo ReadPackedSByte   { get; } = typeof(RecordReader).GetMethod("ReadSByte",  packedArgs);
 
-        public static MethodInfo ReadPackedInt64   { get; } = typeof(RecordReader).GetMethod("ReadInt64", argTypes);
-        public static MethodInfo ReadPackedInt32   { get; } = typeof(RecordReader).GetMethod("ReadInt32", argTypes);
-        public static MethodInfo ReadPackedInt16   { get; } = typeof(RecordReader).GetMethod("ReadInt16", argTypes);
-        public static MethodInfo ReadPackedByte    { get; } = typeof(RecordReader).GetMethod("ReadByte",  argTypes);
+        public static MethodInfo ReadPackedInt64   { get; } = typeof(RecordReader).GetMethod("ReadInt64", packedArgs);
+        public static MethodInfo ReadPackedInt32   { get; } = typeof(RecordReader).GetMethod("ReadInt32", packedArgs);
+        public static MethodInfo ReadPackedInt16   { get; } = typeof(RecordReader).GetMethod("ReadInt16", packedArgs);
+        public static MethodInfo ReadPackedByte    { get; } = typeof(RecordReader).GetMethod("ReadByte",  packedArgs);
 
-        public static MethodInfo ReadPackedString  { get; } = typeof(RecordReader).GetMethod("ReadString", argTypes);
-        public static MethodInfo ReadPackedStrings { get; } = typeof(RecordReader).GetMethod("ReadStrings", new[] { typeof(int), typeof(int), typeof(int) });
-        public static MethodInfo ReadPackedArray   { get; } = typeof(RecordReader).GetMethod("ReadArray", new[] { typeof(int), typeof(int), typeof(int) });
+        public static MethodInfo ReadPackedString  { get; } = typeof(RecordReader).GetMethod("ReadString", packedArgs);
+        public static MethodInfo ReadPackedStrings { get; } = typeof(RecordReader).GetMethod("ReadStrings", arrayPackedArgs);
+        public static MethodInfo ReadPackedArray   { get; } = typeof(RecordReader).GetMethod("ReadArray", arrayPackedArgs);
 
         public static MethodInfo ReadUInt64        { get; } = typeof(RecordReader).GetMethod("ReadUInt64", Type.EmptyTypes);
         public static MethodInfo ReadUInt32        { get; } = typeof(RecordReader).GetMethod("ReadUInt32", Type.EmptyTypes);
@@ -39,8 +42,8 @@ namespace DBClientFiles.NET.IO
 
         public static MethodInfo ReadSingle        { get; } = typeof(RecordReader).GetMethod("ReadSingle", Type.EmptyTypes);
         public static MethodInfo ReadString        { get; } = typeof(RecordReader).GetMethod("ReadString", Type.EmptyTypes);
-        public static MethodInfo ReadStrings       { get; } = typeof(RecordReader).GetMethod("ReadStrings", new[] { typeof(int) });
-        public static MethodInfo ReadArray         { get; } = typeof(RecordReader).GetMethod("ReadArray", new[] { typeof(int) });
+        public static MethodInfo ReadStrings       { get; } = typeof(RecordReader).GetMethod("ReadStrings", arrayArgs);
+        public static MethodInfo ReadArray         { get; } = typeof(RecordReader).GetMethod("ReadArray", arrayArgs);
 
         public static Dictionary<TypeCode, MethodInfo> PackedReaders { get; } = new Dictionary<TypeCode, MethodInfo>()
         {
@@ -74,6 +77,9 @@ namespace DBClientFiles.NET.IO
         };
     }
 
+    /// <summary>
+    /// This class acts as a thing wrapper around the record data for a row. It can read either packed or unpacked elements.
+    /// </summary>
     internal sealed unsafe class RecordReader : IDisposable
     {
         private byte[] _recordData;
@@ -201,20 +207,16 @@ namespace DBClientFiles.NET.IO
         /// Returns an instance of the unmanaged type <see cref="{T}"/>.
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="bitOffset">The offset (in bits) at which the type to read is. If set to zero, <see cref="RecordReader"/> assumes to be sequentially reading from the previous call.</param>
+        /// <param name="bitOffset">The absolute offset (in bits) at which the type to read is. If set to zero, <see cref="RecordReader"/> assumes to be sequentially reading from the previous call.</param>
         /// <returns></returns>
         /// <remarks>
-        /// While this may look fine, it will return a value that will be unaccurate unless properly shifted to the right by <code><paramref name="bitOffset"/> & 7</code>.
-        /// 
+        /// While this may look fine, it will return a value that will be unaccurate unless properly shifted to the right by <code><paramref name="bitOffset"/> & 7</code>, as this cannot be typically done by this method.
         /// </remarks>
-        private T Read<T>(int bitOffset, bool advanceCursor = false) where T : unmanaged
+        private T Read<T>(int bitOffset, bool advanceCursor = false) where T : struct
         {
             T v;
-            fixed (byte* b = _recordData)
-            {
-                var data = b + bitOffset / 8;
-                v = *(T*)&data[0];
-            }
+            fixed (byte* dataBlock = _recordData)
+                v = FastStructure<T>.PtrToStructure(new IntPtr(dataBlock + bitOffset / 8));
 
             if (advanceCursor)
                 _byteCursor += SizeCache<T>.Size * 8;
@@ -222,6 +224,10 @@ namespace DBClientFiles.NET.IO
             return v;
         }
 
+        /// <summary>
+        /// Reads a string from the record.
+        /// </summary>
+        /// <returns></returns>
         public string ReadString()
         {
             if (_usesStringTable)
@@ -230,17 +236,22 @@ namespace DBClientFiles.NET.IO
             return _fileReader.ReadString();
         }
 
+        /// <summary>
+        /// Reads a string from the record, given the provided bit offset and length.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">This exception is thrown when the caller tries to read a packed string offset in a file which does not have a string table.</exception>
+        /// <param name="bitOffset">The absolute offset in the structure, in bits, at which the string is located.</param>
+        /// <param name="bitCount">The amount of bits in which the offset to the string is contained.</param>
+        /// <returns></returns>
         public string ReadString(int bitOffset, int bitCount)
         {
             if (_usesStringTable)
                 return _fileReader.FindStringByOffset(ReadInt32(bitOffset, bitCount));
 
-            var byteList = new List<byte>();
-            byte currChar;
-            while ((currChar = ReadByte()) != '\0')
-                byteList.Add(currChar);
+            if ((bitOffset & 7) == 0)
+                return _fileReader.ReadString();
 
-            return Encoding.UTF8.GetString(byteList.ToArray());
+            throw new InvalidOperationException("Packed strings must be in the string block!");
         }
         
         public long ReadBits(int bitOffset, int bitCount)
@@ -261,7 +272,7 @@ namespace DBClientFiles.NET.IO
             return value;
         }
 
-        public T[] ReadArray<T>(int arraySize, int bitOffset, int bitCount) where T : unmanaged
+        public T[] ReadArray<T>(int arraySize, int bitOffset, int bitCount) where T : struct
         {
             var arr = new T[arraySize];
             for (var i = 0; i < arraySize; ++i)
@@ -272,7 +283,7 @@ namespace DBClientFiles.NET.IO
             return arr;
         }
 
-        public T[] ReadArray<T>(int arraySize) where T : unmanaged
+        public T[] ReadArray<T>(int arraySize) where T : struct
         {
             var nodeSize = SizeCache<T>.Size;
 

@@ -8,6 +8,9 @@ namespace DBClientFiles.NET.Attributes
         Exclude
     }
 
+    /// <summary>
+    /// This attribute really does not make much sense and should probably be removed. It is ignored.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
     public sealed class StoragePresenceAttribute : Attribute
     {

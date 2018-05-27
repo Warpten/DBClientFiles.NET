@@ -1,5 +1,4 @@
 ﻿using DBClientFiles.NET.Utils;
-using System.Collections.Generic;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
