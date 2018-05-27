@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
-    internal sealed class RelationShipSegmentReader<TKey, T> : SegmentReader<TKey, T> where T : class, new()
+    internal sealed class RelationShipSegmentReader<TKey, T> : SegmentReader<T> where T : class, new()
     {
         private class RelationshipNode
         {
@@ -42,12 +42,12 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             _entries = null;
         }
 
-        public unsafe U GetForeignKey<U>(int recordIndex) where U : unmanaged
+        public unsafe U GetForeignKey<U>(int recordIndex) where U : struct
         {
             //! TODO: prevent long, this will cook us.
             var fk = _entries.First(e => e.RecordIndex == recordIndex).ForeignKey;
             fixed (byte* b = fk)
-                return *(U*)&b[0];
+                return FastStructure<U>.PtrToStructure(new IntPtr(b));
         }
     }
 }

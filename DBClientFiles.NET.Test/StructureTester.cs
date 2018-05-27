@@ -145,7 +145,6 @@ namespace DBClientFiles.NET.Test
             TotalTimes = new List<TimeSpan>();
 
             RecordType = typeof(object);
-            Signature = Signatures.WDBC;
         }
 
         public List<TimeSpan> TotalTimes { get; }
@@ -153,7 +152,7 @@ namespace DBClientFiles.NET.Test
         public TimeSpan WorstTime => TotalTimes.Max();
         public TimeSpan AverageTime => new TimeSpan(Convert.ToInt64(TotalTimes.Average(t => t.Ticks)));
         public Type RecordType { get; set; }
-        public Signatures Signature { get; }
+        public Signatures Signature => ((IStorage)Container).Signature;
         public IList Container { get; set; }
 
         public TimeSpan TimePercentile(double percentile)

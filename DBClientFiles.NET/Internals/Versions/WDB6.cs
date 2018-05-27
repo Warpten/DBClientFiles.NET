@@ -100,7 +100,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
-            return _commonTable.Reader.ReadStructValue<T>(memberIndex /* adjust to base-0 for the first column in common */, default /* fixme */);
+            return _commonTable.Reader.ExtractValue<T>(memberIndex /* adjust to base-0 for the first column in common */, default /* fixme */);
         }
     }
 }

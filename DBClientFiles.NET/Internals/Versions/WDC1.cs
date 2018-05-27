@@ -12,7 +12,7 @@ namespace DBClientFiles.NET.Internals.Versions
         where TValue : class, new()
         where TKey : struct
     {
-        private Segment<TValue, RawDataSegmentReader<TValue>> _palletTable;
+        private Segment<TValue, BinarySegmentReader<TValue>> _palletTable;
         private Segment<TValue, IndexTableReader<TKey, TValue>> _indexTable;
         private Segment<TValue, CopyTableReader<TKey, TValue>> _copyTable;
         private Segment<TValue, RelationShipSegmentReader<TKey, TValue>> _relationshipData;
@@ -31,7 +31,7 @@ namespace DBClientFiles.NET.Internals.Versions
         public WDC1(Stream strm) : base(strm, true)
         {
             _indexTable = new Segment<TValue, IndexTableReader<TKey, TValue>>(this);
-            _palletTable = new Segment<TValue, RawDataSegmentReader<TValue>>(this);
+            _palletTable = new Segment<TValue, BinarySegmentReader<TValue>>(this);
             _copyTable = new Segment<TValue, CopyTableReader<TKey, TValue>>(this);
             _relationshipData = new Segment<TValue, RelationShipSegmentReader<TKey, TValue>>(this);
 
@@ -186,8 +186,6 @@ namespace DBClientFiles.NET.Internals.Versions
             _palletTable.Reader.Read();
             _indexTable.Reader.Read();
             _relationshipData.Reader.Read();
-
-            // common, relationship...
         }
 
         public override T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value)

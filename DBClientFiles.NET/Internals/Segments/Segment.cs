@@ -40,8 +40,6 @@ namespace DBClientFiles.NET.Internals.Segments
         public BaseFileReader<TValue> Storage { get; private set; }
         private StorageOptions Options { get; set; }
 
-        public bool Deserialized { get; set; } = false;
-
         public bool Exists
         {
             set => _existsOverride = value;
@@ -72,7 +70,6 @@ namespace DBClientFiles.NET.Internals.Segments
 
             _existsOverride = false;
         }
-
 
         #region IDisposable Support
         private bool _disposedValue = false; // To detect redundant calls

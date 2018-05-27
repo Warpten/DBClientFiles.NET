@@ -1,7 +1,8 @@
-﻿using DBClientFiles.NET.Internals.Versions;
+﻿using DBClientFiles.NET.Collections;
+using System.IO;
+using DBClientFiles.NET.Internals.Versions;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Reflection;
 using System.Text;
 
@@ -31,6 +32,8 @@ namespace DBClientFiles.NET.IO
 
             return Encoding.UTF8.GetString(byteList.ToArray());
         }
+
+        public abstract StorageOptions Options { get; set; }
 
         public abstract string FindStringByOffset(int tableOffset);
 

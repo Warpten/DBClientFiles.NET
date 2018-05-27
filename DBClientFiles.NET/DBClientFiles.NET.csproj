@@ -58,6 +58,7 @@
   <ItemGroup>
     <Compile Include="Attributes\CardinalityAttribute.cs" />
     <Compile Include="Attributes\IgnoreAttribute.cs" />
+    <Compile Include="Attributes\IgnoreRelationshipDataAttribute.cs" />
     <Compile Include="Attributes\IndexAttribute.cs" />
     <Compile Include="Attributes\StoragePresenceAttribute.cs" />
     <Compile Include="Collections\Generic\StorageBase.cs" />
@@ -69,7 +70,7 @@
     <Compile Include="Collections\StorageOptions.cs" />
     <Compile Include="Exceptions\UnreachableCodeException.cs" />
     <Compile Include="IFileHeader.cs" />
-    <Compile Include="Internals\Segments\Readers\RawDataSegmentReader.cs" />
+    <Compile Include="Internals\Segments\Readers\BinarySegmentReader.cs" />
     <Compile Include="Internals\Segments\Readers\RelationShipSegmentReader.cs" />
     <Compile Include="IO\RecordReader.cs" />
     <Compile Include="Utils\ExpressionStringBuilder.cs" />
@@ -100,9 +101,12 @@
     <Compile Include="Utils\BinaryExtensions.cs" />
     <Compile Include="Utils\ExtendedMemberExpression.cs" />
     <Compile Include="Utils\ExtendedMemberInfo.cs" />
+    <Compile Include="Utils\FastStructure.cs" />
+    <Compile Include="Utils\MiscExtensions.cs" />
     <Compile Include="Utils\SizeCache.cs" />
     <Compile Include="Utils\TypeExtensions.cs" />
     <Compile Include="Utils\TypeUtils.cs" />
+    <Compile Include="Utils\UnsafeNativeMethods.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Generators\" />

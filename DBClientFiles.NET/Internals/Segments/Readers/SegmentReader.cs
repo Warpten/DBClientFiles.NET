@@ -1,4 +1,5 @@
 ﻿using DBClientFiles.NET.Internals.Versions;
+using DBClientFiles.NET.IO;
 using System;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
@@ -6,16 +7,16 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     internal interface ISegmentReader<TValue> : IDisposable
         where TValue : class, new()
     {
-        BaseFileReader<TValue> Storage { get; }
+        FileReader Storage { get; }
         Segment<TValue> Segment { get; set; }
         void Read();
     }
 
-    internal abstract class SegmentReader<T, TValue> : ISegmentReader<TValue> where TValue : class, new()
+    internal abstract class SegmentReader<TValue> : ISegmentReader<TValue> where TValue : class, new()
     {
         public Segment<TValue> Segment { get; set; }
 
-        public BaseFileReader<TValue> Storage => Segment.Storage;
+        public FileReader Storage => Segment.Storage;
 
         protected SegmentReader()
         {

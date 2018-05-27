@@ -1,5 +1,6 @@
 ﻿using DBClientFiles.NET.Collections.Generic;
 using DBClientFiles.NET.Internals.Versions;
+using DBClientFiles.NET.IO;
 using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
@@ -17,12 +18,12 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
         where TValue : class, new()
     {
         public Segment<TValue> Segment { get; set; }
-        public BaseFileReader<TValue> Storage => Segment.Storage;
+        public FileReader Storage => Segment.Storage;
 
         private bool _isPadded = true;
         private Type[] _memberTypes;
 
-        private Dictionary<TKey, long>[] _valueOffsets;
+        private Dictionary<TKey, byte[]>[] _valueOffsets;
         
         public LegacyCommonTableReader()
         {
@@ -38,9 +39,9 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             var columnCount = Storage.ReadInt32();
 
             _memberTypes = new Type[columnCount];
-            _valueOffsets = new Dictionary<TKey, long>[columnCount];
+            _valueOffsets = new Dictionary<TKey, byte[]>[columnCount];
             for (var i = 0; i < columnCount; ++i)
-                _valueOffsets[i] = new Dictionary<TKey, long>();
+                _valueOffsets[i] = new Dictionary<TKey, byte[]>();
 
             /// Try to read everything as unpacked.
             /// If reading fails (probably because the cursor is now beyond the end of the file), then the structure is packed.
@@ -126,7 +127,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
                 for (var i = 0; i < entryCount; ++i)
                 {
-                    _valueOffsets[columnIndex][Storage.ReadStruct<TKey>()] = Storage.BaseStream.Position + keySize;
+                    _valueOffsets[columnIndex][Storage.ReadStruct<TKey>()] = Storage.ReadBytes(dataSize);
                     var newPosition = Storage.BaseStream.Seek(keySize + dataSize, SeekOrigin.Current);
 
                     // And same as the comment above here.
@@ -147,80 +148,14 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             
         }
 
-        public T ReadStructValue<T>(int columnIndex, TKey recordKey)
+        public unsafe T ExtractValue<T>(int columnIndex, TKey recordKey) where T : struct
         {
             var dict = _valueOffsets[columnIndex];
-            if (!dict.TryGetValue(recordKey, out var offset))
+            if (!dict.TryGetValue(recordKey, out var dataBlock))
                 return default;
 
-            var previousOffset = Storage.BaseStream.Position;
-            Storage.BaseStream.Position = offset;
-            var value = Storage.ReadStruct<T>();
-            Storage.BaseStream.Position = previousOffset;
-            return value;
-        }
-
-        internal class CommonTableDeserializer
-        {
-            private LegacyCommonTableReader<TKey, TValue> _reader;
-
-            private static Dictionary<Type, ConstructorInfo> _constructorCache = new Dictionary<Type, ConstructorInfo>();
-
-            private static ConstructorInfo GetConstructor<T>() => GetConstructor(typeof(T));
-            private static ConstructorInfo GetConstructor(Type type)
-            {
-                if (_constructorCache.TryGetValue(type, out var ctor))
-                    return ctor;
-
-                return _constructorCache[type] = type.GetConstructor(new[] { typeof(BinaryReader) });
-            }
-
-            public CommonTableDeserializer(LegacyCommonTableReader<TKey, TValue> reader)
-            {
-                _reader = reader;
-            }
-
-            private Func<StorageBase<TValue>, T> GenerateColumnReader<T>(int columnIndex, int deserializedSize)
-            {
-                if (deserializedSize <= 0 || deserializedSize > 4)
-                    throw new ArgumentOutOfRangeException();
-
-                var argExpr = Expression.Parameter(typeof(StorageBase<TValue>));
-                var body = new List<Expression>();
-
-                var oldPositionLocalVar = Expression.Variable(typeof(long));
-
-                var streamPosExpr = Expression.MakeMemberAccess(argExpr, typeof(StorageBase<TValue>).GetProperty("BaseStream"));
-                streamPosExpr = Expression.MakeMemberAccess(streamPosExpr, typeof(Stream).GetProperty("Position"));
-
-                var returnValue = Expression.Variable(typeof(T));
-
-                var valueCtor = GetConstructor<T>();
-                if (valueCtor != null)
-                {
-                    if (typeof(T).IsValueType && _reader._isPadded)
-                        body.Add(Expression.Assign(oldPositionLocalVar, streamPosExpr));
-
-                    body.Add(Expression.Assign(returnValue, Expression.New(valueCtor, argExpr)));
-
-                    if (typeof(T).IsValueType && _reader._isPadded)
-                        body.Add(Expression.Assign(streamPosExpr, Expression.Add(oldPositionLocalVar, Expression.Constant(deserializedSize))));
-                }
-                else if (!typeof(T).IsValueType) // Not a value type, and missing ctor!
-                {
-                    throw new InvalidOperationException();
-                }
-                else // Value type
-                {
-                }
-
-                body.Add(returnValue);
-
-                var bodyExpr = Expression.Block(new[] { oldPositionLocalVar, returnValue }, body);
-                var lambda = Expression.Lambda<Func<StorageBase<TValue>, T>>(bodyExpr, new[] { argExpr });
-                var compiledMethod = lambda.Compile();
-                return compiledMethod;
-            }
+            fixed (byte* buffer = dataBlock)
+                return FastStructure<T>.PtrToStructure(new IntPtr(buffer));
         }
     }
 }

@@ -5,15 +5,24 @@ using System.IO;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
+    public interface IStorage
+    {
+        Signatures Signature { get; }
+    }
+
     /// <summary>
     /// TODO: Turn this into an interface. Exposing this class is not good.
     /// </summary>
     /// <typeparam name="TValue"></typeparam>
-    public abstract class StorageBase<TValue> where TValue : class, new()
+    public abstract class StorageBase<TValue> : IStorage
+        where TValue : class, new()
     {
         internal StorageOptions Options { get; set; }
 
-        public Signatures Signature { get; private set; }
+        public Signatures Signature {
+            get;
+            private set;
+        }
         private IReader<TValue> _fileReader;
 
         protected virtual void FromStream<TKey>(Stream fileStream, StorageOptions options) where TKey : struct

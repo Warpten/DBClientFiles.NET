@@ -4,7 +4,7 @@ using System.IO;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
-    internal sealed class StringTableReader<TValue> : SegmentReader<string, TValue>
+    internal sealed class StringTableReader<TValue> : SegmentReader<TValue>
         where TValue : class, new()
     {
         public StringTableReader() : base() { }
@@ -17,6 +17,8 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
         {
             if (Segment.Length == 0)
                 return;
+
+            var options = Storage.Options;
 
             Storage.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
             while (Storage.BaseStream.Position < Segment.EndOffset)

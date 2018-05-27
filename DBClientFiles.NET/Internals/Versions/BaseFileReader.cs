@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
@@ -29,13 +28,13 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public Type ValueType { get; } = typeof(TValue);
 
-        public abstract T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : unmanaged;
-        public abstract T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : unmanaged;
-        public abstract T ReadForeignKeyMember<T>() where T : unmanaged;
-        public abstract T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : unmanaged;
+        public abstract T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : struct;
+        public abstract T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : struct;
+        public abstract T ReadForeignKeyMember<T>() where T : struct;
+        public abstract T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : struct;
 
         private StorageOptions _options;
-        public StorageOptions Options
+        public override StorageOptions Options
         {
             get => _options;
             set
@@ -63,7 +62,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public virtual void ReadSegments()
         {
-            if (StringTable.Exists && !StringTable.Deserialized)
+            if (StringTable.Exists)
             {
                 if (Options.LoadMask.HasFlag(LoadMask.StringTable))
                     StringTable.Reader.OnStringRead += OnStringTableEntry;

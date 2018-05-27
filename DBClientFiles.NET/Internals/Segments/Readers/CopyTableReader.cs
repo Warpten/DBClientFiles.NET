@@ -4,7 +4,12 @@ using System.IO;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
-    internal sealed class CopyTableReader<TKey, TValue> : SegmentReader<TKey, TValue>
+    /// <summary>
+    /// A segment reader for the copy table section of DB2 files.
+    /// </summary>
+    /// <typeparam name="TKey">The type of key to use.</typeparam>
+    /// <typeparam name="TValue">The record type.</typeparam>
+    internal sealed class CopyTableReader<TKey, TValue> : SegmentReader<TValue>
         where TValue : class, new()
         where TKey : struct
     {
@@ -36,11 +41,9 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             while (Storage.BaseStream.Position < Segment.EndOffset)
             {
                 var newKey = Storage.ReadStruct<TKey>();
-                var oldKey = Storage.ReadStruct<TKey>();
-                _parsedContent[newKey] = oldKey;
+                var copiedRow = Storage.ReadStruct<TKey>();
+                _parsedContent[newKey] = copiedRow;
             }
-
-            Segment.Deserialized = true;
         }
 
         protected override void Release()

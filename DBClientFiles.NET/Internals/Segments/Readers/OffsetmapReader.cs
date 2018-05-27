@@ -3,7 +3,7 @@ using System.IO;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
-    internal sealed class OffsetMapReader<TValue> : SegmentReader<(int, long), TValue>
+    internal sealed class OffsetMapReader<TValue> : SegmentReader<TValue>
         where TValue : class, new()
     {
         public OffsetMapReader() { }

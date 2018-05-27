@@ -3,7 +3,12 @@ using System.Collections.Generic;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
-    internal sealed class IndexTableReader<TKey, TValue> : SegmentReader<TKey, TValue>
+    /// <summary>
+    /// A segment reader that produces an enumeration of keys for the given segment of DB2 files.
+    /// </summary>
+    /// <typeparam name="TKey"></typeparam>
+    /// <typeparam name="TValue"></typeparam>
+    internal sealed class IndexTableReader<TKey, TValue> : SegmentReader<TValue>
         where TValue : class, new()
     {
         public IndexTableReader() { }
