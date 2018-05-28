@@ -11,11 +11,11 @@ namespace DBClientFiles.NET.Utils
     /// <summary>
     /// A convenient class that is used to store metadata information about fields in the record.
     /// </summary>
-    internal struct ExtendedMemberInfo
+    internal sealed class ExtendedMemberInfo
     {
         public MemberInfo MemberInfo { get; }
-        public MemberCompressionType CompressionType { get; set; }
-
+        public MemberCompressionType CompressionType { get; set; } = MemberCompressionType.None;
+        
         /// <summary>
         /// The type of the target property, as declared in the structure.
         /// </summary>
@@ -69,7 +69,7 @@ namespace DBClientFiles.NET.Utils
         /// or <see cref="MemberCompressionType.BitpackedPalletArrayData"/>.
         /// </summary>
         public int BitSize { get; set; }
-
+        
         public ExtendedMemberInfo(PropertyInfo member, int memberIndex)
         {
             MemberInfo = member;
@@ -80,12 +80,7 @@ namespace DBClientFiles.NET.Utils
             HasGetter = member.GetGetMethod() != null;
             HasSetter = member.GetSetMethod() != null;
 
-            BitSize = 0;
-            OffsetInRecord = 0;
-            DefaultValue = null;
-            IsSigned = false;
-            CompressionType = MemberCompressionType.None;
-            Cardinality = 0;
+            InitializeMemberHelpers();
         }
 
         public ExtendedMemberInfo(FieldInfo member, int memberIndex)
@@ -95,30 +90,20 @@ namespace DBClientFiles.NET.Utils
             Type = member.FieldType;
 
             IsInitOnly = member.IsInitOnly;
-            HasGetter = false;
-            HasSetter = false;
 
-            BitSize = 0;
-            OffsetInRecord = 0;
-            DefaultValue = null;
-            IsSigned = false;
-            CompressionType = MemberCompressionType.None;
-            Cardinality = 0;
+            InitializeMemberHelpers();
         }
 
         public static ExtendedMemberInfo Initialize(MemberInfo memberInfo, int memberIndex)
         {
-            ExtendedMemberInfo extendedMemberInfo;
             if (memberInfo is PropertyInfo propInfo)
-                extendedMemberInfo = new ExtendedMemberInfo(propInfo, memberIndex);
+                return new ExtendedMemberInfo(propInfo, memberIndex);
             else if (memberInfo is FieldInfo fieldInfo)
-                extendedMemberInfo = new ExtendedMemberInfo(fieldInfo, memberIndex);
-
-            extendedMemberInfo.Initialize();
-            return extendedMemberInfo;
+                return new ExtendedMemberInfo(fieldInfo, memberIndex);
+            return null;
         }
 
-        public void Initialize()
+        private void InitializeMemberHelpers()
         {
             if (Type.IsArray)
             {
@@ -148,6 +133,10 @@ namespace DBClientFiles.NET.Utils
         public MemberTypes MemberType => MemberInfo.MemberType;
         public string Name => MemberInfo.Name;
 
+        public object[] GetCustomAttributes(bool inherit = false) => MemberInfo.GetCustomAttributes(inherit);
+        public object[] GetCustomAttributes(Type attributeType, bool inherit = false) => MemberInfo.GetCustomAttributes(attributeType, inherit);
+        public T GetCustomAttribute<T>(bool inherit = false) where T : Attribute
+            => MemberInfo.GetCustomAttribute<T>(inherit);
         public bool IsDefined(Type attributeType, bool inherit = false) => MemberInfo.IsDefined(attributeType, inherit);
     }
 }
