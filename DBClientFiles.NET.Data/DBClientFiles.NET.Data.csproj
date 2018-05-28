@@ -55,6 +55,7 @@
     <Compile Include="WDB2\ItemEntry.cs" />
     <Compile Include="WDBC\AchievementEntry.cs" />
     <Compile Include="WDC1\AchievementEntry.cs" />
+    <Compile Include="WDC2\AchievementEntry.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DBClientFiles.NET\DBClientFiles.NET.csproj">

@@ -103,30 +103,48 @@ namespace DBClientFiles.NET.Internals.Versions
             return true;
         }
 
+        private IEnumerable<TValue> ReadIndividualNode(int recordIndex, int recordSize)
+        {
+            TValue oldStructure;
+            using (var recordReader = new RecordReader(this, StringTable.Exists, recordSize))
+                oldStructure = IndexTable.Exists ? _codeGenerator.Deserialize(this, recordReader, _indexTable.Reader[recordIndex]) : _codeGenerator.Deserialize(this, recordReader);
+
+            var currentKey = _codeGenerator.ExtractKey(oldStructure);
+
+            foreach (var copyEntry in _copyTable.Reader[currentKey])
+            {
+                var clone = _codeGenerator.Clone(oldStructure);
+                _codeGenerator.InsertKey(clone, copyEntry);
+
+                yield return clone;
+            }
+
+            yield return oldStructure;
+        }
+
         public override IEnumerable<TValue> ReadRecords()
         {
-            var i = 0;
-            BaseStream.Position = Records.StartOffset;
-            while (BaseStream.Position < Records.EndOffset)
+            if (OffsetMap.Exists)
             {
-                TValue oldStructure;
-                using (var recordReader = new RecordReader(this, StringTable.Exists, _recordSize))
-                    oldStructure = IndexTable.Exists ? _codeGenerator.Deserialize(this, recordReader, _indexTable.Reader[i]) : _codeGenerator.Deserialize(this, recordReader);
-
-                BaseStream.Position = OffsetMap.Reader[i];
-                var currentKey = _codeGenerator.ExtractKey(oldStructure);
-
-                foreach (var copyEntry in _copyTable.Reader[currentKey])
+                for (var i = 0; i < OffsetMap.Reader.Count; ++i)
                 {
-                    var clone = _codeGenerator.Clone(oldStructure);
-                    _codeGenerator.InsertKey(clone, copyEntry);
+                    BaseStream.Seek(OffsetMap.Reader.GetRecordOffset(i), SeekOrigin.Begin);
 
-                    yield return clone;
+                    foreach (var node in ReadIndividualNode(i, OffsetMap.Reader.GetRecordSize(i)))
+                        yield return node;
                 }
+            }
+            else
+            {
+                var i = 0;
+                BaseStream.Position = Records.StartOffset;
+                while (BaseStream.Position < Records.EndOffset)
+                {
+                    foreach (var node in ReadIndividualNode(i, _recordSize))
+                        yield return node;
 
-                yield return oldStructure;
-
-                ++i;
+                    ++i;
+                }
             }
         }
 

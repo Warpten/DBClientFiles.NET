@@ -5,6 +5,10 @@ using DBClientFiles.NET.Internals;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
+    /// <summary>
+    /// An enumerable storage representation of dbc and db2 files.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
     public class StorageEnumerable<T> : StorageBase<T>, IEnumerable<T>
         where T : class, new()
     {

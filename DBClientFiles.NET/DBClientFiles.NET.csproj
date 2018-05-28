@@ -71,6 +71,7 @@
     <Compile Include="Exceptions\UnreachableCodeException.cs" />
     <Compile Include="Internals\Segments\Readers\BinarySegmentReader.cs" />
     <Compile Include="Internals\Segments\Readers\RelationShipSegmentReader.cs" />
+    <Compile Include="Internals\Versions\WDC2.cs" />
     <Compile Include="IO\RecordReader.cs" />
     <Compile Include="Utils\ExpressionStringBuilder.cs" />
     <Compile Include="Internals\IReader.cs" />

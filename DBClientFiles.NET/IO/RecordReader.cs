@@ -80,11 +80,11 @@ namespace DBClientFiles.NET.IO
     /// <summary>
     /// This class acts as a thing wrapper around the record data for a row. It can read either packed or unpacked elements.
     /// </summary>
-    internal sealed unsafe class RecordReader : IDisposable
+    internal unsafe class RecordReader : IDisposable
     {
         private byte[] _recordData;
 
-        private int _byteCursor = 0;
+        protected int _byteCursor = 0;
 
         public long ReadInt64() => Read<long>(_byteCursor, true);
         public int ReadInt32() => Read<int>(_byteCursor, true);
@@ -98,11 +98,15 @@ namespace DBClientFiles.NET.IO
 
         public float ReadSingle() => Read<float>(_byteCursor, true);
 
-        private FileReader _fileReader;
-        private bool _usesStringTable;
+        protected FileReader _fileReader;
+        protected bool _usesStringTable;
+
+        public int StartOffset { get; }
 
         public RecordReader(FileReader fileReader, bool usesStringTable, int recordSize)
         {
+            StartOffset = (int)fileReader.BaseStream.Position;
+
             _usesStringTable = usesStringTable;
             _fileReader = fileReader;
             using (var reader = new BinaryReader(fileReader.BaseStream, Encoding.UTF8, true))
@@ -228,7 +232,7 @@ namespace DBClientFiles.NET.IO
         /// Reads a string from the record.
         /// </summary>
         /// <returns></returns>
-        public string ReadString()
+        public virtual string ReadString()
         {
             if (_usesStringTable)
                 return _fileReader.FindStringByOffset(ReadInt32());
@@ -243,7 +247,7 @@ namespace DBClientFiles.NET.IO
         /// <param name="bitOffset">The absolute offset in the structure, in bits, at which the string is located.</param>
         /// <param name="bitCount">The amount of bits in which the offset to the string is contained.</param>
         /// <returns></returns>
-        public string ReadString(int bitOffset, int bitCount)
+        public virtual string ReadString(int bitOffset, int bitCount)
         {
             if (_usesStringTable)
                 return _fileReader.FindStringByOffset(ReadInt32(bitOffset, bitCount));

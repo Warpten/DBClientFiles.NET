@@ -93,7 +93,7 @@ namespace DBClientFiles.NET.Internals.Versions
             var previousPosition = 0;
             for (var i = 0; i < totalFieldCount; ++i)
             {
-                var columnOffset = (IndexTable.Exists && i >= indexColumn) ? (i + 1) : i;
+                var columnOffset = (idListSize != 0 && i >= indexColumn) ? (i + 1) : i;
 
                 var bitSize = ReadInt16();
                 var recordPosition = ReadInt16();
@@ -230,31 +230,49 @@ namespace DBClientFiles.NET.Internals.Versions
             return _palletTable.Reader.Read<T>(palletOffset);
         }
 
+        private IEnumerable<TValue> ReadIndividualNodes(int recordSize)
+        {
+            TValue instance;
+
+            using (var recordReader = new RecordReader(this, StringTable.Exists, recordSize))
+            {
+                if (IndexTable.Exists)
+                    instance = _codeGenerator.Deserialize(this, recordReader, _indexTable.Reader[_currentlyIteratedIndex]);
+                else
+                    instance = _codeGenerator.Deserialize(this, recordReader);
+
+                foreach (var copyInstanceID in _copyTable.Reader[_codeGenerator.ExtractKey(instance)])
+                {
+                    var cloneInstance = _codeGenerator.Clone(instance);
+                    _codeGenerator.InsertKey(cloneInstance, copyInstanceID);
+                    yield return cloneInstance;
+                }
+
+                yield return instance;
+            }
+        }
+
         public override IEnumerable<TValue> ReadRecords()
         {
-            BaseStream.Seek(Records.StartOffset, SeekOrigin.Begin);
-            while (BaseStream.Position < Records.EndOffset)
+            if (OffsetMap.Exists)
             {
-                if (OffsetMap.Exists)
-                    BaseStream.Seek(OffsetMap.Reader[_currentlyIteratedIndex], SeekOrigin.Begin);
-
-                using (var recordReader = new RecordReader(this, StringTable.Exists, _recordSize))
+                for (_currentlyIteratedIndex = 0; _currentlyIteratedIndex < OffsetMap.Reader.Count; ++_currentlyIteratedIndex)
                 {
-                    TValue instance;
+                    BaseStream.Seek(OffsetMap.Reader.GetRecordOffset(_currentlyIteratedIndex), SeekOrigin.Begin);
 
-                    if (IndexTable.Exists)
-                        instance = _codeGenerator.Deserialize(this, recordReader, _indexTable.Reader[_currentlyIteratedIndex]);
-                    else
-                        instance = _codeGenerator.Deserialize(this, recordReader);
+                    foreach (var node in ReadIndividualNodes(OffsetMap.Reader.GetRecordSize(_currentlyIteratedIndex)))
+                        yield return node;
+                }
+            }
+            else
+            {
+                BaseStream.Seek(Records.StartOffset, SeekOrigin.Begin);
 
-                    yield return instance;
-
-                    foreach (var copyInstanceIDs in _copyTable.Reader[_codeGenerator.ExtractKey(instance)])
-                    {
-                        var cloneInstance = _codeGenerator.Clone(instance);
-                        _codeGenerator.InsertKey(cloneInstance, copyInstanceIDs);
-                        yield return cloneInstance;
-                    }
+                _currentlyIteratedIndex = 0;
+                while (BaseStream.Position < Records.EndOffset)
+                {
+                    foreach (var node in ReadIndividualNodes(_recordSize))
+                        yield return node;
 
                     ++_currentlyIteratedIndex;
                 }

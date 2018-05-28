@@ -24,7 +24,7 @@ namespace DBClientFiles.NET.Internals.Versions
         }
 
         public int FieldCount { get; protected set; }
-        public ExtendedMemberInfo[] Members { get; protected set; }
+        public virtual ExtendedMemberInfo[] Members { get; protected set; }
 
         public Type ValueType { get; } = typeof(TValue);
 

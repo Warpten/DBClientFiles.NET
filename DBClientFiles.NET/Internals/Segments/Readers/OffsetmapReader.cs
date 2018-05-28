@@ -8,7 +8,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     {
         public OffsetMapReader() { }
 
-        private Dictionary<int, long> _parsedContent = new Dictionary<int, long>();
+        private Dictionary<int, (long, int)> _parsedContent = new Dictionary<int, (long, int)>();
 
         public int MinIndex { get; set; }
         public int MaxIndex { get; set; }
@@ -23,25 +23,32 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             while (Storage.BaseStream.Position < Segment.EndOffset)
             {
                 long offset = Storage.ReadInt32();
-                Storage.BaseStream.Seek(2, SeekOrigin.Current);
+                var size = Storage.ReadInt16();
 
                 ++i;
 
                 if (offset == 0)
                     continue;
 
-                _parsedContent.Add(MinIndex + i - 1, offset);
+                _parsedContent.Add(MinIndex + i - 1, (offset, size));
             }
         }
 
-        public long this[int index]
+        public long GetRecordOffset(int index)
         {
-            get => _parsedContent[index];
+            return _parsedContent[index].Item1;
+        }
+
+        public int GetRecordSize(int index)
+        {
+            return _parsedContent[index].Item2;
         }
 
         protected override void Release()
         {
             _parsedContent.Clear();
         }
+
+        public int Count => _parsedContent.Count;
     }
 }

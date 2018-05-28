@@ -1,5 +1,6 @@
 ﻿using DBClientFiles.NET.Utils;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
@@ -12,7 +13,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             public byte[] ForeignKey { get; set; }
         }
 
-        private RelationshipNode[] _entries;
+        private Dictionary<int /* recordIndex */, byte[]> _entries;
 
         public override void Read()
         {
@@ -24,13 +25,11 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             var minIndex = Storage.ReadStruct<TKey>();
             var maxIndex = Storage.ReadStruct<TKey>();
 
-            _entries = new RelationshipNode[entryCount];
+            _entries = new Dictionary<int, byte[]>();
 
             for (var i = 0; i < entryCount; ++i)
             {
-                _entries[i] = new RelationshipNode();
-                _entries[i].RecordIndex = Storage.ReadInt32();
-                _entries[i].ForeignKey = Storage.ReadBytes(4);
+                _entries[Storage.ReadInt32()] = Storage.ReadBytes(4);
             }
         }
 
@@ -41,8 +40,11 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
         public unsafe U GetForeignKey<U>(int recordIndex) where U : struct
         {
+            if (!_entries.ContainsKey(recordIndex))
+                return default;
+
             //! TODO: prevent long, this will cook us.
-            var fk = _entries.First(e => e.RecordIndex == recordIndex).ForeignKey;
+            var fk = _entries[recordIndex];
             fixed (byte* b = fk)
                 return FastStructure<U>.PtrToStructure(new IntPtr(b));
         }

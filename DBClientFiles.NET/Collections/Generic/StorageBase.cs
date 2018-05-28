@@ -51,6 +51,9 @@ namespace DBClientFiles.NET.Collections.Generic
                 case Signatures.WDC1:
                     _fileReader = new WDC1<TKey, TValue>(fileStream);
                     break;
+                case Signatures.WDC2:
+                    _fileReader = new WDC2<TKey, TValue>(fileStream);
+                    break;
                 default:
                     throw new NotSupportedVersionException($"Unknown signature 0x{(int)Signature:X8}!");
             }

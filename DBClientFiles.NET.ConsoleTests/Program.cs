@@ -17,6 +17,7 @@ namespace DBClientFiles.NET.ConsoleTests
             TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC");
             TestStructuresInNamespace("DBClientFiles.NET.Data.WDB2");
             TestStructuresInNamespace("DBClientFiles.NET.Data.WDC1");
+            TestStructuresInNamespace("DBClientFiles.NET.Data.WDC2");
 
             Console.ReadKey();
         }
@@ -81,7 +82,7 @@ namespace DBClientFiles.NET.ConsoleTests
                 ms.Position = 0;
 
                 var structureTester = new StructureTester<TValue>();
-                var benchmarkResult = structureTester.Benchmark<StorageList<TValue>>(out var dataStore, ms, 10);
+                var benchmarkResult = structureTester.Benchmark<StorageList<TValue>>(out var dataStore, ms, 250);
                 _dataStores[typeof(TValue)] = benchmarkResult;
             }
         }

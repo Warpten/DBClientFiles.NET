@@ -155,6 +155,12 @@ namespace DBClientFiles.NET.Internals.Serializers
                 throw new InvalidOperationException("Type mismatch");
         }
 
+        public virtual void Invalidate()
+        {
+            _deserializationMethod = null;
+            _memberwiseClone = null;
+        }
+
         public virtual T CreateInstance()
         {
             return (T) typeof(T).CreateInstance();
@@ -263,9 +269,11 @@ namespace DBClientFiles.NET.Internals.Serializers
             var expressionBody = Expression.Block(bodyBlock);
             var expressionLambda = Expression.Lambda<Action<BaseFileReader<T>, RecordReader, T>>(expressionBody, binaryReader, recordReader, _instance);
 
+#if DEBUG
             var stringView = new ExpressionStringBuilder();
             stringView.Visit(expressionLambda);
             var resultStringView = stringView.ToString();
+#endif
             return expressionLambda.Compile();
         }
 
