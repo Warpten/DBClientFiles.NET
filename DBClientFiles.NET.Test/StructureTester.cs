@@ -119,6 +119,7 @@ namespace DBClientFiles.NET.Test
             {
                 benchmarkResult.TotalTimes.Add(Accumulate<TStorage>(dataStream, options));
                 GC.Collect();
+                dataStream.Position = 0;
             }
 
             benchmarkResult.Container = (IList)instance;

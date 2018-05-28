@@ -48,6 +48,17 @@ namespace DBClientFiles.NET.Collections.Generic
                 Stream = fileStream;
         }
 
+        public void Dispose()
+        {
+            if (Options.CopyToMemory)
+                Stream?.Dispose();
+            Stream = null;
+
+            Options = null;
+
+            _fileReader = null;
+        }
+
         public StorageImpl(Stream dataStream, StorageOptions options)
         {
             Options = options;
@@ -100,16 +111,6 @@ namespace DBClientFiles.NET.Collections.Generic
 
             _fileReader.ReadSegments();
             return _fileReader.ReadRecords();
-        }
-
-        public void Dispose()
-        {
-            Stream?.Dispose();
-            Stream = null;
-
-            Options = null;
-
-            _fileReader = null;
         }
     }
 }
