@@ -79,19 +79,14 @@ namespace DBClientFiles.NET.Test
         public TimeSpan AccumulateList(Stream dataStream, StorageOptions options) => Accumulate<StorageList<TValue>>(dataStream, options);
         public TimeSpan AccumulateList(Stream dataStream) => AccumulateList(dataStream, StorageOptions.Default);
 
-        public TimeSpan AccumulateDictionary<TKey>(Stream dataStream, StorageOptions options) where TKey : struct
-            => Accumulate<StorageDictionary<TKey, TValue>>(dataStream, options);
-        public TimeSpan AccumulateDictionary<TKey>(Stream dataStream) where TKey : struct
-            => AccumulateDictionary<TKey>(dataStream, StorageOptions.Default);
-
-        public TimeSpan Accumulate<TStorage>(Stream dataStream) where TStorage : StorageBase<TValue>
+        public TimeSpan Accumulate<TStorage>(Stream dataStream) where TStorage : IStorage
             => Accumulate<TStorage>(dataStream);
 
-        public TimeSpan Accumulate<TStorage>(Stream dataStream, StorageOptions options) where TStorage : StorageBase<TValue>
+        public TimeSpan Accumulate<TStorage>(Stream dataStream, StorageOptions options) where TStorage : IStorage
             => Accumulate<TStorage>(out var instance, dataStream, options);
 
         public TimeSpan Accumulate<TStorage>(out TStorage instance, Stream dataStream, StorageOptions options)
-            where TStorage : StorageBase<TValue>
+            where TStorage : IStorage
         {
             dataStream.Position = 0;
 
@@ -105,10 +100,10 @@ namespace DBClientFiles.NET.Test
             return timer.Elapsed - TypeExtensions.LambdaGenerationTime;
         }
 
-        public BenchmarkResult Benchmark<TStorage>(out TStorage instance, Stream dataStream, int iterationCount = 100) where TStorage : StorageBase<TValue>
+        public BenchmarkResult Benchmark<TStorage>(out TStorage instance, Stream dataStream, int iterationCount = 100) where TStorage : IStorage
             => Benchmark(out instance, dataStream, StorageOptions.Default, iterationCount);
 
-        public BenchmarkResult Benchmark<TStorage>(out TStorage instance, Stream dataStream, StorageOptions options, int iterationCount = 100) where TStorage : StorageBase<TValue>
+        public BenchmarkResult Benchmark<TStorage>(out TStorage instance, Stream dataStream, StorageOptions options, int iterationCount = 100) where TStorage : IStorage
         {
             if (iterationCount == 0)
                 throw new ArgumentOutOfRangeException(nameof(iterationCount));
@@ -131,10 +126,10 @@ namespace DBClientFiles.NET.Test
             return benchmarkResult;
         }
 
-        public BenchmarkResult Benchmark<TStorage>(Stream dataStream, int iterationCount = 100) where TStorage : StorageBase<TValue>
+        public BenchmarkResult Benchmark<TStorage>(Stream dataStream, int iterationCount = 100) where TStorage : IStorage
             => Benchmark<TStorage>(dataStream, StorageOptions.Default, iterationCount);
 
-        public BenchmarkResult Benchmark<TStorage>(Stream dataStream, StorageOptions options, int iterationCount = 100) where TStorage : StorageBase<TValue>
+        public BenchmarkResult Benchmark<TStorage>(Stream dataStream, StorageOptions options, int iterationCount = 100) where TStorage : IStorage
             => Benchmark<TStorage>(out var instance, dataStream, options, iterationCount);
     }
 

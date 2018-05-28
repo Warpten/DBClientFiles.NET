@@ -7,13 +7,32 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using DBClientFiles.NET.Internals.Serializers;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
-    internal abstract class BaseFileReader<TKey, TValue> : BaseFileReader<TValue> where TKey : struct where TValue : class, new()
+    internal abstract class BaseFileReader<TKey, TValue> : BaseFileReader<TValue>
+        where TKey : struct
+        where TValue : class, new()
     {
+        private CodeGenerator<TValue, TKey> _codeGenerator;
+        public override CodeGenerator<TValue> Generator => _codeGenerator;
+
         protected BaseFileReader(Stream strm, bool keepOpen) : base(strm, keepOpen)
         {
+        }
+
+        public override bool ReadHeader()
+        {
+            _codeGenerator = new CodeGenerator<TValue, TKey>(Members) {
+                IsIndexStreamed = !IndexTable.Exists
+            };
+            return true;
+        }
+
+        protected override void ReleaseResources()
+        {
+            _codeGenerator = null;
         }
     }
 
@@ -25,8 +44,6 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public int FieldCount { get; protected set; }
         public virtual ExtendedMemberInfo[] Members { get; protected set; }
-
-        public Type ValueType { get; } = typeof(TValue);
 
         public abstract T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : struct;
         public abstract T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : struct;
@@ -47,16 +64,21 @@ namespace DBClientFiles.NET.Internals.Versions
             }
         }
 
-        public virtual Segment<TValue, StringTableReader<TValue>> StringTable { get { throw new NotImplementedException(); } }
-        public virtual Segment<TValue, OffsetMapReader<TValue>> OffsetMap { get { throw new NotImplementedException(); } }
-        public virtual Segment<TValue> Records { get { throw new NotImplementedException(); } }
-        public virtual Segment<TValue> CopyTable { get { throw new NotImplementedException(); } }
-        public virtual Segment<TValue> CommonTable { get { throw new NotImplementedException(); } }
-        public virtual Segment<TValue> IndexTable { get { throw new NotImplementedException(); } }
+        public virtual CodeGenerator<TValue> Generator => throw new NotImplementedException();
+
+        public virtual Segment<TValue, StringTableReader<TValue>> StringTable => throw new NotImplementedException();
+        public virtual Segment<TValue, OffsetMapReader<TValue>> OffsetMap => throw new NotImplementedException();
+        public virtual Segment<TValue> Records => throw new NotImplementedException();
+        public virtual Segment<TValue> CopyTable => throw new NotImplementedException();
+        public virtual Segment<TValue> CommonTable => throw new NotImplementedException();
+        public virtual Segment<TValue> IndexTable => throw new NotImplementedException();
 
         public event Action<long, string> OnStringTableEntry;
 
-        public abstract bool ReadHeader();
+        public virtual bool ReadHeader()
+        {
+            return false;
+        }
 
         public abstract IEnumerable<TValue> ReadRecords();
 

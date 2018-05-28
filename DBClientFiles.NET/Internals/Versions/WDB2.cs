@@ -21,6 +21,12 @@ namespace DBClientFiles.NET.Internals.Versions
             Records = new Segment<TValue>();
         }
 
+        protected override void ReleaseResources()
+        {
+            StringTable.Dispose();
+            Records.Dispose();
+        }
+
         public override bool ReadHeader()
         {
             var recordCount = ReadInt32();
@@ -58,14 +64,10 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override IEnumerable<TValue> ReadRecords()
         {
-            var serializer = new CodeGenerator<TValue>(Members);
-            serializer.IndexColumn = 0;
-            serializer.IsIndexStreamed = true;
-
             BaseStream.Position = Records.StartOffset;
             while (BaseStream.Position < Records.EndOffset)
                 using (var segmentReader = new RecordReader(this, StringTable.Exists, _recordSize))
-                    yield return serializer.Deserialize(this, segmentReader);
+                    yield return Generator.Deserialize(this, segmentReader);
         }
 
         public override T ReadPalletMember<T>(int memberIndex, RecordReader segmentReader, TValue value)

@@ -1,7 +1,7 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using DBClientFiles.NET.Internals;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
@@ -9,33 +9,51 @@ namespace DBClientFiles.NET.Collections.Generic
     /// An enumerable storage representation of dbc and db2 files.
     /// </summary>
     /// <typeparam name="T">The element type.</typeparam>
-    public sealed class StorageEnumerable<T> : StorageBase<T>, IEnumerable<T>
+    public sealed class StorageEnumerable<T> : IStorage, IEnumerable<T>
         where T : class, new()
     {
+        #region IStorage
+        public Signatures Signature { get; }
+        public uint TableHash { get; }
+        public uint LayoutHash { get; }
+        #endregion
+
+        private StorageImpl<T> _implementation;
         private IEnumerable<T> _enumerable;
 
         public StorageEnumerable(Stream fileStream) : this(fileStream, StorageOptions.Default)
         {
         }
 
-        public StorageEnumerable(Stream fileStream, StorageOptions options)
+        ~StorageEnumerable()
         {
-            FromStream(fileStream, options);
-            LoadRecords();
+            _enumerable = null;
+            _implementation.Dispose();
         }
 
-        internal override void LoadRecords(IReader<T> reader)
+        public StorageEnumerable(Stream fileStream, StorageOptions options)
         {
-            _enumerable = reader.ReadRecords();
+            _implementation = new StorageImpl<T>(fileStream, options);
+            _enumerable = _implementation.Enumerate();
+
+            Signature = _implementation.Signature;
+            TableHash = _implementation.TableHash;
+            LayoutHash = _implementation.LayoutHash;
         }
-        
+
         public IEnumerator<T> GetEnumerator()
         {
+            if (_enumerable == null)
+                throw new ObjectDisposedException("StorageEnumerable<T>");
+
             return _enumerable.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
+            if (_enumerable == null)
+                throw new ObjectDisposedException("StorageEnumerable<T>");
+
             return _enumerable.GetEnumerator();
         }
     }

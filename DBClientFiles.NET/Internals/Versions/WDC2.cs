@@ -61,9 +61,7 @@ namespace DBClientFiles.NET.Internals.Versions
             public override ExtendedMemberInfo[] Members
             {
                 get => _parent.Members;
-                protected set {
-                    throw new InvalidOperationException();
-                }
+                protected set => throw new InvalidOperationException();
             }
 
             private int _unkHeader0;
@@ -90,13 +88,11 @@ namespace DBClientFiles.NET.Internals.Versions
                 StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
                 OffsetMap = new Segment<TValue, OffsetMapReader<TValue>>(this);
 
-                Options = _parent.Options;
             }
 
-            protected override void Dispose(bool disposing)
+            protected override void ReleaseResources()
             {
-                // TODO: Try to avoid calling parent
-                base.Dispose(disposing);
+                base.ReleaseResources();
 
                 Records.Dispose();
                 StringTable.Dispose();
@@ -159,19 +155,16 @@ namespace DBClientFiles.NET.Internals.Versions
 
             private IEnumerable<TValue> ReadIndividualNodes(int recordSize)
             {
-                TValue instance;
-
                 using (var recordReader = new WDC2RecordReader(_parent, StringTable.Exists, recordSize))
                 {
-                    if (IndexTable.Exists)
-                        instance = _parent._codeGenerator.Deserialize(_parent, recordReader, _indexTable.Reader[_currentlyIteratedIndex]);
-                    else
-                        instance = _parent._codeGenerator.Deserialize(_parent, recordReader);
+                    var instance = IndexTable.Exists
+                        ? _parent.Generator.Deserialize(_parent, recordReader, _indexTable.Reader[_currentlyIteratedIndex])
+                        : _parent.Generator.Deserialize(_parent, recordReader);
 
-                    foreach (var copyInstanceID in _copyTable.Reader[_parent._codeGenerator.ExtractKey(instance)])
+                    foreach (var copyInstanceID in _copyTable.Reader[_parent.Generator.ExtractKey<TKey>(instance)])
                     {
-                        var cloneInstance = _parent._codeGenerator.Clone(instance);
-                        _parent._codeGenerator.InsertKey(cloneInstance, copyInstanceID);
+                        var cloneInstance = _parent.Generator.Clone(instance);
+                        _parent.Generator.InsertKey(cloneInstance, copyInstanceID);
                         yield return cloneInstance;
                     }
 
@@ -181,12 +174,6 @@ namespace DBClientFiles.NET.Internals.Versions
 
             public override IEnumerable<TValue> ReadRecords()
             {
-                // Costly, but nothing better - invalidate the methods if we are in a section where the index table presence changes from the previous one
-                if (_indexTable.Exists != _parent._codeGenerator.IsIndexStreamed)
-                    _parent._codeGenerator.Invalidate();
-
-                _parent._codeGenerator.IsIndexStreamed = !_indexTable.Exists;
-
                 if (OffsetMap.Exists)
                 {
                     for (_currentlyIteratedIndex = 0; _currentlyIteratedIndex < OffsetMap.Reader.Count; ++_currentlyIteratedIndex)
@@ -241,33 +228,49 @@ namespace DBClientFiles.NET.Internals.Versions
 
         }
 
+        #region Segments
         private Section[] _segments;
 
         private Segment<TValue, BinarySegmentReader<TValue>> _palletTable;
         private Segment<TValue> _commonTable;
+        #endregion
 
         private int _flags;
         private int _recordSize;
         private int _currentlyParsedSegment;
 
-        private CodeGenerator<TValue, TKey> _codeGenerator;
+        private CodeGenerator<TValue, TKey>[] _codeGenerator;
 
+        public override CodeGenerator<TValue> Generator
+        {
+            get
+            {
+                if (_segments[_currentlyParsedSegment].IndexTable.Exists)
+                    return _codeGenerator[0];
+                return _codeGenerator[1];
+            }
+        }
+
+        #region Life and Death
         public WDC2(Stream strm) : base(strm, true)
         {
             _palletTable = new Segment<TValue, BinarySegmentReader<TValue>>(this);
             _commonTable = new Segment<TValue>();
         }
 
-        protected override void Dispose(bool disposing)
+        protected override void ReleaseResources()
         {
-            base.Dispose(disposing);
-
+            base.ReleaseResources();
+        
             _palletTable.Dispose();
             _commonTable.Dispose();
+
+            _codeGenerator = null;
 
             for (var i = 0; i < _segments.Length; ++i)
                 _segments[i].Dispose();
         }
+        #endregion
 
         public override bool ReadHeader()
         {
@@ -369,8 +372,11 @@ namespace DBClientFiles.NET.Internals.Versions
             for (var i = 0; i < sectionCount; ++i)
                 _segments[i].PopulateSegmentOffsets();
 
-            _codeGenerator = new CodeGenerator<TValue, TKey>(Members);
-            _codeGenerator.IndexColumn = indexColumn;
+            _codeGenerator = new []
+            {
+                new CodeGenerator<TValue, TKey>(Members) { IsIndexStreamed = false },
+                new CodeGenerator<TValue, TKey>(Members) { IsIndexStreamed = true, IndexColumn = indexColumn }
+            };
             return true;
         }
 

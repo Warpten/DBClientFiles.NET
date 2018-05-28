@@ -61,8 +61,8 @@
     <Compile Include="Attributes\IgnoreRelationshipDataAttribute.cs" />
     <Compile Include="Attributes\IndexAttribute.cs" />
     <Compile Include="Attributes\StoragePresenceAttribute.cs" />
-    <Compile Include="Collections\Generic\StorageBase.cs" />
     <Compile Include="Collections\Generic\StorageEnumerable.cs" />
+    <Compile Include="Collections\Generic\StorageImpl.cs" />
     <Compile Include="Data\ISimpleMember.cs" />
     <Compile Include="Exceptions\NotSupportedVersionException.cs" />
     <Compile Include="Collections\Generic\StorageDictionary.cs" />

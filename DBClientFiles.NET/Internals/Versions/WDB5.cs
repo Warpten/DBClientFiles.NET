@@ -12,6 +12,9 @@ namespace DBClientFiles.NET.Internals.Versions
         where TKey : struct
         where TValue : class, new()
     {
+        private int _recordSize;
+
+        #region Segments
         private Segment<TValue, CopyTableReader<TKey, TValue>> _copyTable;
         private Segment<TValue, IndexTableReader<TKey, TValue>> _indexTable;
 
@@ -19,10 +22,12 @@ namespace DBClientFiles.NET.Internals.Versions
         public override Segment<TValue, StringTableReader<TValue>> StringTable { get; }
         public override Segment<TValue> IndexTable => _indexTable;
         public override Segment<TValue> CopyTable => _copyTable;
+        #endregion
 
         protected CodeGenerator<TValue, TKey> _codeGenerator;
-        private int _recordSize;
-
+        public override CodeGenerator<TValue> Generator => _codeGenerator;
+        
+        #region Life and death
         public WDB5(Stream strm) : base(strm, true)
         {
             _copyTable = new Segment<TValue, CopyTableReader<TKey, TValue>>(this);
@@ -30,21 +35,18 @@ namespace DBClientFiles.NET.Internals.Versions
 
             Records = new Segment<TValue>();
             StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
-
-            _codeGenerator = new CodeGenerator<TValue, TKey>(Members);
         }
 
-        protected override void Dispose(bool disposing)
+        protected override void ReleaseResources()
         {
-            base.Dispose(disposing);
-
-            _codeGenerator = null;
+            base.ReleaseResources();
 
             Records.Dispose();
             StringTable.Dispose();
             IndexTable.Dispose();
             CopyTable.Dispose();
         }
+        #endregion
 
         public override bool ReadHeader()
         {
@@ -98,23 +100,30 @@ namespace DBClientFiles.NET.Internals.Versions
             FieldCount = fieldCount;
 
             _recordSize = recordSize;
-            _codeGenerator.IsIndexStreamed = IndexTable.Exists;
-            _codeGenerator.IndexColumn = indexColumn;
+
+            _codeGenerator = new CodeGenerator<TValue, TKey>(Members)
+            {
+                IndexColumn = indexColumn,
+                IsIndexStreamed = !IndexTable.Exists
+            };
             return true;
         }
 
-        private IEnumerable<TValue> ReadIndividualNode(int recordIndex, int recordSize)
+        private IEnumerable<TValue> ReadRecord(int recordIndex, int recordSize)
         {
             TValue oldStructure;
             using (var recordReader = new RecordReader(this, StringTable.Exists, recordSize))
-                oldStructure = IndexTable.Exists ? _codeGenerator.Deserialize(this, recordReader, _indexTable.Reader[recordIndex]) : _codeGenerator.Deserialize(this, recordReader);
-
-            var currentKey = _codeGenerator.ExtractKey(oldStructure);
-
-            foreach (var copyEntry in _copyTable.Reader[currentKey])
+            {
+                oldStructure = IndexTable.Exists
+                    ? _codeGenerator.Deserialize(this, recordReader, _indexTable.Reader[recordIndex])
+                    : _codeGenerator.Deserialize(this, recordReader);
+            }
+            
+            var sourceID = _codeGenerator.ExtractKey(oldStructure);
+            foreach (var copyEntryID in _copyTable.Reader[sourceID])
             {
                 var clone = _codeGenerator.Clone(oldStructure);
-                _codeGenerator.InsertKey(clone, copyEntry);
+                _codeGenerator.InsertKey(clone, copyEntryID);
 
                 yield return clone;
             }
@@ -130,7 +139,7 @@ namespace DBClientFiles.NET.Internals.Versions
                 {
                     BaseStream.Seek(OffsetMap.Reader.GetRecordOffset(i), SeekOrigin.Begin);
 
-                    foreach (var node in ReadIndividualNode(i, OffsetMap.Reader.GetRecordSize(i)))
+                    foreach (var node in ReadRecord(i, OffsetMap.Reader.GetRecordSize(i)))
                         yield return node;
                 }
             }
@@ -140,7 +149,7 @@ namespace DBClientFiles.NET.Internals.Versions
                 BaseStream.Position = Records.StartOffset;
                 while (BaseStream.Position < Records.EndOffset)
                 {
-                    foreach (var node in ReadIndividualNode(i, _recordSize))
+                    foreach (var node in ReadRecord(i, _recordSize))
                         yield return node;
 
                     ++i;

@@ -10,6 +10,7 @@ namespace DBClientFiles.NET.Internals.Versions
         where TValue : class, new()
         where TKey : struct
     {
+        #region Segments
         private Segment<TValue, CopyTableReader<TKey, TValue>> _copyTable;
         private Segment<TValue, IndexTableReader<TKey, TValue>> _indexTable;
         private Segment<TValue, LegacyCommonTableReader<TKey, TValue>> _commonTable;
@@ -19,9 +20,11 @@ namespace DBClientFiles.NET.Internals.Versions
         public override Segment<TValue> IndexTable => _indexTable;
         public override Segment<TValue> CopyTable => _copyTable;
         public override Segment<TValue> CommonTable => _commonTable;
+        #endregion
 
         private int _commonTableStartColumn;
 
+        #region Life and death
         public WDB6(Stream dataStream) : base(dataStream)
         {
             _copyTable = new Segment<TValue, CopyTableReader<TKey, TValue>>(this);
@@ -32,9 +35,9 @@ namespace DBClientFiles.NET.Internals.Versions
             StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
         }
 
-        protected override void Dispose(bool disposing)
+        protected override void ReleaseResources()
         {
-            base.Dispose(disposing);
+            base.ReleaseResources();
 
             Records.Dispose();
             StringTable.Dispose();
@@ -42,6 +45,7 @@ namespace DBClientFiles.NET.Internals.Versions
             CopyTable.Dispose();
             CommonTable.Dispose();
         }
+        #endregion
 
         public override bool ReadHeader()
         {
@@ -100,7 +104,6 @@ namespace DBClientFiles.NET.Internals.Versions
             CommonTable.Length = commonDataTableSize;
 
             // TODO: Check that the mapped index column corresponds to metadata
-
             _codeGenerator.IndexColumn = indexColumn;
             _codeGenerator.IsIndexStreamed = !IndexTable.Exists;
 

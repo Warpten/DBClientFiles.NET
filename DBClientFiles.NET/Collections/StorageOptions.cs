@@ -18,6 +18,12 @@ namespace DBClientFiles.NET.Collections
         public bool InternStrings { get; set; } = true;
         public bool KeepStringTable { get; set; } = false;
 
+        /// <summary>
+        /// If set to to <code>true</code>, the stream used as source will be copied to RAM before being used.
+        /// This is set to true by default for anything but MemoryStream.
+        /// </summary>
+        public bool CopyToMemory { get; set; } = true;
+
         public static StorageOptions Default { get; } = new StorageOptions();
     }
 }

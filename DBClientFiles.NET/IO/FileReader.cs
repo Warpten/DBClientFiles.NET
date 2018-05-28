@@ -39,5 +39,13 @@ namespace DBClientFiles.NET.IO
         public abstract string FindStringByOffset(int tableOffset);
 
         public abstract string[] ReadStringArray(int[] tableOffsets);
+
+        protected abstract void ReleaseResources();
+
+        protected override void Dispose(bool disposing)
+        {
+            ReleaseResources();
+            base.Dispose(disposing);
+        }
     }
 }

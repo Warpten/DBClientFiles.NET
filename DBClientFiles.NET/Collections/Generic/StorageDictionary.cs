@@ -9,10 +9,16 @@ using System.Linq;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
-    public sealed class StorageDictionary<TKey, TValue> : StorageBase<TValue>, IDictionary<TKey, TValue>
+    public sealed class StorageDictionary<TKey, TValue> : IStorage, IDictionary<TKey, TValue>
         where TKey : struct
         where TValue : class, new()
     {
+        #region IStorage
+        public Signatures Signature { get; }
+        public uint TableHash { get; }
+        public uint LayoutHash { get; }
+        #endregion
+
         private readonly Func<TValue, TKey> _keyGetter;
         private readonly Dictionary<TKey, TValue> _container = new Dictionary<TKey, TValue>();
 
@@ -31,7 +37,6 @@ namespace DBClientFiles.NET.Collections.Generic
         public StorageDictionary(Stream dataStream, StorageOptions options, Func<TValue, TKey> keyGetter) : this(dataStream, options)
         {
             _keyGetter = keyGetter;
-
         }
 
         /// <summary>
@@ -72,22 +77,18 @@ namespace DBClientFiles.NET.Collections.Generic
         /// <param name="options">The options with which to load the file.</param>
         public StorageDictionary(Stream dataStream, StorageOptions options)
         {
-            FromStream<TKey>(dataStream, options);
-        }
-
-        internal override void LoadRecords(IReader<TValue> reader)
-        {
-            // TODO Avoid instanciating a new serializer here, use a global application cache instead
-            var legacySerializer = new CodeGenerator<TValue, TKey>(reader.Members);
-
-            foreach (var record in reader.ReadRecords())
+            using (var implementation = new StorageImpl<TValue>(dataStream, options))
             {
-                var recordKey = _keyGetter?.Invoke(record) ?? legacySerializer.ExtractKey(record);
+                foreach (var item in implementation.Enumerate<TKey>())
+                    _container[_keyGetter.Invoke(item)] = item;
 
-                _container.Add(recordKey, record);
+                Signature = implementation.Signature;
+                TableHash = implementation.TableHash;
+                LayoutHash = implementation.LayoutHash;
             }
         }
 
+        #region IDictionary<TKey, TValue> implementation
         /// <inheritdoc/>
         public TValue this[TKey key]
         {
@@ -111,5 +112,6 @@ namespace DBClientFiles.NET.Collections.Generic
         public bool Remove(KeyValuePair<TKey, TValue> item) => ((IDictionary<TKey, TValue>)_container).Remove(item);
         public bool TryGetValue(TKey key, out TValue value) => _container.TryGetValue(key, out value);
         IEnumerator IEnumerable.GetEnumerator() => ((IDictionary<TKey, TValue>)_container).GetEnumerator();
+        #endregion
     }
 }

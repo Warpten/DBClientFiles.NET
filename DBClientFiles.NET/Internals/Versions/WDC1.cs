@@ -12,6 +12,7 @@ namespace DBClientFiles.NET.Internals.Versions
         where TValue : class, new()
         where TKey : struct
     {
+        #region Segments
         private Segment<TValue, BinarySegmentReader<TValue>> _palletTable;
         private Segment<TValue, IndexTableReader<TKey, TValue>> _indexTable;
         private Segment<TValue, CopyTableReader<TKey, TValue>> _copyTable;
@@ -25,9 +26,15 @@ namespace DBClientFiles.NET.Internals.Versions
         public override Segment<TValue> CommonTable { get; }
         private Segment<TValue> RelationshipData => _relationshipData;
         private Segment<TValue> Pallet => _palletTable;
+        #endregion
 
         private int _recordSize;
+        private int _currentlyIteratedIndex = 0;
 
+        private CodeGenerator<TValue, TKey> _codeGenerator;
+        public override CodeGenerator<TValue> Generator => _codeGenerator;
+
+        #region Life and death
         public WDC1(Stream strm) : base(strm, true)
         {
             _indexTable = new Segment<TValue, IndexTableReader<TKey, TValue>>(this);
@@ -41,10 +48,10 @@ namespace DBClientFiles.NET.Internals.Versions
             CommonTable = new Segment<TValue>();
         }
 
-        protected override void Dispose(bool disposing)
+        protected override void ReleaseResources()
         {
-            base.Dispose(disposing);
-
+            base.ReleaseResources();
+            
             _codeGenerator = null;
 
             Records.Dispose();
@@ -56,9 +63,7 @@ namespace DBClientFiles.NET.Internals.Versions
             RelationshipData.Dispose();
             Pallet.Dispose();
         }
-
-        private int _currentlyIteratedIndex = 0;
-        private CodeGenerator<TValue, TKey> _codeGenerator;
+        #endregion
 
         public override bool ReadHeader()
         {
@@ -186,10 +191,12 @@ namespace DBClientFiles.NET.Internals.Versions
 
             RelationshipData.StartOffset = CommonTable.EndOffset;
             RelationshipData.Length = relationshipDataSize;
-            
-            _codeGenerator = new CodeGenerator<TValue, TKey>(Members);
-            _codeGenerator.IndexColumn = indexColumn;
-            _codeGenerator.IsIndexStreamed = !IndexTable.Exists;
+
+            _codeGenerator = new CodeGenerator<TValue, TKey>(Members)
+            {
+                IndexColumn = indexColumn,
+                IsIndexStreamed = !IndexTable.Exists
+            };
 
             _recordSize = recordSize;
             return true;
@@ -230,16 +237,13 @@ namespace DBClientFiles.NET.Internals.Versions
             return _palletTable.Reader.Read<T>(palletOffset);
         }
 
-        private IEnumerable<TValue> ReadIndividualNodes(int recordSize)
+        private IEnumerable<TValue> ReadRecord(int recordSize)
         {
-            TValue instance;
-
             using (var recordReader = new RecordReader(this, StringTable.Exists, recordSize))
             {
-                if (IndexTable.Exists)
-                    instance = _codeGenerator.Deserialize(this, recordReader, _indexTable.Reader[_currentlyIteratedIndex]);
-                else
-                    instance = _codeGenerator.Deserialize(this, recordReader);
+                var instance = IndexTable.Exists
+                    ? _codeGenerator.Deserialize(this, recordReader, _indexTable.Reader[_currentlyIteratedIndex])
+                    : _codeGenerator.Deserialize(this, recordReader);
 
                 foreach (var copyInstanceID in _copyTable.Reader[_codeGenerator.ExtractKey(instance)])
                 {
@@ -260,7 +264,7 @@ namespace DBClientFiles.NET.Internals.Versions
                 {
                     BaseStream.Seek(OffsetMap.Reader.GetRecordOffset(_currentlyIteratedIndex), SeekOrigin.Begin);
 
-                    foreach (var node in ReadIndividualNodes(OffsetMap.Reader.GetRecordSize(_currentlyIteratedIndex)))
+                    foreach (var node in ReadRecord(OffsetMap.Reader.GetRecordSize(_currentlyIteratedIndex)))
                         yield return node;
                 }
             }
@@ -271,7 +275,7 @@ namespace DBClientFiles.NET.Internals.Versions
                 _currentlyIteratedIndex = 0;
                 while (BaseStream.Position < Records.EndOffset)
                 {
-                    foreach (var node in ReadIndividualNodes(_recordSize))
+                    foreach (var node in ReadRecord(_recordSize))
                         yield return node;
 
                     ++_currentlyIteratedIndex;
