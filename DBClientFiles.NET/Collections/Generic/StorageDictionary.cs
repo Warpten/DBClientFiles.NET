@@ -9,12 +9,12 @@ using System.Linq;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
-    public class StorageDictionary<TKey, TValue> : StorageBase<TValue>, IDictionary<TKey, TValue>
+    public sealed class StorageDictionary<TKey, TValue> : StorageBase<TValue>, IDictionary<TKey, TValue>
         where TKey : struct
         where TValue : class, new()
     {
-        private Func<TValue, TKey> _keyGetter;
-        private Dictionary<TKey, TValue> _container = new Dictionary<TKey, TValue>();
+        private readonly Func<TValue, TKey> _keyGetter;
+        private readonly Dictionary<TKey, TValue> _container = new Dictionary<TKey, TValue>();
 
         /// <summary>
         /// Create a new dictionary keyed by a specific column.
@@ -82,7 +82,7 @@ namespace DBClientFiles.NET.Collections.Generic
 
             foreach (var record in reader.ReadRecords())
             {
-                var recordKey = _keyGetter != null ? _keyGetter(record) : legacySerializer.ExtractKey(record);
+                var recordKey = _keyGetter?.Invoke(record) ?? legacySerializer.ExtractKey(record);
 
                 _container.Add(recordKey, record);
             }

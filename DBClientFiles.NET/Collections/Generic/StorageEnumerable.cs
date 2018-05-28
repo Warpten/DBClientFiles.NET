@@ -9,7 +9,7 @@ namespace DBClientFiles.NET.Collections.Generic
     /// An enumerable storage representation of dbc and db2 files.
     /// </summary>
     /// <typeparam name="T">The element type.</typeparam>
-    public class StorageEnumerable<T> : StorageBase<T>, IEnumerable<T>
+    public sealed class StorageEnumerable<T> : StorageBase<T>, IEnumerable<T>
         where T : class, new()
     {
         private IEnumerable<T> _enumerable;

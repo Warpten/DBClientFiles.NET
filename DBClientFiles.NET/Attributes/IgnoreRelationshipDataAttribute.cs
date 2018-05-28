@@ -1,4 +1,5 @@
 ﻿using System;
+
 namespace DBClientFiles.NET.Attributes
 {
     /// <summary>

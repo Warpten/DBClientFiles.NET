@@ -63,12 +63,11 @@ namespace DBClientFiles.NET.ConsoleTests
             foreach (var kv in _dataStores)
             {
                 Console.WriteLine(kv.Value.ToString());
-                using (var writer  = new StreamWriter($"./perf_{kv.Value.RecordType.Name.Replace("Entry","").ToLower()}.csv"))
+                using (var writer  = new StreamWriter($"./perf_{kv.Value.RecordType.Name.Replace("Entry","").ToLower()}_{kv.Value.Signature}.csv"))
                     kv.Value.WriteCSV(writer);
             }
 
             Console.WriteLine();
-
         }
 
         private static void BenchmarkStructure<TValue>(string resourcePath) where TValue : class, new()
@@ -82,7 +81,7 @@ namespace DBClientFiles.NET.ConsoleTests
                 ms.Position = 0;
 
                 var structureTester = new StructureTester<TValue>();
-                var benchmarkResult = structureTester.Benchmark<StorageList<TValue>>(out var dataStore, ms, 250);
+                var benchmarkResult = structureTester.Benchmark<StorageList<TValue>>(out var dataStore, ms, 200);
                 _dataStores[typeof(TValue)] = benchmarkResult;
             }
         }

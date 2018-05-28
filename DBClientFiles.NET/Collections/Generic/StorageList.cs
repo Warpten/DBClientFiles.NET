@@ -24,10 +24,10 @@ namespace DBClientFiles.NET.Collections.Generic
         }
     }
 
-    public class StorageList<T> : StorageBase<T>, IList<T>, IList, IReadOnlyList<T>, IReadOnlyCollection<T>
+    public class StorageList<T> : StorageBase<T>, IList<T>, IList, IReadOnlyList<T>
         where T : class, new()
     {
-        private List<T> _container = new List<T>();
+        private readonly List<T> _container = new List<T>();
 
         public StorageList(Stream fileStream) : this(fileStream, StorageOptions.Default)
         {
@@ -35,6 +35,7 @@ namespace DBClientFiles.NET.Collections.Generic
 
         public StorageList(Stream fileStream, StorageOptions options)
         {
+            //! TODO: Fix me, this would be calling the wrong method when using StorageList<TKey, T>
             FromStream(fileStream, options);
             LoadRecords();
         }
