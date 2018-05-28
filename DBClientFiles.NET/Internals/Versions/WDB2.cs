@@ -59,7 +59,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
             _recordSize = recordSize;
 
-            return true;
+            return base.ReadHeader();
         }
 
         public override IEnumerable<TValue> ReadRecords()

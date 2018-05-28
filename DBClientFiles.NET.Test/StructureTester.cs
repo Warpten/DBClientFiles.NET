@@ -170,11 +170,16 @@ namespace DBClientFiles.NET.Test
         public override string ToString()
         {
             var stringBuilder = new StringBuilder();
-            stringBuilder.Append((RecordType.Name.ToString() + " " + Signature.ToString() + "[" + Container.Count + " entries]").PadRight(45) + "|");
+            stringBuilder.Append("| ");
+            stringBuilder.Append((RecordType.Name.ToString() + " " + Signature.ToString() + "[" + Container.Count + " entries]").PadRight(45));
 
-            stringBuilder.Append(AverageTime.ToString(@"ss\.ffffff").PadRight(15) + "|");
-            stringBuilder.Append(BestTime.ToString(@"ss\.ffffff").PadRight(15) + "|");
-            stringBuilder.Append(WorstTime.ToString(@"ss\.ffffff").PadRight(20) + "|");
+            stringBuilder.Append(" | ");
+            stringBuilder.Append(AverageTime.ToString(@"ss\.ffffff").PadRight(15));
+            stringBuilder.Append(" | ");
+            stringBuilder.Append(BestTime.ToString(@"ss\.ffffff").PadRight(15));
+            stringBuilder.Append(" | ");
+            stringBuilder.Append(WorstTime.ToString(@"ss\.ffffff").PadRight(20));
+            stringBuilder.Append(" |");
             return stringBuilder.ToString();
         }
 
@@ -193,14 +198,30 @@ namespace DBClientFiles.NET.Test
             get
             {
                 var stringBuilder = new StringBuilder();
-                stringBuilder.Append("File name".PadRight(45) + "|");
-
-                stringBuilder.Append("Avg".PadRight(15) + "|");
-                stringBuilder.Append("Best".PadRight(15) + "|");
-                stringBuilder.Append("Worst".PadRight(20) + "|");
+                stringBuilder.Append("| File name".PadRight(47) + " | ");
+                stringBuilder.Append("Avg".PadRight(15) + " | ");
+                stringBuilder.Append("Best".PadRight(15) + " | ");
+                stringBuilder.Append("Worst".PadRight(20) + " | ");
                 return stringBuilder.ToString();
             }
         }
-        public static string HeaderSep => new string('=', 45 + (15 + 15 + 20) + 4);
+
+        public static string HeaderSep
+        {
+            get
+            {
+                var stringBuilder = new StringBuilder();
+                stringBuilder.Append("| ");
+                stringBuilder.Append(new string('-', 45));
+                stringBuilder.Append(" | ");
+                stringBuilder.Append(new string('-', 15));
+                stringBuilder.Append(" | ");
+                stringBuilder.Append(new string('-', 15));
+                stringBuilder.Append(" | ");
+                stringBuilder.Append(new string('-', 20));
+                stringBuilder.Append(" |");
+                return stringBuilder.ToString();
+            }
+        }
     }
 }

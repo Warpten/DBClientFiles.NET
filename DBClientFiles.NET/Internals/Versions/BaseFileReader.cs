@@ -38,9 +38,16 @@ namespace DBClientFiles.NET.Internals.Versions
 
     internal abstract class BaseFileReader<TValue> : FileReader, IReader<TValue> where TValue : class, new()
     {
+        #region Life and death
         protected BaseFileReader(Stream strm, bool keepOpen) : base(strm, keepOpen)
         {
         }
+
+        protected override void ReleaseResources()
+        {
+            _codeGenerator = null;
+        }
+        #endregion
 
         public int FieldCount { get; protected set; }
         public virtual ExtendedMemberInfo[] Members { get; protected set; }
@@ -64,8 +71,9 @@ namespace DBClientFiles.NET.Internals.Versions
             }
         }
 
-        public virtual CodeGenerator<TValue> Generator => throw new NotImplementedException();
-
+        private CodeGenerator<TValue> _codeGenerator;
+        public virtual CodeGenerator<TValue> Generator => _codeGenerator;
+    
         public virtual Segment<TValue, StringTableReader<TValue>> StringTable => throw new NotImplementedException();
         public virtual Segment<TValue, OffsetMapReader<TValue>> OffsetMap => throw new NotImplementedException();
         public virtual Segment<TValue> Records => throw new NotImplementedException();
@@ -77,9 +85,10 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public virtual bool ReadHeader()
         {
-            return false;
+            _codeGenerator = new CodeGenerator<TValue>(Members) { IsIndexStreamed = true };
+            return true;
         }
-
+        
         public abstract IEnumerable<TValue> ReadRecords();
 
         public virtual void ReadSegments()

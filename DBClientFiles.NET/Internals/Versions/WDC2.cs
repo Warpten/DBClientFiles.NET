@@ -88,6 +88,7 @@ namespace DBClientFiles.NET.Internals.Versions
                 StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
                 OffsetMap = new Segment<TValue, OffsetMapReader<TValue>>(this);
 
+                Options = _parent.Options;
             }
 
             protected override void ReleaseResources()
