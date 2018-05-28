@@ -5,7 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace DBClientFiles.NET.Test
+namespace DBClientFiles.NET.ConsoleTests
 {
     public static class TypeExtensions
     {

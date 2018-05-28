@@ -3,9 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBClientFiles.NET", "DBClientFiles.NET\DBClientFiles.NET.csproj", "{884B23C7-A165-4090-880C-1DAAAF9A1C51}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBClientFiles.NET.Test", "DBClientFiles.NET.Test\DBClientFiles.NET.Test.csproj", "{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DBClientFiles.NET", "DBClientFiles.NET\DBClientFiles.NET.csproj", "{884B23C7-A165-4090-880C-1DAAAF9A1C51}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBClientFiles.NET.ConsoleTests", "DBClientFiles.NET.ConsoleTests\DBClientFiles.NET.ConsoleTests.csproj", "{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}"
 EndProject
@@ -41,30 +39,10 @@ Global
 		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithDebInfo|Any CPU.Build.0 = Release|Any CPU
 		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithDebInfo|x64.ActiveCfg = Release|Any CPU
 		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithDebInfo|x64.Build.0 = Release|Any CPU
-		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithPerformance|Any CPU.ActiveCfg = RelWithPerformance|Any CPU
-		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithPerformance|Any CPU.Build.0 = RelWithPerformance|Any CPU
-		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithPerformance|x64.ActiveCfg = RelWithPerformance|Any CPU
-		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithPerformance|x64.Build.0 = RelWithPerformance|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.Debug|x64.Build.0 = Debug|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.MinSizeRel|Any CPU.ActiveCfg = Release|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.MinSizeRel|Any CPU.Build.0 = Release|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.MinSizeRel|x64.ActiveCfg = Release|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.MinSizeRel|x64.Build.0 = Release|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.Release|x64.ActiveCfg = Release|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.Release|x64.Build.0 = Release|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.RelWithDebInfo|Any CPU.ActiveCfg = Release|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.RelWithDebInfo|Any CPU.Build.0 = Release|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.RelWithDebInfo|x64.ActiveCfg = Release|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.RelWithDebInfo|x64.Build.0 = Release|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.RelWithPerformance|Any CPU.ActiveCfg = RelWithPerformance|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.RelWithPerformance|Any CPU.Build.0 = RelWithPerformance|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.RelWithPerformance|x64.ActiveCfg = RelWithPerformance|Any CPU
-		{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}.RelWithPerformance|x64.Build.0 = RelWithPerformance|Any CPU
+		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithPerformance|Any CPU.ActiveCfg = Release|Any CPU
+		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithPerformance|Any CPU.Build.0 = Release|Any CPU
+		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithPerformance|x64.ActiveCfg = Release|Any CPU
+		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithPerformance|x64.Build.0 = Release|Any CPU
 		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -81,10 +59,10 @@ Global
 		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.RelWithDebInfo|Any CPU.Build.0 = Release|Any CPU
 		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.RelWithDebInfo|x64.ActiveCfg = Release|Any CPU
 		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.RelWithDebInfo|x64.Build.0 = Release|Any CPU
-		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.RelWithPerformance|Any CPU.ActiveCfg = RelWithPerformance|Any CPU
-		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.RelWithPerformance|Any CPU.Build.0 = RelWithPerformance|Any CPU
-		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.RelWithPerformance|x64.ActiveCfg = RelWithPerformance|Any CPU
-		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.RelWithPerformance|x64.Build.0 = RelWithPerformance|Any CPU
+		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.RelWithPerformance|Any CPU.ActiveCfg = Release|Any CPU
+		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.RelWithPerformance|Any CPU.Build.0 = Release|Any CPU
+		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.RelWithPerformance|x64.ActiveCfg = Release|Any CPU
+		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.RelWithPerformance|x64.Build.0 = Release|Any CPU
 		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -101,10 +79,10 @@ Global
 		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithDebInfo|Any CPU.Build.0 = Release|Any CPU
 		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithDebInfo|x64.ActiveCfg = Release|Any CPU
 		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithDebInfo|x64.Build.0 = Release|Any CPU
-		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithPerformance|Any CPU.ActiveCfg = RelWithPerformance|Any CPU
-		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithPerformance|Any CPU.Build.0 = RelWithPerformance|Any CPU
-		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithPerformance|x64.ActiveCfg = RelWithPerformance|Any CPU
-		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithPerformance|x64.Build.0 = RelWithPerformance|Any CPU
+		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithPerformance|Any CPU.ActiveCfg = Release|Any CPU
+		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithPerformance|Any CPU.Build.0 = Release|Any CPU
+		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithPerformance|x64.ActiveCfg = Release|Any CPU
+		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithPerformance|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

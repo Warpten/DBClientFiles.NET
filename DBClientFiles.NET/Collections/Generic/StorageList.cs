@@ -79,11 +79,11 @@ namespace DBClientFiles.NET.Collections.Generic
     public sealed class StorageList<T> : IStorage, IList<T>, IList, IReadOnlyList<T>
         where T : class, new()
     {
-        #region IStorage
+#region IStorage
         public Signatures Signature { get; }
         public uint TableHash { get; }
         public uint LayoutHash { get; }
-        #endregion
+#endregion
 
         private readonly List<T> _container = new List<T>();
 
@@ -104,7 +104,7 @@ namespace DBClientFiles.NET.Collections.Generic
             }
         }
 
-        #region IList<T> implementation
+#region IList<T> implementation
         public T this[int index] {
             get => _container[index];
             set => _container[index] = value;
@@ -122,9 +122,9 @@ namespace DBClientFiles.NET.Collections.Generic
         public bool Remove(T item) => _container.Remove(item);
         public void RemoveAt(int index) => _container.RemoveAt(index);
         IEnumerator IEnumerable.GetEnumerator() => ((IList<T>)_container).GetEnumerator();
-        #endregion
+#endregion
 
-        #region IList implementation
+#region IList implementation
         public bool IsFixedSize => ((IList)_container).IsFixedSize;
         public object SyncRoot => ((IList)_container).SyncRoot;
         public bool IsSynchronized => ((IList)_container).IsSynchronized;
@@ -140,6 +140,6 @@ namespace DBClientFiles.NET.Collections.Generic
         public void Insert(int index, object value) => ((IList)_container).Insert(index, value);
         public void Remove(object value) => ((IList)_container).Remove(value);
         public void CopyTo(Array array, int index) => ((IList)_container).CopyTo(array, index);
-        #endregion
+#endregion
     }
 }

@@ -1,7 +1,6 @@
 ﻿using DBClientFiles.NET.Collections.Generic;
 using DBClientFiles.NET.Data;
 using DBClientFiles.NET.Data.WDBC;
-using DBClientFiles.NET.Test;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -42,7 +41,7 @@ namespace DBClientFiles.NET.ConsoleTests
 
             var types = Assembly.GetExecutingAssembly().GetReferencedAssemblies()
                 .Where(a => a.Name.Contains("DBClientFiles"))
-                .Select(a => Assembly.Load(a))
+                .Select(Assembly.Load)
                 .SelectMany(a => a.GetTypes());
 
             foreach (var typeInfo in types.Where(t => t.Namespace == @namespace))

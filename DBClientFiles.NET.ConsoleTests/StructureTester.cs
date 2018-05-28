@@ -9,7 +9,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace DBClientFiles.NET.Test
+namespace DBClientFiles.NET.ConsoleTests
 {
     public class StructureTester
     {
@@ -83,7 +83,7 @@ namespace DBClientFiles.NET.Test
             => Accumulate<TStorage>(dataStream);
 
         public TimeSpan Accumulate<TStorage>(Stream dataStream, StorageOptions options) where TStorage : IStorage
-            => Accumulate<TStorage>(out var instance, dataStream, options);
+            => Accumulate<TStorage>(out _, dataStream, options);
 
         public TimeSpan Accumulate<TStorage>(out TStorage instance, Stream dataStream, StorageOptions options)
             where TStorage : IStorage
@@ -150,23 +150,6 @@ namespace DBClientFiles.NET.Test
         public Type RecordType { get; set; }
         public Signatures Signature => ((IStorage)Container).Signature;
         public IList Container { get; set; }
-
-        public TimeSpan TimePercentile(double percentile)
-        {
-            TotalTimes.Sort();
-
-            int N = TotalTimes.Count;
-            double n = (N - 1) * percentile + 1;
-            if (n == 1d)
-                return TotalTimes.First();
-            else if (n == N)
-                return TotalTimes.Last();
-
-            int k = (int)n;
-            double d = n - k;
-            return TotalTimes[k - 1] + new TimeSpan(Convert.ToInt64(d * (TotalTimes[k] - TotalTimes[k - 1]).Ticks));
-
-        }
 
         public override string ToString()
         {

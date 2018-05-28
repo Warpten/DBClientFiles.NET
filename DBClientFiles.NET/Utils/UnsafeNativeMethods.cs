@@ -4,7 +4,9 @@ using System.Security;
 
 namespace DBClientFiles.NET.Utils
 {
+#if !(NETCOREAPP1_0 || NETCOREAPP1_1)
     [SuppressUnmanagedCodeSecurity]
+#endif
     internal unsafe class UnsafeNativeMethods
     {
         private UnsafeNativeMethods() { }
@@ -16,11 +18,10 @@ namespace DBClientFiles.NET.Utils
         /// <param name="src"></param>
         /// <param name="count"></param>
         [DllImport("kernel32.dll", EntryPoint = "CopyMemory", SetLastError = false)]
-        [SecurityCritical, SuppressUnmanagedCodeSecurity]
         internal static extern void CopyMemory(IntPtr dest, IntPtr src, uint count);
 
         [DllImport("kernel32.dll", EntryPoint = "CopyMemory", SetLastError = false)]
-        [SecurityCritical, SuppressUnmanagedCodeSecurity]
+        [SecurityCritical]
         internal static extern void CopyMemoryPtr(void* dest, void* src, uint count);
 
         /// <summary>
@@ -28,7 +29,6 @@ namespace DBClientFiles.NET.Utils
         /// </summary>
         // Note: SuppressUnmanagedCodeSecurity speeds things up drastically since there is no stack-walk required before moving to native code.
         [DllImport("Kernel32.dll", EntryPoint = "RtlMoveMemory", SetLastError = false)]
-        [SuppressUnmanagedCodeSecurity]
         internal static extern IntPtr MoveMemory(byte* dest, byte* src, int count);
     }
 }

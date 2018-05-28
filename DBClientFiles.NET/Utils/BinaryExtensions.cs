@@ -5,16 +5,9 @@ using System.Security;
 
 namespace DBClientFiles.NET.Utils
 {
+    [SuppressUnmanagedCodeSecurity]
     internal static unsafe class BinaryReaderExtensions
     {
-        /// <summary>
-        ///     Calls the native "memcpy" function.
-        /// </summary>
-        // Note: SuppressUnmanagedCodeSecurity speeds things up drastically since there is no stack-walk required before moving to native code.
-        [DllImport("Kernel32.dll", EntryPoint = "RtlMoveMemory", SetLastError = false)]
-        [SuppressUnmanagedCodeSecurity]
-        internal static extern IntPtr MoveMemory(byte* dest, byte* src, int count);
-
         /// <summary>
         ///     Reads a generic structure from the current stream.
         /// </summary>
@@ -27,7 +20,11 @@ namespace DBClientFiles.NET.Utils
             {
                 var ptr = Marshal.AllocHGlobal(SizeCache<T>.Size);
                 Marshal.Copy(br.ReadBytes(SizeCache<T>.Size), 0, ptr, SizeCache<T>.Size);
+#if NET45
+                var mret = (T)Marshal.PtrToStructure(ptr, typeof(T));
+#else
                 var mret = Marshal.PtrToStructure<T>(ptr);
+#endif
                 Marshal.FreeHGlobal(ptr);
                 return mret;
             }
@@ -37,7 +34,7 @@ namespace DBClientFiles.NET.Utils
             fixed (byte* b = br.ReadBytes(SizeCache<T>.Size))
             {
                 var tPtr = (byte*)SizeCache<T>.GetUnsafePtr(ref ret);
-                MoveMemory(tPtr, b, SizeCache<T>.Size);
+                UnsafeNativeMethods.MoveMemory(tPtr, b, SizeCache<T>.Size);
             }
             return ret;
         }
@@ -70,7 +67,11 @@ namespace DBClientFiles.NET.Utils
                 // Can't just do a bulk memcpy.
                 for (var i = 0; i < count; i++)
                 {
+#if NET45
+                    arr[i] = (T)Marshal.PtrToStructure(ptr + (SizeCache<T>.Size * i), typeof(T));
+#else
                     arr[i] = Marshal.PtrToStructure<T>(ptr + (SizeCache<T>.Size * i));
+#endif
                 }
                 Marshal.FreeHGlobal(ptr);
                 return arr;
@@ -85,7 +86,7 @@ namespace DBClientFiles.NET.Utils
             fixed (byte* pB = br.ReadBytes(SizeCache<T>.Size * count))
             {
                 var genericPtr = (byte*)SizeCache<T>.GetUnsafePtr(ref ret[0]);
-                MoveMemory(genericPtr, pB, SizeCache<T>.Size * count);
+                UnsafeNativeMethods.MoveMemory(genericPtr, pB, SizeCache<T>.Size * count);
             }
             return ret;
         }
@@ -109,7 +110,7 @@ namespace DBClientFiles.NET.Utils
 
             fixed (byte* pB = buf)
             {
-                MoveMemory(pB, valData, SizeCache<T>.Size);
+                UnsafeNativeMethods.MoveMemory(pB, valData, SizeCache<T>.Size);
             }
 
             bw.Write(buf);

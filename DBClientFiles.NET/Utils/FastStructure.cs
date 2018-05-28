@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Reflection.Emit;
+#if NET47 || NET471 || NET472
 using System.Runtime.CompilerServices;
+#endif
+using System.Runtime.InteropServices;
 
 namespace DBClientFiles.NET.Utils
 {
@@ -19,7 +22,9 @@ namespace DBClientFiles.NET.Utils
         /// <param name="structure"></param>
         /// <returns>A pointer to the provided structure in memory.</returns>
         /// <see cref="FastStructure{T}.GetPtr"/>]
+#if NET47 || NET471 || NET472
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static unsafe void* GetPtr<T>(ref T structure)
             where T : struct
         {
@@ -39,7 +44,9 @@ namespace DBClientFiles.NET.Utils
         /// <typeparam name="T">Any value/struct type</typeparam>
         /// <param name="pointer">Unsafe pointer to memory to load the value from</param>
         /// <returns>The newly loaded value</returns>
+#if NET47
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static T PtrToStructure<T>(IntPtr pointer)
             where T : struct
         {
@@ -59,7 +66,9 @@ namespace DBClientFiles.NET.Utils
         /// <typeparam name="T"></typeparam>
         /// <param name="pointer"></param>
         /// <param name="structure"></param>
+#if NET47
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static void StructureToPtr<T>(ref T structure, IntPtr pointer)
             where T : struct
         {
@@ -73,7 +82,9 @@ namespace DBClientFiles.NET.Utils
         /// <returns></returns>
         /// <remarks>Caches the size by type</remarks>
         /// <see cref="FastStructure{T}.Size"/>
+#if NET47
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         public static int SizeOf<T>()
             where T : struct
         {
@@ -144,7 +155,7 @@ namespace DBClientFiles.NET.Utils
     /// <see cref="System.Runtime.InteropServices.Marshal.StructureToPtr(object, IntPtr, bool)"/> (4ms vs 34ms). </para>
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public static class FastStructure<T>
+    public static unsafe class FastStructure<T>
         where T : struct
     {
         /// <summary>
@@ -184,9 +195,13 @@ namespace DBClientFiles.NET.Utils
         public static readonly StructureToPtrDelegate StructureToPtr = BuildWriteToPointerFunction();
 
         /// <summary>
-        /// Cached size of T as determined by <see cref="System.Runtime.InteropServices.Marshal.SizeOf(Type)"/>.
+        /// Cached size of T as determined by <see cref="Marshal.SizeOf(Type)"/>.
         /// </summary>
-        public static readonly int Size = System.Runtime.InteropServices.Marshal.SizeOf(typeof(T));
+#if NET45 || NETCOREAPP2_0 || NETCOREAPP2_1
+        public static readonly int Size = Marshal.SizeOf(typeof(T));
+#else
+        public static readonly int Size = Marshal.SizeOf<T>();
+#endif
 
         private static DynamicMethod method;
         private static DynamicMethod methodLoad;
@@ -195,7 +210,7 @@ namespace DBClientFiles.NET.Utils
         private static GetPtrDelegate BuildFunction()
         {
             method = new DynamicMethod("GetStructurePtr<" + typeof(T).FullName + ">",
-                typeof(void*), new Type[1] { typeof(T).MakeByRefType() }, typeof(FastStructure).Module);
+                typeof(void*), new[] { typeof(T).MakeByRefType() }, typeof(FastStructure).Module);
 
             var generator = method.GetILGenerator();
             generator.Emit(OpCodes.Ldarg_0);
@@ -207,7 +222,7 @@ namespace DBClientFiles.NET.Utils
         private static PtrToStructureDelegate BuildLoadFromPointerFunction()
         {
             methodLoad = new DynamicMethod("PtrToStructure<" + typeof(T).FullName + ">",
-                typeof(T), new Type[1] { typeof(IntPtr) }, typeof(FastStructure).Module);
+                typeof(T), new[] { typeof(IntPtr) }, typeof(FastStructure).Module);
 
             var generator = methodLoad.GetILGenerator();
             generator.Emit(OpCodes.Ldarg_0);
@@ -220,7 +235,7 @@ namespace DBClientFiles.NET.Utils
         private static StructureToPtrDelegate BuildWriteToPointerFunction()
         {
             methodWrite = new DynamicMethod("StructureToPtr<" + typeof(T).FullName + ">",
-                null, new Type[2] { typeof(T).MakeByRefType(), typeof(IntPtr) }, typeof(FastStructure).Module);
+                null, new[] { typeof(T).MakeByRefType(), typeof(IntPtr) }, typeof(FastStructure).Module);
 
             var generator = methodWrite.GetILGenerator();
             generator.Emit(OpCodes.Ldarg_1);

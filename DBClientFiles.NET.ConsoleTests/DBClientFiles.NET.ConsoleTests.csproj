@@ -1,74 +1,16 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}</ProjectGuid>
+    <TargetFrameworks>net45;net46;net47;net471;net472;netcoreapp2.0;netcoreapp2.1</TargetFrameworks>
+    <ApplicationIcon />
     <OutputType>Exe</OutputType>
-    <RootNamespace>DBClientFiles.NET.ConsoleTests</RootNamespace>
-    <AssemblyName>DBClientFiles.NET.ConsoleTests</AssemblyName>
-    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <StartupObject/>
+    <RuntimeIdentifiers>win10-x64;osx.10.11-x64</RuntimeIdentifiers>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <LangVersion>7.2</LangVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <LangVersion>7.2</LangVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'RelWithPerformance|AnyCPU'">
-    <OutputPath>bin\RelWithPerformance\</OutputPath>
-    <DefineConstants>TRACE;PERFORMANCE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>true</Prefer32Bit>
-    <LangVersion>7.2</LangVersion>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="Microsoft.CSharp" />
+    <ProjectReference Include="..\DBClientFiles.NET.Data\DBClientFiles.NET.Data.csproj" />
+    <ProjectReference Include="..\DBClientFiles.NET\DBClientFiles.NET.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Program.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\DBClientFiles.NET.Data\DBClientFiles.NET.Data.csproj">
-      <Project>{8ef65df8-d079-4826-a2a7-620de05cf484}</Project>
-      <Name>DBClientFiles.NET.Data</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\DBClientFiles.NET.Test\DBClientFiles.NET.Test.csproj">
-      <Project>{0B777C0A-1589-42EB-B3F3-A6A067CEC37B}</Project>
-      <Name>DBClientFiles.NET.Test</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\DBClientFiles.NET\DBClientFiles.NET.csproj">
-      <Project>{884B23C7-A165-4090-880C-1DAAAF9A1C51}</Project>
-      <Name>DBClientFiles.NET</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
 </Project>

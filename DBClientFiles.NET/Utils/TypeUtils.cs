@@ -42,8 +42,13 @@ namespace DBClientFiles.NET.Utils
             if (t == typeof(IntPtr))
                 return 4;
 
+#if NETCOREAPP1_0 || NETCOREAPP1_1 || NETCOREAPP2_0 || NETCOREAPP2_1
+            if (t.GetTypeInfo().IsEnum)
+                return t.GetTypeInfo().GetEnumUnderlyingType().GetBinarySize();
+#else
             if (t.IsEnum)
                 return t.GetEnumUnderlyingType().GetBinarySize();
+#endif
 
             if (_typeSizes.TryGetValue(t, out var size))
                 return size;
@@ -92,5 +97,17 @@ namespace DBClientFiles.NET.Utils
 
             return store.ToArray();
         }
+
+#if NETCOREAPP1_0 || NETCOREAPP1_1 || NETCOREAPP2_0 || NETCOREAPP2_1
+        public static bool IsDefined(this Type type, Type attrType)
+        {
+            return type.GetTypeInfo().IsDefined(attrType);
+        }
+
+        public static bool IsDefined(this Type type, Type attrType, bool inherited)
+        {
+            return type.GetTypeInfo().IsDefined(attrType, inherited);
+        }
+#endif
     }
 }
