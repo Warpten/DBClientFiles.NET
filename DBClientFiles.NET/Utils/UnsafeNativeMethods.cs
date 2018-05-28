@@ -16,12 +16,12 @@ namespace DBClientFiles.NET.Utils
         /// <param name="src"></param>
         /// <param name="count"></param>
         [DllImport("kernel32.dll", EntryPoint = "CopyMemory", SetLastError = false)]
-        [SecurityCritical]
+        [SecurityCritical, SuppressUnmanagedCodeSecurity]
         internal static extern void CopyMemory(IntPtr dest, IntPtr src, uint count);
 
         [DllImport("kernel32.dll", EntryPoint = "CopyMemory", SetLastError = false)]
-        [SecurityCritical]
-        internal static extern unsafe void CopyMemoryPtr(void* dest, void* src, uint count);
+        [SecurityCritical, SuppressUnmanagedCodeSecurity]
+        internal static extern void CopyMemoryPtr(void* dest, void* src, uint count);
 
         /// <summary>
         ///     Calls the native "memcpy" function.

@@ -10,8 +10,6 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     internal sealed class IndexTableReader<TKey, TValue> : SegmentReader<TValue>
         where TValue : class, new()
     {
-        public IndexTableReader() { }
-
         private TKey[] _keys;
 
         public override void Read()

@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 
-/// <remarks>
-/// The entirety of this file was shamelessly stolen from <a href="https://www.nuget.org/packages/SharedMemory">SharpMemory</a>.
-/// </remarks>
 namespace DBClientFiles.NET.Utils
 {
     /// <summary>
     /// Provides fast reading and writing of generic structures to a memory location using IL emitted functions.
     /// </summary>
+    /// /// <remarks>
+    /// This class was shamelessly stolen from <a href="https://www.nuget.org/packages/SharedMemory">SharpMemory</a>.
+    /// </remarks>
     public static class FastStructure
     {
         /// <summary>
@@ -17,7 +18,8 @@ namespace DBClientFiles.NET.Utils
         /// <typeparam name="T"></typeparam>
         /// <param name="structure"></param>
         /// <returns>A pointer to the provided structure in memory.</returns>
-        /// <see cref="FastStructure{T}.GetPtr"/>
+        /// <see cref="FastStructure{T}.GetPtr"/>]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe void* GetPtr<T>(ref T structure)
             where T : struct
         {
@@ -37,7 +39,8 @@ namespace DBClientFiles.NET.Utils
         /// <typeparam name="T">Any value/struct type</typeparam>
         /// <param name="pointer">Unsafe pointer to memory to load the value from</param>
         /// <returns>The newly loaded value</returns>
-        public static unsafe T PtrToStructure<T>(IntPtr pointer)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T PtrToStructure<T>(IntPtr pointer)
             where T : struct
         {
             return FastStructure<T>.PtrToStructure(pointer);
@@ -56,7 +59,8 @@ namespace DBClientFiles.NET.Utils
         /// <typeparam name="T"></typeparam>
         /// <param name="pointer"></param>
         /// <param name="structure"></param>
-        public static unsafe void StructureToPtr<T>(ref T structure, IntPtr pointer)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void StructureToPtr<T>(ref T structure, IntPtr pointer)
             where T : struct
         {
             FastStructure<T>.StructureToPtr(ref structure, pointer);
@@ -69,6 +73,7 @@ namespace DBClientFiles.NET.Utils
         /// <returns></returns>
         /// <remarks>Caches the size by type</remarks>
         /// <see cref="FastStructure{T}.Size"/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int SizeOf<T>()
             where T : struct
         {
@@ -86,19 +91,19 @@ namespace DBClientFiles.NET.Utils
         public static unsafe void ReadArray<T>(T[] buffer, IntPtr source, int index, int count)
             where T : struct
         {
-            uint elementSize = (uint)SizeOf<T>();
+            var elementSize = (uint)SizeOf<T>();
 
             if (buffer == null)
-                throw new ArgumentNullException("buffer");
+                throw new ArgumentNullException(nameof(buffer));
             if (count < 0)
-                throw new ArgumentOutOfRangeException("count");
+                throw new ArgumentOutOfRangeException(nameof(count));
             if (index < 0)
-                throw new ArgumentOutOfRangeException("index");
+                throw new ArgumentOutOfRangeException(nameof(index));
             if (buffer.Length - index < count)
                 throw new ArgumentException("Invalid offset into array specified by index and count");
 
-            void* ptr = source.ToPointer();
-            byte* p = (byte*)GetPtr(ref buffer[0]);
+            var ptr = source.ToPointer();
+            var p = (byte*)GetPtr(ref buffer[0]);
             UnsafeNativeMethods.CopyMemoryPtr(p + (index * elementSize), ptr, (uint)(elementSize * count));
         }
 
@@ -113,19 +118,19 @@ namespace DBClientFiles.NET.Utils
         public static unsafe void WriteArray<T>(IntPtr destination, T[] buffer, int index, int count)
             where T : struct
         {
-            uint elementSize = (uint)SizeOf<T>();
+            var elementSize = (uint)SizeOf<T>();
 
             if (buffer == null)
-                throw new ArgumentNullException("buffer");
+                throw new ArgumentNullException(nameof(buffer));
             if (count < 0)
-                throw new ArgumentOutOfRangeException("count");
+                throw new ArgumentOutOfRangeException(nameof(count));
             if (index < 0)
-                throw new ArgumentOutOfRangeException("index");
+                throw new ArgumentOutOfRangeException(nameof(index));
             if (buffer.Length - index < count)
                 throw new ArgumentException("Invalid offset into array specified by index and count");
 
-            void* ptr = destination.ToPointer();
-            byte* p = (byte*)FastStructure.GetPtr<T>(ref buffer[0]);
+            var ptr = destination.ToPointer();
+            var p = (byte*)GetPtr(ref buffer[0]);
             UnsafeNativeMethods.CopyMemoryPtr(ptr, p + (index * elementSize), (uint)(elementSize * count));
         }
     }
@@ -166,17 +171,17 @@ namespace DBClientFiles.NET.Utils
         /// <summary>
         /// The <see cref="GetPtrDelegate"/> delegate for the generated IL to retrieve a pointer to the structure
         /// </summary>
-        public unsafe readonly static GetPtrDelegate GetPtr = BuildFunction();
+        public static readonly GetPtrDelegate GetPtr = BuildFunction();
 
         /// <summary>
         /// The <see cref="PtrToStructureDelegate"/> delegate for the generated IL to retrieve a structure from a specified memory address.
         /// </summary>
-        public readonly static PtrToStructureDelegate PtrToStructure = BuildLoadFromPointerFunction();
+        public static readonly PtrToStructureDelegate PtrToStructure = BuildLoadFromPointerFunction();
 
         /// <summary>
         /// The <see cref="StructureToPtrDelegate"/> delegate for the generated IL to store a structure at the specified memory address.
         /// </summary>
-        public readonly static StructureToPtrDelegate StructureToPtr = BuildWriteToPointerFunction();
+        public static readonly StructureToPtrDelegate StructureToPtr = BuildWriteToPointerFunction();
 
         /// <summary>
         /// Cached size of T as determined by <see cref="System.Runtime.InteropServices.Marshal.SizeOf(Type)"/>.
@@ -187,24 +192,24 @@ namespace DBClientFiles.NET.Utils
         private static DynamicMethod methodLoad;
         private static DynamicMethod methodWrite;
 
-        private unsafe static GetPtrDelegate BuildFunction()
+        private static GetPtrDelegate BuildFunction()
         {
             method = new DynamicMethod("GetStructurePtr<" + typeof(T).FullName + ">",
                 typeof(void*), new Type[1] { typeof(T).MakeByRefType() }, typeof(FastStructure).Module);
 
-            ILGenerator generator = method.GetILGenerator();
+            var generator = method.GetILGenerator();
             generator.Emit(OpCodes.Ldarg_0);
             generator.Emit(OpCodes.Conv_U);
             generator.Emit(OpCodes.Ret);
             return (GetPtrDelegate)method.CreateDelegate(typeof(GetPtrDelegate));
         }
 
-        private static unsafe PtrToStructureDelegate BuildLoadFromPointerFunction()
+        private static PtrToStructureDelegate BuildLoadFromPointerFunction()
         {
             methodLoad = new DynamicMethod("PtrToStructure<" + typeof(T).FullName + ">",
                 typeof(T), new Type[1] { typeof(IntPtr) }, typeof(FastStructure).Module);
 
-            ILGenerator generator = methodLoad.GetILGenerator();
+            var generator = methodLoad.GetILGenerator();
             generator.Emit(OpCodes.Ldarg_0);
             generator.Emit(OpCodes.Ldobj, typeof(T));
             generator.Emit(OpCodes.Ret);
@@ -212,12 +217,12 @@ namespace DBClientFiles.NET.Utils
             return (PtrToStructureDelegate)methodLoad.CreateDelegate(typeof(PtrToStructureDelegate));
         }
 
-        private static unsafe StructureToPtrDelegate BuildWriteToPointerFunction()
+        private static StructureToPtrDelegate BuildWriteToPointerFunction()
         {
             methodWrite = new DynamicMethod("StructureToPtr<" + typeof(T).FullName + ">",
                 null, new Type[2] { typeof(T).MakeByRefType(), typeof(IntPtr) }, typeof(FastStructure).Module);
 
-            ILGenerator generator = methodWrite.GetILGenerator();
+            var generator = methodWrite.GetILGenerator();
             generator.Emit(OpCodes.Ldarg_1);
             generator.Emit(OpCodes.Ldarg_0);
             generator.Emit(OpCodes.Ldobj, typeof(T));

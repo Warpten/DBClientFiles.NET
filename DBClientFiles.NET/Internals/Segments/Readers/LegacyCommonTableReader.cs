@@ -9,6 +9,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     /// <summary>
     /// A segment reader for legacy common table (as seen in WDB6 file format).
     /// </summary>
+    /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TValue">The record type of the currently operated file.</typeparam>
     internal sealed class LegacyCommonTableReader<TKey, TValue> : ISegmentReader<TValue>
         where TValue : class, new()
@@ -39,22 +40,22 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             for (var i = 0; i < columnCount; ++i)
                 _valueOffsets[i] = new Dictionary<TKey, byte[]>();
 
-            /// Try to read everything as unpacked.
-            /// If reading fails (probably because the cursor is now beyond the end of the file), then the structure is packed.
+            // Try to read everything as unpacked.
+            // If reading fails (probably because the cursor is now beyond the end of the file), then the structure is packed.
 
-            bool isDryRun = true;
-            bool successfulParse = true;
+            var successfulParse = true;
             for (var i = 0; i < columnCount && successfulParse; ++i)
-                successfulParse |= AssertReadColumn(i, isDryRun, false);
+                successfulParse = AssertReadColumn(i, true, false);
 
             _isPadded = successfulParse;
             if (successfulParse)
             {
                 // Structure is actually packed.
+                // Read again, but it's not a dry run this time.
                 Storage.BaseStream.Seek(Segment.StartOffset + 4, SeekOrigin.Begin);
 
                 for (var i = 0; i < columnCount && successfulParse; ++i)
-                    successfulParse |= AssertReadColumn(i, false, true);
+                    successfulParse = AssertReadColumn(i, false, true);
             }
             else
             {
@@ -139,11 +140,6 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             Segment = null;
         }
 
-        public void Read()
-        {
-            
-        }
-
         public unsafe T ExtractValue<T>(int columnIndex, TKey recordKey) where T : struct
         {
             var dict = _valueOffsets[columnIndex];
@@ -151,7 +147,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
                 return default;
 
             fixed (byte* buffer = dataBlock)
-                return FastStructure<T>.PtrToStructure(new IntPtr(buffer));
+                return FastStructure.PtrToStructure<T>(new IntPtr(buffer));
         }
     }
 }

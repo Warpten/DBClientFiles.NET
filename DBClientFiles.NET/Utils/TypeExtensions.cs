@@ -4,11 +4,12 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-/// <remarks>
-/// Shamelessly stolen from <a href="http://geekswithblogs.net/mrsteve/archive/2012/01/11/csharp-expression-trees-create-instance-from-type-extension-method.aspx">Steve Wilkes</a>.
-/// </remarks>
+
 namespace DBClientFiles.NET.Utils
 {
+    /// <remarks>
+    /// Shamelessly stolen from <a href="http://geekswithblogs.net/mrsteve/archive/2012/01/11/csharp-expression-trees-create-instance-from-type-extension-method.aspx">Steve Wilkes</a>.
+    /// </remarks>
     internal static class TypeExtensions
     {
         /// <summary>

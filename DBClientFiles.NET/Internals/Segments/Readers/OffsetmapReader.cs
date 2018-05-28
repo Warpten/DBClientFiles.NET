@@ -6,19 +6,14 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     internal sealed class OffsetMapReader<TValue> : SegmentReader<TValue>
         where TValue : class, new()
     {
-        public OffsetMapReader() { }
-
-        private Dictionary<int, (long, int)> _parsedContent = new Dictionary<int, (long, int)>();
-
-        public int MinIndex { get; set; }
-        public int MaxIndex { get; set; }
+        private readonly Dictionary<int, (long, int)> _parsedContent = new Dictionary<int, (long, int)>();
 
         public override void Read()
         {
             if (!Segment.Exists)
                 return;
 
-            int i = 0;
+            var i = 0;
             Storage.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
             while (Storage.BaseStream.Position < Segment.EndOffset)
             {
@@ -30,7 +25,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
                 if (offset == 0)
                     continue;
 
-                _parsedContent.Add(MinIndex + i - 1, (offset, size));
+                _parsedContent.Add(i, (offset, size));
             }
         }
 

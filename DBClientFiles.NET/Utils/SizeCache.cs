@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection.Emit;
+// ReSharper disable StaticMemberInGenericType
 
 namespace DBClientFiles.NET.Utils
 {
@@ -51,7 +52,7 @@ namespace DBClientFiles.NET.Utils
                 new[] { typeof(T).MakeByRefType() },
                 typeof(SizeCache<>).Module);
 
-            ILGenerator generator = method.GetILGenerator();
+            var generator = method.GetILGenerator();
 
             // ldarg 0
             generator.Emit(OpCodes.Ldarg_0);

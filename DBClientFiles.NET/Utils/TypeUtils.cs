@@ -53,12 +53,12 @@ namespace DBClientFiles.NET.Utils
                 // Try letting the marshaler handle getting the size.
                 // It can *sometimes* do it correctly
                 // If it can't, fall back to our own methods.
-                /// var o = Activator.CreateInstance(t);
+                // var o = Activator.CreateInstance(t);
                 return _typeSizes[t] = Marshal.SizeOf(t);
             }
             catch
             {
-                int totalSize = 0;
+                var totalSize = 0;
                 var fields = t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
                 foreach (var field in fields)

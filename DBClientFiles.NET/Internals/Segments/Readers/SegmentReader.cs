@@ -6,9 +6,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     internal interface ISegmentReader<TValue> : IDisposable
         where TValue : class, new()
     {
-        FileReader Storage { get; }
         Segment<TValue> Segment { get; set; }
-        void Read();
     }
 
     internal abstract class SegmentReader<TValue> : ISegmentReader<TValue> where TValue : class, new()
@@ -16,11 +14,6 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
         public Segment<TValue> Segment { get; set; }
 
         public FileReader Storage => Segment.Storage;
-
-        protected SegmentReader()
-        {
-
-        }
 
         public abstract void Read();
         protected abstract void Release();

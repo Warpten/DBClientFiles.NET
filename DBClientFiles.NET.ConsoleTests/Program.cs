@@ -14,10 +14,15 @@ namespace DBClientFiles.NET.ConsoleTests
     {
         static void Main(string[] args)
         {
-            TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC");
-            TestStructuresInNamespace("DBClientFiles.NET.Data.WDB2");
-            TestStructuresInNamespace("DBClientFiles.NET.Data.WDC1");
-            TestStructuresInNamespace("DBClientFiles.NET.Data.WDC2");
+            using (var fs = File.OpenRead(@"D:\Repositories\DBFilesClient.NET\Tests\WDB2\Files\Item-sparse.db2"))
+            {
+                var sl = new StorageList<Data.WDB2.ItemSparseEntry>(fs);
+            }
+
+            // TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC");
+            // TestStructuresInNamespace("DBClientFiles.NET.Data.WDB2");
+            // TestStructuresInNamespace("DBClientFiles.NET.Data.WDC1");
+            // TestStructuresInNamespace("DBClientFiles.NET.Data.WDC2");
 
             Console.ReadKey();
         }

@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace DBClientFiles.NET.IO
@@ -83,9 +85,11 @@ namespace DBClientFiles.NET.IO
     internal unsafe class RecordReader : IDisposable
     {
         private byte[] _recordData;
+        private GCHandle _dataHandle;
+        private IntPtr _dataPointer;
 
         protected int _byteCursor = 0;
-
+    
         public long ReadInt64() => Read<long>(_byteCursor, true);
         public int ReadInt32() => Read<int>(_byteCursor, true);
         public short ReadInt16() => Read<short>(_byteCursor, true);
@@ -99,7 +103,7 @@ namespace DBClientFiles.NET.IO
         public float ReadSingle() => Read<float>(_byteCursor, true);
 
         protected FileReader _fileReader;
-        protected bool _usesStringTable;
+        protected readonly bool _usesStringTable;
 
         public int StartOffset { get; }
 
@@ -109,8 +113,19 @@ namespace DBClientFiles.NET.IO
 
             _usesStringTable = usesStringTable;
             _fileReader = fileReader;
-            using (var reader = new BinaryReader(fileReader.BaseStream, Encoding.UTF8, true))
-                _recordData = reader.ReadBytes(recordSize);
+
+            _recordData = fileReader.ReadBytes(recordSize);
+
+            _dataHandle = GCHandle.Alloc(_recordData, GCHandleType.Pinned);
+            _dataPointer = _dataHandle.AddrOfPinnedObject();
+        }
+
+        public void Dispose()
+        {
+            _dataHandle.Free();
+
+            _fileReader = null;
+            _recordData = null;
         }
 
         public long ReadInt64(int bitOffset, int bitCount)
@@ -218,9 +233,7 @@ namespace DBClientFiles.NET.IO
         /// </remarks>
         private T Read<T>(int bitOffset, bool advanceCursor = false) where T : struct
         {
-            T v;
-            fixed (byte* dataBlock = _recordData)
-                v = FastStructure<T>.PtrToStructure(new IntPtr(dataBlock + bitOffset / 8));
+            T v = FastStructure.PtrToStructure<T>(IntPtr.Add(_dataPointer, bitOffset / 8));
 
             if (advanceCursor)
                 _byteCursor += SizeCache<T>.Size * 8;
@@ -262,7 +275,7 @@ namespace DBClientFiles.NET.IO
         {
             var byteOffset = bitOffset / 8;
             var byteCount = (bitCount + (bitOffset & 7) + 7) / 8;
-                
+            
             var value = 0L;
             for (var i = 0; i < byteCount; ++i)
                 value |= (long)(_recordData[i + byteOffset] << (8 * i));
@@ -280,25 +293,16 @@ namespace DBClientFiles.NET.IO
         {
             var arr = new T[arraySize];
             for (var i = 0; i < arraySize; ++i)
-            {
-                var itemBitOffset = bitOffset + i * bitCount;
-                arr[i] = Read<T>(itemBitOffset);
-            }
+                arr[i] = Read<T>(bitOffset + i * SizeCache<T>.Size);
             return arr;
         }
 
         public T[] ReadArray<T>(int arraySize) where T : struct
         {
-            var nodeSize = SizeCache<T>.Size;
-
             var arr = new T[arraySize];
             for (var i = 0; i < arraySize; ++i)
-            {
-                var itemBitOffset = _byteCursor + nodeSize * i;
-                arr[i] = Read<T>(itemBitOffset, false);
-            }
-
-            _byteCursor += nodeSize * arraySize;
+                arr[i] = Read<T>(_byteCursor, true);
+            // _byteCursor += SizeCache<T>.Size * 8 * arraySize;
             return arr;
         }
 
@@ -318,10 +322,5 @@ namespace DBClientFiles.NET.IO
             return arr;
         }
 
-        public void Dispose()
-        {
-            _fileReader = null;
-            _recordData = null;
-        }
     }
 }

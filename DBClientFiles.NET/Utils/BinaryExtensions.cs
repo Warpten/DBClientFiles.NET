@@ -25,7 +25,7 @@ namespace DBClientFiles.NET.Utils
         {
             if (SizeCache<T>.TypeRequiresMarshal)
             {
-                IntPtr ptr = Marshal.AllocHGlobal(SizeCache<T>.Size);
+                var ptr = Marshal.AllocHGlobal(SizeCache<T>.Size);
                 Marshal.Copy(br.ReadBytes(SizeCache<T>.Size), 0, ptr, SizeCache<T>.Size);
                 var mret = Marshal.PtrToStructure<T>(ptr);
                 Marshal.FreeHGlobal(ptr);
@@ -50,8 +50,8 @@ namespace DBClientFiles.NET.Utils
         /// <returns></returns>
         public static T ReadUsingRefType<T>(this BinaryReader br) where T : struct
         {
-            T result = default(T);
-            TypedReference refResult = __makeref(result);
+            var result = default(T);
+            var refResult = __makeref(result);
             fixed (byte* pBuffer = br.ReadBytes(SizeCache<T>.Size))
             {
                 *(byte**)&refResult = pBuffer;
@@ -63,12 +63,12 @@ namespace DBClientFiles.NET.Utils
         {
             if (SizeCache<T>.TypeRequiresMarshal)
             {
-                IntPtr ptr = Marshal.AllocHGlobal(SizeCache<T>.Size * count);
+                var ptr = Marshal.AllocHGlobal(SizeCache<T>.Size * count);
                 Marshal.Copy(br.ReadBytes(SizeCache<T>.Size * count), 0, ptr, SizeCache<T>.Size * count);
-                T[] arr = new T[count];
+                var arr = new T[count];
                 // Unfortunate part of the marshaler, is that each instance needs to be pulled in separately.
                 // Can't just do a bulk memcpy.
-                for (int i = 0; i < count; i++)
+                for (var i = 0; i < count; i++)
                 {
                     arr[i] = Marshal.PtrToStructure<T>(ptr + (SizeCache<T>.Size * i));
                 }

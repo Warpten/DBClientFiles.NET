@@ -18,9 +18,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             _parsedContent = new Dictionary<TKey, TKey>();
         }
 
-        private Dictionary<TKey /* newRow */, TKey /* oldRow */> _parsedContent;
-
-        public int Length => _parsedContent.Count;
+        private readonly Dictionary<TKey /* newRow */, TKey /* oldRow */> _parsedContent;
 
         public IEnumerable<TKey> this[TKey oldKey]
         {

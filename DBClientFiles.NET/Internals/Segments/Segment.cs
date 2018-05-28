@@ -34,22 +34,18 @@ namespace DBClientFiles.NET.Internals.Segments
         public long Length { get; set; }
 
         public long EndOffset => Exists ? (StartOffset + Length) : StartOffset;
-
-        private bool _existsOverride;
-
+        
         public BaseFileReader<TValue> Storage { get; private set; }
         private StorageOptions Options { get; set; }
 
         public bool Exists
         {
-            set => _existsOverride = value;
-            get
+            set
             {
-                if (Length == 0)
-                    return false;
-
-                return _existsOverride || true;
+                if (!value)
+                    Length = 0;
             }
+            get => Length != 0;
         }
 
         internal Segment(BaseFileReader<TValue> storage)
@@ -59,16 +55,13 @@ namespace DBClientFiles.NET.Internals.Segments
 
             StartOffset = 0;
             Length = 0;
-
-            _existsOverride = false;
+            
         }
 
         internal Segment()
         {
             StartOffset = 0;
             Length = 0;
-
-            _existsOverride = false;
         }
 
         #region IDisposable Support
@@ -99,6 +92,9 @@ namespace DBClientFiles.NET.Internals.Segments
 
         public bool Equals(Segment<TValue> other)
         {
+            if (other == null)
+                return false;
+
             return StartOffset == other.StartOffset && Length == other.Length;
         }
     }

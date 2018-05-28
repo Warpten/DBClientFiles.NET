@@ -7,12 +7,6 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 {
     internal sealed class RelationShipSegmentReader<TKey, T> : SegmentReader<T> where T : class, new()
     {
-        private class RelationshipNode
-        {
-            public int RecordIndex { get; set; }
-            public byte[] ForeignKey { get; set; }
-        }
-
         private Dictionary<int /* recordIndex */, byte[]> _entries;
 
         public override void Read()
