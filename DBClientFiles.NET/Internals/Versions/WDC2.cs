@@ -51,6 +51,8 @@ namespace DBClientFiles.NET.Internals.Versions
             private readonly CopyTableReader<TKey, TValue> _copyTable;
             private readonly RelationShipSegmentReader<TKey, TValue> _relationshipData;
 
+            public override CodeGenerator<TValue> Generator => _parent.Generator;
+
             public override ExtendedMemberInfo[] Members
             {
                 get => _parent.Members;
@@ -103,6 +105,7 @@ namespace DBClientFiles.NET.Internals.Versions
                 {
                     Records.StartOffset = _fileOffset;
                     Records.Length = _recordCount * _parent._recordSize;
+                    Records.ItemLength = _parent._recordSize;
 
                     StringTable.StartOffset = Records.EndOffset;
                     StringTable.Length = _stringTableSize;
@@ -220,7 +223,7 @@ namespace DBClientFiles.NET.Internals.Versions
             var flags                = ReadInt16();
             var indexColumn          = ReadInt16();
             var totalFieldCount      = ReadInt32();
-            BaseStream.Seek(4, SeekOrigin.Current); // bitpacked_data_ofs, lookup_column_count
+            BaseStream.Seek(4 + 4, SeekOrigin.Current); // bitpacked_data_ofs, lookup_column_count
             var fieldStorageInfoSize = ReadInt32();
             var commonDataSize       = ReadInt32();
             var palletDataSize       = ReadInt32();
@@ -237,6 +240,7 @@ namespace DBClientFiles.NET.Internals.Versions
                 if (!_segments[i].ReadHeader())
                     return false;
             }
+
             var previousPosition = 0;
             for (var i = 0; i < totalFieldCount; ++i)
             {

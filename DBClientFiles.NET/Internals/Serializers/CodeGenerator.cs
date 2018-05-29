@@ -395,7 +395,7 @@ namespace DBClientFiles.NET.Internals.Serializers
             var elementType = memberInfo.Type.IsArray ? memberInfo.Type.GetElementType() : memberInfo.Type;
             var elementCode = Type.GetTypeCode(elementType);
 
-            if (memberInfo.BitSize != 0 && memberInfo.OffsetInRecord != 0)
+            if (memberInfo.BitSize != 0)
             {
                 if (memberInfo.Type.IsArray)
                 {

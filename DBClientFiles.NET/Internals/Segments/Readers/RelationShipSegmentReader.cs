@@ -10,7 +10,9 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     {
         private Dictionary<int /* recordIndex */, byte[]> _entries;
 
-        public RelationShipSegmentReader(FileReader reader) : base(reader) { }
+        public RelationShipSegmentReader(FileReader reader) : base(reader)
+        {
+        }
 
         public override void Read()
         {
@@ -37,7 +39,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
         public unsafe U GetForeignKey<U>(int recordIndex) where U : struct
         {
-            if (!_entries.ContainsKey(recordIndex))
+            if (_entries == null || !_entries.ContainsKey(recordIndex))
                 return default;
 
             //! TODO: prevent long, this will cook us.

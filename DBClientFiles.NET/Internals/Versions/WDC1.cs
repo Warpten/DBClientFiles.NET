@@ -49,7 +49,7 @@ namespace DBClientFiles.NET.Internals.Versions
             if (recordCount == 0)
                 return true;
 
-            BaseStream.Seek(4, SeekOrigin.Current); // field_count
+            var fieldCount           = ReadInt32();
             var recordSize           = ReadInt32();
             var stringTableSize      = ReadInt32();
             TableHash                = ReadUInt32();
@@ -73,16 +73,22 @@ namespace DBClientFiles.NET.Internals.Versions
             //     throw new InvalidOperationException($"Missing column(s) in definition: found {Members.Length}, expected {totalFieldCount}");
 
             var previousPosition = 0;
-            for (var i = 0; i < totalFieldCount; ++i)
+            for (var i = 0; i < Members.Length; ++i)
             {
-                var columnOffset = (idListSize != 0 && i >= indexColumn) ? (i + 1) : i;
+                var memberInfo = Members[i];
+                if (idListSize != 0 && i == indexColumn)
+                    continue;
+
+                var previousMember = i - 1;
+                if (idListSize != 0 && (i - 1) == indexColumn)
+                    previousMember -= 1;
 
                 var bitSize = ReadInt16();
                 var recordPosition = ReadInt16();
-                
-                Members[columnOffset].BitSize = 32 - bitSize;
-                if (columnOffset > 0 && Members[columnOffset - 1].BitSize != 0)
-                    Members[columnOffset - 1].Cardinality = (recordPosition - previousPosition) / Members[columnOffset - 1].BitSize;
+
+                memberInfo.BitSize = 32 - bitSize;
+                if (previousMember > 0 && Members[previousMember].BitSize != 0)
+                    Members[previousMember].Cardinality = (recordPosition - previousPosition) / Members[previousMember].BitSize;
 
                 previousPosition = recordPosition;
             }
@@ -91,6 +97,7 @@ namespace DBClientFiles.NET.Internals.Versions
             {
                 Records.StartOffset = BaseStream.Position;
                 Records.Length = recordSize * recordCount;
+                Records.ItemLength = recordSize;
 
                 StringTable.StartOffset = Records.EndOffset;
                 StringTable.Length = stringTableSize;
@@ -108,6 +115,7 @@ namespace DBClientFiles.NET.Internals.Versions
                 StringTable.Exists = false;
             }
 
+            IndexTable.Exists = idListSize != 0;
             IndexTable.StartOffset = ((flags & 0x01) != 0) ? OffsetMap.EndOffset : StringTable.EndOffset;
             IndexTable.Length = idListSize;
 
@@ -118,7 +126,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
             for (var i = 0; i < (fieldStorageInfoSize / (2 + 2 + 4 + 4 + 3 * 4)); ++i)
             {
-                var columnOffset = (IndexTable.Exists && i >= indexColumn) ? (i + 1) : i;
+                var columnOffset = (idListSize != 0 && i >= indexColumn) ? (i + 1) : i;
                 var memberInfo = Members[columnOffset];
 
                 memberInfo.OffsetInRecord = ReadInt16();
@@ -223,10 +231,10 @@ namespace DBClientFiles.NET.Internals.Versions
             using (var recordReader = GetRecordReader(recordSize))
             {
                 var instance = IndexTable.Exists
-                    ? _codeGenerator.Deserialize(this, recordReader, IndexTable[recordIndex])
-                    : _codeGenerator.Deserialize(this, recordReader);
+                    ? Generator.Deserialize(this, recordReader, IndexTable[recordIndex])
+                    : Generator.Deserialize(this, recordReader);
 
-                foreach (var copyInstanceID in _copyTable[_codeGenerator.ExtractKey(instance)])
+                foreach (var copyInstanceID in _copyTable[Generator.ExtractKey<TKey>(instance)])
                 {
                     var cloneInstance = _codeGenerator.Clone(instance);
                     _codeGenerator.InsertKey(cloneInstance, copyInstanceID);
