@@ -71,20 +71,19 @@ namespace DBClientFiles.NET.Internals.Versions
             if (recordCount == 0)
                 return true;
 
-            var fieldCount           = ReadInt32(); // counts arrays as 1 now, thankfully
+            BaseStream.Seek(4, SeekOrigin.Current); // field_count
             var recordSize           = ReadInt32();
             var stringTableSize      = ReadInt32();
-            var tableHash            = ReadInt32();
-            var layoutHash           = ReadInt32();
+            TableHash                = ReadUInt32();
+            LayoutHash               = ReadUInt32();
             var minIndex             = ReadInt32();
             var maxIndex             = ReadInt32();
-            var locale               = ReadInt32();
+            BaseStream.Seek(4, SeekOrigin.Current); // locale
             var copyTableSize        = ReadInt32();
             var flags                = ReadInt16();
             var indexColumn          = ReadInt16(); // this is the index of the field containing ID values; this is ignored if flags & 0x04 != 0
             var totalFieldCount      = ReadInt32(); // from WDC1 onwards, this value seems to always be the same as the 'field_count' value
-            var bitpackedDataOfs     = ReadInt32(); // relative position in record where bitpacked data begins; not important for parsing the file
-            var lookupColumnCount    = ReadInt32(); 
+            BaseStream.Seek(4 + 4, SeekOrigin.Current); // bitpacked_data_ofs, lookup_column_count
             var offsetMapOffset      = ReadInt32();
             var idListSize           = ReadInt32();
             var fieldStorageInfoSize = ReadInt32();

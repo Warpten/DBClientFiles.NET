@@ -15,5 +15,8 @@ namespace DBClientFiles.NET.Internals
         
         StorageOptions Options { get; set; }
         CodeGenerator<T> Generator { get; }
+
+        uint TableHash { get; }
+        uint LayoutHash { get; }
     }
 }

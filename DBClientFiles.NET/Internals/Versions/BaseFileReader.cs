@@ -49,7 +49,9 @@ namespace DBClientFiles.NET.Internals.Versions
         }
         #endregion
 
-        public int FieldCount { get; protected set; }
+        public uint TableHash { get; protected set; }
+        public uint LayoutHash { get; protected set; }
+
         public virtual ExtendedMemberInfo[] Members { get; protected set; }
 
         public abstract T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : struct;

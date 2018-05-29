@@ -33,16 +33,18 @@ namespace DBClientFiles.NET.Internals.Versions
             if (recordCount == 0)
                 return false;
 
-            var fieldCount = ReadInt32();
-            var recordSize = ReadInt32();
+            BaseStream.Seek(4, SeekOrigin.Current); // field_count
+            var recordSize      = ReadInt32();
             var stringBlockSize = ReadInt32();
-            var tableHash = ReadInt32();
-            var buildHash = ReadInt32();
-            var timeStampLastWritten = ReadInt32();
+            TableHash           = ReadUInt32();
+            LayoutHash          = ReadUInt32(); // technically build
+
+            BaseStream.Seek(4, SeekOrigin.Current); // timestamp_last_written
+
             var minIndex = ReadInt32();
             var maxIndex = ReadInt32();
-            var locale = ReadInt32();
-            var copyTableSize = ReadInt32(); // Unused
+
+            BaseStream.Seek(4 + 4, SeekOrigin.Current); // locale, copy_table_size
 
             // Skip string length information (unused by nearly everyone)
             if (maxIndex != 0)
@@ -54,8 +56,6 @@ namespace DBClientFiles.NET.Internals.Versions
 
             StringTable.StartOffset = Records.EndOffset;
             StringTable.Length = stringBlockSize;
-
-            FieldCount = fieldCount;
 
             _recordSize = recordSize;
 

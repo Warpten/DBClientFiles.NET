@@ -3,6 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using DBClientFiles.NET.Collections.Generic;
 
 namespace DBClientFiles.NET.IO
 {
@@ -35,7 +36,7 @@ namespace DBClientFiles.NET.IO
         }
 
         public abstract StorageOptions Options { get; set; }
-
+        
         public abstract string FindStringByOffset(int tableOffset);
 
         public abstract string[] ReadStringArray(int[] tableOffsets);

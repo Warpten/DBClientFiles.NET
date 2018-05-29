@@ -109,6 +109,9 @@ namespace DBClientFiles.NET.Collections.Generic
             // Steal the generator
             Generator = _fileReader.Generator;
 
+            TableHash = _fileReader.TableHash;
+            LayoutHash = _fileReader.LayoutHash;
+
             _fileReader.ReadSegments();
             return _fileReader.ReadRecords();
         }

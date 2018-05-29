@@ -53,18 +53,18 @@ namespace DBClientFiles.NET.Internals.Versions
             if (recordCount == 0)
                 return false;
 
-            var fieldCount = ReadInt32();
-            var recordSize = ReadInt32();
-            var stringTableSize = ReadInt32();
-            var tableHash = ReadInt32();
-            var layoutHash = ReadInt32();
-            var minIndex = ReadInt32();
-            var maxIndex = ReadInt32();
-            var locale = ReadInt32();
-            var copyTableSize = ReadInt32();
-            var flags = ReadInt16();
-            var indexColumn = ReadInt32();
-            var totalFieldCount = ReadInt32();
+            var fieldCount          = ReadInt32();
+            var recordSize          = ReadInt32();
+            var stringTableSize     = ReadInt32();
+            TableHash               = ReadUInt32();
+            LayoutHash              = ReadUInt32();
+            var minIndex            = ReadInt32();
+            var maxIndex            = ReadInt32();
+            BaseStream.Seek(4, SeekOrigin.Current); // locale
+            var copyTableSize       = ReadInt32();
+            var flags               = ReadInt16();
+            var indexColumn         = ReadInt32();
+            BaseStream.Seek(4, SeekOrigin.Current); // total_field_count
             var commonDataTableSize = ReadInt32();
 
             _commonTableStartColumn = fieldCount;

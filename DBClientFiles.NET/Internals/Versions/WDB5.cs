@@ -57,11 +57,11 @@ namespace DBClientFiles.NET.Internals.Versions
             var fieldCount       = ReadInt32();
             var recordSize       = ReadInt32();
             var stringTableSize  = ReadInt32();
-            var tableHash        = ReadInt32();
-            var layoutHash       = ReadInt32();
+            TableHash            = ReadUInt32();
+            LayoutHash           = ReadUInt32();
             var minIndex         = ReadInt32();
             var maxIndex         = ReadInt32();
-            var locale           = ReadInt32();
+            BaseStream.Seek(4, SeekOrigin.Current); // locale
             var copyTableSize    = ReadInt32();
             var flags            = ReadInt16();
             var indexColumn      = ReadInt16();
@@ -96,8 +96,6 @@ namespace DBClientFiles.NET.Internals.Versions
 
             CopyTable.StartOffset = IndexTable.EndOffset;
             CopyTable.Length = copyTableSize;
-
-            FieldCount = fieldCount;
 
             _recordSize = recordSize;
 

@@ -32,7 +32,8 @@ namespace DBClientFiles.NET.Internals.Versions
             if (recordCount == 0)
                 return false;
 
-            var fieldCount = ReadInt32();
+            BaseStream.Seek(4, SeekOrigin.Current); // fieldcount
+
             var recordSize = ReadInt32();
             var stringTableSize = ReadInt32();
 
@@ -41,8 +42,6 @@ namespace DBClientFiles.NET.Internals.Versions
 
             StringTable.Length = stringTableSize;
             StringTable.StartOffset = Records.EndOffset;
-
-            FieldCount = fieldCount;
 
             _recordSize = recordSize;
 

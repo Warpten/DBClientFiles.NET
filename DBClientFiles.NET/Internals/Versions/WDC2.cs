@@ -63,9 +63,7 @@ namespace DBClientFiles.NET.Internals.Versions
                 get => _parent.Members;
                 protected set => throw new InvalidOperationException();
             }
-
-            private int _unkHeader0;
-            private int _unkHeader1;
+            
             private int _fileOffset;
             private int _recordCount;
             private int _stringTableSize;
@@ -104,8 +102,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
             public override bool ReadHeader()
             {
-                _unkHeader0           = ReadInt32();
-                _unkHeader1           = ReadInt32();
+                BaseStream.Seek(4 + 4, SeekOrigin.Current); // unk_header[2]
                 _fileOffset           = ReadInt32(); // Absolute offset to the beginning of this section
                 _recordCount          = ReadInt32();
                 _stringTableSize      = ReadInt32();
@@ -276,19 +273,19 @@ namespace DBClientFiles.NET.Internals.Versions
         public override bool ReadHeader()
         {
             var recordCount          = ReadInt32();
-            var fieldCount           = ReadInt32();
+            if (recordCount == 0)
+                return false;
+
+            BaseStream.Seek(4, SeekOrigin.Current); // field_count
             var recordSize           = ReadInt32();
             var stringTableSize      = ReadInt32(); // All sections combined
-            var tableHash            = ReadInt32();
-            var layoutHash           = ReadInt32();
-            var minIndex             = ReadInt32();
-            var maxIndex             = ReadInt32();
-            var locale               = ReadInt32();
+            TableHash                = ReadUInt32();
+            LayoutHash               = ReadUInt32();
+            BaseStream.Seek(4 + 4 + 4, SeekOrigin.Current); // minIndex, maxIndex, locale
             var flags                = ReadInt16();
             var indexColumn          = ReadInt16();
             var totalFieldCount      = ReadInt32();
-            var bitpackedDataOffset  = ReadInt32();
-            var lookupColumnCount    = ReadInt32();
+            BaseStream.Seek(4, SeekOrigin.Current); // bitpacked_data_ofs, lookup_column_count
             var fieldStorageInfoSize = ReadInt32();
             var commonDataSize       = ReadInt32();
             var palletDataSize       = ReadInt32();
