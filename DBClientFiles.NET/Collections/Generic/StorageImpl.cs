@@ -34,20 +34,6 @@ namespace DBClientFiles.NET.Collections.Generic
 
         public CodeGenerator<T> Generator { get; private set; }
 
-        public StorageImpl(FileStream fileStream, StorageOptions options)
-        {
-            Options = options;
-
-            if (options.CopyToMemory)
-            {
-                Stream = new MemoryStream((int)fileStream.Length);
-                fileStream.CopyTo(Stream);
-                Stream.Position = 0;
-            }
-            else
-                Stream = fileStream;
-        }
-
         public void Dispose()
         {
             if (Options.CopyToMemory)
@@ -63,8 +49,14 @@ namespace DBClientFiles.NET.Collections.Generic
         {
             Options = options;
 
-            Stream = dataStream;
-            Stream.Position = 0;
+            if (options.CopyToMemory)
+            {
+                Stream = new MemoryStream((int)dataStream.Length);
+                dataStream.CopyTo(Stream);
+                Stream.Position = 0;
+            }
+            else
+                Stream = dataStream;
         }
 
         public IEnumerable<T> Enumerate() => Enumerate<int>();

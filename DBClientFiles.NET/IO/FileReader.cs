@@ -1,9 +1,11 @@
-﻿using DBClientFiles.NET.Collections;
+﻿using System;
+using DBClientFiles.NET.Collections;
 using System.IO;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using DBClientFiles.NET.Collections.Generic;
+using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.IO
 {
@@ -12,8 +14,7 @@ namespace DBClientFiles.NET.IO
     /// </summary>
     internal static class _FileReader
     {
-        public static MethodInfo ReadString { get; } = typeof(FileReader).GetMethod("ReadString", new[] { typeof(int) });
-        public static MethodInfo ReadStringArray { get; } = typeof(FileReader).GetMethod("ReadStringArray", new[] { typeof(int[]) });
+        public static MethodInfo ReadString = typeof(FileReader).GetMethod("ReadString", new[] { typeof(int) });
     }
 
     /// <summary>
@@ -38,9 +39,7 @@ namespace DBClientFiles.NET.IO
         public abstract StorageOptions Options { get; set; }
         
         public abstract string FindStringByOffset(int tableOffset);
-
-        public abstract string[] ReadStringArray(int[] tableOffsets);
-
+        
         protected abstract void ReleaseResources();
 
         protected override void Dispose(bool disposing)

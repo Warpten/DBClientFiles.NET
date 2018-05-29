@@ -13,23 +13,13 @@ namespace DBClientFiles.NET.Internals.Versions
         where TKey : struct
     {
         #region Segments
-        private Segment<TValue, BinarySegmentReader<TValue>> _palletTable;
-        private Segment<TValue, IndexTableReader<TKey, TValue>> _indexTable;
-        private Segment<TValue, CopyTableReader<TKey, TValue>> _copyTable;
-        private Segment<TValue, RelationShipSegmentReader<TKey, TValue>> _relationshipData;
-
-        public override Segment<TValue> Records { get; }
-        public override Segment<TValue, StringTableReader<TValue>> StringTable { get; }
-        public override Segment<TValue, OffsetMapReader<TValue>> OffsetMap { get; }
-        public override Segment<TValue> CopyTable => _copyTable;
-        public override Segment<TValue> IndexTable => _indexTable;
-        public override Segment<TValue> CommonTable { get; }
-        private Segment<TValue> RelationshipData => _relationshipData;
-        private Segment<TValue> Pallet => _palletTable;
+        private readonly BinarySegmentReader<TValue> _palletTable;
+        private readonly CopyTableReader<TKey, TValue> _copyTable;
+        private readonly RelationShipSegmentReader<TKey, TValue> _relationshipData;
+        private Segment<TValue> _commonTable;
         #endregion
 
-        private int _recordSize;
-        private int _currentlyIteratedIndex = 0;
+        private int _currentRecordIndex = 0;
 
         private CodeGenerator<TValue, TKey> _codeGenerator;
         public override CodeGenerator<TValue> Generator => _codeGenerator;
@@ -37,15 +27,9 @@ namespace DBClientFiles.NET.Internals.Versions
         #region Life and death
         public WDC1(Stream strm) : base(strm, true)
         {
-            _indexTable = new Segment<TValue, IndexTableReader<TKey, TValue>>(this);
-            _palletTable = new Segment<TValue, BinarySegmentReader<TValue>>(this);
-            _copyTable = new Segment<TValue, CopyTableReader<TKey, TValue>>(this);
-            _relationshipData = new Segment<TValue, RelationShipSegmentReader<TKey, TValue>>(this);
-
-            Records = new Segment<TValue>();
-            StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
-            OffsetMap = new Segment<TValue, OffsetMapReader<TValue>>(this);
-            CommonTable = new Segment<TValue>();
+            _palletTable      = new BinarySegmentReader<TValue>(this);
+            _copyTable        = new CopyTableReader<TKey, TValue>(this);
+            _relationshipData = new RelationShipSegmentReader<TKey, TValue>(this);
         }
 
         protected override void ReleaseResources()
@@ -53,15 +37,9 @@ namespace DBClientFiles.NET.Internals.Versions
             base.ReleaseResources();
             
             _codeGenerator = null;
-
-            Records.Dispose();
-            StringTable.Dispose();
-            OffsetMap.Dispose();
-            CopyTable.Dispose();
-            IndexTable.Dispose();
-            CommonTable.Dispose();
-            RelationshipData.Dispose();
-            Pallet.Dispose();
+            _palletTable.Dispose();
+            _copyTable.Dispose();
+            _relationshipData.Dispose();
         }
         #endregion
 
@@ -133,10 +111,10 @@ namespace DBClientFiles.NET.Internals.Versions
             IndexTable.StartOffset = ((flags & 0x01) != 0) ? OffsetMap.EndOffset : StringTable.EndOffset;
             IndexTable.Length = idListSize;
 
-            CopyTable.StartOffset = IndexTable.EndOffset;
-            CopyTable.Length = copyTableSize;
+            _copyTable.StartOffset = IndexTable.EndOffset;
+            _copyTable.Length = copyTableSize;
 
-            BaseStream.Position = CopyTable.EndOffset;
+            BaseStream.Position = _copyTable.EndOffset;
 
             for (var i = 0; i < (fieldStorageInfoSize / (2 + 2 + 4 + 4 + 3 * 4)); ++i)
             {
@@ -182,22 +160,21 @@ namespace DBClientFiles.NET.Internals.Versions
                     memberInfo.Cardinality = fieldSizeBits / memberInfo.BitSize;
             }
 
-            Pallet.StartOffset = BaseStream.Position;
-            Pallet.Length = palletDataSize;
+            _palletTable.StartOffset = BaseStream.Position;
+            _palletTable.Length = palletDataSize;
 
-            CommonTable.StartOffset = Pallet.EndOffset;
-            CommonTable.Length = commonDataSize;
+            _commonTable.StartOffset = _palletTable.EndOffset;
+            _commonTable.Length = commonDataSize;
 
-            RelationshipData.StartOffset = CommonTable.EndOffset;
-            RelationshipData.Length = relationshipDataSize;
+            _relationshipData.StartOffset = _commonTable.EndOffset;
+            _relationshipData.Length = relationshipDataSize;
 
             _codeGenerator = new CodeGenerator<TValue, TKey>(Members)
             {
                 IndexColumn = indexColumn,
                 IsIndexStreamed = !IndexTable.Exists
             };
-
-            _recordSize = recordSize;
+            
             return true;
         }
 
@@ -205,9 +182,8 @@ namespace DBClientFiles.NET.Internals.Versions
         {
             base.ReadSegments();
 
-            _palletTable.Reader.Read();
-            _indexTable.Reader.Read();
-            _relationshipData.Reader.Read();
+            _palletTable.Read();
+            _relationshipData.Read();
         }
 
         public override T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value)
@@ -217,7 +193,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override T ReadForeignKeyMember<T>()
         {
-            return _relationshipData.Reader.GetForeignKey<T>(_currentlyIteratedIndex);
+            return _relationshipData.GetForeignKey<T>(_currentRecordIndex);
         }
 
         public override T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value)
@@ -225,7 +201,7 @@ namespace DBClientFiles.NET.Internals.Versions
             var memberInfo = Members[memberIndex];
 
             var palletOffset = recordReader.ReadBits(memberInfo.OffsetInRecord, memberInfo.BitSize);
-            return _palletTable.Reader.ReadArray<T>(palletOffset, memberInfo.Cardinality);
+            return _palletTable.ReadArray<T>(palletOffset, memberInfo.Cardinality);
         }
 
         public override T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value)
@@ -233,18 +209,24 @@ namespace DBClientFiles.NET.Internals.Versions
             var memberInfo = Members[memberIndex];
 
             var palletOffset = recordReader.ReadBits(memberInfo.OffsetInRecord, memberInfo.BitSize);
-            return _palletTable.Reader.Read<T>(palletOffset);
+            return _palletTable.Read<T>(palletOffset);
         }
 
-        private IEnumerable<TValue> ReadRecord(int recordSize)
+        public virtual RecordReader GetRecordReader(int recordSize)
         {
-            using (var recordReader = new RecordReader(this, StringTable.Exists, recordSize))
+            return new RecordReader(this, StringTable.Exists, recordSize);
+        }
+
+        protected override IEnumerable<TValue> ReadRecords(int recordIndex, long recordOffset, int recordSize)
+        {
+            _currentRecordIndex = recordIndex;
+            using (var recordReader = GetRecordReader(recordSize))
             {
                 var instance = IndexTable.Exists
-                    ? _codeGenerator.Deserialize(this, recordReader, _indexTable.Reader[_currentlyIteratedIndex])
+                    ? _codeGenerator.Deserialize(this, recordReader, IndexTable[recordIndex])
                     : _codeGenerator.Deserialize(this, recordReader);
 
-                foreach (var copyInstanceID in _copyTable.Reader[_codeGenerator.ExtractKey(instance)])
+                foreach (var copyInstanceID in _copyTable[_codeGenerator.ExtractKey(instance)])
                 {
                     var cloneInstance = _codeGenerator.Clone(instance);
                     _codeGenerator.InsertKey(cloneInstance, copyInstanceID);
@@ -252,33 +234,6 @@ namespace DBClientFiles.NET.Internals.Versions
                 }
 
                 yield return instance;
-            }
-        }
-
-        public override IEnumerable<TValue> ReadRecords()
-        {
-            if (OffsetMap.Exists)
-            {
-                for (_currentlyIteratedIndex = 0; _currentlyIteratedIndex < OffsetMap.Reader.Count; ++_currentlyIteratedIndex)
-                {
-                    BaseStream.Seek(OffsetMap.Reader.GetRecordOffset(_currentlyIteratedIndex), SeekOrigin.Begin);
-
-                    foreach (var node in ReadRecord(OffsetMap.Reader.GetRecordSize(_currentlyIteratedIndex)))
-                        yield return node;
-                }
-            }
-            else
-            {
-                BaseStream.Seek(Records.StartOffset, SeekOrigin.Begin);
-
-                _currentlyIteratedIndex = 0;
-                while (BaseStream.Position < Records.EndOffset)
-                {
-                    foreach (var node in ReadRecord(_recordSize))
-                        yield return node;
-
-                    ++_currentlyIteratedIndex;
-                }
             }
         }
     }

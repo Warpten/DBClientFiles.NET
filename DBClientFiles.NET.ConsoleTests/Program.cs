@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using DBClientFiles.NET.Collections;
 
 namespace DBClientFiles.NET.ConsoleTests
 {
@@ -15,7 +16,7 @@ namespace DBClientFiles.NET.ConsoleTests
         {
             using (var fs = File.OpenRead(@"D:\Repositories\DBFilesClient.NET\Tests\WDB2\Files\Item-sparse.db2"))
             {
-                var sl = new StorageList<Data.WDB2.ItemSparseEntry>(fs);
+                var sl = new StorageList<Data.WDB2.ItemSparseEntry>(fs, new StorageOptions() { CopyToMemory = true });
             }
 
             //TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC");

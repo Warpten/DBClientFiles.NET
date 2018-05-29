@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using DBClientFiles.NET.IO;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
@@ -9,21 +10,23 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     {
         private Dictionary<int /* recordIndex */, byte[]> _entries;
 
+        public RelationShipSegmentReader(FileReader reader) : base(reader) { }
+
         public override void Read()
         {
             if (!Segment.Exists)
                 return;
 
-            Storage.BaseStream.Position = Segment.StartOffset;
-            var entryCount = Storage.ReadInt32();
-            var minIndex = Storage.ReadStruct<TKey>();
-            var maxIndex = Storage.ReadStruct<TKey>();
+            FileReader.BaseStream.Position = Segment.StartOffset;
+            var entryCount = FileReader.ReadInt32();
+            var minIndex = FileReader.ReadStruct<TKey>();
+            var maxIndex = FileReader.ReadStruct<TKey>();
 
             _entries = new Dictionary<int, byte[]>();
 
             for (var i = 0; i < entryCount; ++i)
             {
-                _entries[Storage.ReadInt32()] = Storage.ReadBytes(4);
+                _entries[FileReader.ReadInt32()] = FileReader.ReadBytes(4);
             }
         }
 

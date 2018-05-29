@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using DBClientFiles.NET.IO;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
@@ -8,17 +9,19 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     {
         private readonly Dictionary<int, (long, int)> _parsedContent = new Dictionary<int, (long, int)>();
 
+        public OffsetMapReader(FileReader reader) : base(reader) { }
+
         public override void Read()
         {
             if (!Segment.Exists)
                 return;
 
             var i = 0;
-            Storage.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
-            while (Storage.BaseStream.Position < Segment.EndOffset)
+            FileReader.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
+            while (FileReader.BaseStream.Position < Segment.EndOffset)
             {
-                long offset = Storage.ReadInt32();
-                var size = Storage.ReadInt16();
+                long offset = FileReader.ReadInt32();
+                var size = FileReader.ReadInt16();
 
                 ++i;
 

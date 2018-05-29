@@ -6,7 +6,6 @@ using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using DBClientFiles.NET.Internals.Serializers;
 
 namespace DBClientFiles.NET.Internals.Versions
@@ -18,8 +17,11 @@ namespace DBClientFiles.NET.Internals.Versions
         private CodeGenerator<TValue, TKey> _codeGenerator;
         public override CodeGenerator<TValue> Generator => _codeGenerator;
 
+        public IndexTableReader<TKey, TValue> IndexTable { get; }
+
         protected BaseFileReader(Stream strm, bool keepOpen) : base(strm, keepOpen)
         {
+            IndexTable = new IndexTableReader<TKey, TValue>(this);
         }
 
         public override bool ReadHeader()
@@ -30,9 +32,18 @@ namespace DBClientFiles.NET.Internals.Versions
             return true;
         }
 
+        public override void ReadSegments()
+        {
+            base.ReadSegments();
+
+            IndexTable.Read();
+        }
+
         protected override void ReleaseResources()
         {
             _codeGenerator = null;
+
+            IndexTable.Dispose();
         }
     }
 
@@ -41,6 +52,9 @@ namespace DBClientFiles.NET.Internals.Versions
         #region Life and death
         protected BaseFileReader(Stream strm, bool keepOpen) : base(strm, keepOpen)
         {
+            StringTable = new StringTableSegment<TValue>(this);
+            OffsetMap = new OffsetMapReader<TValue>(this);
+            Records = new Segment<TValue>();
         }
 
         protected override void ReleaseResources()
@@ -48,12 +62,13 @@ namespace DBClientFiles.NET.Internals.Versions
             _codeGenerator = null;
         }
         #endregion
-
+        
         public uint TableHash { get; protected set; }
         public uint LayoutHash { get; protected set; }
 
         public virtual ExtendedMemberInfo[] Members { get; protected set; }
 
+        // These are called through code generation, don't trust ReSharper.
         public abstract T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : struct;
         public abstract T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : struct;
         public abstract T ReadForeignKeyMember<T>() where T : struct;
@@ -75,13 +90,12 @@ namespace DBClientFiles.NET.Internals.Versions
 
         private CodeGenerator<TValue> _codeGenerator;
         public virtual CodeGenerator<TValue> Generator => _codeGenerator;
-    
-        public virtual Segment<TValue, StringTableReader<TValue>> StringTable => throw new NotImplementedException();
-        public virtual Segment<TValue, OffsetMapReader<TValue>> OffsetMap => throw new NotImplementedException();
-        public virtual Segment<TValue> Records => throw new NotImplementedException();
-        public virtual Segment<TValue> CopyTable => throw new NotImplementedException();
-        public virtual Segment<TValue> CommonTable => throw new NotImplementedException();
-        public virtual Segment<TValue> IndexTable => throw new NotImplementedException();
+
+        #region Segments
+        protected StringTableSegment<TValue> StringTable;
+        protected OffsetMapReader<TValue> OffsetMap;
+        protected Segment<TValue> Records;
+        #endregion
 
         public event Action<long, string> OnStringTableEntry;
 
@@ -91,30 +105,54 @@ namespace DBClientFiles.NET.Internals.Versions
             return true;
         }
         
-        public abstract IEnumerable<TValue> ReadRecords();
+        public virtual IEnumerable<TValue> ReadRecords()
+        {
+            if (OffsetMap.Exists)
+            {
+                for (var i = 0; i < OffsetMap.Count; ++i)
+                {
+                    foreach (var node in ReadRecords(i, OffsetMap.GetRecordOffset(i), OffsetMap.GetRecordSize(i)))
+                        yield return node;
+                }
+            }
+            else
+            {
+                var recordIndex = 0;
+                BaseStream.Seek(Records.StartOffset, SeekOrigin.Begin);
+
+                while (BaseStream.Position < Records.EndOffset)
+                {
+                    foreach (var node in ReadRecords(recordIndex, BaseStream.Position, Records.ItemLength))
+                        yield return node;
+
+                    ++recordIndex;
+                }
+            }
+        }
+
+        protected abstract IEnumerable<TValue> ReadRecords(int recordIndex, long recordOffset, int recordSize);
 
         public virtual void ReadSegments()
         {
-            if (StringTable.Exists)
+            if (StringTable.Segment.Exists)
             {
                 if (Options.LoadMask.HasFlag(LoadMask.StringTable))
-                    StringTable.Reader.OnStringRead += OnStringTableEntry;
+                    StringTable.OnStringRead += OnStringTableEntry;
 
-                StringTable.Reader.Read();
+                StringTable.Read();
 
                 if (Options.LoadMask.HasFlag(LoadMask.StringTable))
-                    StringTable.Reader.OnStringRead -= OnStringTableEntry;
+                    StringTable.OnStringRead -= OnStringTableEntry;
             }
         }
 
         public override string FindStringByOffset(int tableOffset)
         {
-            return StringTable.Reader[tableOffset];
-        }
-
-        public override string[] ReadStringArray(int[] tableOffsets)
-        {
-            return tableOffsets.Select(tableOffset => StringTable.Reader[tableOffset]).ToArray();
+            var oldPosition = BaseStream.Position;
+            BaseStream.Seek(tableOffset + StringTable.StartOffset, SeekOrigin.Begin);
+            var str = Options.InternStrings ? string.Intern(ReadString()) : ReadString();
+            BaseStream.Seek(oldPosition, SeekOrigin.Begin);
+            return str;
         }
     }
 }

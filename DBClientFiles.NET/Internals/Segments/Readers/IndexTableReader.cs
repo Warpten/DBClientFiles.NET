@@ -1,4 +1,5 @@
-﻿using DBClientFiles.NET.Utils;
+﻿using DBClientFiles.NET.IO;
+using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
@@ -12,6 +13,8 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     {
         private TKey[] _keys;
 
+        public IndexTableReader(FileReader reader) : base(reader) { }
+
         public override void Read()
         {
             if (Segment.Length == 0)
@@ -19,9 +22,9 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
             _keys = new TKey[Segment.Length / typeof(TKey).GetBinarySize()];
 
-            Storage.BaseStream.Position = Segment.StartOffset;
+            FileReader.BaseStream.Position = Segment.StartOffset;
             for (var i = 0; i < _keys.Length; ++i)
-                _keys[i] = Storage.ReadStruct<TKey>();
+                _keys[i] = FileReader.ReadStruct<TKey>();
         }
 
         public TKey this[int index] => _keys[index];

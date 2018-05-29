@@ -11,29 +11,30 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TValue">The record type of the currently operated file.</typeparam>
-    internal sealed class LegacyCommonTableReader<TKey, TValue> : ISegmentReader<TValue>
+    internal sealed class LegacyCommonTableReader<TKey, TValue> : SegmentReader<TValue>
         where TValue : class, new()
     {
-        public Segment<TValue> Segment { get; set; }
-        public FileReader Storage => Segment.Storage;
-
         private bool _isPadded = true;
         private Type[] _memberTypes;
 
         private Dictionary<TKey, byte[]>[] _valueOffsets;
-        
-        public LegacyCommonTableReader()
+
+        public LegacyCommonTableReader(FileReader reader) : base(reader)
+        {
+        }
+
+        protected override void Release()
+        {
+            _valueOffsets = null;
+        }
+
+        public override void Read()
         {
             if (Segment.Length == 0)
                 return;
 
-            Storage.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
-            Parse();
-        }
-
-        private void Parse()
-        {
-            var columnCount = Storage.ReadInt32();
+            FileReader.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
+            var columnCount = FileReader.ReadInt32();
 
             _memberTypes = new Type[columnCount];
             _valueOffsets = new Dictionary<TKey, byte[]>[columnCount];
@@ -52,7 +53,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             {
                 // Structure is actually packed.
                 // Read again, but it's not a dry run this time.
-                Storage.BaseStream.Seek(Segment.StartOffset + 4, SeekOrigin.Begin);
+                FileReader.BaseStream.Seek(Segment.StartOffset + 4, SeekOrigin.Begin);
 
                 for (var i = 0; i < columnCount && successfulParse; ++i)
                     successfulParse = AssertReadColumn(i, false, true);
@@ -61,14 +62,14 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             {
                 // Structure is unpacked.
                 // Read again, but it's not a dry run this time.
-                Storage.BaseStream.Seek(Segment.StartOffset + 4, SeekOrigin.Begin);
+                FileReader.BaseStream.Seek(Segment.StartOffset + 4, SeekOrigin.Begin);
 
                 for (var i = 0; i < columnCount; ++i)
                     AssertReadColumn(i, true, false);
             }
 
             // We also need to check here that we properly went through the entirety of the block - for safekeeping.
-            if (Storage.BaseStream.Position != Segment.EndOffset)
+            if (FileReader.BaseStream.Position != Segment.EndOffset)
                 throw new FileLoadException();
         }
 
@@ -81,8 +82,8 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
         /// <returns>true if the block read correctly, false otherwise.</returns>
         private bool AssertReadColumn(int columnIndex, bool dryRun, bool readAsPadded)
         {
-            var entryCount = Storage.ReadInt32();
-            var entryType = Storage.ReadByte();
+            var entryCount = FileReader.ReadInt32();
+            var entryType = FileReader.ReadByte();
 
             var dataSize = 4;
             switch (entryType)
@@ -112,7 +113,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
             if (dryRun)
             {
-                var newPosition = Storage.BaseStream.Seek((4 + dataSize) * entryCount, SeekOrigin.Current);
+                var newPosition = FileReader.BaseStream.Seek((4 + dataSize) * entryCount, SeekOrigin.Current);
                 // Hopefully when this happens it means we were trying to read as non-packed.
                 if (newPosition > Segment.EndOffset)
                     return false;
@@ -124,8 +125,8 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
                 for (var i = 0; i < entryCount; ++i)
                 {
-                    _valueOffsets[columnIndex][Storage.ReadStruct<TKey>()] = Storage.ReadBytes(dataSize);
-                    var newPosition = Storage.BaseStream.Seek(keySize + dataSize, SeekOrigin.Current);
+                    _valueOffsets[columnIndex][FileReader.ReadStruct<TKey>()] = FileReader.ReadBytes(dataSize);
+                    var newPosition = FileReader.BaseStream.Seek(keySize + dataSize, SeekOrigin.Current);
 
                     // And same as the comment above here.
                     if (newPosition > Segment.EndOffset)
@@ -133,11 +134,6 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
                 }
                 return true;
             }
-        }
-
-        public void Dispose()
-        {
-            Segment = null;
         }
 
         public unsafe T ExtractValue<T>(int columnIndex, TKey recordKey) where T : struct

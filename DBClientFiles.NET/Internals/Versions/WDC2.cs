@@ -17,7 +17,7 @@ namespace DBClientFiles.NET.Internals.Versions
     {
         private class Section : WDC1<TKey, TValue>
         {
-            internal class WDC2RecordReader : RecordReader
+            private class WDC2RecordReader : RecordReader
             {
                 public WDC2RecordReader(FileReader fileReader, bool usesStringTable, int recordSize) : base(fileReader, usesStringTable, recordSize)
                 {
@@ -44,19 +44,12 @@ namespace DBClientFiles.NET.Internals.Versions
                 }
             }
 
-            private WDC2<TKey, TValue> _parent;
+            private readonly WDC2<TKey, TValue> _parent;
 
             public override StorageOptions Options { get; set; }
-
-            private Segment<TValue, IndexTableReader<TKey, TValue>> _indexTable;
-            private Segment<TValue, CopyTableReader<TKey, TValue>> _copyTable;
-            private Segment<TValue, RelationShipSegmentReader<TKey, TValue>> _relationshipData;
-
-            public override Segment<TValue> Records { get; }
-            public override Segment<TValue, StringTableReader<TValue>> StringTable { get; }
-            public override Segment<TValue, OffsetMapReader<TValue>> OffsetMap { get; }
-            public override Segment<TValue> IndexTable => _indexTable;
-            public override Segment<TValue> CopyTable => _copyTable;
+            
+            private readonly CopyTableReader<TKey, TValue> _copyTable;
+            private readonly RelationShipSegmentReader<TKey, TValue> _relationshipData;
 
             public override ExtendedMemberInfo[] Members
             {
@@ -72,19 +65,12 @@ namespace DBClientFiles.NET.Internals.Versions
             private int _indexListSize;
             private int _relationshipDataSize;
 
-            private int _currentlyIteratedIndex;
-
             public Section(WDC2<TKey, TValue> parent, Stream strm) : base(strm)
             {
                 _parent = parent;
-
-                _indexTable = new Segment<TValue, IndexTableReader<TKey, TValue>>(this);
-                _copyTable = new Segment<TValue, CopyTableReader<TKey, TValue>>(this);
-                _relationshipData = new Segment<TValue, RelationShipSegmentReader<TKey, TValue>>(this);
-
-                Records = new Segment<TValue>();
-                StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
-                OffsetMap = new Segment<TValue, OffsetMapReader<TValue>>(this);
+                
+                _copyTable        = new CopyTableReader<TKey, TValue>(this);
+                _relationshipData = new RelationShipSegmentReader<TKey, TValue>(this);
 
                 Options = _parent.Options;
             }
@@ -93,11 +79,8 @@ namespace DBClientFiles.NET.Internals.Versions
             {
                 base.ReleaseResources();
 
-                Records.Dispose();
-                StringTable.Dispose();
-                OffsetMap.Dispose();
-                IndexTable.Dispose();
-                CopyTable.Dispose();
+                _copyTable.Dispose();
+                _relationshipData.Dispose();
             }
 
             public override bool ReadHeader()
@@ -136,70 +119,19 @@ namespace DBClientFiles.NET.Internals.Versions
 
                 IndexTable.Length = _indexListSize;
 
-                CopyTable.StartOffset = IndexTable.EndOffset;
-                CopyTable.Length = _copyTableSize;
+                _copyTable.StartOffset = IndexTable.EndOffset;
+                _copyTable.Length = _copyTableSize;
 
-                _relationshipData.StartOffset = CopyTable.EndOffset;
+                _relationshipData.StartOffset = _copyTable.EndOffset;
                 _relationshipData.Length = _relationshipDataSize;
             }
 
             public override void ReadSegments()
             {
-                StringTable.Reader.Read();
-                _indexTable.Reader.Read();
-                _copyTable.Reader.Read();
-                _relationshipData.Reader.Read();
-            }
+                base.ReadSegments();
 
-            private IEnumerable<TValue> ReadIndividualNodes(int recordSize)
-            {
-                using (var recordReader = new WDC2RecordReader(_parent, StringTable.Exists, recordSize))
-                {
-                    var instance = IndexTable.Exists
-                        ? _parent.Generator.Deserialize(_parent, recordReader, _indexTable.Reader[_currentlyIteratedIndex])
-                        : _parent.Generator.Deserialize(_parent, recordReader);
-
-                    foreach (var copyInstanceID in _copyTable.Reader[_parent.Generator.ExtractKey<TKey>(instance)])
-                    {
-                        var cloneInstance = _parent.Generator.Clone(instance);
-                        _parent.Generator.InsertKey(cloneInstance, copyInstanceID);
-                        yield return cloneInstance;
-                    }
-
-                    yield return instance;
-                }
-            }
-
-            public override IEnumerable<TValue> ReadRecords()
-            {
-                if (OffsetMap.Exists)
-                {
-                    for (_currentlyIteratedIndex = 0; _currentlyIteratedIndex < OffsetMap.Reader.Count; ++_currentlyIteratedIndex)
-                    {
-                        BaseStream.Seek(OffsetMap.Reader.GetRecordOffset(_currentlyIteratedIndex), SeekOrigin.Begin);
-
-                        foreach (var node in ReadIndividualNodes(OffsetMap.Reader.GetRecordSize(_currentlyIteratedIndex)))
-                            yield return node;
-                    }
-                }
-                else
-                {
-                    BaseStream.Seek(Records.StartOffset, SeekOrigin.Begin);
-
-                    _currentlyIteratedIndex = 0;
-                    while (BaseStream.Position < Records.EndOffset)
-                    {
-                        foreach (var node in ReadIndividualNodes(_parent._recordSize))
-                            yield return node;
-
-                        ++_currentlyIteratedIndex;
-                    }
-                }
-            }
-
-            public override T ReadForeignKeyMember<T>()
-            {
-                return _relationshipData.Reader.GetForeignKey<T>(_currentlyIteratedIndex);
+                _copyTable.Read();
+                _relationshipData.Read();
             }
 
             public override T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value)
@@ -224,12 +156,17 @@ namespace DBClientFiles.NET.Internals.Versions
                 return base.FindStringByOffset((int)adjustedPos);
             }
 
+            public override RecordReader GetRecordReader(int recordSize)
+            {
+                return new WDC2RecordReader(this, StringTable.Exists, recordSize);
+            }
+
         }
 
         #region Segments
         private Section[] _segments;
 
-        private Segment<TValue, BinarySegmentReader<TValue>> _palletTable;
+        private readonly BinarySegmentReader<TValue> _palletTable;
         private Segment<TValue> _commonTable;
         #endregion
 
@@ -252,7 +189,7 @@ namespace DBClientFiles.NET.Internals.Versions
         #region Life and Death
         public WDC2(Stream strm) : base(strm, true)
         {
-            _palletTable = new Segment<TValue, BinarySegmentReader<TValue>>(this);
+            _palletTable = new BinarySegmentReader<TValue>(this);
             _commonTable = new Segment<TValue>();
         }
 
@@ -261,8 +198,6 @@ namespace DBClientFiles.NET.Internals.Versions
             base.ReleaseResources();
         
             _palletTable.Dispose();
-            _commonTable.Dispose();
-
             _codeGenerator = null;
 
             for (var i = 0; i < _segments.Length; ++i)
@@ -278,7 +213,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
             BaseStream.Seek(4, SeekOrigin.Current); // field_count
             var recordSize           = ReadInt32();
-            var stringTableSize      = ReadInt32(); // All sections combined
+            BaseStream.Seek(4, SeekOrigin.Current); // string_table_size combined
             TableHash                = ReadUInt32();
             LayoutHash               = ReadUInt32();
             BaseStream.Seek(4 + 4 + 4, SeekOrigin.Current); // minIndex, maxIndex, locale
@@ -380,7 +315,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override void ReadSegments()
         {
-            _palletTable.Reader.Read();
+            _palletTable.Read();
             // _commonTable.Reader.Read();
 
             for (var i = 0; i < _segments.Length; ++i)
@@ -401,14 +336,14 @@ namespace DBClientFiles.NET.Internals.Versions
         {
             var memberInfo = Members[memberIndex];
 
-            return _palletTable.Reader.ReadArray<T>(memberInfo.OffsetInRecord, memberInfo.Cardinality);
+            return _palletTable.ReadArray<T>(memberInfo.OffsetInRecord, memberInfo.Cardinality);
         }
 
         public override T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
             var memberInfo = Members[memberIndex];
 
-            return _palletTable.Reader.Read<T>(memberInfo.OffsetInRecord);
+            return _palletTable.Read<T>(memberInfo.OffsetInRecord);
         }
 
         public override T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value)
@@ -425,6 +360,11 @@ namespace DBClientFiles.NET.Internals.Versions
         {
             // Forward the call to the current segment
             return _segments[_currentlyParsedSegment].FindStringByOffset(tableOffset);
+        }
+
+        protected override IEnumerable<TValue> ReadRecords(int recordIndex, long recordOffset, int recordSize)
+        {
+            throw new UnreachableCodeException("WDC2.ReadRecords should never execute!");
         }
     }
 }

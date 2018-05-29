@@ -1,29 +1,19 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using DBClientFiles.NET.Exceptions;
-using DBClientFiles.NET.Internals.Segments;
-using DBClientFiles.NET.Internals.Segments.Readers;
 using DBClientFiles.NET.IO;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
     internal class WDBC<TValue> : BaseFileReader<TValue> where TValue : class, new()
     {
-        public override Segment<TValue, StringTableReader<TValue>> StringTable { get; }
-        public override Segment<TValue> Records { get; }
-        
-        private int _recordSize;
-
         public WDBC(Stream fileStream): base(fileStream, true)
         {
-            StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
-            Records = new Segment<TValue>();
         }
 
         protected override void ReleaseResources()
         {
             StringTable.Dispose();
-            Records.Dispose();
         }
 
         public override bool ReadHeader()
@@ -39,24 +29,19 @@ namespace DBClientFiles.NET.Internals.Versions
 
             Records.StartOffset = BaseStream.Position;
             Records.Length = recordSize * recordCount;
+            Records.ItemLength = recordSize;
 
             StringTable.Length = stringTableSize;
             StringTable.StartOffset = Records.EndOffset;
-
-            _recordSize = recordSize;
 
             // sets up a default generator
             return base.ReadHeader();
         }
 
-        public override IEnumerable<TValue> ReadRecords()
+        protected override IEnumerable<TValue> ReadRecords(int recordIndex, long recordOffset, int recordSize)
         {
-            BaseStream.Position = Records.StartOffset;
-            while (BaseStream.Position < Records.EndOffset)
-            {
-                using (var segmentStream = new RecordReader(this, StringTable.Exists, _recordSize))
-                    yield return Generator.Deserialize(this, segmentStream);
-            }
+            using (var segmentStream = new RecordReader(this, StringTable.Exists, recordSize))
+                yield return Generator.Deserialize(this, segmentStream);
         }
 
         public override T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value)

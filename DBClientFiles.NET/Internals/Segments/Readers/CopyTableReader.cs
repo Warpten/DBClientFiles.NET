@@ -1,4 +1,5 @@
-﻿using DBClientFiles.NET.Utils;
+﻿using DBClientFiles.NET.IO;
+using DBClientFiles.NET.Utils;
 using System.Collections.Generic;
 using System.IO;
 
@@ -13,7 +14,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
         where TValue : class, new()
         where TKey : struct
     {
-        public CopyTableReader()
+        public CopyTableReader(FileReader reader) : base(reader)
         {
             _parsedContent = new Dictionary<TKey, TKey>();
         }
@@ -35,11 +36,11 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             if (!Segment.Exists)
                 return;
 
-            Storage.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
-            while (Storage.BaseStream.Position < Segment.EndOffset)
+            FileReader.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
+            while (FileReader.BaseStream.Position < Segment.EndOffset)
             {
-                var newKey = Storage.ReadStruct<TKey>();
-                var copiedRow = Storage.ReadStruct<TKey>();
+                var newKey = FileReader.ReadStruct<TKey>();
+                var copiedRow = FileReader.ReadStruct<TKey>();
                 _parsedContent[newKey] = copiedRow;
             }
         }

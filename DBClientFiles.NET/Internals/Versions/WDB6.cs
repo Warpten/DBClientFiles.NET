@@ -11,15 +11,8 @@ namespace DBClientFiles.NET.Internals.Versions
         where TKey : struct
     {
         #region Segments
-        private Segment<TValue, CopyTableReader<TKey, TValue>> _copyTable;
-        private Segment<TValue, IndexTableReader<TKey, TValue>> _indexTable;
-        private Segment<TValue, LegacyCommonTableReader<TKey, TValue>> _commonTable;
-
-        public override Segment<TValue> Records { get; }
-        public override Segment<TValue, StringTableReader<TValue>> StringTable { get; }
-        public override Segment<TValue> IndexTable => _indexTable;
-        public override Segment<TValue> CopyTable => _copyTable;
-        public override Segment<TValue> CommonTable => _commonTable;
+        private readonly CopyTableReader<TKey, TValue> _copyTable;
+        private readonly LegacyCommonTableReader<TKey, TValue> _commonTable;
         #endregion
 
         private int _commonTableStartColumn;
@@ -27,23 +20,16 @@ namespace DBClientFiles.NET.Internals.Versions
         #region Life and death
         public WDB6(Stream dataStream) : base(dataStream)
         {
-            _copyTable = new Segment<TValue, CopyTableReader<TKey, TValue>>(this);
-            _indexTable = new Segment<TValue, IndexTableReader<TKey, TValue>>(this);
-            _commonTable = new Segment<TValue, LegacyCommonTableReader<TKey, TValue>>(this);
-
-            Records = new Segment<TValue>();
-            StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
+            _copyTable   = new CopyTableReader<TKey, TValue>(this);
+            _commonTable = new LegacyCommonTableReader<TKey, TValue>(this);
         }
 
         protected override void ReleaseResources()
         {
             base.ReleaseResources();
 
-            Records.Dispose();
-            StringTable.Dispose();
-            IndexTable.Dispose();
-            CopyTable.Dispose();
-            CommonTable.Dispose();
+            _copyTable.Dispose();
+            _commonTable.Dispose();
         }
         #endregion
 
@@ -84,6 +70,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
             Records.StartOffset = BaseStream.Position;
             Records.Length = recordSize * recordCount;
+            Records.ItemLength = recordSize;
 
             StringTable.Exists = (flags & 0x01) == 0;
             StringTable.StartOffset = Records.EndOffset;
@@ -97,11 +84,11 @@ namespace DBClientFiles.NET.Internals.Versions
             IndexTable.StartOffset = OffsetMap.Exists ? OffsetMap.EndOffset : StringTable.EndOffset;
             IndexTable.Length = recordCount * typeof(TKey).GetBinarySize();
 
-            CopyTable.StartOffset = IndexTable.EndOffset;
-            CopyTable.Length = copyTableSize;
+            _copyTable.StartOffset = IndexTable.EndOffset;
+            _copyTable.Length = copyTableSize;
 
-            CommonTable.StartOffset = CopyTable.EndOffset;
-            CommonTable.Length = commonDataTableSize;
+            _commonTable.StartOffset = _copyTable.EndOffset;
+            _commonTable.Length = commonDataTableSize;
 
             // TODO: Check that the mapped index column corresponds to metadata
             _codeGenerator.IndexColumn = indexColumn;
@@ -112,7 +99,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
-            return _commonTable.Reader.ExtractValue<T>(memberIndex - _commonTableStartColumn, _codeGenerator.ExtractKey(value));
+            return _commonTable.ExtractValue<T>(memberIndex - _commonTableStartColumn, _codeGenerator.ExtractKey(value));
         }
     }
 }

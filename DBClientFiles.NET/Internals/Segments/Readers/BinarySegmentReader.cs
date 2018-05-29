@@ -8,27 +8,25 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     /// A segment reader that treats the entirety of its content as byte data that is to be deserialized as need may be.
     /// </summary>
     /// <typeparam name="TValue"></typeparam>
-    internal sealed class BinarySegmentReader<TValue> : ISegmentReader<TValue>
+    internal sealed class BinarySegmentReader<TValue> : SegmentReader<TValue>
         where TValue : class, new()
     {
-        public FileReader Storage => Segment.Storage;
-
-        public Segment<TValue> Segment { get; set; }
-
         private byte[] _data;
 
-        public void Dispose()
+        public BinarySegmentReader(FileReader reader) : base(reader) { }
+
+        protected override void Release()
         {
             _data = null;
         }
 
-        public void Read()
+        public override void Read()
         {
             if (Segment.Length == 0)
                 return;
 
-            Storage.BaseStream.Position = Segment.StartOffset;
-            _data = Storage.ReadBytes((int)Segment.Length);
+            FileReader.BaseStream.Position = Segment.StartOffset;
+            _data = FileReader.ReadBytes((int)Segment.Length);
         }
 
         public unsafe T[] ReadArray<T>(long offset, int arraySize) where T : struct

@@ -5,6 +5,7 @@ using DBClientFiles.NET.Internals.Serializers;
 using DBClientFiles.NET.IO;
 using System.Collections.Generic;
 using System.IO;
+using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
@@ -12,16 +13,8 @@ namespace DBClientFiles.NET.Internals.Versions
         where TKey : struct
         where TValue : class, new()
     {
-        private int _recordSize;
-
         #region Segments
-        private Segment<TValue, CopyTableReader<TKey, TValue>> _copyTable;
-        private Segment<TValue, IndexTableReader<TKey, TValue>> _indexTable;
-
-        public override Segment<TValue> Records { get; }
-        public override Segment<TValue, StringTableReader<TValue>> StringTable { get; }
-        public override Segment<TValue> IndexTable => _indexTable;
-        public override Segment<TValue> CopyTable => _copyTable;
+        private readonly CopyTableReader<TKey, TValue> _copyTable;
         #endregion
 
         protected CodeGenerator<TValue, TKey> _codeGenerator;
@@ -30,21 +23,14 @@ namespace DBClientFiles.NET.Internals.Versions
         #region Life and death
         public WDB5(Stream strm) : base(strm, true)
         {
-            _copyTable = new Segment<TValue, CopyTableReader<TKey, TValue>>(this);
-            _indexTable = new Segment<TValue, IndexTableReader<TKey, TValue>>(this);
-
-            Records = new Segment<TValue>();
-            StringTable = new Segment<TValue, StringTableReader<TValue>>(this);
+            _copyTable = new CopyTableReader<TKey, TValue>(this);
         }
 
         protected override void ReleaseResources()
         {
             base.ReleaseResources();
 
-            Records.Dispose();
-            StringTable.Dispose();
-            IndexTable.Dispose();
-            CopyTable.Dispose();
+            _copyTable.Dispose();
         }
         #endregion
 
@@ -81,6 +67,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
             Records.StartOffset = BaseStream.Position;
             Records.Length = recordSize * recordCount;
+            Records.ItemLength = recordSize;
 
             StringTable.Exists = (flags & 0x01) == 0;
             StringTable.StartOffset = Records.EndOffset;
@@ -94,10 +81,8 @@ namespace DBClientFiles.NET.Internals.Versions
             IndexTable.StartOffset = OffsetMap.EndOffset;
             IndexTable.Length = recordCount * 4;
 
-            CopyTable.StartOffset = IndexTable.EndOffset;
-            CopyTable.Length = copyTableSize;
-
-            _recordSize = recordSize;
+            _copyTable.StartOffset = IndexTable.EndOffset;
+            _copyTable.Length = copyTableSize;
 
             _codeGenerator = new CodeGenerator<TValue, TKey>(Members)
             {
@@ -106,19 +91,19 @@ namespace DBClientFiles.NET.Internals.Versions
             };
             return true;
         }
-
-        private IEnumerable<TValue> ReadRecord(int recordIndex, int recordSize)
+        
+        protected override IEnumerable<TValue> ReadRecords(int recordIndex, long recordOffset, int recordSize)
         {
             TValue oldStructure;
             using (var recordReader = new RecordReader(this, StringTable.Exists, recordSize))
             {
                 oldStructure = IndexTable.Exists
-                    ? _codeGenerator.Deserialize(this, recordReader, _indexTable.Reader[recordIndex])
+                    ? _codeGenerator.Deserialize(this, recordReader, IndexTable[recordIndex])
                     : _codeGenerator.Deserialize(this, recordReader);
             }
             
             var sourceID = _codeGenerator.ExtractKey(oldStructure);
-            foreach (var copyEntryID in _copyTable.Reader[sourceID])
+            foreach (var copyEntryID in _copyTable[sourceID])
             {
                 var clone = _codeGenerator.Clone(oldStructure);
                 _codeGenerator.InsertKey(clone, copyEntryID);
@@ -128,33 +113,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
             yield return oldStructure;
         }
-
-        public override IEnumerable<TValue> ReadRecords()
-        {
-            if (OffsetMap.Exists)
-            {
-                for (var i = 0; i < OffsetMap.Reader.Count; ++i)
-                {
-                    BaseStream.Seek(OffsetMap.Reader.GetRecordOffset(i), SeekOrigin.Begin);
-
-                    foreach (var node in ReadRecord(i, OffsetMap.Reader.GetRecordSize(i)))
-                        yield return node;
-                }
-            }
-            else
-            {
-                var i = 0;
-                BaseStream.Position = Records.StartOffset;
-                while (BaseStream.Position < Records.EndOffset)
-                {
-                    foreach (var node in ReadRecord(i, _recordSize))
-                        yield return node;
-
-                    ++i;
-                }
-            }
-        }
-
+        
         public override T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
             throw new UnreachableCodeException("WDB5 does not need to implement ReadPalletMember.");
