@@ -17,8 +17,9 @@ namespace DBClientFiles.NET.Utils
         public static bool IsRequiringMarshalling(this Type t)
         {
             var fields = t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            foreach (var field in fields)
+            for (var index = 0; index < fields.Length; index++)
             {
+                var field = fields[index];
                 var requires = field.GetCustomAttributes(typeof(MarshalAsAttribute), true).Length != 0;
                 if (requires)
                     return true;
@@ -31,6 +32,7 @@ namespace DBClientFiles.NET.Utils
 
                 return requires;
             }
+
             return false;
         }
 
@@ -66,8 +68,9 @@ namespace DBClientFiles.NET.Utils
                 var totalSize = 0;
                 var fields = t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
-                foreach (var field in fields)
+                for (var index = 0; index < fields.Length; index++)
                 {
+                    var field = fields[index];
                     var fba = field.GetCustomAttribute<FixedBufferAttribute>(false);
                     if (fba != null)
                     {
@@ -77,6 +80,7 @@ namespace DBClientFiles.NET.Utils
 
                     totalSize += field.FieldType.GetBinarySize();
                 }
+
                 return _typeSizes[t] = totalSize;
             }
         }
@@ -86,8 +90,10 @@ namespace DBClientFiles.NET.Utils
             var memberIndex = 0;
 
             var store = new List<ExtendedMemberInfo>();
-            foreach (var memberInfo in type.GetMembers(BindingFlags.Public | BindingFlags.Instance))
+            var memberInfos = type.GetMembers(BindingFlags.Public | BindingFlags.Instance);
+            for (var i = 0; i < memberInfos.Length; i++)
             {
+                var memberInfo = memberInfos[i];
                 if (memberInfo.MemberType != options.MemberType)
                     continue;
 

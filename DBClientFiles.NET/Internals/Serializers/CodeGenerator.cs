@@ -236,9 +236,11 @@ namespace DBClientFiles.NET.Internals.Serializers
             var newNode = CreateTypeInitializer();
 
             body.Add(Expression.Assign(outputNode, newNode));
-
-            foreach (var memberInfo in Members)
+            
+            for (var i = 0; i < Members.Length; ++i)
             {
+                var memberInfo = Members[i];
+
                 //! TODO: Handle deep copy
                 var oldMember = memberInfo.MakeMemberAccess(inputNode);
                 var newMember = memberInfo.MakeMemberAccess(outputNode);
@@ -266,8 +268,9 @@ namespace DBClientFiles.NET.Internals.Serializers
 
             var bodyBlock = new List<Expression>();
 
-            foreach (var memberInfo in Members)
+            for (var index = 0; index < Members.Length; index++)
             {
+                var memberInfo = Members[index];
                 if (memberInfo.MemberIndex == IndexColumn)
                     if (!IsIndexStreamed)
                         continue;
