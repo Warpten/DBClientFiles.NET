@@ -33,7 +33,7 @@ namespace DBClientFiles.NET.Internals.Segments
         public long StartOffset { get; set; }
         public long Length { get; set; }
 
-        public long EndOffset => Exists ? (StartOffset + Length) : StartOffset;
+        public long EndOffset => StartOffset + Length;
         
         public BaseFileReader<TValue> Storage { get; private set; }
         private StorageOptions Options { get; set; }
