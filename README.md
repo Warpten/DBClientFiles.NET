@@ -37,4 +37,4 @@ The new version of DBFilesClient.NET.
 | --------------------------------------------- | --------------- | --------------- | -------------------- |
 | AchievementEntry WDC2[6138 entries]           | 00.020611       | 00.018804       | 00.033515            |
 
-![img](https://i.imgur.com/st1cZke.png)
+![img](https://i.imgur.com/x13ULQH.png)

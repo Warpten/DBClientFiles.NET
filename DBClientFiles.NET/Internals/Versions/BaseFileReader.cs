@@ -5,9 +5,6 @@ using DBClientFiles.NET.IO;
 using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
-#if DEBUG
-using System.Diagnostics;
-#endif
 using System.IO;
 using DBClientFiles.NET.Internals.Serializers;
 
@@ -120,9 +117,7 @@ namespace DBClientFiles.NET.Internals.Versions
             }
             else
             {
-#if DEBUG
-                Debug.Assert(Records.ItemLength != 0, "An implementation forgot to set Records.ItemLength");
-#endif
+                System.Diagnostics.Debug.Assert(Records.ItemLength != 0, "An implementation forgot to set Records.ItemLength");
 
                 var recordIndex = 0;
                 BaseStream.Seek(Records.StartOffset, SeekOrigin.Begin);

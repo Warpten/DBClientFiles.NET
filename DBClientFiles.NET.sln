@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBClientFiles.NET.ConsoleTe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBClientFiles.NET.Data", "DBClientFiles.NET.Data\DBClientFiles.NET.Data.csproj", "{8EF65DF8-D079-4826-A2A7-620DE05CF484}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BenchmarkAggregator", "BenchmarkAggregator\BenchmarkAggregator.csproj", "{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,26 @@ Global
 		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithPerformance|Any CPU.Build.0 = Release|Any CPU
 		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithPerformance|x64.ActiveCfg = Release|Any CPU
 		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithPerformance|x64.Build.0 = Release|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.Debug|x64.Build.0 = Debug|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.MinSizeRel|Any CPU.ActiveCfg = Release|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.MinSizeRel|Any CPU.Build.0 = Release|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.MinSizeRel|x64.ActiveCfg = Release|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.MinSizeRel|x64.Build.0 = Release|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.Release|x64.ActiveCfg = Release|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.Release|x64.Build.0 = Release|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.RelWithDebInfo|Any CPU.ActiveCfg = Release|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.RelWithDebInfo|Any CPU.Build.0 = Release|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.RelWithDebInfo|x64.ActiveCfg = Release|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.RelWithDebInfo|x64.Build.0 = Release|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.RelWithPerformance|Any CPU.ActiveCfg = Release|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.RelWithPerformance|Any CPU.Build.0 = Release|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.RelWithPerformance|x64.ActiveCfg = Release|Any CPU
+		{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}.RelWithPerformance|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
