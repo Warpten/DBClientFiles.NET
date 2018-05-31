@@ -10,6 +10,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     /// <typeparam name="TValue"></typeparam>
     internal sealed class IndexTableReader<TKey, TValue> : SegmentReader<TValue>
         where TValue : class, new()
+        where TKey : struct
     {
         private TKey[] _keys;
 

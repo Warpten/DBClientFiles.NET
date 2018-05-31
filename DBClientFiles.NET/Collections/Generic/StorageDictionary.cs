@@ -1,6 +1,4 @@
-﻿using DBClientFiles.NET.Internals;
-using DBClientFiles.NET.Internals.Serializers;
-using DBClientFiles.NET.Attributes;
+﻿using DBClientFiles.NET.Attributes;
 using System;
 using System.Collections;
 using System.Collections.Generic;

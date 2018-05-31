@@ -1,5 +1,4 @@
-﻿using DBClientFiles.NET.Collections.Generic;
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 
 namespace DBClientFiles.NET.Attributes

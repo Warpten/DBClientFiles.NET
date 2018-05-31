@@ -1,11 +1,8 @@
 ﻿using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace DBClientFiles.NET.IO
 {
@@ -225,12 +222,6 @@ namespace DBClientFiles.NET.IO
             return Read<float>(bitOffset);
         }
 
-        /// <summary>
-        /// Returns an instance of the unmanaged type <see cref="{T}"/>.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="bitOffset">The absolute offset (in bits) at which the type to read is. If set to zero, <see cref="RecordReader"/> assumes to be sequentially reading from the previous call.</param>
-        /// <returns></returns>
         /// <remarks>
         /// While this may look fine, it will return a value that will be unaccurate unless properly shifted to the right by <code><paramref name="bitOffset"/> & 7</code>, as this cannot be typically done by this method.
         /// </remarks>

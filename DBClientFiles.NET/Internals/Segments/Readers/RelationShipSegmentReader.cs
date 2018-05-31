@@ -1,12 +1,13 @@
 ﻿using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using DBClientFiles.NET.IO;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
-    internal sealed class RelationShipSegmentReader<TKey, T> : SegmentReader<T> where T : class, new()
+    internal sealed class RelationShipSegmentReader<TKey, T> : SegmentReader<T>
+        where T : class, new()
+        where TKey : struct
     {
         private Dictionary<int /* recordIndex */, byte[]> _entries;
 

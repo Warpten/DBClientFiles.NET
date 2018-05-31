@@ -14,7 +14,7 @@ namespace DBClientFiles.NET.Utils
         /// <typeparam name="T"></typeparam>
         /// <param name="br"></param>
         /// <returns></returns>
-        public static T ReadStruct<T>(this BinaryReader br)
+        public static T ReadStruct<T>(this BinaryReader br) where T : struct
         {
             if (SizeCache<T>.TypeRequiresMarshal)
             {
@@ -26,86 +26,10 @@ namespace DBClientFiles.NET.Utils
             }
 
             // OPTIMIZATION!
-            var ret = default(T);
-            fixed (byte* b = br.ReadBytes(SizeCache<T>.Size))
-            {
-                var tPtr = (byte*)SizeCache<T>.GetUnsafePtr(ref ret);
-                UnsafeNativeMethods.MoveMemory(tPtr, b, SizeCache<T>.Size);
-            }
-            return ret;
-        }
-
-        /// <summary>
-        /// This method is a marshal-less type. It's very fast, but if the type requires any marshaling, it will fail miseraby.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="br"></param>
-        /// <returns></returns>
-        public static T ReadUsingRefType<T>(this BinaryReader br) where T : struct
-        {
-            var result = default(T);
-            var refResult = __makeref(result);
-            fixed (byte* pBuffer = br.ReadBytes(SizeCache<T>.Size))
-            {
-                *(byte**)&refResult = pBuffer;
-                return __refvalue(refResult, T);
-            }
-        }
-
-        public static T[] ReadStructs<T>(this BinaryReader br, int count)
-        {
-            if (SizeCache<T>.TypeRequiresMarshal)
-            {
-                var ptr = Marshal.AllocHGlobal(SizeCache<T>.Size * count);
-                Marshal.Copy(br.ReadBytes(SizeCache<T>.Size * count), 0, ptr, SizeCache<T>.Size * count);
-                var arr = new T[count];
-                // Unfortunate part of the marshaler, is that each instance needs to be pulled in separately.
-                // Can't just do a bulk memcpy.
-                for (var i = 0; i < count; i++)
-                {
-                    arr[i] = Marshal.PtrToStructure<T>(ptr + (SizeCache<T>.Size * i));
-                }
-                Marshal.FreeHGlobal(ptr);
-                return arr;
-            }
-
-            if (count == 0)
-            {
-                return new T[0];
-            }
-
-            var ret = new T[count];
-            fixed (byte* pB = br.ReadBytes(SizeCache<T>.Size * count))
-            {
-                var genericPtr = (byte*)SizeCache<T>.GetUnsafePtr(ref ret[0]);
-                UnsafeNativeMethods.MoveMemory(genericPtr, pB, SizeCache<T>.Size * count);
-            }
-            return ret;
-        }
-
-        public static void WriteStruct<T>(this BinaryWriter bw, T value)
-        {
-            if (SizeCache<T>.TypeRequiresMarshal)
-            {
-                var ptr = Marshal.AllocHGlobal(SizeCache<T>.Size);
-                var bytes = new byte[SizeCache<T>.Size];
-                Marshal.StructureToPtr(value, ptr, true);
-                Marshal.Copy(ptr, bytes, 0, SizeCache<T>.Size);
-                Marshal.FreeHGlobal(ptr);
-                bw.Write(bytes);
-            }
-
-            // fastest way to copy?
-            var buf = new byte[SizeCache<T>.Size];
-
-            var valData = (byte*)SizeCache<T>.GetUnsafePtr(ref value);
-
-            fixed (byte* pB = buf)
-            {
-                UnsafeNativeMethods.MoveMemory(pB, valData, SizeCache<T>.Size);
-            }
-
-            bw.Write(buf);
+            var dataBytes = br.ReadBytes(SizeCache<T>.Size);
+            var dataSpan = new Span<byte>(dataBytes);
+            var structSpan = MemoryMarshal.Cast<byte, T>(dataSpan);
+            return structSpan[0];
         }
     }
 }

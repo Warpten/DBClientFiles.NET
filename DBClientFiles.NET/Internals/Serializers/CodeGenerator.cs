@@ -98,7 +98,7 @@ namespace DBClientFiles.NET.Internals.Serializers
             var recordArgExpr = Expression.Parameter(typeof(T), "record");
             var memberAccessExpr = Expression.MakeMemberAccess(recordArgExpr, keyMemberInfo.MemberInfo);
             var assignmentExpr = Expression.Assign(memberAccessExpr, newKeyArgExpr);
-            _keySetter = Expression.Lambda<Action<T, TKey>>(assignmentExpr, new[] { recordArgExpr, newKeyArgExpr }).Compile();
+            _keySetter = Expression.Lambda<Action<T, TKey>>(assignmentExpr, recordArgExpr, newKeyArgExpr).Compile();
             return _keySetter;
         }
     }
@@ -243,45 +243,45 @@ namespace DBClientFiles.NET.Internals.Serializers
             return expressionLambda.Compile();
         }
 
-        private void InsertMemberAssignment(List<Expression> bodyBlock, Expression binaryReaderInstance, Expression recordReaderInstance, ref ExtendedMemberExpression memberAccess)
+        private void InsertMemberAssignment(List<Expression> bodyBlock, Expression binaryReader, Expression recordReader, ref ExtendedMemberExpression memberAccess)
         {
             switch (memberAccess.MemberInfo.CompressionType)
             {
                 case MemberCompressionType.None:
-                    InsertSimpleMemberAssignment(bodyBlock, binaryReaderInstance, recordReaderInstance, ref memberAccess);
+                    InsertSimpleMemberAssignment(bodyBlock, recordReader, ref memberAccess);
                     break;
                 case MemberCompressionType.Immediate:
-                    InsertBitpackedMemberAssignment(bodyBlock, binaryReaderInstance, recordReaderInstance, ref memberAccess);
+                    InsertBitpackedMemberAssignment(bodyBlock, recordReader, ref memberAccess);
                     break;
                 case MemberCompressionType.BitpackedPalletData:
                 case MemberCompressionType.BitpackedPalletArrayData:
-                    InsertPalletMemberAssignment(bodyBlock, binaryReaderInstance, recordReaderInstance, ref memberAccess);
+                    InsertPalletMemberAssignment(bodyBlock, binaryReader, recordReader, ref memberAccess);
                     break;
                 case MemberCompressionType.CommonData:
-                    InsertCommonMemberAssignment(bodyBlock, binaryReaderInstance, recordReaderInstance, ref memberAccess);
+                    InsertCommonMemberAssignment(bodyBlock, binaryReader, recordReader, ref memberAccess);
                     break;
                 case MemberCompressionType.RelationshipData:
                     if (!_instance.Type.IsDefined(typeof(IgnoreRelationshipDataAttribute), false))
-                        InsertRelationshipMemberAssignment(bodyBlock, binaryReaderInstance, recordReaderInstance, ref memberAccess);
+                        InsertRelationshipMemberAssignment(bodyBlock, binaryReader, recordReader, ref memberAccess);
                     break;
                 default:
                     throw new NotImplementedException();
             }
         }
 
-        private void InsertRelationshipMemberAssignment(List<Expression> bodyBlock, Expression binaryReaderInstance, Expression recordReaderInstance, ref ExtendedMemberExpression memberAccess)
+        private void InsertRelationshipMemberAssignment(List<Expression> bodyBlock, Expression binaryReader, Expression recordReader, ref ExtendedMemberExpression memberAccess)
         {
-            var commonReader = GenerateForeignKeyReader(binaryReaderInstance, recordReaderInstance, memberAccess.MemberInfo);
+            var commonReader = GenerateForeignKeyReader(binaryReader, recordReader, memberAccess.MemberInfo);
             bodyBlock.Add(Expression.Assign(memberAccess.Expression, commonReader));
         }
 
-        private void InsertCommonMemberAssignment(List<Expression> bodyBlock, Expression binaryReaderInstance, Expression recordReaderInstance, ref ExtendedMemberExpression memberAccess)
+        private void InsertCommonMemberAssignment(List<Expression> bodyBlock, Expression binaryReader, Expression recordReader, ref ExtendedMemberExpression memberAccess)
         {
-            var commonReader = GenerateCommonReader(binaryReaderInstance, recordReaderInstance, memberAccess.MemberInfo);
+            var commonReader = GenerateCommonReader(binaryReader, recordReader, memberAccess.MemberInfo);
             bodyBlock.Add(Expression.Assign(memberAccess.Expression, commonReader));
         }
 
-        private void InsertPalletMemberAssignment(List<Expression> bodyBlock, Expression binaryReaderInstance, Expression recordReaderInstance, ref ExtendedMemberExpression memberAccess)
+        private void InsertPalletMemberAssignment(List<Expression> bodyBlock, Expression binaryReader, Expression recordReader, ref ExtendedMemberExpression memberAccess)
         {
             if (memberAccess.MemberInfo.Type.IsArray == (memberAccess.MemberInfo.CompressionType == MemberCompressionType.BitpackedPalletData))
                 throw new InvalidOperationException();
@@ -289,11 +289,11 @@ namespace DBClientFiles.NET.Internals.Serializers
             if (memberAccess.MemberInfo.BitSize == 0)
                 throw new InvalidOperationException();
 
-            var palletReader = GeneratePalletReader(binaryReaderInstance, recordReaderInstance, memberAccess.MemberInfo);
+            var palletReader = GeneratePalletReader(binaryReader, recordReader, memberAccess.MemberInfo);
             bodyBlock.Add(Expression.Assign(memberAccess.Expression, palletReader));
         }
 
-        private void InsertBitpackedMemberAssignment(List<Expression> bodyBlock, Expression binaryReaderInstance, Expression recordReaderInstance, ref ExtendedMemberExpression memberAccess)
+        private void InsertBitpackedMemberAssignment(List<Expression> bodyBlock, Expression recordReader, ref ExtendedMemberExpression memberAccess)
         {
             if (memberAccess.MemberInfo.BitSize == 0)
                 throw new InvalidOperationException();
@@ -301,43 +301,43 @@ namespace DBClientFiles.NET.Internals.Serializers
             if (memberAccess.MemberInfo.Type.IsArray)
                 throw new InvalidOperationException();
 
-            var binaryReader = GenerateBinaryReader(binaryReaderInstance, recordReaderInstance, memberAccess.MemberInfo);
+            var binaryReader = GenerateBinaryReader(recordReader, memberAccess.MemberInfo);
             bodyBlock.Add(Expression.Assign(memberAccess.Expression, binaryReader));
         }
         
-        private void InsertSimpleMemberAssignment(List<Expression> bodyBlock, Expression binaryReaderInstance, Expression recordReaderInstance, ref ExtendedMemberExpression memberAccess)
+        private void InsertSimpleMemberAssignment(List<Expression> bodyBlock, Expression recordReader, ref ExtendedMemberExpression memberAccess)
         {
-            var binaryReader = GenerateBinaryReader(binaryReaderInstance, recordReaderInstance, memberAccess.MemberInfo);
+            var binaryReader = GenerateBinaryReader(recordReader, memberAccess.MemberInfo);
             bodyBlock.Add(Expression.Assign(memberAccess.Expression, binaryReader));
         }
 
-        protected virtual Expression GenerateForeignKeyReader(Expression binaryReaderInstance, Expression recordReaderInstance, ExtendedMemberInfo memberInfo)
+        protected virtual Expression GenerateForeignKeyReader(Expression binaryReader, Expression recordReader, ExtendedMemberInfo memberInfo)
         {
             // TODO Fix this
-            var methodInfo = binaryReaderInstance.Type.GetMethod("ReadForeignKeyMember").MakeGenericMethod(memberInfo.Type);
-            return Expression.Call(binaryReaderInstance, methodInfo); // , Expression.Constant(memberInfo.MemberIndex), recordReaderInstance, _instance);
+            var methodInfo = binaryReader.Type.GetMethod("ReadForeignKeyMember").MakeGenericMethod(memberInfo.Type);
+            return Expression.Call(binaryReader, methodInfo); // , Expression.Constant(memberInfo.MemberIndex), recordReader, _instance);
         }
 
-        protected virtual Expression GenerateCommonReader(Expression binaryReaderInstance, Expression recordReaderInstance, ExtendedMemberInfo memberInfo)
+        protected virtual Expression GenerateCommonReader(Expression binaryReader, Expression recordReader, ExtendedMemberInfo memberInfo)
         {
             // TODO Fix this
-            var methodInfo = binaryReaderInstance.Type.GetMethod("ReadCommonMember").MakeGenericMethod(memberInfo.Type);
-            return Expression.Call(binaryReaderInstance, methodInfo, Expression.Constant(memberInfo.MemberIndex), recordReaderInstance, _instance);
+            var methodInfo = binaryReader.Type.GetMethod("ReadCommonMember").MakeGenericMethod(memberInfo.Type);
+            return Expression.Call(binaryReader, methodInfo, Expression.Constant(memberInfo.MemberIndex), recordReader, _instance);
         }
 
-        protected virtual Expression GeneratePalletReader(Expression binaryReaderInstance, Expression recordReaderInstance, ExtendedMemberInfo memberInfo)
+        protected virtual Expression GeneratePalletReader(Expression binaryReader, Expression recordReader, ExtendedMemberInfo memberInfo)
         {
             // TODO Fix this
             MethodInfo methodInfo;
             if (memberInfo.Type.IsArray)
-                methodInfo = binaryReaderInstance.Type.GetMethod("ReadPalletArrayMember").MakeGenericMethod(memberInfo.Type);
+                methodInfo = binaryReader.Type.GetMethod("ReadPalletArrayMember").MakeGenericMethod(memberInfo.Type);
             else
-                methodInfo = binaryReaderInstance.Type.GetMethod("ReadPalletMember").MakeGenericMethod(memberInfo.Type);
+                methodInfo = binaryReader.Type.GetMethod("ReadPalletMember").MakeGenericMethod(memberInfo.Type);
 
-            return Expression.Call(binaryReaderInstance, methodInfo, Expression.Constant(memberInfo.MemberIndex), recordReaderInstance, _instance);
+            return Expression.Call(binaryReader, methodInfo, Expression.Constant(memberInfo.MemberIndex), recordReader, _instance);
         }
 
-        private Expression GenerateBinaryReader(Expression binaryReader, Expression recordReader, ExtendedMemberInfo memberInfo)
+        private Expression GenerateBinaryReader(Expression recordReader, ExtendedMemberInfo memberInfo)
         {
             var elementType = memberInfo.Type.IsArray ? memberInfo.Type.GetElementType() : memberInfo.Type;
             var elementCode = Type.GetTypeCode(elementType);
@@ -346,31 +346,30 @@ namespace DBClientFiles.NET.Internals.Serializers
             {
                 if (memberInfo.Type.IsArray)
                 {
-                    var methodInfo = elementCode == TypeCode.String ? _RecordReader.ReadPackedStrings : _RecordReader.ReadPackedArray.MakeGenericMethod(elementType);
-                    return Expression.Call(recordReader, methodInfo, Expression.Constant(memberInfo.Cardinality), Expression.Constant(memberInfo.OffsetInRecord), Expression.Constant(memberInfo.BitSize));
+                    var stringMethodInfo = elementCode == TypeCode.String
+                        ? _RecordReader.ReadPackedStrings
+                        : _RecordReader.ReadPackedArray.MakeGenericMethod(elementType);
+                    return Expression.Call(recordReader, stringMethodInfo, Expression.Constant(memberInfo.Cardinality), Expression.Constant(memberInfo.OffsetInRecord), Expression.Constant(memberInfo.BitSize));
                 }
-                else if (elementCode == TypeCode.Single) // This is an ugly hack because they are not yet dumb enough to pack floats. God bless.
-                {
-                    return Expression.Call(recordReader, _RecordReader.ReadSingle);
-                }
-                else
-                {
-                    var methodInfo = _RecordReader.PackedReaders[elementCode];
-                    return Expression.Call(recordReader, methodInfo, Expression.Constant(memberInfo.OffsetInRecord), Expression.Constant(memberInfo.BitSize));
-                }
+
+                if (elementCode == TypeCode.Single && (memberInfo.BitSize != 32 || (memberInfo.OffsetInRecord & 7) != 0))
+                    throw new InvalidOperationException("Found a bitpacked/unaligned float. Impossible");
+
+                var methodInfo = _RecordReader.PackedReaders[elementCode];
+                return Expression.Call(recordReader, methodInfo, Expression.Constant(memberInfo.OffsetInRecord), Expression.Constant(memberInfo.BitSize));
+            }
+
+            if (memberInfo.Type.IsArray)
+            {
+                var methodInfo = elementCode == TypeCode.String
+                    ? _RecordReader.ReadStrings
+                    : _RecordReader.ReadArray.MakeGenericMethod(elementType);
+                return Expression.Call(recordReader, methodInfo, Expression.Constant(memberInfo.Cardinality));
             }
             else
             {
-                if (memberInfo.Type.IsArray)
-                {
-                    var methodInfo = elementCode == TypeCode.String ? _RecordReader.ReadStrings : _RecordReader.ReadArray.MakeGenericMethod(elementType);
-                    return Expression.Call(recordReader, methodInfo, Expression.Constant(memberInfo.Cardinality));
-                }
-                else
-                {
-                    var methodInfo = _RecordReader.Readers[elementCode];
-                    return Expression.Call(recordReader, methodInfo);
-                }
+                var methodInfo = _RecordReader.Readers[elementCode];
+                return Expression.Call(recordReader, methodInfo);
             }
         }
 

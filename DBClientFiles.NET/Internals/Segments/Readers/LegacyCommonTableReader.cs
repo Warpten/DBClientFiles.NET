@@ -13,6 +13,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     /// <typeparam name="TValue">The record type of the currently operated file.</typeparam>
     internal sealed class LegacyCommonTableReader<TKey, TValue> : SegmentReader<TValue>
         where TValue : class, new()
+        where TKey : struct
     {
         private bool _isPadded = true;
         private Type[] _memberTypes;

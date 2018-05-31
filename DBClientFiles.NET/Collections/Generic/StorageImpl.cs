@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using DBClientFiles.NET.Internals.Serializers;
+using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
@@ -60,10 +61,14 @@ namespace DBClientFiles.NET.Collections.Generic
         }
 
         public IEnumerable<T> Enumerate() => Enumerate<int>();
+        public ExtendedMemberInfo[] Members => _fileReader.Members;
 
-        public IEnumerable<T> Enumerate<TKey>()
+        public void Initialize<TKey>()
             where TKey : struct
         {
+            if (_fileReader != null)
+                return;
+
             Signature = (Signatures)((Stream.ReadByte()) | (Stream.ReadByte() << 8) | (Stream.ReadByte() << 16) | (Stream.ReadByte() << 24));
 
             switch (Signature)
@@ -93,10 +98,16 @@ namespace DBClientFiles.NET.Collections.Generic
                     throw new NotSupportedVersionException($"Unknown signature 0x{(int)Signature:X8}!");
             }
 
-            _fileReader.Options = Options;
-
             if (!_fileReader.ReadHeader())
                 throw new InvalidOperationException("Unable to read file header!");
+
+            _fileReader.Options = Options;
+        }
+
+        public IEnumerable<T> Enumerate<TKey>()
+            where TKey : struct
+        {
+            Initialize<TKey>();
 
             // Steal the generator
             Generator = _fileReader.Generator;

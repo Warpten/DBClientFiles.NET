@@ -1,5 +1,4 @@
-﻿using DBClientFiles.NET.Internals.Segments;
-using DBClientFiles.NET.Internals.Segments.Readers;
+﻿using DBClientFiles.NET.Internals.Segments.Readers;
 using DBClientFiles.NET.IO;
 using DBClientFiles.NET.Utils;
 using System.IO;

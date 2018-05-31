@@ -1,8 +1,8 @@
 ﻿using DBClientFiles.NET.Collections;
-using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
 using DBClientFiles.NET.Internals.Serializers;
+using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.Internals
 {
@@ -15,6 +15,7 @@ namespace DBClientFiles.NET.Internals
         
         StorageOptions Options { get; set; }
         CodeGenerator<T> Generator { get; }
+        ExtendedMemberInfo[] Members { get; }
 
         uint TableHash { get; }
         uint LayoutHash { get; }
