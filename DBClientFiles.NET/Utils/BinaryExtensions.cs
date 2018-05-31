@@ -20,11 +20,7 @@ namespace DBClientFiles.NET.Utils
             {
                 var ptr = Marshal.AllocHGlobal(SizeCache<T>.Size);
                 Marshal.Copy(br.ReadBytes(SizeCache<T>.Size), 0, ptr, SizeCache<T>.Size);
-#if NET45
-                var mret = (T)Marshal.PtrToStructure(ptr, typeof(T));
-#else
                 var mret = Marshal.PtrToStructure<T>(ptr);
-#endif
                 Marshal.FreeHGlobal(ptr);
                 return mret;
             }
@@ -67,11 +63,7 @@ namespace DBClientFiles.NET.Utils
                 // Can't just do a bulk memcpy.
                 for (var i = 0; i < count; i++)
                 {
-#if NET45
-                    arr[i] = (T)Marshal.PtrToStructure(ptr + (SizeCache<T>.Size * i), typeof(T));
-#else
                     arr[i] = Marshal.PtrToStructure<T>(ptr + (SizeCache<T>.Size * i));
-#endif
                 }
                 Marshal.FreeHGlobal(ptr);
                 return arr;

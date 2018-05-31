@@ -14,16 +14,17 @@ namespace DBClientFiles.NET.ConsoleTests
     {
         static void Main(string[] args)
         {
-            //using (var fs = File.OpenRead(@"D:\Repositories\DBFilesClient.NET\Tests\WDC2\Files\Achievement.db2"))
-            //{
-            //    var sl = new StorageList<Data.WDC2.AchievementEntry>(fs);
-            //}
+            using (var fs = File.OpenRead(@"D:\Repositories\DBFilesClient.NET\Tests\WDB2\Files\Item-sparse.db2"))
+            {
+                var sl = new StorageList<Data.WDB2.ItemSparseEntry>(fs);
+            }
 
-            TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC");
-            TestStructuresInNamespace("DBClientFiles.NET.Data.WDB2");
-            TestStructuresInNamespace("DBClientFiles.NET.Data.WDC1");
-            TestStructuresInNamespace("DBClientFiles.NET.Data.WDC2");
+            //TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC");
+            //TestStructuresInNamespace("DBClientFiles.NET.Data.WDB2");
+            //TestStructuresInNamespace("DBClientFiles.NET.Data.WDC1");
+            //TestStructuresInNamespace("DBClientFiles.NET.Data.WDC2");
 
+            Console.WriteLine("Press a key to exit");
             Console.ReadKey();
         }
 
@@ -86,7 +87,7 @@ namespace DBClientFiles.NET.ConsoleTests
                 ms.Position = 0;
 
                 var structureTester = new StructureTester<TValue>();
-                var benchmarkResult = structureTester.Benchmark<StorageList<TValue>>(out var dataStore, ms, 200);
+                var benchmarkResult = structureTester.Benchmark<StorageList<TValue>>(out var dataStore, ms, 1);
                 _dataStores[typeof(TValue)] = benchmarkResult;
             }
         }

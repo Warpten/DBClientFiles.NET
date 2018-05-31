@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using DBClientFiles.NET.IO;
 using DBClientFiles.NET.Utils;
 
@@ -12,6 +13,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
         where TValue : class, new()
     {
         private byte[] _data;
+        private Memory<byte> _memorySpan;
 
         public BinarySegmentReader(FileReader reader) : base(reader) { }
 
@@ -27,6 +29,8 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
             FileReader.BaseStream.Position = Segment.StartOffset;
             _data = FileReader.ReadBytes((int)Segment.Length);
+
+            _memorySpan = new Memory<byte>(_data, 0, _data.Length);
         }
 
         public unsafe T[] ReadArray<T>(long offset, int arraySize) where T : struct
@@ -37,10 +41,13 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             return buffer;
         }
 
-        public unsafe T Read<T>(long offset) where T : struct
+        public T Read<T>(int offset) where T : struct
         {
-            fixed (byte* ptr = _data)
-                return FastStructure.PtrToStructure<T>(new IntPtr(ptr + offset));
+            var span = MemoryMarshal.Cast<byte, T>(_memorySpan.Slice(offset, SizeCache<T>.Size).Span);
+            return span[0];
+
+            //fixed (byte* ptr = _data)
+            //    return FastStructure.PtrToStructure<T>(new IntPtr(ptr + offset));
         }
     }
 }

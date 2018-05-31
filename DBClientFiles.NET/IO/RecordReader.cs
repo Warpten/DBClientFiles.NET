@@ -85,8 +85,9 @@ namespace DBClientFiles.NET.IO
     internal unsafe class RecordReader : IDisposable
     {
         private byte[] _recordData;
-        private GCHandle _dataHandle;
-        private IntPtr _dataPointer;
+        private Memory<byte> _recordMemory;
+        //private GCHandle _dataHandle;
+        //private IntPtr _dataPointer;
 
         protected int _byteCursor = 0;
     
@@ -115,14 +116,16 @@ namespace DBClientFiles.NET.IO
             _fileReader = fileReader;
 
             _recordData = fileReader.ReadBytes(recordSize);
+            _recordMemory = new Memory<byte>(_recordData);
 
-            _dataHandle = GCHandle.Alloc(_recordData, GCHandleType.Pinned);
-            _dataPointer = _dataHandle.AddrOfPinnedObject();
+
+            //_dataHandle = GCHandle.Alloc(_recordData, GCHandleType.Pinned);
+            //_dataPointer = _dataHandle.AddrOfPinnedObject();
         }
 
         public void Dispose()
         {
-            _dataHandle.Free();
+            // _dataHandle.Free();
 
             _fileReader = null;
             _recordData = null;
@@ -233,12 +236,17 @@ namespace DBClientFiles.NET.IO
         /// </remarks>
         private T Read<T>(int bitOffset, bool advanceCursor = false) where T : struct
         {
-            T v = FastStructure.PtrToStructure<T>(IntPtr.Add(_dataPointer, bitOffset / 8));
-
             if (advanceCursor)
                 _byteCursor += SizeCache<T>.Size * 8;
 
-            return v;
+            // It is safe to assume that the caller needs less bits than what T can contain.
+            var spanSlice = _recordMemory.Slice(bitOffset / 8, SizeCache<T>.Size);
+            var typeMemory = MemoryMarshal.Cast<byte, T>(spanSlice.Span);
+            return typeMemory[0];
+
+            //T v = FastStructure.PtrToStructure<T>(IntPtr.Add(_dataPointer, bitOffset / 8));
+
+            //return v;
         }
 
         /// <summary>

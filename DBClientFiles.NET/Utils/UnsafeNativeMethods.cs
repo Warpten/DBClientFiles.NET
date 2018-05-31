@@ -4,9 +4,7 @@ using System.Security;
 
 namespace DBClientFiles.NET.Utils
 {
-#if !(NETCOREAPP1_0 || NETCOREAPP1_1)
     [SuppressUnmanagedCodeSecurity]
-#endif
     internal unsafe class UnsafeNativeMethods
     {
         private UnsafeNativeMethods() { }

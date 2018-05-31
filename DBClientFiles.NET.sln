@@ -5,13 +5,16 @@ VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DBClientFiles.NET", "DBClientFiles.NET\DBClientFiles.NET.csproj", "{884B23C7-A165-4090-880C-1DAAAF9A1C51}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBClientFiles.NET.ConsoleTests", "DBClientFiles.NET.ConsoleTests\DBClientFiles.NET.ConsoleTests.csproj", "{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DBClientFiles.NET.ConsoleTests", "DBClientFiles.NET.ConsoleTests\DBClientFiles.NET.ConsoleTests.csproj", "{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBClientFiles.NET.Data", "DBClientFiles.NET.Data\DBClientFiles.NET.Data.csproj", "{8EF65DF8-D079-4826-A2A7-620DE05CF484}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DBClientFiles.NET.Data", "DBClientFiles.NET.Data\DBClientFiles.NET.Data.csproj", "{8EF65DF8-D079-4826-A2A7-620DE05CF484}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BenchmarkAggregator", "BenchmarkAggregator\BenchmarkAggregator.csproj", "{CD26C821-37ED-4BA1-90DA-63916CA1CCAF}"
 EndProject
 Global
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64

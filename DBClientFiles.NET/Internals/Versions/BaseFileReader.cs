@@ -1,12 +1,12 @@
 ﻿using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.Internals.Segments.Readers;
+using DBClientFiles.NET.Internals.Serializers;
 using DBClientFiles.NET.IO;
 using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using DBClientFiles.NET.Internals.Serializers;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
@@ -97,7 +97,7 @@ namespace DBClientFiles.NET.Internals.Versions
         protected Segment<TValue> Records;
         #endregion
 
-        public event Action<long, string> OnStringTableEntry;
+        public event Action<int> OnStringTableEntry;
 
         public virtual bool ReadHeader()
         {
@@ -150,11 +150,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override string FindStringByOffset(int tableOffset)
         {
-            var oldPosition = BaseStream.Position;
-            BaseStream.Seek(tableOffset + StringTable.StartOffset, SeekOrigin.Begin);
-            var str = Options.InternStrings ? string.Intern(ReadString()) : ReadString();
-            BaseStream.Seek(oldPosition, SeekOrigin.Begin);
-            return str;
+            return StringTable[tableOffset];
         }
     }
 }

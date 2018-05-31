@@ -141,29 +141,11 @@ namespace DBClientFiles.NET.Internals.Serializers
             _deserializationMethod = null;
             _memberwiseClone = null;
         }
-
-#if NET47
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public virtual T CreateInstance()
         {
-            return (T) typeof(T).CreateInstance();
-        }
-
-#if NET47
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public virtual T CreateInstance<TArg>(TArg arg1)
-        {
-            return (T) typeof(T).CreateInstance(arg1);
-        }
-
-#if NET47
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public virtual T CreateInstance<T1, T2>(T1 arg1, T2 arg2)
-        {
-            return (T) typeof(T).CreateInstance(arg1, arg2);
+            return New<T>.Instance();
         }
 
         /// <summary>
@@ -176,7 +158,7 @@ namespace DBClientFiles.NET.Internals.Serializers
             if (_deserializationMethod == null)
                 _deserializationMethod = GenerateDeserializationMethod();
 
-            var instanceOfT = Activator.CreateInstance<T>();
+            var instanceOfT = CreateInstance();
             _deserializationMethod(fileReader, recordReader, instanceOfT);
             return instanceOfT;
         }
@@ -316,18 +298,12 @@ namespace DBClientFiles.NET.Internals.Serializers
             }
         }
 
-#if NET47
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private void InsertRelationshipMemberAssignment(List<Expression> bodyBlock, Expression binaryReaderInstance, Expression recordReaderInstance, ref ExtendedMemberExpression memberAccess)
         {
             var commonReader = GenerateForeignKeyReader(binaryReaderInstance, recordReaderInstance, memberAccess.MemberInfo);
             bodyBlock.Add(Expression.Assign(memberAccess.Expression, commonReader));
         }
 
-#if NET47
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private void InsertCommonMemberAssignment(List<Expression> bodyBlock, Expression binaryReaderInstance, Expression recordReaderInstance, ref ExtendedMemberExpression memberAccess)
         {
             var commonReader = GenerateCommonReader(binaryReaderInstance, recordReaderInstance, memberAccess.MemberInfo);

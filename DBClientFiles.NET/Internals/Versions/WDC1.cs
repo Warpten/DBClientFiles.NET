@@ -217,7 +217,7 @@ namespace DBClientFiles.NET.Internals.Versions
             var memberInfo = Members[memberIndex];
 
             var palletOffset = recordReader.ReadBits(memberInfo.OffsetInRecord, memberInfo.BitSize);
-            return _palletTable.Read<T>(palletOffset);
+            return _palletTable.Read<T>((int)palletOffset);
         }
 
         public virtual RecordReader GetRecordReader(int recordSize)

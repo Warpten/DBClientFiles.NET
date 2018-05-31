@@ -19,7 +19,6 @@ namespace DBClientFiles.NET.ConsoleTests
         /// <returns>An instance of the <paramref name="type"/>.</returns>
         public static object CreateInstance(this Type type)
         {
-            // Optimized by the BCL Team.
             return Activator.CreateInstance(type);
         }
 

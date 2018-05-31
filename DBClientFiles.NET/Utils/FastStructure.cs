@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Reflection.Emit;
-#if NET47 || NET471 || NET472
 using System.Runtime.CompilerServices;
-#endif
 using System.Runtime.InteropServices;
 
 namespace DBClientFiles.NET.Utils
@@ -22,9 +20,7 @@ namespace DBClientFiles.NET.Utils
         /// <param name="structure"></param>
         /// <returns>A pointer to the provided structure in memory.</returns>
         /// <see cref="FastStructure{T}.GetPtr"/>]
-#if NET47 || NET471 || NET472
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static unsafe void* GetPtr<T>(ref T structure)
             where T : struct
         {
@@ -44,9 +40,7 @@ namespace DBClientFiles.NET.Utils
         /// <typeparam name="T">Any value/struct type</typeparam>
         /// <param name="pointer">Unsafe pointer to memory to load the value from</param>
         /// <returns>The newly loaded value</returns>
-#if NET47
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static T PtrToStructure<T>(IntPtr pointer)
             where T : struct
         {
@@ -82,9 +76,7 @@ namespace DBClientFiles.NET.Utils
         /// <returns></returns>
         /// <remarks>Caches the size by type</remarks>
         /// <see cref="FastStructure{T}.Size"/>
-#if NET47
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static int SizeOf<T>()
             where T : struct
         {
@@ -197,11 +189,7 @@ namespace DBClientFiles.NET.Utils
         /// <summary>
         /// Cached size of T as determined by <see cref="Marshal.SizeOf(Type)"/>.
         /// </summary>
-#if NET45 || NETCOREAPP2_0 || NETCOREAPP2_1
-        public static readonly int Size = Marshal.SizeOf(typeof(T));
-#else
         public static readonly int Size = Marshal.SizeOf<T>();
-#endif
 
         private static DynamicMethod method;
         private static DynamicMethod methodLoad;
