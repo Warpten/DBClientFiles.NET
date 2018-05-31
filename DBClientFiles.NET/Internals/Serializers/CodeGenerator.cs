@@ -163,35 +163,6 @@ namespace DBClientFiles.NET.Internals.Serializers
             return instanceOfT;
         }
 
-#region Disgusting hacks
-        public T Deserialize<TKey>(BaseFileReader<T> fileReader, RecordReader recordReader, TKey key)
-            where TKey : struct
-        {
-            return ((CodeGenerator<T, TKey>)this).Deserialize(fileReader, recordReader, key);
-        }
-
-        public TKey ExtractKey<TKey>(T instance) 
-            where TKey : struct
-        {
-            return ((CodeGenerator<T, TKey>)this).ExtractKey(instance);
-        }
-
-        public void InsertKey<TKey>(T instance, TKey key)
-            where TKey : struct
-        {
-            ((CodeGenerator<T, TKey>)this).InsertKey(instance, key);
-        }
-#endregion
-
-        protected T Deserialize(BaseFileReader<T> fileReader, RecordReader recordReader, T instance)
-        {
-            if (_deserializationMethod == null)
-                _deserializationMethod = GenerateDeserializationMethod();
-
-            _deserializationMethod(fileReader, recordReader, instance);
-            return instance;
-        }
-
         /// <summary>
         /// Produces a shallow copy of the provided object.
         /// </summary>

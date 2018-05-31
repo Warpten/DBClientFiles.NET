@@ -231,10 +231,10 @@ namespace DBClientFiles.NET.Internals.Versions
             using (var recordReader = GetRecordReader(recordSize))
             {
                 var instance = IndexTable.Exists
-                    ? Generator.Deserialize(this, recordReader, IndexTable[recordIndex])
-                    : Generator.Deserialize(this, recordReader);
+                    ? _codeGenerator.Deserialize(this, recordReader, IndexTable[recordIndex])
+                    : _codeGenerator.Deserialize(this, recordReader);
 
-                foreach (var copyInstanceID in _copyTable[Generator.ExtractKey<TKey>(instance)])
+                foreach (var copyInstanceID in _copyTable[_codeGenerator.ExtractKey(instance)])
                 {
                     var cloneInstance = _codeGenerator.Clone(instance);
                     _codeGenerator.InsertKey(cloneInstance, copyInstanceID);
