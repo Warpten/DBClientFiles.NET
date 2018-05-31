@@ -98,10 +98,11 @@ namespace DBClientFiles.NET.Collections.Generic
                     throw new NotSupportedVersionException($"Unknown signature 0x{(int)Signature:X8}!");
             }
 
+            _fileReader.Options = Options;
+
             if (!_fileReader.ReadHeader())
                 throw new InvalidOperationException("Unable to read file header!");
 
-            _fileReader.Options = Options;
         }
 
         public IEnumerable<T> Enumerate<TKey>()
