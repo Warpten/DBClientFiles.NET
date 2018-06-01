@@ -9,7 +9,6 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     /// A segment reader for the copy table section of DB2 files.
     /// </summary>
     /// <typeparam name="TKey">The type of key to use.</typeparam>
-    /// <typeparam name="TValue">The record type.</typeparam>
     internal sealed class CopyTableReader<TKey> : SegmentReader
         where TKey : struct
     {

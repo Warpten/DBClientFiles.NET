@@ -8,9 +8,9 @@ namespace DBClientFiles.NET.Utils
     internal struct ExtendedMemberExpression
     {
         public MemberExpression Expression { get; }
-        public StructureMemberInfo MemberInfo { get; }
+        public ExtendedMemberInfo MemberInfo { get; }
 
-        public ExtendedMemberExpression(Expression expr, StructureMemberInfo memberInfo)
+        public ExtendedMemberExpression(Expression expr, ExtendedMemberInfo memberInfo)
         {
             Expression = System.Linq.Expressions.Expression.MakeMemberAccess(expr, memberInfo.MemberInfo);
             MemberInfo = memberInfo;

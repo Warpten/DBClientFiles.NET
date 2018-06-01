@@ -27,16 +27,18 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
                 return;
 
             FileReader.BaseStream.Position = Segment.StartOffset;
-            _data = FileReader.ReadBytes((int)Segment.Length);
+            _data = FileReader.ReadBytes(Segment.Length);
 
-            _memorySpan = new Memory<byte>(_data, 0, _data.Length);
+            _memorySpan = new Memory<byte>(_data);
         }
 
-        public unsafe T[] ReadArray<T>(long offset, int arraySize) where T : struct
+        public T[] ReadArray<T>(int offset, int arraySize) where T : struct
         {
+            var targetSpan = MemoryMarshal.Cast<byte, T>(_memorySpan.Slice(offset, SizeCache<T>.Size * arraySize).Span);
+
             var buffer = new T[arraySize];
-            fixed (byte* b = _data)
-                FastStructure.ReadArray(buffer, new IntPtr(b + offset), 0, arraySize);
+            for (var i = 0; i < arraySize; ++i)
+                buffer[i] = targetSpan[i];
             return buffer;
         }
 

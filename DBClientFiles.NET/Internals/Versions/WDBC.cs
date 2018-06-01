@@ -50,7 +50,7 @@ namespace DBClientFiles.NET.Internals.Versions
             throw new UnreachableCodeException("WDBC does not need to implement ReadPalletMember.");
         }
 
-        public override T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value)
+        public override T ReadCommonMember<T>(int memberIndex, TValue value)
         {
             throw new UnreachableCodeException("WDBC does not need to implement ReadPalletMember.");
         }

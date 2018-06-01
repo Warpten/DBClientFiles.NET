@@ -17,7 +17,7 @@ namespace DBClientFiles.NET.Internals.Versions
         private readonly BinarySegmentReader _palletTable;
         private readonly CopyTableReader<TKey> _copyTable;
         private readonly RelationShipSegmentReader<TKey> _relationshipData;
-        private readonly LegacyCommonTableReader<TKey> _commonTable;
+        private readonly CommonTableReader<TKey> _commonTable;
         #endregion
 
         private int _currentRecordIndex = 0;
@@ -31,7 +31,7 @@ namespace DBClientFiles.NET.Internals.Versions
             _palletTable      = new BinarySegmentReader(this);
             _copyTable        = new CopyTableReader<TKey>(this);
             _relationshipData = new RelationShipSegmentReader<TKey>(this);
-            _commonTable      = new LegacyCommonTableReader<TKey>(this);
+            _commonTable      = new CommonTableReader<TKey>(this);
         }
 
         protected override void ReleaseResources()
@@ -71,6 +71,7 @@ namespace DBClientFiles.NET.Internals.Versions
             var palletDataSize       = ReadInt32();
             var relationshipDataSize = ReadInt32();
 
+            MemberStore.IndexColumn = indexColumn;
             IndexTable.Length = idListSize;
 
             for (var i = 0; i < fieldCount; ++i)
@@ -104,13 +105,12 @@ namespace DBClientFiles.NET.Internals.Versions
             _copyTable.StartOffset = IndexTable.EndOffset;
             _copyTable.Length = copyTableSize;
             #endregion
-
-
+            
             BaseStream.Position = _copyTable.EndOffset;
             var fieldStorageInfoCount = fieldStorageInfoSize / (2 + 2 + 4 + 4 + 3 * 4);
             for (var i = 0; i < fieldStorageInfoCount; ++i)
             {
-                var memberInfo = MemberStore.GetFileMember(i);
+                var memberInfo = MemberStore.FileMembers[i];
 
                 memberInfo.Offset = ReadInt16();
                 memberInfo.BitSize = ReadInt16(); // size is the sum of all array pieces in bits - for example, uint32[3] will appear here as '96'
@@ -120,6 +120,8 @@ namespace DBClientFiles.NET.Internals.Versions
                 if (memberInfo.ByteSize != 0)
                     memberInfo.Cardinality = memberInfo.BitSize / (8 * memberInfo.ByteSize);
             }
+
+            _commonTable.Initialize(MemberStore.GetBlockLengths(MemberCompressionType.CommonData));
 
             #region Initialize the last segments
             _palletTable.StartOffset = BaseStream.Position;
@@ -147,13 +149,14 @@ namespace DBClientFiles.NET.Internals.Versions
 
             _palletTable.Read();
             _relationshipData.Read();
-            // _commonTable.ReadPadded();
+            _commonTable.Read();
         }
 
-        public override T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value)
+        public override T ReadCommonMember<T>(int memberIndex, TValue value)
         {
-            return default(T);
-            // return _commonTable.ExtractValue<T>(memberIndex, _codeGenerator.ExtractKey(value));
+            var memberInfo = MemberStore.FileMembers[memberIndex];
+
+            return _commonTable.ExtractValue(MemberStore.ToCompressionSpecificIndex(memberIndex), memberInfo.GetDefaultValue<T>(), _codeGenerator.ExtractKey(value));
         }
 
         public override T ReadForeignKeyMember<T>()
@@ -163,15 +166,15 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
-            var memberInfo = MemberStore.GetFileMember(memberIndex);
+            var memberInfo = MemberStore.FileMembers[memberIndex];
 
             var palletOffset = recordReader.ReadBits(memberInfo.Offset, memberInfo.BitSize);
-            return _palletTable.ReadArray<T>(palletOffset, memberInfo.Cardinality);
+            return _palletTable.ReadArray<T>((int)palletOffset, memberInfo.Cardinality);
         }
 
         public override T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
-            var memberInfo = MemberStore.GetFileMember(memberIndex);
+            var memberInfo = MemberStore.FileMembers[memberIndex];
 
             var palletOffset = recordReader.ReadBits(memberInfo.Offset, memberInfo.BitSize);
             return _palletTable.Read<T>((int)palletOffset);

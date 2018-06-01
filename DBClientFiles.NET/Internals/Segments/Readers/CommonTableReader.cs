@@ -56,8 +56,10 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
         
         private struct Node<T> where T : struct
         {
+#pragma warning disable 649
             public TKey Key;
             public T Value;
+#pragma warning restore 649
 
             public override string ToString()
             {

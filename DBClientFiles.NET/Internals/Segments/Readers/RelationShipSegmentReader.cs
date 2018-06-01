@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
+    //! TOOD Not sure if correct
     internal sealed class RelationShipSegmentReader<TKey> : SegmentReader
         where TKey : struct
     {

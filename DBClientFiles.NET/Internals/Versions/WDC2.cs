@@ -46,12 +46,17 @@ namespace DBClientFiles.NET.Internals.Versions
 
             private readonly WDC2<TKey, TValue> _parent;
 
-            public override StorageOptions Options { get; set; }
+            public override StorageOptions Options
+            {
+                get => _parent.Options;
+                set => throw new InvalidOperationException();
+            }
             
             private readonly CopyTableReader<TKey> _copyTable;
             private readonly RelationShipSegmentReader<TKey> _relationshipData;
 
-            public override CodeGenerator<TValue> Generator => _parent.Generator;
+            private CodeGenerator<TValue, TKey> _codeGenerator;
+            public override CodeGenerator<TValue> Generator => _codeGenerator;
 
             private int _fileOffset;
             private int _recordCount;
@@ -68,7 +73,7 @@ namespace DBClientFiles.NET.Internals.Versions
                 _copyTable        = new CopyTableReader<TKey>(this);
                 _relationshipData = new RelationShipSegmentReader<TKey>(this);
 
-                Options = _parent.Options;
+                _codeGenerator = new CodeGenerator<TValue, TKey>(this);
             }
 
             protected override void ReleaseResources()
@@ -77,6 +82,11 @@ namespace DBClientFiles.NET.Internals.Versions
 
                 _copyTable.Dispose();
                 _relationshipData.Dispose();
+            }
+
+            public void SetFileMemberInfo(IEnumerable<FileMemberInfo> fileMembers)
+            {
+                MemberStore.SetFileMemberInfo(fileMembers);
             }
 
             public override bool ReadHeader()
@@ -95,6 +105,8 @@ namespace DBClientFiles.NET.Internals.Versions
 
             public void PopulateSegmentOffsets()
             {
+                MemberStore = new ExtendedMemberInfoCollection(typeof(TValue), _parent.Options);
+
                 if ((_parent._flags & 0x1) == 0)
                 {
                     Records.StartOffset = _fileOffset;
@@ -115,12 +127,14 @@ namespace DBClientFiles.NET.Internals.Versions
                 }
 
                 IndexTable.Length = _indexListSize;
+                _codeGenerator.IsIndexStreamed = !IndexTable.Exists;
 
                 _copyTable.StartOffset = IndexTable.EndOffset;
                 _copyTable.Length = _copyTableSize;
 
                 _relationshipData.StartOffset = _copyTable.EndOffset;
                 _relationshipData.Length = _relationshipDataSize;
+            
             }
 
             public override void ReadSegments()
@@ -143,13 +157,32 @@ namespace DBClientFiles.NET.Internals.Versions
                 return new WDC2RecordReader(this, StringTable.Exists, recordSize);
             }
 
+            protected override IEnumerable<TValue> ReadRecords(int recordIndex, long recordOffset, int recordSize)
+            {
+                using (var recordReader = GetRecordReader(recordSize))
+                {
+                    var instance = IndexTable.Exists
+                        ? _codeGenerator.Deserialize(this, recordReader, IndexTable[recordIndex])
+                        : _codeGenerator.Deserialize(this, recordReader);
+
+                    foreach (var copyInstanceID in _copyTable[_codeGenerator.ExtractKey(instance)])
+                    {
+                        var cloneInstance = _codeGenerator.Clone(instance);
+                        _codeGenerator.InsertKey(cloneInstance, copyInstanceID);
+                        yield return cloneInstance;
+                    }
+
+                    yield return instance;
+                }
+            }
+
         }
 
         #region Segments
         private Section[] _segments;
 
         private readonly BinarySegmentReader _palletTable;
-        private Segment _commonTable;
+        private readonly CommonTableReader<TKey> _commonTable;
         #endregion
 
         private int _flags;
@@ -158,21 +191,13 @@ namespace DBClientFiles.NET.Internals.Versions
 
         private CodeGenerator<TValue, TKey>[] _codeGenerator;
 
-        public override CodeGenerator<TValue> Generator
-        {
-            get
-            {
-                if (_segments[_currentlyParsedSegment].IndexTable.Exists)
-                    return _codeGenerator[0];
-                return _codeGenerator[1];
-            }
-        }
-
+        public override CodeGenerator<TValue> Generator => _segments[_currentlyParsedSegment].Generator;
+        
         #region Life and Death
         public WDC2(Stream strm) : base(strm, true)
         {
             _palletTable = new BinarySegmentReader(this);
-            _commonTable = new Segment();
+            _commonTable = new CommonTableReader<TKey>(this);
         }
 
         protected override void ReleaseResources()
@@ -215,6 +240,7 @@ namespace DBClientFiles.NET.Internals.Versions
             for (var i = 0; i < _segments.Length; ++i)
             {
                 _segments[i] = new Section(this, BaseStream);
+                _segments[i].Generator.IndexColumn = indexColumn;
 
                 if (!_segments[i].ReadHeader())
                     return false;
@@ -226,7 +252,7 @@ namespace DBClientFiles.NET.Internals.Versions
             var fieldStorageInfoCount = fieldStorageInfoSize / (2 + 2 + 4 + 4 + 3 * 4);
             for (var i = 0; i < fieldStorageInfoCount; ++i)
             {
-                var memberInfo = MemberStore.GetFileMember(i);
+                var memberInfo = MemberStore.FileMembers[i];
 
                 memberInfo.Offset = ReadInt16();
                 memberInfo.BitSize = ReadInt16(); // size is the sum of all array pieces in bits - for example, uint32[3] will appear here as '96'
@@ -244,20 +270,18 @@ namespace DBClientFiles.NET.Internals.Versions
             _commonTable.Length = commonDataSize;
 
             for (var i = 0; i < sectionCount; ++i)
-                _segments[i].PopulateSegmentOffsets();
-
-            _codeGenerator = new []
             {
-                new CodeGenerator<TValue, TKey>(this) { IsIndexStreamed = false },
-                new CodeGenerator<TValue, TKey>(this) { IsIndexStreamed = true, IndexColumn = indexColumn }
-            };
+                _segments[i].PopulateSegmentOffsets();
+                _segments[i].SetFileMemberInfo(MemberStore.FileMembers);
+            }
+
             return true;
         }
 
         public override void ReadSegments()
         {
             _palletTable.Read();
-            // _commonTable.Reader.Read();
+            _commonTable.Read();
 
             for (var i = 0; i < _segments.Length; ++i)
                 _segments[i].ReadSegments();
@@ -275,21 +299,25 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
-            var memberInfo = MemberStore.GetFileMember(memberIndex);
+            var memberInfo = MemberStore.FileMembers[memberIndex];
 
             return _palletTable.ReadArray<T>(memberInfo.Offset, memberInfo.Cardinality);
         }
 
         public override T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
-            var memberInfo = MemberStore.GetFileMember(memberIndex);
+            var memberInfo = MemberStore.FileMembers[memberIndex];
 
             return _palletTable.Read<T>(memberInfo.Offset);
         }
 
-        public override T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value)
+        public override T ReadCommonMember<T>(int memberIndex, TValue value)
         {
-            throw new NotImplementedException();
+            var memberInfo = MemberStore.FileMembers[memberIndex];
+
+            return _commonTable.ExtractValue(MemberStore.ToCompressionSpecificIndex(memberIndex), 
+                memberInfo.GetDefaultValue<T>(),
+                default(TKey)); //! TODO FIXME
         }
 
         public override T ReadForeignKeyMember<T>()

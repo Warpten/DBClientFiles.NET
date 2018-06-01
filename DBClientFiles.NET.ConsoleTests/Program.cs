@@ -22,8 +22,8 @@ namespace DBClientFiles.NET.ConsoleTests
 
             // TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC");
             // TestStructuresInNamespace("DBClientFiles.NET.Data.WDB2");
-            TestStructuresInNamespace("DBClientFiles.NET.Data.WDC1");
-            // TestStructuresInNamespace("DBClientFiles.NET.Data.WDC2");
+            // TestStructuresInNamespace("DBClientFiles.NET.Data.WDC1");
+            TestStructuresInNamespace("DBClientFiles.NET.Data.WDC2");
 
             Console.WriteLine("Press a key to exit");
             Console.ReadKey();
@@ -32,9 +32,11 @@ namespace DBClientFiles.NET.ConsoleTests
         private static Dictionary<Type, BenchmarkResult> _dataStores = new Dictionary<Type, BenchmarkResult>();
 
         private static MethodInfo methodInfo = typeof(Program).GetMethod("BenchmarkStructure", BindingFlags.NonPublic | BindingFlags.Static);
-
+        
         // Forces the corresponding assembly to be referenced.
+#pragma warning disable 169
         private volatile AchievementEntry entry;
+#pragma warning restore 169
 
         private static void TestStructuresInNamespace(string @namespace, int count = 1)
         {

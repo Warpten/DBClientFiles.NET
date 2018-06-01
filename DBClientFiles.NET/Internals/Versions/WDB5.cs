@@ -50,6 +50,8 @@ namespace DBClientFiles.NET.Internals.Versions
             var flags            = ReadInt16();
             var indexColumn      = ReadInt16();
 
+            MemberStore.IndexColumn = indexColumn;
+
             #region Initialize segments
             Records.StartOffset = BaseStream.Position;
             Records.Length = recordSize * recordCount;
@@ -109,7 +111,7 @@ namespace DBClientFiles.NET.Internals.Versions
             throw new UnreachableCodeException("WDB5 does not need to implement ReadPalletMember.");
         }
 
-        public override T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value)
+        public override T ReadCommonMember<T>(int memberIndex, TValue value)
         {
             throw new UnreachableCodeException("WDB5 does not need to implement ReadPalletMember.");
         }

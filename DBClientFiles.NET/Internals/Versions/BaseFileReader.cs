@@ -34,6 +34,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override void ReadSegments()
         {
+            MemberStore.IsIndexStreamed = !IndexTable.Exists;
             base.ReadSegments();
 
             IndexTable.Read();
@@ -73,7 +74,7 @@ namespace DBClientFiles.NET.Internals.Versions
         #region Methods that may be called through deserialization
         // These are called through code generation, don't trust ReSharper.
         public abstract T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : struct;
-        public abstract T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : struct;
+        public abstract T ReadCommonMember<T>(int memberIndex, TValue value) where T : struct;
         public abstract T ReadForeignKeyMember<T>() where T : struct;
         public abstract T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : struct;
         #endregion
@@ -144,7 +145,7 @@ namespace DBClientFiles.NET.Internals.Versions
         /// <summary>
         /// Read any possible amount of records starting at the provided offset and of the given length, including possible copies in the copy table.
         /// </summary>
-        /// <see cref="CopyTableReader{TKey, TValue}"/>
+        /// <see cref="CopyTableReader{TKey}"/>
         /// <param name="recordIndex">The index of this record in the sparse or records block.</param>
         /// <param name="recordOffset">The (absolute) offset in the file at which the record data starts.</param>
         /// <param name="recordSize">The size, in bytes, of the record.</param>
@@ -156,7 +157,8 @@ namespace DBClientFiles.NET.Internals.Versions
         /// </summary>
         public virtual void ReadSegments()
         {
-            MemberStore.Map();
+            MemberStore.MapMembers();
+            MemberStore.CalculateCardinalities();
 
             if (StringTable.Segment.Exists)
             {

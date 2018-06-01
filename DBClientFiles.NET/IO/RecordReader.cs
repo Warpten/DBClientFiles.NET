@@ -1,5 +1,6 @@
 ﻿using DBClientFiles.NET.Utils;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -90,17 +91,17 @@ namespace DBClientFiles.NET.IO
 
         protected int _byteCursor = 0;
     
-        public long ReadInt64() => Read<long>(_byteCursor, true);
-        public int ReadInt32() => Read<int>(_byteCursor, true);
-        public short ReadInt16() => Read<short>(_byteCursor, true);
-        public byte ReadByte() => Read<byte>(_byteCursor, true);
+        public long ReadInt64() => Read<long>(_byteCursor, 64, true);
+        public int ReadInt32() => Read<int>(_byteCursor, 32, true);
+        public short ReadInt16() => Read<short>(_byteCursor, 16, true);
+        public byte ReadByte() => Read<byte>(_byteCursor, 8, true);
         
-        public ulong ReadUInt64() => Read<ulong>(_byteCursor, true);
-        public uint ReadUInt32() => Read<uint>(_byteCursor, true);
-        public ushort ReadUInt16() => Read<ushort>(_byteCursor, true);
-        public sbyte ReadSByte() => Read<sbyte>(_byteCursor, true);
+        public ulong ReadUInt64() => Read<ulong>(_byteCursor, 64, true);
+        public uint ReadUInt32() => Read<uint>(_byteCursor, 32, true);
+        public ushort ReadUInt16() => Read<ushort>(_byteCursor, 16, true);
+        public sbyte ReadSByte() => Read<sbyte>(_byteCursor, 8, true);
 
-        public float ReadSingle() => Read<float>(_byteCursor, true);
+        public float ReadSingle() => Read<float>(_byteCursor, 32, true);
 
         protected FileReader _fileReader;
         protected readonly bool _usesStringTable;
@@ -137,7 +138,7 @@ namespace DBClientFiles.NET.IO
 
             _byteCursor = bitOffset + bitCount;
 
-            var longValue = Read<long>(bitOffset) >> (bitOffset & 7);
+            var longValue = Read<long>(bitOffset, bitCount) >> (bitOffset & 7);
             if (bitCount != 64)
                 longValue &= (1L << bitCount) - 1;
 
@@ -151,7 +152,7 @@ namespace DBClientFiles.NET.IO
 
             _byteCursor = bitOffset + bitCount;
 
-            var longValue = Read<ulong>(bitOffset) >> (bitOffset & 7);
+            var longValue = Read<ulong>(bitOffset, bitCount) >> (bitOffset & 7);
             if (bitCount != 64)
                 longValue &= (1uL << bitCount) - 1;
 
@@ -165,7 +166,7 @@ namespace DBClientFiles.NET.IO
 
             _byteCursor = bitOffset + bitCount;
 
-            var intValue = Read<int>(bitOffset) >> (bitOffset & 7);
+            var intValue = Read<int>(bitOffset, bitCount) >> (bitOffset & 7);
             if (bitCount != 32)
                 intValue &= (1 << bitCount) - 1;
 
@@ -179,7 +180,7 @@ namespace DBClientFiles.NET.IO
 
             _byteCursor = bitOffset + bitCount;
 
-            var intValue = Read<uint>(bitOffset) >> (bitOffset & 7);
+            var intValue = Read<uint>(bitOffset, bitCount) >> (bitOffset & 7);
             if (bitCount != 32)
                 intValue &= (1u << bitCount) - 1;
 
@@ -193,7 +194,7 @@ namespace DBClientFiles.NET.IO
 
             _byteCursor = bitOffset + bitCount;
 
-            var shortValue = Read<short>(bitOffset) >> (bitOffset & 7);
+            var shortValue = Read<short>(bitOffset, bitCount) >> (bitOffset & 7);
             if (bitCount != 16)
                 shortValue &= (1 << bitCount) - 1;
 
@@ -207,7 +208,7 @@ namespace DBClientFiles.NET.IO
 
             _byteCursor = bitOffset + bitCount;
 
-            var shortValue = Read<short>(bitOffset) >> (bitOffset & 7);
+            var shortValue = Read<short>(bitOffset, bitCount) >> (bitOffset & 7);
             if (bitCount != 16)
                 shortValue &= (1 << bitCount) - 1;
 
@@ -218,7 +219,7 @@ namespace DBClientFiles.NET.IO
         {
             _byteCursor = bitOffset + bitCount;
 
-            var byteValue = Read<byte>(bitOffset) >> (bitOffset & 7);
+            var byteValue = Read<byte>(bitOffset, bitCount) >> (bitOffset & 7);
             if (bitCount != 8)
                 byteValue &= (1 << bitCount) - 1;
 
@@ -229,7 +230,7 @@ namespace DBClientFiles.NET.IO
         {
             _byteCursor = bitOffset + bitCount;
 
-            var byteValue = Read<sbyte>(bitOffset) >> (bitOffset & 7);
+            var byteValue = Read<sbyte>(bitOffset, bitCount) >> (bitOffset & 7);
             if (bitCount != 8)
                 byteValue &= (1 << bitCount) - 1;
 
@@ -239,19 +240,28 @@ namespace DBClientFiles.NET.IO
         public float ReadSingle(int bitOffset)
         {
             _byteCursor += 32;
-            return Read<float>(bitOffset);
+            return Read<float>(bitOffset, 32);
         }
 
         /// <remarks>
         /// While this may look fine, it will return a value that will be unaccurate unless properly shifted to the right by <code><paramref name="bitOffset"/> & 7</code>, as this cannot be typically done by this method.
         /// </remarks>
-        private T Read<T>(int bitOffset, bool advanceCursor = false) where T : struct
+        private T Read<T>(int bitOffset, int bitCount, bool advanceCursor = false) where T : struct
         {
+            //! TODO: This needs to be more robust: Ideally speaking, the size check condition needs to go.
+            //! TODO: Unfortunately, some types make be less bytes wide than SizeCache<T>.Size but still
+            //! TODO: larger than the next smaller primitive type. We would need int24, int40, int48, int56...
+
             if (advanceCursor)
                 _byteCursor += SizeCache<T>.Size * 8;
 
-            // It is safe to assume that the caller needs less bits than what T can contain.
-            var spanSlice = _recordMemory.Slice(bitOffset / 8, SizeCache<T>.Size);
+            var spanSlice = _recordMemory.Slice(bitOffset / 8, (bitCount + (bitOffset & 7) + 7) / 8);
+            if (SizeCache<T>.Size > spanSlice.Length)
+            {
+                using (var sliceHandle = spanSlice.Pin())
+                    return FastStructure.PtrToStructure<T>(new IntPtr(sliceHandle.Pointer));
+            }
+
             var typeMemory = MemoryMarshal.Cast<byte, T>(spanSlice.Span);
             return typeMemory[0];
 
@@ -312,7 +322,7 @@ namespace DBClientFiles.NET.IO
         {
             var arr = new T[arraySize];
             for (var i = 0; i < arraySize; ++i)
-                arr[i] = Read<T>(bitOffset + i * SizeCache<T>.Size);
+                arr[i] = Read<T>(bitOffset + i * SizeCache<T>.Size, bitCount);
             return arr;
         }
 
@@ -320,7 +330,7 @@ namespace DBClientFiles.NET.IO
         {
             var arr = new T[arraySize];
             for (var i = 0; i < arraySize; ++i)
-                arr[i] = Read<T>(_byteCursor, true);
+                arr[i] = Read<T>(_byteCursor, SizeCache<T>.Size, true);
             // _byteCursor += SizeCache<T>.Size * 8 * arraySize;
             return arr;
         }

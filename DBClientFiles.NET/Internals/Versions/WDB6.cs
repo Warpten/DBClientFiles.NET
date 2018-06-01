@@ -88,7 +88,7 @@ namespace DBClientFiles.NET.Internals.Versions
             return true;
         }
 
-        public override T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value)
+        public override T ReadCommonMember<T>(int memberIndex,  TValue value)
         {
             return _commonTable.ExtractValue<T>(memberIndex - _commonTableStartColumn, _codeGenerator.ExtractKey(value));
         }

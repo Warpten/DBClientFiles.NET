@@ -1,5 +1,4 @@
-﻿#if DEBUG
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -531,7 +530,7 @@ namespace DBClientFiles.NET.Utils
 
         protected override MemberAssignment VisitMemberAssignment(MemberAssignment assignment)
         {
-            Out(assignment.Member.Name);
+            Out(assignment.Member.Name.PadLeft(50));
             Out(" = ");
             Visit(assignment.Expression);
             return assignment;
@@ -904,4 +903,3 @@ namespace DBClientFiles.NET.Utils
         #endregion
     }
 }
-#endif
