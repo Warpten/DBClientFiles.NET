@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 using DBClientFiles.NET.IO;
-using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
@@ -13,13 +11,11 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     /// A segment reader for legacy common table (as seen in WDB6 file format).
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
-    /// <typeparam name="TValue">The record type of the currently operated file.</typeparam>
     internal sealed class CommonTableReader<TKey> : SegmentReader
         where TKey : struct
     {
-        private Type[] _memberTypes;
-
-        private Dictionary<TKey, byte[]>[] _valueOffsets;
+        private Memory<byte>[] _dataBlocks;
+        private int[] _dataSizes;
 
         public CommonTableReader(FileReader reader) : base(reader)
         {
@@ -27,7 +23,12 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
         protected override void Release()
         {
-            _valueOffsets = null;
+        }
+
+        public void Initialize(IEnumerable<int> blockLengths)
+        {
+            _dataSizes = blockLengths.ToArray();
+            _dataBlocks = new Memory<byte>[_dataSizes.Length];
         }
 
         public override void Read()
@@ -36,88 +37,32 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
                 return;
 
             FileReader.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
-            var columnCount = FileReader.ReadInt32();
-
-            _memberTypes = new Type[columnCount];
-            _valueOffsets = new Dictionary<TKey, byte[]>[columnCount];
-            for (var i = 0; i < columnCount; ++i)
-                _valueOffsets[i] = new Dictionary<TKey, byte[]>();
-
-            for (var i = 0; i < columnCount; ++i)
-                AssertReadColumn(i, false, true);
+            for (var i = 0; i < _dataSizes.Length; ++i)
+                _dataBlocks[i] = FileReader.ReadBytes(_dataSizes[i]);
         }
 
-        /// <summary>
-        /// Reads a column, also asserting if the common block is packed or not.
-        /// </summary>
-        /// <param name="columnIndex"></param>
-        /// <param name="dryRun"></param>
-        /// <param name="readAsPadded"></param>
-        /// <returns>true if the block read correctly, false otherwise.</returns>
-        private bool AssertReadColumn(int columnIndex, bool dryRun, bool readAsPadded)
+        public T ExtractValue<T>(int columnIndex, T defaultValue, TKey recordKey) where T : struct
         {
-            var entryCount = FileReader.ReadInt32();
-            var entryType = FileReader.ReadByte();
+            // TODO: This is horribly slow.
+            var slice = _dataBlocks[columnIndex];
+            var nodesSlice = MemoryMarshal.Cast<byte, Node<T>>(slice.Span);
+            
+            for (var i = 0; i < nodesSlice.Length; ++i)
+                if (nodesSlice[i].Key.Equals(recordKey))
+                    return nodesSlice[i].Value;
 
-            var dataSize = 4;
-            switch (entryType)
-            {
-                case 0: // string
-                    _memberTypes[columnIndex] = typeof(string);
-                    break;
-                case 3: // float
-                    _memberTypes[columnIndex] = typeof(float);
-                    break;
-                case 4: // int
-                    _memberTypes[columnIndex] = typeof(int);
-                    break;
-                case 1: // short
-                    _memberTypes[columnIndex] = typeof(short);
-                    if (!readAsPadded)
-                        dataSize = 2;
-                    break;
-                case 2: // byte
-                    _memberTypes[columnIndex] = typeof(byte);
-                    if (!readAsPadded)
-                        dataSize = 1;
-                    break;
-                default:
-                    throw new InvalidOperationException();
-            }
-
-            if (dryRun)
-            {
-                var newPosition = FileReader.BaseStream.Seek((4 + dataSize) * entryCount, SeekOrigin.Current);
-                // Hopefully when this happens it means we were trying to read as non-packed.
-                if (newPosition > Segment.EndOffset)
-                    return false;
-                return true;
-            }
-            else
-            {
-                var keySize = Math.Min(4, SizeCache<TKey>.Size);
-
-                for (var i = 0; i < entryCount; ++i)
-                {
-                    _valueOffsets[columnIndex][FileReader.ReadStruct<TKey>()] = FileReader.ReadBytes(dataSize);
-                    var newPosition = FileReader.BaseStream.Seek(keySize + dataSize, SeekOrigin.Current);
-
-                    // And same as the comment above here.
-                    if (newPosition > Segment.EndOffset)
-                        return false;
-                }
-                return true;
-            }
+            return defaultValue;
         }
-
-        public unsafe T ExtractValue<T>(int columnIndex, TKey recordKey) where T : struct
+        
+        private struct Node<T> where T : struct
         {
-            var dict = _valueOffsets[columnIndex];
-            if (!dict.TryGetValue(recordKey, out var dataBlock))
-                return default;
+            public TKey Key;
+            public T Value;
 
-            fixed (byte* buffer = dataBlock)
-                return FastStructure.PtrToStructure<T>(new IntPtr(buffer));
+            public override string ToString()
+            {
+                return $"[{Key}] = {Value}";
+            }
         }
     }
 }

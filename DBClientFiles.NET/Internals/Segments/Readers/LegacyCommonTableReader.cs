@@ -27,23 +27,6 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             _valueOffsets = null;
         }
 
-        public void ReadPadded()
-        {
-            if (Segment.Length == 0)
-                return;
-
-            FileReader.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
-            var columnCount = FileReader.ReadInt32();
-
-            _memberTypes = new Type[columnCount];
-            _valueOffsets = new Dictionary<TKey, byte[]>[columnCount];
-            for (var i = 0; i < columnCount; ++i)
-                _valueOffsets[i] = new Dictionary<TKey, byte[]>();
-
-            for (var i = 0; i < columnCount; ++i)
-                AssertReadColumn(i, false, true);
-        }
-
         public override void Read()
         {
             if (Segment.Length == 0)
