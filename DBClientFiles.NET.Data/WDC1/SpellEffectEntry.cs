@@ -1,8 +1,12 @@
-﻿namespace DBClientFiles.NET.Data.WDC1
+﻿using DBClientFiles.NET.Attributes;
+
+namespace DBClientFiles.NET.Data.WDC1
 {
+    [DBFileName(Name = "SpellEffect", Extension = FileExtension.DB2)]
     public sealed class SpellEffectEntry
     {
-        public int ID;
+        [Index]
+        public int ID { get; set; }
         public uint Effect { get; set; }
         public int EffectBasePoints { get; set; }
         public int EffectIndex { get; set; }

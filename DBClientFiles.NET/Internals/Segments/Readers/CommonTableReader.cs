@@ -1,8 +1,11 @@
-﻿using DBClientFiles.NET.IO;
-using DBClientFiles.NET.Utils;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using DBClientFiles.NET.IO;
+using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
@@ -11,37 +14,20 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TValue">The record type of the currently operated file.</typeparam>
-    internal sealed class LegacyCommonTableReader<TKey> : SegmentReader
+    internal sealed class CommonTableReader<TKey> : SegmentReader
         where TKey : struct
     {
         private Type[] _memberTypes;
 
         private Dictionary<TKey, byte[]>[] _valueOffsets;
 
-        public LegacyCommonTableReader(FileReader reader) : base(reader)
+        public CommonTableReader(FileReader reader) : base(reader)
         {
         }
 
         protected override void Release()
         {
             _valueOffsets = null;
-        }
-
-        public void ReadPadded()
-        {
-            if (Segment.Length == 0)
-                return;
-
-            FileReader.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
-            var columnCount = FileReader.ReadInt32();
-
-            _memberTypes = new Type[columnCount];
-            _valueOffsets = new Dictionary<TKey, byte[]>[columnCount];
-            for (var i = 0; i < columnCount; ++i)
-                _valueOffsets[i] = new Dictionary<TKey, byte[]>();
-
-            for (var i = 0; i < columnCount; ++i)
-                AssertReadColumn(i, false, true);
         }
 
         public override void Read()
@@ -57,35 +43,8 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             for (var i = 0; i < columnCount; ++i)
                 _valueOffsets[i] = new Dictionary<TKey, byte[]>();
 
-            // Try to read everything as unpacked.
-            // If reading fails (probably because the cursor is now beyond the end of the file), then the structure is packed.
-
-            var successfulParse = true;
-            for (var i = 0; i < columnCount && successfulParse; ++i)
-                successfulParse = AssertReadColumn(i, true, false);
-
-            if (successfulParse)
-            {
-                // Structure is actually packed.
-                // Read again, but it's not a dry run this time.
-                FileReader.BaseStream.Seek(Segment.StartOffset + 4, SeekOrigin.Begin);
-
-                for (var i = 0; i < columnCount && successfulParse; ++i)
-                    successfulParse = AssertReadColumn(i, false, true);
-            }
-            else
-            {
-                // Structure is unpacked.
-                // Read again, but it's not a dry run this time.
-                FileReader.BaseStream.Seek(Segment.StartOffset + 4, SeekOrigin.Begin);
-
-                for (var i = 0; i < columnCount; ++i)
-                    AssertReadColumn(i, true, false);
-            }
-
-            // We also need to check here that we properly went through the entirety of the block - for safekeeping.
-            if (FileReader.BaseStream.Position != Segment.EndOffset)
-                throw new FileLoadException();
+            for (var i = 0; i < columnCount; ++i)
+                AssertReadColumn(i, false, true);
         }
 
         /// <summary>

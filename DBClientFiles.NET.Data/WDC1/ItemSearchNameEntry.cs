@@ -2,6 +2,7 @@
 
 namespace DBClientFiles.NET.Data.WDC1
 {
+    [DBFileName(Name = "ItemSearchName", Extension = FileExtension.DB2)]
     public sealed class ItemSearchNameEntry
     {
         public long AllowableRace { get; set; }

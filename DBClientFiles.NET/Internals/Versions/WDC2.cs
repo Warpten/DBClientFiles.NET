@@ -48,17 +48,11 @@ namespace DBClientFiles.NET.Internals.Versions
 
             public override StorageOptions Options { get; set; }
             
-            private readonly CopyTableReader<TKey, TValue> _copyTable;
-            private readonly RelationShipSegmentReader<TKey, TValue> _relationshipData;
+            private readonly CopyTableReader<TKey> _copyTable;
+            private readonly RelationShipSegmentReader<TKey> _relationshipData;
 
             public override CodeGenerator<TValue> Generator => _parent.Generator;
 
-            public override ExtendedMemberInfo[] Members
-            {
-                get => _parent.Members;
-                protected set => throw new InvalidOperationException();
-            }
-            
             private int _fileOffset;
             private int _recordCount;
             private int _stringTableSize;
@@ -71,8 +65,8 @@ namespace DBClientFiles.NET.Internals.Versions
             {
                 _parent = parent;
                 
-                _copyTable        = new CopyTableReader<TKey, TValue>(this);
-                _relationshipData = new RelationShipSegmentReader<TKey, TValue>(this);
+                _copyTable        = new CopyTableReader<TKey>(this);
+                _relationshipData = new RelationShipSegmentReader<TKey>(this);
 
                 Options = _parent.Options;
             }
@@ -137,21 +131,6 @@ namespace DBClientFiles.NET.Internals.Versions
                 _relationshipData.Read();
             }
 
-            public override T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value)
-            {
-                throw new UnreachableCodeException("WDC2's section does not contain a common block!");
-            }
-
-            public override T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value)
-            {
-                throw new UnreachableCodeException("WDC2's section does not contain a pallet block!");
-            }
-
-            public override T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value)
-            {
-                throw new UnreachableCodeException("WDC2's section does not contain a pallet block!");
-            }
-
             public override string FindStringByOffset(int tableOffset)
             {
                 // Part 2 of string handling: convert the absolute offset into a relative one
@@ -169,8 +148,8 @@ namespace DBClientFiles.NET.Internals.Versions
         #region Segments
         private Section[] _segments;
 
-        private readonly BinarySegmentReader<TValue> _palletTable;
-        private Segment<TValue> _commonTable;
+        private readonly BinarySegmentReader _palletTable;
+        private Segment _commonTable;
         #endregion
 
         private int _flags;
@@ -192,8 +171,8 @@ namespace DBClientFiles.NET.Internals.Versions
         #region Life and Death
         public WDC2(Stream strm) : base(strm, true)
         {
-            _palletTable = new BinarySegmentReader<TValue>(this);
-            _commonTable = new Segment<TValue>();
+            _palletTable = new BinarySegmentReader(this);
+            _commonTable = new Segment();
         }
 
         protected override void ReleaseResources()
@@ -241,63 +220,21 @@ namespace DBClientFiles.NET.Internals.Versions
                     return false;
             }
 
-            var previousPosition = 0;
             for (var i = 0; i < totalFieldCount; ++i)
+                MemberStore.AddFileMemberInfo(4 - ReadInt16() / 8, ReadInt16());
+
+            var fieldStorageInfoCount = fieldStorageInfoSize / (2 + 2 + 4 + 4 + 3 * 4);
+            for (var i = 0; i < fieldStorageInfoCount; ++i)
             {
-                var columnOffset = i;
+                var memberInfo = MemberStore.GetFileMember(i);
 
-                var bitSize = ReadInt16();
-                var recordPosition = ReadInt16();
+                memberInfo.Offset = ReadInt16();
+                memberInfo.BitSize = ReadInt16(); // size is the sum of all array pieces in bits - for example, uint32[3] will appear here as '96'
 
-                Members[columnOffset].BitSize = 32 - bitSize;
-                if (columnOffset > 0 && Members[columnOffset - 1].BitSize != 0)
-                    Members[columnOffset - 1].Cardinality = (recordPosition - previousPosition) / Members[columnOffset - 1].BitSize;
+                memberInfo.CompressionOptions = this.ReadStruct<FileMemberInfo.CompressionInfo>();
 
-                previousPosition = recordPosition;
-            }
-
-            for (var i = 0; i < (fieldStorageInfoSize / (2 + 2 + 4 + 4 + 3 * 4)); ++i)
-            {
-                var columnOffset = i;
-                var memberInfo = Members[columnOffset];
-
-                memberInfo.OffsetInRecord = ReadInt16();
-                var fieldSizeBits = ReadInt16(); // size is the sum of all array pieces in bits - for example, uint32[3] will appear here as '96'
-                if (memberInfo.BitSize == 0)
-                    memberInfo.BitSize = fieldSizeBits;
-
-                var additionalDataSize = ReadInt32();
-                memberInfo.CompressionType = (MemberCompressionType)ReadInt32();
-                switch (memberInfo.CompressionType)
-                {
-                    case MemberCompressionType.Immediate:
-                        {
-                            BaseStream.Seek(4 + 4, SeekOrigin.Current);
-                            var memberFlags = ReadInt32();
-                            memberInfo.IsSigned = (memberFlags & 0x01) != 0;
-                            break;
-                        }
-                    case MemberCompressionType.CommonData:
-                        memberInfo.DefaultValue = ReadBytes(4);
-                        BaseStream.Seek(4 + 4, SeekOrigin.Current);
-                        break;
-                    case MemberCompressionType.BitpackedPalletData:
-                    case MemberCompressionType.BitpackedPalletArrayData:
-                        {
-                            BaseStream.Seek(4 + 4, SeekOrigin.Current);
-                            if (memberInfo.CompressionType == MemberCompressionType.BitpackedPalletArrayData)
-                                memberInfo.Cardinality = ReadInt32();
-                            else
-                                BaseStream.Seek(4, SeekOrigin.Current);
-                            break;
-                        }
-                    default:
-                        BaseStream.Seek(4 + 4 + 4, SeekOrigin.Current);
-                        break;
-                }
-
-                if (memberInfo.BitSize != 0)
-                    memberInfo.Cardinality = fieldSizeBits / memberInfo.BitSize;
+                if (memberInfo.ByteSize != 0)
+                    memberInfo.Cardinality = memberInfo.BitSize / (8 * memberInfo.ByteSize);
             }
 
             _palletTable.StartOffset = BaseStream.Position;
@@ -311,8 +248,8 @@ namespace DBClientFiles.NET.Internals.Versions
 
             _codeGenerator = new []
             {
-                new CodeGenerator<TValue, TKey>(Members) { IsIndexStreamed = false },
-                new CodeGenerator<TValue, TKey>(Members) { IsIndexStreamed = true, IndexColumn = indexColumn }
+                new CodeGenerator<TValue, TKey>(this) { IsIndexStreamed = false },
+                new CodeGenerator<TValue, TKey>(this) { IsIndexStreamed = true, IndexColumn = indexColumn }
             };
             return true;
         }
@@ -338,16 +275,16 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
-            var memberInfo = Members[memberIndex];
+            var memberInfo = MemberStore.GetFileMember(memberIndex);
 
-            return _palletTable.ReadArray<T>(memberInfo.OffsetInRecord, memberInfo.Cardinality);
+            return _palletTable.ReadArray<T>(memberInfo.Offset, memberInfo.Cardinality);
         }
 
         public override T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
-            var memberInfo = Members[memberIndex];
+            var memberInfo = MemberStore.GetFileMember(memberIndex);
 
-            return _palletTable.Read<T>(memberInfo.OffsetInRecord);
+            return _palletTable.Read<T>(memberInfo.Offset);
         }
 
         public override T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value)

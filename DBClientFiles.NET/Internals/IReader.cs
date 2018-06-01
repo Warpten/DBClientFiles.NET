@@ -15,7 +15,7 @@ namespace DBClientFiles.NET.Internals
         
         StorageOptions Options { get; set; }
         CodeGenerator<T> Generator { get; }
-        ExtendedMemberInfo[] Members { get; }
+        ExtendedMemberInfoCollection MemberStore { get; }
 
         uint TableHash { get; }
         uint LayoutHash { get; }

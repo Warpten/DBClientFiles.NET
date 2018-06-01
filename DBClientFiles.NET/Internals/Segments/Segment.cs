@@ -2,11 +2,10 @@
 
 namespace DBClientFiles.NET.Internals.Segments
 {
-    internal struct Segment<TValue> : IEquatable<Segment<TValue>>
-        where TValue : class, new()
+    internal struct Segment
     {
         public long StartOffset { get; set; }
-        public long Length { get; set; }
+        public int Length { get; set; }
 
         public long EndOffset => StartOffset + Length;
         public int ItemLength { get; set; }
@@ -17,11 +16,6 @@ namespace DBClientFiles.NET.Internals.Segments
                     Length = 0;
             }
             get => Length != 0;
-        }
-
-        public bool Equals(Segment<TValue> other)
-        {
-            return StartOffset == other.StartOffset && Length == other.Length;
         }
     }
 }

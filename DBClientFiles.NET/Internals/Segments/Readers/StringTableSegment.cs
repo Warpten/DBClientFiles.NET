@@ -5,8 +5,7 @@ using DBClientFiles.NET.IO;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
-    internal sealed class StringTableSegment<TValue> : SegmentReader<TValue>
-        where TValue : class, new()
+    internal sealed class StringTableSegment : SegmentReader
     {
         public StringTableSegment(FileReader reader) : base(reader)
         {
@@ -24,10 +23,10 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             
             FileReader.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
 
-            var stringSegment = FileReader.ReadBytes((int)Segment.Length);
+            var stringSegment = FileReader.ReadBytes(Segment.Length);
 
-            var stringEnd = (int)(Segment.Length - 1);
-            for (var i = (int)(Segment.Length - 2); i >= 0;)
+            var stringEnd = Segment.Length - 1;
+            for (var i = Segment.Length - 2; i >= 0;)
             {
                 var isStringTermination = stringSegment[i] == 0;
                 if (isStringTermination)

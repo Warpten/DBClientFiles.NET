@@ -10,8 +10,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     /// </summary>
     /// <typeparam name="TKey">The type of key to use.</typeparam>
     /// <typeparam name="TValue">The record type.</typeparam>
-    internal sealed class CopyTableReader<TKey, TValue> : SegmentReader<TValue>
-        where TValue : class, new()
+    internal sealed class CopyTableReader<TKey> : SegmentReader
         where TKey : struct
     {
         public CopyTableReader(FileReader reader) : base(reader)

@@ -12,7 +12,7 @@ namespace DBClientFiles.NET.Internals.Versions
         where TValue : class, new()
     {
         #region Segments
-        private readonly CopyTableReader<TKey, TValue> _copyTable;
+        private readonly CopyTableReader<TKey> _copyTable;
         #endregion
 
         protected CodeGenerator<TValue, TKey> _codeGenerator;
@@ -21,7 +21,7 @@ namespace DBClientFiles.NET.Internals.Versions
         #region Life and death
         public WDB5(Stream strm) : base(strm, true)
         {
-            _copyTable = new CopyTableReader<TKey, TValue>(this);
+            _copyTable = new CopyTableReader<TKey>(this);
         }
 
         protected override void ReleaseResources()
@@ -50,19 +50,7 @@ namespace DBClientFiles.NET.Internals.Versions
             var flags            = ReadInt16();
             var indexColumn      = ReadInt16();
 
-            var previousPosition = 0;
-            for (var i = 0; i < fieldCount; ++i)
-            {
-                var bitSize = 32 - ReadInt16();
-                var position = ReadInt16();
-
-                Members[i].BitSize = bitSize;
-                if (i > 0)
-                    Members[i - 1].Cardinality = (position - previousPosition) / Members[i - 1].BitSize;
-
-                previousPosition = position;
-            }
-
+            #region Initialize segments
             Records.StartOffset = BaseStream.Position;
             Records.Length = recordSize * recordCount;
             Records.ItemLength = recordSize;
@@ -70,19 +58,23 @@ namespace DBClientFiles.NET.Internals.Versions
             StringTable.Exists = (flags & 0x01) == 0;
             StringTable.StartOffset = Records.EndOffset;
             StringTable.Length = stringTableSize;
-            
+
             OffsetMap.Exists = (flags & 0x01) != 0;
             OffsetMap.StartOffset = stringTableSize;
             OffsetMap.Length = (maxIndex - minIndex + 1) * (4 + 2);
-            
+
             IndexTable.Exists = (flags & 0x04) != 0;
             IndexTable.StartOffset = OffsetMap.EndOffset;
             IndexTable.Length = recordCount * 4;
 
             _copyTable.StartOffset = IndexTable.EndOffset;
             _copyTable.Length = copyTableSize;
+            #endregion
+            
+            for (var i = 0; i < fieldCount; ++i)
+                MemberStore.AddFileMemberInfo(4 - ReadInt16() / 8, ReadInt16());
 
-            _codeGenerator = new CodeGenerator<TValue, TKey>(Members)
+            _codeGenerator = new CodeGenerator<TValue, TKey>(this)
             {
                 IndexColumn = indexColumn,
                 IsIndexStreamed = !IndexTable.Exists

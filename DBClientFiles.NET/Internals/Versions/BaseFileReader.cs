@@ -17,16 +17,16 @@ namespace DBClientFiles.NET.Internals.Versions
         private CodeGenerator<TValue, TKey> _codeGenerator;
         public override CodeGenerator<TValue> Generator => _codeGenerator;
 
-        public IndexTableReader<TKey, TValue> IndexTable { get; }
+        public IndexTableReader<TKey> IndexTable { get; }
 
         protected BaseFileReader(Stream strm, bool keepOpen) : base(strm, keepOpen)
         {
-            IndexTable = new IndexTableReader<TKey, TValue>(this);
+            IndexTable = new IndexTableReader<TKey>(this);
         }
 
         public override bool ReadHeader()
         {
-            _codeGenerator = new CodeGenerator<TValue, TKey>(Members) {
+            _codeGenerator = new CodeGenerator<TValue, TKey>(this) {
                 IsIndexStreamed = !IndexTable.Exists
             };
             return true;
@@ -52,9 +52,9 @@ namespace DBClientFiles.NET.Internals.Versions
         #region Life and death
         protected BaseFileReader(Stream strm, bool keepOpen) : base(strm, keepOpen)
         {
-            StringTable = new StringTableSegment<TValue>(this);
-            OffsetMap = new OffsetMapReader<TValue>(this);
-            Records = new Segment<TValue>();
+            StringTable = new StringTableSegment(this);
+            OffsetMap = new OffsetMapReader(this);
+            Records = new Segment();
         }
 
         protected override void ReleaseResources()
@@ -62,29 +62,34 @@ namespace DBClientFiles.NET.Internals.Versions
             _codeGenerator = null;
         }
         #endregion
-        
+
+        #region IStorage implementation
         public uint TableHash { get; protected set; }
         public uint LayoutHash { get; protected set; }
+        #endregion
+        
+        public ExtendedMemberInfoCollection MemberStore { get; protected set; }
 
-        public virtual ExtendedMemberInfo[] Members { get; protected set; }
-
+        #region Methods that may be called through deserialization
         // These are called through code generation, don't trust ReSharper.
         public abstract T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : struct;
         public abstract T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : struct;
         public abstract T ReadForeignKeyMember<T>() where T : struct;
         public abstract T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : struct;
+        #endregion
 
         private StorageOptions _options;
+
         public override StorageOptions Options
         {
             get => _options;
             set
             {
-                var oldOptions = _options;
-                _options = value;
+                if (_options != null && _options.MemberType == value.MemberType)
+                    return;
 
-                if (oldOptions == null || oldOptions.MemberType != _options.MemberType)
-                    Members = typeof(TValue).GetMemberInfos(_options);
+                _options = value;
+                MemberStore = new ExtendedMemberInfoCollection(typeof(TValue), Options);
             }
         }
 
@@ -92,19 +97,23 @@ namespace DBClientFiles.NET.Internals.Versions
         public virtual CodeGenerator<TValue> Generator => _codeGenerator;
 
         #region Segments
-        protected StringTableSegment<TValue> StringTable;
-        protected OffsetMapReader<TValue> OffsetMap;
-        protected Segment<TValue> Records;
+        protected StringTableSegment StringTable;
+        protected OffsetMapReader OffsetMap;
+        protected Segment Records;
         #endregion
 
         public event Action<int> OnStringTableEntry;
 
         public virtual bool ReadHeader()
         {
-            _codeGenerator = new CodeGenerator<TValue>(Members) { IsIndexStreamed = true };
+            _codeGenerator = new CodeGenerator<TValue>(this) { IsIndexStreamed = true };
             return true;
         }
         
+        /// <summary>
+        /// Enumerates the file, parsing either the records block or the sparse table, if either one exists.
+        /// </summary>
+        /// <returns></returns>
         public virtual IEnumerable<TValue> ReadRecords()
         {
             if (OffsetMap.Exists)
@@ -132,10 +141,23 @@ namespace DBClientFiles.NET.Internals.Versions
             }
         }
 
+        /// <summary>
+        /// Read any possible amount of records starting at the provided offset and of the given length, including possible copies in the copy table.
+        /// </summary>
+        /// <see cref="CopyTableReader{TKey, TValue}"/>
+        /// <param name="recordIndex">The index of this record in the sparse or records block.</param>
+        /// <param name="recordOffset">The (absolute) offset in the file at which the record data starts.</param>
+        /// <param name="recordSize">The size, in bytes, of the record.</param>
+        /// <returns></returns>
         protected abstract IEnumerable<TValue> ReadRecords(int recordIndex, long recordOffset, int recordSize);
 
+        /// <summary>
+        /// Populates segment informations
+        /// </summary>
         public virtual void ReadSegments()
         {
+            MemberStore.Map();
+
             if (StringTable.Segment.Exists)
             {
                 if (Options.LoadMask.HasFlag(LoadMask.StringTable))

@@ -3,17 +3,10 @@ using System;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
-    internal interface ISegmentReader<TValue> : IDisposable
-        where TValue : class, new()
+    internal abstract class SegmentReader : IDisposable
     {
-        Segment<TValue> Segment { get; }
-        bool Exists { get; }
-    }
-
-    internal abstract class SegmentReader<TValue> : ISegmentReader<TValue> where TValue : class, new()
-    {
-        private Segment<TValue> _segment;
-        public Segment<TValue> Segment => _segment;
+        private Segment _segment;
+        public Segment Segment => _segment;
         public FileReader FileReader { get; }
 
         public bool Exists
@@ -28,7 +21,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             set => _segment.StartOffset = value;
         }
 
-        public long Length
+        public int Length
         {
             get => _segment.Length;
             set => _segment.Length = value;

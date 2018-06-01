@@ -9,8 +9,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     /// A segment reader that treats the entirety of its content as byte data that is to be deserialized as need may be.
     /// </summary>
     /// <typeparam name="TValue"></typeparam>
-    internal sealed class BinarySegmentReader<TValue> : SegmentReader<TValue>
-        where TValue : class, new()
+    internal sealed class BinarySegmentReader : SegmentReader
     {
         private byte[] _data;
         private Memory<byte> _memorySpan;

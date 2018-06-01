@@ -4,8 +4,7 @@ using DBClientFiles.NET.IO;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
-    internal sealed class OffsetMapReader<TValue> : SegmentReader<TValue>
-        where TValue : class, new()
+    internal sealed class OffsetMapReader : SegmentReader
     {
         private readonly Dictionary<int, (long, int)> _parsedContent = new Dictionary<int, (long, int)>();
 
@@ -25,7 +24,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
                 ++i;
 
-                if (offset == 0)
+                if (offset == 0 || size == 0)
                     continue;
 
                 _parsedContent.Add(i, (offset, size));

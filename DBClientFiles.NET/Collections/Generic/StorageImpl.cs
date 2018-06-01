@@ -61,7 +61,6 @@ namespace DBClientFiles.NET.Collections.Generic
         }
 
         public IEnumerable<T> Enumerate() => Enumerate<int>();
-        public ExtendedMemberInfo[] Members => _fileReader.Members;
 
         public void Initialize<TKey>()
             where TKey : struct
@@ -99,10 +98,9 @@ namespace DBClientFiles.NET.Collections.Generic
             }
 
             _fileReader.Options = Options;
-
+            
             if (!_fileReader.ReadHeader())
                 throw new InvalidOperationException("Unable to read file header!");
-
         }
 
         public IEnumerable<T> Enumerate<TKey>()

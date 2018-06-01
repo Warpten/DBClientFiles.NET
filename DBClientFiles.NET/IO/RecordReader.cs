@@ -25,6 +25,8 @@ namespace DBClientFiles.NET.IO
         public static MethodInfo ReadPackedInt16   = typeof(RecordReader).GetMethod("ReadInt16", packedArgs);
         public static MethodInfo ReadPackedByte    = typeof(RecordReader).GetMethod("ReadByte",  packedArgs);
 
+        public static MethodInfo ReadPackedSingle  = typeof(RecordReader).GetMethod("ReadSingle", new[] { typeof(int) });
+
         public static MethodInfo ReadPackedString  = typeof(RecordReader).GetMethod("ReadString", packedArgs);
         public static MethodInfo ReadPackedStrings = typeof(RecordReader).GetMethod("ReadStrings", arrayPackedArgs);
         public static MethodInfo ReadPackedArray   = typeof(RecordReader).GetMethod("ReadArray", arrayPackedArgs);
@@ -130,6 +132,9 @@ namespace DBClientFiles.NET.IO
 
         public long ReadInt64(int bitOffset, int bitCount)
         {
+            if (bitCount <= 32)
+                return ReadInt32(bitOffset, bitCount);
+
             _byteCursor = bitOffset + bitCount;
 
             var longValue = Read<long>(bitOffset) >> (bitOffset & 7);
@@ -141,6 +146,9 @@ namespace DBClientFiles.NET.IO
 
         public ulong ReadUInt64(int bitOffset, int bitCount)
         {
+            if (bitCount <= 32)
+                return ReadUInt32(bitOffset, bitCount);
+
             _byteCursor = bitOffset + bitCount;
 
             var longValue = Read<ulong>(bitOffset) >> (bitOffset & 7);
@@ -152,6 +160,9 @@ namespace DBClientFiles.NET.IO
 
         public int ReadInt32(int bitOffset, int bitCount)
         {
+            if (bitCount <= 16)
+                return ReadInt16(bitOffset, bitCount);
+
             _byteCursor = bitOffset + bitCount;
 
             var intValue = Read<int>(bitOffset) >> (bitOffset & 7);
@@ -163,6 +174,9 @@ namespace DBClientFiles.NET.IO
 
         public uint ReadUInt32(int bitOffset, int bitCount)
         {
+            if (bitCount <= 16)
+                return ReadUInt16(bitOffset, bitCount);
+
             _byteCursor = bitOffset + bitCount;
 
             var intValue = Read<uint>(bitOffset) >> (bitOffset & 7);
@@ -174,6 +188,9 @@ namespace DBClientFiles.NET.IO
 
         public short ReadInt16(int bitOffset, int bitCount)
         {
+            if (bitCount <= 8)
+                return ReadSByte(bitOffset, bitCount);
+
             _byteCursor = bitOffset + bitCount;
 
             var shortValue = Read<short>(bitOffset) >> (bitOffset & 7);
@@ -185,6 +202,9 @@ namespace DBClientFiles.NET.IO
 
         public ushort ReadUInt16(int bitOffset, int bitCount)
         {
+            if (bitCount <= 8)
+                return ReadByte(bitOffset, bitCount);
+
             _byteCursor = bitOffset + bitCount;
 
             var shortValue = Read<short>(bitOffset) >> (bitOffset & 7);

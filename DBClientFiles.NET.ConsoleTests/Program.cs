@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using DBClientFiles.NET.Collections;
 
 namespace DBClientFiles.NET.ConsoleTests
@@ -14,9 +15,9 @@ namespace DBClientFiles.NET.ConsoleTests
     {
         static void Main(string[] args)
         {
-            //using (var fs = File.OpenRead(@"D:\Repositories\DBFilesClient.NET\Tests\WDB2\Files\Item-sparse.db2"))
+            //using (var fs = File.OpenRead(@"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\bin\Release\net472\Data\WDBC\AreaTrigger.dbc"))
             //{
-            //    var sl = new StorageList<Data.WDB2.ItemSparseEntry>(fs);
+            //    var sl = new StorageList<Data.WDBC.AreaTriggerEntry>(fs);
             //}
 
             // TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC");
@@ -35,7 +36,7 @@ namespace DBClientFiles.NET.ConsoleTests
         // Forces the corresponding assembly to be referenced.
         private volatile AchievementEntry entry;
 
-        private static void TestStructuresInNamespace(string @namespace)
+        private static void TestStructuresInNamespace(string @namespace, int count = 1)
         {
             _dataStores.Clear();
 
@@ -48,6 +49,9 @@ namespace DBClientFiles.NET.ConsoleTests
 
             foreach (var typeInfo in types.Where(t => t.Namespace == @namespace))
             {
+                if (!typeInfo.IsDefined(typeof(DBFileNameAttribute), false))
+                    continue;
+
                 var genericMethodInfo = methodInfo.MakeGenericMethod(typeInfo);
                 var fileName = typeInfo.Name.Replace("Entry", "");
                 var nameAttr = typeInfo.GetCustomAttribute<DBFileNameAttribute>();
@@ -60,8 +64,8 @@ namespace DBClientFiles.NET.ConsoleTests
                     fileName += ".dbc";
                 }
                 
-                var resourcePath = $@"D:\Repositories\DBFilesClient.NET\Tests\{fileType}\Files\{fileName}";
-                genericMethodInfo.Invoke(null, new object[] {resourcePath});
+                var resourcePath = $@"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\bin\Release\net472\Data\{fileType}\{fileName}";
+                genericMethodInfo.Invoke(null, new object[] {resourcePath, count});
             }
 
             Console.WriteLine(BenchmarkResult.Header);
@@ -76,7 +80,7 @@ namespace DBClientFiles.NET.ConsoleTests
             Console.WriteLine();
         }
 
-        private static void BenchmarkStructure<TValue>(string resourcePath) where TValue : class, new()
+        private static void BenchmarkStructure<TValue>(string resourcePath, int count) where TValue : class, new()
         {
             var correctedPath = File.Exists(resourcePath) ? resourcePath : resourcePath.Replace(".dbc", ".db2");
 
@@ -87,7 +91,7 @@ namespace DBClientFiles.NET.ConsoleTests
                 ms.Position = 0;
 
                 var structureTester = new StructureTester<TValue>();
-                var benchmarkResult = structureTester.Benchmark<StorageList<TValue>>(out var dataStore, ms, 200);
+                var benchmarkResult = structureTester.Benchmark<StorageList<TValue>>(out var dataStore, ms, count);
                 _dataStores[typeof(TValue)] = benchmarkResult;
             }
         }

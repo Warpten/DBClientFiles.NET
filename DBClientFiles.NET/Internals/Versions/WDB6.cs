@@ -10,8 +10,8 @@ namespace DBClientFiles.NET.Internals.Versions
         where TKey : struct
     {
         #region Segments
-        private readonly CopyTableReader<TKey, TValue> _copyTable;
-        private readonly LegacyCommonTableReader<TKey, TValue> _commonTable;
+        private readonly CopyTableReader<TKey> _copyTable;
+        private readonly LegacyCommonTableReader<TKey> _commonTable;
         #endregion
 
         private int _commonTableStartColumn;
@@ -19,8 +19,8 @@ namespace DBClientFiles.NET.Internals.Versions
         #region Life and death
         public WDB6(Stream dataStream) : base(dataStream)
         {
-            _copyTable   = new CopyTableReader<TKey, TValue>(this);
-            _commonTable = new LegacyCommonTableReader<TKey, TValue>(this);
+            _copyTable   = new CopyTableReader<TKey>(this);
+            _commonTable = new LegacyCommonTableReader<TKey>(this);
         }
 
         protected override void ReleaseResources()
@@ -54,19 +54,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
             _commonTableStartColumn = fieldCount;
 
-            var previousPosition = 0;
-            for (var i = 0; i < fieldCount; ++i)
-            {
-                var bitSize = 32 - ReadInt16();
-                var position = ReadInt16();
-
-                Members[i].BitSize = bitSize;
-                if (i > 0)
-                    Members[i - 1].Cardinality = (position - previousPosition) / Members[i - 1].BitSize;
-
-                previousPosition = position;
-            }
-
+            #region Initialize segments
             Records.StartOffset = BaseStream.Position;
             Records.Length = recordSize * recordCount;
             Records.ItemLength = recordSize;
@@ -81,13 +69,17 @@ namespace DBClientFiles.NET.Internals.Versions
 
             IndexTable.Exists = (flags & 0x04) != 0;
             IndexTable.StartOffset = OffsetMap.Exists ? OffsetMap.EndOffset : StringTable.EndOffset;
-            IndexTable.Length = recordCount * typeof(TKey).GetBinarySize();
+            IndexTable.Length = recordCount * SizeCache<TKey>.Size;
 
             _copyTable.StartOffset = IndexTable.EndOffset;
             _copyTable.Length = copyTableSize;
 
             _commonTable.StartOffset = _copyTable.EndOffset;
             _commonTable.Length = commonDataTableSize;
+            #endregion
+
+            for (var i = 0; i < fieldCount; ++i)
+                MemberStore.AddFileMemberInfo(4 - ReadInt16() / 8, ReadInt16());
 
             // TODO: Check that the mapped index column corresponds to metadata
             _codeGenerator.IndexColumn = indexColumn;

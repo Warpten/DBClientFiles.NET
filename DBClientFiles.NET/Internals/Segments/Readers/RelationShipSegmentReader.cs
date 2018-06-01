@@ -1,15 +1,16 @@
 ﻿using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using DBClientFiles.NET.IO;
+using System.Runtime.InteropServices;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
-    internal sealed class RelationShipSegmentReader<TKey, T> : SegmentReader<T>
-        where T : class, new()
+    internal sealed class RelationShipSegmentReader<TKey> : SegmentReader
         where TKey : struct
     {
-        private Dictionary<int /* recordIndex */, byte[]> _entries;
+        private Dictionary<int /* recordIndex */, Memory<byte>> _entries;
 
         public RelationShipSegmentReader(FileReader reader) : base(reader)
         {
@@ -22,15 +23,12 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
             FileReader.BaseStream.Position = Segment.StartOffset;
             var entryCount = FileReader.ReadInt32();
-            var minIndex = FileReader.ReadStruct<TKey>();
-            var maxIndex = FileReader.ReadStruct<TKey>();
+            FileReader.BaseStream.Seek(4 + 4, SeekOrigin.Current);
 
-            _entries = new Dictionary<int, byte[]>();
+            _entries = new Dictionary<int, Memory<byte>>();
 
             for (var i = 0; i < entryCount; ++i)
-            {
                 _entries[FileReader.ReadInt32()] = FileReader.ReadBytes(4);
-            }
         }
 
         protected override void Release()
@@ -38,15 +36,14 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             _entries = null;
         }
 
-        public unsafe U GetForeignKey<U>(int recordIndex) where U : struct
+        public U GetForeignKey<U>(int recordIndex)
+            where U : struct
         {
             if (_entries == null || !_entries.ContainsKey(recordIndex))
                 return default;
-
-            //! TODO: prevent long, this will cook us.
+            
             var fk = _entries[recordIndex];
-            fixed (byte* b = fk)
-                return FastStructure<U>.PtrToStructure(new IntPtr(b));
+            return MemoryMarshal.Read<U>(fk.Span);
         }
     }
 }

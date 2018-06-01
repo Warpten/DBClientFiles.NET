@@ -2,6 +2,7 @@
 using System.IO;
 using DBClientFiles.NET.Exceptions;
 using DBClientFiles.NET.IO;
+using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.Internals.Versions
 {

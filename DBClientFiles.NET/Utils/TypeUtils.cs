@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using DBClientFiles.NET.Attributes;
 
 namespace DBClientFiles.NET.Utils
 {
@@ -78,25 +79,6 @@ namespace DBClientFiles.NET.Utils
 
                 return _typeSizes[t] = totalSize;
             }
-        }
-
-        public static ExtendedMemberInfo[] GetMemberInfos(this Type type, StorageOptions options)
-        {
-            var memberIndex = 0;
-
-            var store = new List<ExtendedMemberInfo>();
-            var memberInfos = type.GetMembers(BindingFlags.Public | BindingFlags.Instance);
-            for (var i = 0; i < memberInfos.Length; i++)
-            {
-                var memberInfo = memberInfos[i];
-                if (memberInfo.MemberType != options.MemberType)
-                    continue;
-
-                var extendedMemberInfo = ExtendedMemberInfo.Initialize(memberInfo, memberIndex++);
-                store.Add(extendedMemberInfo);
-            }
-
-            return store.ToArray();
         }
     }
 }

@@ -46,41 +46,10 @@ namespace DBClientFiles.NET.ConsoleTests
 
     public class StructureTester<TValue> where TValue : class, new()
     {
-        public void InspectInstance(TValue instance)
-        {
-            foreach (var memberInfo in typeof(TValue).GetProperties(BindingFlags.Public | BindingFlags.Instance))
-            {
-                if (!memberInfo.PropertyType.IsArray)
-                {
-                    if (memberInfo.PropertyType == typeof(string))
-                        Console.WriteLine($@"{memberInfo.Name}: ""{memberInfo.GetValue(instance)}""");
-                    else
-                        Console.WriteLine($@"{memberInfo.Name}: {memberInfo.GetValue(instance)}");
-                }
-                else
-                {
-                    var value = (Array)memberInfo.GetValue(instance);
-                    Console.WriteLine($"{memberInfo.Name}: [{value.Length}] {{");
-                    if (memberInfo.PropertyType == typeof(string[]))
-                    {
-                        for (var i = 0; i < value.Length; ++i)
-                            if (!string.IsNullOrEmpty((string)value.GetValue(i)))
-                                Console.WriteLine($@"{i.ToString().PadLeft(5)}: ""{value.GetValue(i)}""");
-                    }
-                    else
-                        for (var i = 0; i < value.Length; ++i)
-                            Console.WriteLine($@"{i.ToString().PadLeft(5)}: {value.GetValue(i)}");
-
-                    Console.WriteLine("}");
-                }
-            }
-        }
+        public static void InspectInstance(TValue instance) => StructureTester.InspectInstance(instance);
 
         public TimeSpan AccumulateList(Stream dataStream, StorageOptions options) => Accumulate<StorageList<TValue>>(dataStream, options);
         public TimeSpan AccumulateList(Stream dataStream) => AccumulateList(dataStream, StorageOptions.Default);
-
-        public TimeSpan Accumulate<TStorage>(Stream dataStream) where TStorage : IStorage
-            => Accumulate<TStorage>(dataStream);
 
         public TimeSpan Accumulate<TStorage>(Stream dataStream, StorageOptions options) where TStorage : IStorage
             => Accumulate<TStorage>(out _, dataStream, options);
@@ -131,7 +100,7 @@ namespace DBClientFiles.NET.ConsoleTests
             => Benchmark<TStorage>(dataStream, StorageOptions.Default, iterationCount);
 
         public BenchmarkResult Benchmark<TStorage>(Stream dataStream, StorageOptions options, int iterationCount = 100) where TStorage : IStorage
-            => Benchmark<TStorage>(out var instance, dataStream, options, iterationCount);
+            => Benchmark<TStorage>(out _, dataStream, options, iterationCount);
     }
 
     public class BenchmarkResult
@@ -155,7 +124,7 @@ namespace DBClientFiles.NET.ConsoleTests
         {
             var stringBuilder = new StringBuilder();
             stringBuilder.Append("| ");
-            stringBuilder.Append((RecordType.Name.ToString() + " " + Signature.ToString() + "[" + Container.Count + " entries]").PadRight(45));
+            stringBuilder.Append((RecordType.Name + " " + Signature + "[" + Container.Count + " entries]").PadRight(45));
 
             stringBuilder.Append(" | ");
             stringBuilder.Append(AverageTime.ToString(@"ss\.ffffff").PadRight(15));

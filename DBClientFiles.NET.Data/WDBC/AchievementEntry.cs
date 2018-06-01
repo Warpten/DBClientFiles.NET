@@ -10,10 +10,10 @@ namespace DBClientFiles.NET.Data.WDBC
         public int Faction { get; set; }
         public int MapID { get; set; }
         public uint Supercedes { get; set; }
-        [StoragePresence(StoragePresence.Include, SizeConst = 16)]
+        [Cardinality(SizeConst = 16)]
         public string[] Title { get; set; }
         public uint TitleFlags { get; set; }
-        [StoragePresence(StoragePresence.Include, SizeConst = 16)]
+        [Cardinality(SizeConst = 16)]
         public string[] Description { get; set; }
         public uint Description_flags { get; set; }
         public uint Category { get; set; }
@@ -21,7 +21,7 @@ namespace DBClientFiles.NET.Data.WDBC
         public uint UIOrder { get; set; }
         public uint Flags { get; set; }
         public uint IconID { get; set; }
-        [StoragePresence(StoragePresence.Include, SizeConst = 16)]
+        [Cardinality(SizeConst = 16)]
         public string[] Rewards { get; set; }
         public uint RewardFlags { get; set; }
         public uint MinimumCriteria { get; set; }

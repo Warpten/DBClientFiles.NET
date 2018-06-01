@@ -5,6 +5,7 @@ using DBClientFiles.NET.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
@@ -13,10 +14,10 @@ namespace DBClientFiles.NET.Internals.Versions
         where TKey : struct
     {
         #region Segments
-        private readonly BinarySegmentReader<TValue> _palletTable;
-        private readonly CopyTableReader<TKey, TValue> _copyTable;
-        private readonly RelationShipSegmentReader<TKey, TValue> _relationshipData;
-        private Segment<TValue> _commonTable;
+        private readonly BinarySegmentReader _palletTable;
+        private readonly CopyTableReader<TKey> _copyTable;
+        private readonly RelationShipSegmentReader<TKey> _relationshipData;
+        private readonly LegacyCommonTableReader<TKey> _commonTable;
         #endregion
 
         private int _currentRecordIndex = 0;
@@ -27,9 +28,10 @@ namespace DBClientFiles.NET.Internals.Versions
         #region Life and death
         public WDC1(Stream strm) : base(strm, true)
         {
-            _palletTable      = new BinarySegmentReader<TValue>(this);
-            _copyTable        = new CopyTableReader<TKey, TValue>(this);
-            _relationshipData = new RelationShipSegmentReader<TKey, TValue>(this);
+            _palletTable      = new BinarySegmentReader(this);
+            _copyTable        = new CopyTableReader<TKey>(this);
+            _relationshipData = new RelationShipSegmentReader<TKey>(this);
+            _commonTable      = new LegacyCommonTableReader<TKey>(this);
         }
 
         protected override void ReleaseResources()
@@ -40,6 +42,7 @@ namespace DBClientFiles.NET.Internals.Versions
             _palletTable.Dispose();
             _copyTable.Dispose();
             _relationshipData.Dispose();
+            _commonTable.Dispose();
         }
         #endregion
 
@@ -60,8 +63,7 @@ namespace DBClientFiles.NET.Internals.Versions
             var copyTableSize        = ReadInt32();
             var flags                = ReadInt16();
             var indexColumn          = ReadInt16(); // this is the index of the field containing ID values; this is ignored if flags & 0x04 != 0
-            var totalFieldCount      = ReadInt32(); // from WDC1 onwards, this value seems to always be the same as the 'field_count' value
-            BaseStream.Seek(4 + 4, SeekOrigin.Current); // bitpacked_data_ofs, lookup_column_count
+            BaseStream.Seek(4 + 4 + 4, SeekOrigin.Current); // total_field_count, bitpacked_data_ofs, lookup_column_count
             var offsetMapOffset      = ReadInt32();
             var idListSize           = ReadInt32();
             var fieldStorageInfoSize = ReadInt32();
@@ -69,30 +71,12 @@ namespace DBClientFiles.NET.Internals.Versions
             var palletDataSize       = ReadInt32();
             var relationshipDataSize = ReadInt32();
 
-            // if (Members.Length != totalFieldCount)
-            //     throw new InvalidOperationException($"Missing column(s) in definition: found {Members.Length}, expected {totalFieldCount}");
+            IndexTable.Length = idListSize;
 
-            var previousPosition = 0;
-            for (var i = 0; i < Members.Length; ++i)
-            {
-                var memberInfo = Members[i];
-                if (idListSize != 0 && i == indexColumn)
-                    continue;
+            for (var i = 0; i < fieldCount; ++i)
+                MemberStore.AddFileMemberInfo(4 - ReadInt16() / 8, ReadInt16());
 
-                var previousMember = i - 1;
-                if (idListSize != 0 && (i - 1) == indexColumn)
-                    previousMember -= 1;
-
-                var bitSize = ReadInt16();
-                var recordPosition = ReadInt16();
-
-                memberInfo.BitSize = 32 - bitSize;
-                if (previousMember > 0 && Members[previousMember].BitSize != 0)
-                    Members[previousMember].Cardinality = (recordPosition - previousPosition) / Members[previousMember].BitSize;
-
-                previousPosition = recordPosition;
-            }
-
+            #region Initialize the first set of segments
             if ((flags & 0x01) == 0)
             {
                 Records.StartOffset = BaseStream.Position;
@@ -103,71 +87,41 @@ namespace DBClientFiles.NET.Internals.Versions
                 StringTable.Length = stringTableSize;
 
                 OffsetMap.Exists = false;
+                IndexTable.StartOffset = StringTable.EndOffset;
             }
             else
             {
                 Records.StartOffset = BaseStream.Position;
-                Records.Length = offsetMapOffset - BaseStream.Position;
+                Records.Length = (int)(offsetMapOffset - BaseStream.Position);
 
                 OffsetMap.StartOffset = Records.EndOffset;
                 OffsetMap.Length = (4 + 2) * (maxIndex - minIndex + 1);
 
                 StringTable.Exists = false;
+                IndexTable.StartOffset = OffsetMap.EndOffset;
             }
-
-            IndexTable.Exists = idListSize != 0;
-            IndexTable.StartOffset = ((flags & 0x01) != 0) ? OffsetMap.EndOffset : StringTable.EndOffset;
-            IndexTable.Length = idListSize;
 
             _copyTable.StartOffset = IndexTable.EndOffset;
             _copyTable.Length = copyTableSize;
+            #endregion
+
 
             BaseStream.Position = _copyTable.EndOffset;
-
-            for (var i = 0; i < (fieldStorageInfoSize / (2 + 2 + 4 + 4 + 3 * 4)); ++i)
+            var fieldStorageInfoCount = fieldStorageInfoSize / (2 + 2 + 4 + 4 + 3 * 4);
+            for (var i = 0; i < fieldStorageInfoCount; ++i)
             {
-                var columnOffset = (idListSize != 0 && i >= indexColumn) ? (i + 1) : i;
-                var memberInfo = Members[columnOffset];
+                var memberInfo = MemberStore.GetFileMember(i);
 
-                memberInfo.OffsetInRecord = ReadInt16();
-                var fieldSizeBits = ReadInt16(); // size is the sum of all array pieces in bits - for example, uint32[3] will appear here as '96'
-                if (memberInfo.BitSize == 0)
-                    memberInfo.BitSize = fieldSizeBits;
+                memberInfo.Offset = ReadInt16();
+                memberInfo.BitSize = ReadInt16(); // size is the sum of all array pieces in bits - for example, uint32[3] will appear here as '96'
+                
+                memberInfo.CompressionOptions = this.ReadStruct<FileMemberInfo.CompressionInfo>();
 
-                var additionalDataSize = ReadInt32();
-                memberInfo.CompressionType = (MemberCompressionType)ReadInt32();
-                switch (memberInfo.CompressionType)
-                {
-                    case MemberCompressionType.Immediate:
-                        {
-                            BaseStream.Seek(4 + 4, SeekOrigin.Current);
-                            var memberFlags = ReadInt32();
-                            memberInfo.IsSigned = (memberFlags & 0x01) != 0;
-                            break;
-                        }
-                    case MemberCompressionType.CommonData:
-                        memberInfo.DefaultValue = ReadBytes(4);
-                        BaseStream.Seek(4 + 4, SeekOrigin.Current);
-                        break;
-                    case MemberCompressionType.BitpackedPalletData:
-                    case MemberCompressionType.BitpackedPalletArrayData:
-                        {
-                            BaseStream.Seek(4 + 4, SeekOrigin.Current);
-                            if (memberInfo.CompressionType == MemberCompressionType.BitpackedPalletArrayData)
-                                memberInfo.Cardinality = ReadInt32();
-                            else
-                                BaseStream.Seek(4, SeekOrigin.Current);
-                            break;
-                        }
-                    default:
-                        BaseStream.Seek(4 + 4 + 4, SeekOrigin.Current);
-                        break;
-                }
-
-                if (memberInfo.BitSize != 0)
-                    memberInfo.Cardinality = fieldSizeBits / memberInfo.BitSize;
+                if (memberInfo.ByteSize != 0)
+                    memberInfo.Cardinality = memberInfo.BitSize / (8 * memberInfo.ByteSize);
             }
 
+            #region Initialize the last segments
             _palletTable.StartOffset = BaseStream.Position;
             _palletTable.Length = palletDataSize;
 
@@ -176,8 +130,9 @@ namespace DBClientFiles.NET.Internals.Versions
 
             _relationshipData.StartOffset = _commonTable.EndOffset;
             _relationshipData.Length = relationshipDataSize;
+            #endregion
 
-            _codeGenerator = new CodeGenerator<TValue, TKey>(Members)
+            _codeGenerator = new CodeGenerator<TValue, TKey>(this)
             {
                 IndexColumn = indexColumn,
                 IsIndexStreamed = !IndexTable.Exists
@@ -192,11 +147,13 @@ namespace DBClientFiles.NET.Internals.Versions
 
             _palletTable.Read();
             _relationshipData.Read();
+            // _commonTable.ReadPadded();
         }
 
         public override T ReadCommonMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
-            throw new NotImplementedException();
+            return default(T);
+            // return _commonTable.ExtractValue<T>(memberIndex, _codeGenerator.ExtractKey(value));
         }
 
         public override T ReadForeignKeyMember<T>()
@@ -206,17 +163,17 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
-            var memberInfo = Members[memberIndex];
+            var memberInfo = MemberStore.GetFileMember(memberIndex);
 
-            var palletOffset = recordReader.ReadBits(memberInfo.OffsetInRecord, memberInfo.BitSize);
+            var palletOffset = recordReader.ReadBits(memberInfo.Offset, memberInfo.BitSize);
             return _palletTable.ReadArray<T>(palletOffset, memberInfo.Cardinality);
         }
 
         public override T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
-            var memberInfo = Members[memberIndex];
+            var memberInfo = MemberStore.GetFileMember(memberIndex);
 
-            var palletOffset = recordReader.ReadBits(memberInfo.OffsetInRecord, memberInfo.BitSize);
+            var palletOffset = recordReader.ReadBits(memberInfo.Offset, memberInfo.BitSize);
             return _palletTable.Read<T>((int)palletOffset);
         }
 
