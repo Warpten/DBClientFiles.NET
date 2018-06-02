@@ -39,6 +39,9 @@ namespace DBClientFiles.NET.Utils
 
         public static int GetBinarySize(this Type t)
         {
+            if (t.IsArray)
+                return t.GetElementType().GetBinarySize();
+            
             if (t == typeof(string))
                 return 4;
 

@@ -10,9 +10,24 @@ namespace DBClientFiles.NET.Utils
     /// </summary>
     internal class FileMemberInfo
     {
+        /// <summary>
+        /// Size, in bytes, of this field.
+        /// </summary>
         public int ByteSize { get; set; }
+
+        /// <summary>
+        /// Size, in bits, of this field.
+        /// </summary>
         public int BitSize  { get; set; }
+
+        /// <summary>
+        /// Offset, in bits, of this field in the record.
+        /// </summary>
         public int Offset   { get; set; }
+        
+        /// <summary>
+        /// Index of this field in the file metainfo.
+        /// </summary>
         public int Index    { get; set; }
 
         private int _cardinality;

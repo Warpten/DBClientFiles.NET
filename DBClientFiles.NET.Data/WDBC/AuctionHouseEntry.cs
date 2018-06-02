@@ -10,6 +10,7 @@ namespace DBClientFiles.NET.Data.WDBC
         public uint FactionID { get; set; }
         public uint DepositPercent { get; set; }
         public uint CutPercent { get; set; }
+        [Cardinality(SizeConst = 16)]
         public string[] Name { get; set; }
         public uint NameFlags { get; set; }
     }

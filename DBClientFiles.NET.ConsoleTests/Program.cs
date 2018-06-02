@@ -20,10 +20,10 @@ namespace DBClientFiles.NET.ConsoleTests
             //    var sl = new StorageList<Data.WDBC.AreaTriggerEntry>(fs);
             //}
 
-            // TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC");
-            // TestStructuresInNamespace("DBClientFiles.NET.Data.WDB2");
-            // TestStructuresInNamespace("DBClientFiles.NET.Data.WDC1");
-            TestStructuresInNamespace("DBClientFiles.NET.Data.WDC2");
+            TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC", 1);
+            TestStructuresInNamespace("DBClientFiles.NET.Data.WDB2", 1);
+            TestStructuresInNamespace("DBClientFiles.NET.Data.WDC1", 1);
+            TestStructuresInNamespace("DBClientFiles.NET.Data.WDC2", 1);
 
             Console.WriteLine("Press a key to exit");
             Console.ReadKey();

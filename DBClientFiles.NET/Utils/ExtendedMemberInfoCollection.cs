@@ -71,27 +71,27 @@ namespace DBClientFiles.NET.Utils
 
             if (FileMembers.Count == 0)
             {
-                memberInfo.MappedTo = new FileMemberInfo
-                {
-                    ByteSize = memberInfo.Type.GetBinarySize(),
-                    Offset = memberOffset * 8,
-                    Index = fileIndex
-                };
-                memberOffset += memberInfo.MappedTo.ByteSize * 8;
+                memberInfo.MappedTo = new FileMemberInfo();
+                memberInfo.MappedTo.ByteSize = memberInfo.Type.GetBinarySize();
+                memberInfo.MappedTo.Offset = memberOffset;
+                memberInfo.MappedTo.Index = fileIndex;
+                memberInfo.MappedTo.Cardinality = memberInfo.Cardinality;
+
+                memberOffset += memberInfo.MappedTo.ByteSize * 8 * memberInfo.MappedTo.Cardinality;
 
                 return fileIndex + 1;
             }
 
             if (fileIndex >= FileMembers.Count)
             {
-                memberInfo.MappedTo = new FileMemberInfo {
-                    ByteSize = memberInfo.Type.GetBinarySize(),
-                    Offset = memberOffset * 8,
-                    Index = fileIndex,
-                };
-                memberInfo.MappedTo.BitSize = memberInfo.MappedTo.ByteSize * 8;
+                memberInfo.MappedTo = new FileMemberInfo();
+                memberInfo.MappedTo.ByteSize = memberInfo.Type.GetBinarySize();
+                memberInfo.MappedTo.Offset = memberOffset;
+                memberInfo.MappedTo.Index = fileIndex;
+                memberInfo.MappedTo.Cardinality = memberInfo.Cardinality;
                 memberInfo.MappedTo.CompressionOptions.CompressionType = MemberCompressionType.RelationshipData;
-                memberOffset += memberInfo.MappedTo.ByteSize * 8;
+
+                memberOffset += memberInfo.MappedTo.ByteSize * 8 * memberInfo.MappedTo.Cardinality;
 
                 return fileIndex + 1;
             }

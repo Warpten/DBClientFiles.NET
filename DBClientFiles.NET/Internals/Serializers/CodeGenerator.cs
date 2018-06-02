@@ -222,7 +222,7 @@ namespace DBClientFiles.NET.Internals.Serializers
             for (var index = 0; index < Reader.MemberStore.Members.Count; index++)
             {
                 var memberInfo = Reader.MemberStore.Members[index];
-                if (memberInfo.MappedTo == null)
+                if (memberInfo.MappedTo == null && memberInfo.Children.Count == 0)
                     continue;
 
                 if (IsIndexStreamed && memberInfo.Index == IndexColumn)
