@@ -75,7 +75,7 @@ namespace DBClientFiles.NET.Internals.Versions
             IndexTable.Length = idListSize;
 
             for (var i = 0; i < fieldCount; ++i)
-                MemberStore.AddFileMemberInfo(4 - ReadInt16() / 8, ReadInt16());
+                MemberStore.AddFileMemberInfo(this);
 
             #region Initialize the first set of segments
             if ((flags & 0x01) == 0)
@@ -109,20 +109,8 @@ namespace DBClientFiles.NET.Internals.Versions
             BaseStream.Position = _copyTable.EndOffset;
             var fieldStorageInfoCount = fieldStorageInfoSize / (2 + 2 + 4 + 4 + 3 * 4);
             for (var i = 0; i < fieldStorageInfoCount; ++i)
-            {
-                var memberInfo = MemberStore.FileMembers[i];
-
-                memberInfo.Offset = ReadInt16();
-                memberInfo.BitSize = ReadInt16(); // size is the sum of all array pieces in bits - for example, uint32[3] will appear here as '96'
-                
-                memberInfo.CompressionOptions = this.ReadStruct<FileMemberInfo.CompressionInfo>();
-
-                if (memberInfo.ByteSize != 0)
-                    memberInfo.Cardinality = memberInfo.BitSize / (8 * memberInfo.ByteSize);
-            }
-
-            _commonTable.Initialize(MemberStore.GetBlockLengths(MemberCompressionType.CommonData));
-
+                MemberStore.FileMembers[i].ReadExtra(this);
+            
             #region Initialize the last segments
             _palletTable.StartOffset = BaseStream.Position;
             _palletTable.Length = palletDataSize;
@@ -149,14 +137,15 @@ namespace DBClientFiles.NET.Internals.Versions
 
             _palletTable.Read();
             _relationshipData.Read();
-            _commonTable.Read();
+
+            _commonTable.Initialize(MemberStore.GetBlockLengths(MemberCompressionType.CommonData));
         }
 
         public override T ReadCommonMember<T>(int memberIndex, TValue value)
         {
             var memberInfo = MemberStore.FileMembers[memberIndex];
 
-            return _commonTable.ExtractValue(MemberStore.ToCompressionSpecificIndex(memberIndex), memberInfo.GetDefaultValue<T>(), _codeGenerator.ExtractKey(value));
+            return _commonTable.ExtractValue(memberInfo.CategoryIndex, memberInfo.GetDefaultValue<T>(), _codeGenerator.ExtractKey(value));
         }
 
         public override T ReadForeignKeyMember<T>()

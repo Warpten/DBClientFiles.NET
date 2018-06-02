@@ -55,7 +55,7 @@ namespace DBClientFiles.NET.Internals.Versions
             private readonly CopyTableReader<TKey> _copyTable;
             private readonly RelationShipSegmentReader<TKey> _relationshipData;
 
-            private CodeGenerator<TValue, TKey> _codeGenerator;
+            private readonly CodeGenerator<TValue, TKey> _codeGenerator;
             public override CodeGenerator<TValue> Generator => _codeGenerator;
 
             private int _fileOffset;
@@ -83,6 +83,8 @@ namespace DBClientFiles.NET.Internals.Versions
                 _copyTable.Dispose();
                 _relationshipData.Dispose();
             }
+
+            public TKey ExtractRecordKey(TValue instance) => _codeGenerator.ExtractKey(instance);
 
             public void SetFileMemberInfo(IEnumerable<FileMemberInfo> fileMembers)
             {
@@ -247,21 +249,11 @@ namespace DBClientFiles.NET.Internals.Versions
             }
 
             for (var i = 0; i < totalFieldCount; ++i)
-                MemberStore.AddFileMemberInfo(4 - ReadInt16() / 8, ReadInt16());
+                MemberStore.AddFileMemberInfo(this);
 
             var fieldStorageInfoCount = fieldStorageInfoSize / (2 + 2 + 4 + 4 + 3 * 4);
             for (var i = 0; i < fieldStorageInfoCount; ++i)
-            {
-                var memberInfo = MemberStore.FileMembers[i];
-
-                memberInfo.Offset = ReadInt16();
-                memberInfo.BitSize = ReadInt16(); // size is the sum of all array pieces in bits - for example, uint32[3] will appear here as '96'
-
-                memberInfo.CompressionOptions = this.ReadStruct<FileMemberInfo.CompressionInfo>();
-
-                if (memberInfo.ByteSize != 0)
-                    memberInfo.Cardinality = memberInfo.BitSize / (8 * memberInfo.ByteSize);
-            }
+                MemberStore.FileMembers[i].ReadExtra(this);
 
             _palletTable.StartOffset = BaseStream.Position;
             _palletTable.Length = palletDataSize;
@@ -315,9 +307,9 @@ namespace DBClientFiles.NET.Internals.Versions
         {
             var memberInfo = MemberStore.FileMembers[memberIndex];
 
-            return _commonTable.ExtractValue(MemberStore.ToCompressionSpecificIndex(memberIndex), 
+            return _commonTable.ExtractValue(memberInfo.CategoryIndex, 
                 memberInfo.GetDefaultValue<T>(),
-                default(TKey)); //! TODO FIXME
+                _segments[_currentlyParsedSegment].ExtractRecordKey(value)); //! TODO FIXME
         }
 
         public override T ReadForeignKeyMember<T>()

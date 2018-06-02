@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using System.IO;
 using DBClientFiles.NET.Internals;
 
 namespace DBClientFiles.NET.Utils
@@ -30,59 +30,68 @@ namespace DBClientFiles.NET.Utils
         /// </summary>
         public int Index    { get; set; }
 
-        private int _cardinality;
-        public int Cardinality
-        {
-            get
-            {
-                if (CompressionOptions.CompressionType == MemberCompressionType.BitpackedPalletArrayData)
-                    return CompressionOptions.Pallet.ArraySize;
-                return _cardinality;
-            }
-            set => _cardinality = value;
-        }
+        /// <summary>
+        /// This is the index of the field in file metainfo, based on <see cref="CompressionType"/>.
+        /// </summary>
+        public int CategoryIndex { get; set; }
 
-        public CompressionInfo CompressionOptions;
+        /// <summary>
+        /// Cardinality of the field, defined by file metadata. This is guessed for old formats.
+        /// </summary>
+        public int Cardinality { get; set; }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1)]
-        public struct BitpackedInfo
-        {
-            [FieldOffset(0)] public int OffsetBits;
-            [FieldOffset(4)] public int SizeBits;
-            [FieldOffset(8)] public int Flags;
-        }
+        public int CompressedDataSize { get; set; }
+        public MemberCompressionType CompressionType { get; set; }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1)]
-        public struct CommonDataInfo
-        {
-            [FieldOffset(0)] public int DefaultValue;
-        }
-
-        [StructLayout(LayoutKind.Explicit, Pack = 1)]
-        public struct PalletInfo
-        {
-            [FieldOffset(0)] public int OffsetBits;
-            [FieldOffset(4)] public int SizeBits;
-            [FieldOffset(8)] public int ArraySize;
-        }
-
-        [StructLayout(LayoutKind.Explicit, Pack = 1)]
-        public struct CompressionInfo
-        {
-            [FieldOffset(0)] public int CompressedDataSize;
-            [FieldOffset(4)] public MemberCompressionType CompressionType;
-            [FieldOffset(8)] public BitpackedInfo Bitpacked;
-            [FieldOffset(8)] public CommonDataInfo CommonData;
-            [FieldOffset(8)] public PalletInfo Pallet;
-        }
+        /// <summary>
+        /// If <see cref="CompressionType"/> is <see cref="MemberCompressionType.CommonData"/>, this is set. null otherwise.
+        /// </summary>
+        public byte[] DefaultValue { get; set; }
+        public bool IsSigned { get; set; }
 
         public unsafe T GetDefaultValue<T>() where T : struct
         {
-            Debug.Assert(CompressionOptions.CompressionType == MemberCompressionType.CommonData);
+            Debug.Assert(CompressionType == MemberCompressionType.CommonData);
 
-            Span<int> asInt = stackalloc int[1];
-            asInt[0] = CompressionOptions.CommonData.DefaultValue;
-            return MemoryMarshal.Cast<int, T>(asInt)[0];
+            fixed (byte* buffer = DefaultValue)
+                return FastStructure.PtrToStructure<T>(new IntPtr(buffer));
+        }
+
+        public void Initialize(BinaryReader reader)
+        {
+            ByteSize = 4 - reader.ReadInt16() / 8;
+            Offset = reader.ReadInt16() * 8;
+        }
+
+        public void ReadExtra(BinaryReader reader)
+        {
+            Offset = reader.ReadInt16();
+            BitSize = reader.ReadInt16();
+
+            CompressedDataSize = reader.ReadInt32();
+            CompressionType = (MemberCompressionType)reader.ReadInt32();
+
+            switch (CompressionType)
+            {
+                case MemberCompressionType.Immediate:
+                    reader.BaseStream.Seek(4 + 4, SeekOrigin.Current);
+                    IsSigned = (reader.ReadInt32() & 0x01) != 0;
+                    break;
+                case MemberCompressionType.CommonData:
+                    DefaultValue = reader.ReadBytes(4);
+                    reader.BaseStream.Seek(4 + 4, SeekOrigin.Current);
+                    break;
+                case MemberCompressionType.BitpackedPalletArrayData:
+                    reader.BaseStream.Seek(4 + 4, SeekOrigin.Current);
+                    Cardinality = reader.ReadInt32();
+                    break;
+                default:
+                    reader.BaseStream.Seek(4 + 4 + 4, SeekOrigin.Current);
+                    break;
+            }
+
+            if (ByteSize != 0 && CompressionType != MemberCompressionType.BitpackedPalletArrayData)
+                Cardinality = BitSize / (8 * ByteSize);
         }
     }
 }

@@ -225,7 +225,7 @@ namespace DBClientFiles.NET.Internals.Serializers
                 if (memberInfo.MappedTo == null && memberInfo.Children.Count == 0)
                     continue;
 
-                if (IsIndexStreamed && memberInfo.Index == IndexColumn)
+                if (!IsIndexStreamed && memberInfo.Index == IndexColumn)
                     continue;
 
                 var memberAccess = memberInfo.MakeMemberAccess(_instance);
@@ -266,7 +266,7 @@ namespace DBClientFiles.NET.Internals.Serializers
 
         private void InsertMemberAssignment(List<Expression> bodyBlock, Expression binaryReader, Expression recordReader, ref ExtendedMemberExpression memberAccess)
         {
-            switch (memberAccess.MemberInfo.CompressionType)
+            switch (memberAccess.MemberInfo.MappedTo.CompressionType)
             {
                 case MemberCompressionType.None:
                     InsertSimpleMemberAssignment(bodyBlock, recordReader, ref memberAccess);
@@ -304,7 +304,7 @@ namespace DBClientFiles.NET.Internals.Serializers
 
         private void InsertPalletMemberAssignment(List<Expression> bodyBlock, Expression binaryReader, Expression recordReader, ref ExtendedMemberExpression memberAccess)
         {
-            if (memberAccess.MemberInfo.Type.IsArray && (memberAccess.MemberInfo.CompressionType == MemberCompressionType.BitpackedPalletData))
+            if (memberAccess.MemberInfo.Type.IsArray && (memberAccess.MemberInfo.MappedTo.CompressionType == MemberCompressionType.BitpackedPalletData))
                 throw new InvalidOperationException();
             
             if (memberAccess.MemberInfo.MappedTo.BitSize == 0)

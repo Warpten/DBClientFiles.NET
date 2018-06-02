@@ -74,7 +74,7 @@ namespace DBClientFiles.NET.Internals.Versions
             #endregion
             
             for (var i = 0; i < fieldCount; ++i)
-                MemberStore.AddFileMemberInfo(4 - ReadInt16() / 8, ReadInt16());
+                MemberStore.AddFileMemberInfo(this);
 
             _codeGenerator = new CodeGenerator<TValue, TKey>(this)
             {

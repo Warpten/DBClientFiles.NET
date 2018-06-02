@@ -16,6 +16,7 @@ namespace DBClientFiles.NET.Utils
     {
         public MemberInfo MemberInfo { get; }
         public int Index { get; set; }
+        public int CompressionIndex { get; set; }
 
         /// <summary>
         /// If this describes a member with underlying members, this only contains the first file member this is mapped to.
@@ -24,8 +25,6 @@ namespace DBClientFiles.NET.Utils
 
         public List<ExtendedMemberInfo> Children { get; } = new List<ExtendedMemberInfo>();
         public ExtendedMemberInfo Parent { get; set; }
-
-        public MemberCompressionType CompressionType => MappedTo.CompressionOptions.CompressionType;
 
         public Type Type { get; }
 
@@ -101,7 +100,7 @@ namespace DBClientFiles.NET.Utils
         public override string ToString()
         {
             if (MappedTo != null)
-                return $"{MemberInfo.Name} (#{Index}) => FileFields[{MappedTo.Index}] {{ CompressionType = {MappedTo.CompressionOptions.CompressionType} }}";
+                return $"{MemberInfo.Name} (#{Index}) => FileFields[{MappedTo.Index}] {{ CompressionType = {MappedTo.CompressionType} }}";
             return $"{MemberInfo.Name} (#{Index})";
         }
     }

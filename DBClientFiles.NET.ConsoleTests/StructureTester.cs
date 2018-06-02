@@ -124,14 +124,20 @@ namespace DBClientFiles.NET.ConsoleTests
         {
             var stringBuilder = new StringBuilder();
             stringBuilder.Append("| ");
-            stringBuilder.Append((RecordType.Name + " " + Signature + "[" + Container.Count + " entries]").PadRight(45));
+            stringBuilder.Append((RecordType.Name + " [" + Container.Count + " entries - (" + Signature + ")]").PadRight(65));
 
             stringBuilder.Append(" | ");
-            stringBuilder.Append(AverageTime.ToString(@"ss\.ffffff").PadRight(15));
+            stringBuilder.Append(string.Format("{0:s\\.ffffff} ({1:s\\.ffffff})", 
+                AverageTime, 
+                TimeSpan.FromTicks(AverageTime.Ticks / Container.Count)).PadRight(20));
             stringBuilder.Append(" | ");
-            stringBuilder.Append(BestTime.ToString(@"ss\.ffffff").PadRight(15));
+            stringBuilder.Append(string.Format("{0:s\\.ffffff} ({1:s\\.ffffff})",
+                BestTime,
+                TimeSpan.FromTicks(BestTime.Ticks / Container.Count)).PadRight(20));
             stringBuilder.Append(" | ");
-            stringBuilder.Append(WorstTime.ToString(@"ss\.ffffff").PadRight(20));
+            stringBuilder.Append(string.Format("{0:s\\.ffffff} ({1:s\\.ffffff})",
+                WorstTime,
+                TimeSpan.FromTicks(WorstTime.Ticks / Container.Count)).PadRight(20));
             stringBuilder.Append(" |");
             return stringBuilder.ToString();
         }
@@ -151,9 +157,9 @@ namespace DBClientFiles.NET.ConsoleTests
             get
             {
                 var stringBuilder = new StringBuilder();
-                stringBuilder.Append("| File name".PadRight(47) + " | ");
-                stringBuilder.Append("Avg".PadRight(15) + " | ");
-                stringBuilder.Append("Best".PadRight(15) + " | ");
+                stringBuilder.Append("| File name".PadRight(67) + " | ");
+                stringBuilder.Append("Avg".PadRight(20) + " | ");
+                stringBuilder.Append("Best".PadRight(20) + " | ");
                 stringBuilder.Append("Worst".PadRight(20) + " | ");
                 return stringBuilder.ToString();
             }
@@ -165,11 +171,11 @@ namespace DBClientFiles.NET.ConsoleTests
             {
                 var stringBuilder = new StringBuilder();
                 stringBuilder.Append("| ");
-                stringBuilder.Append(new string('-', 45));
+                stringBuilder.Append(new string('-', 65));
                 stringBuilder.Append(" | ");
-                stringBuilder.Append(new string('-', 15));
+                stringBuilder.Append(new string('-', 20));
                 stringBuilder.Append(" | ");
-                stringBuilder.Append(new string('-', 15));
+                stringBuilder.Append(new string('-', 20));
                 stringBuilder.Append(" | ");
                 stringBuilder.Append(new string('-', 20));
                 stringBuilder.Append(" |");

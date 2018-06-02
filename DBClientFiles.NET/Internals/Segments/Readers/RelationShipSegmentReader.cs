@@ -11,7 +11,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     internal sealed class RelationShipSegmentReader<TKey> : SegmentReader
         where TKey : struct
     {
-        private Dictionary<int /* recordIndex */, Memory<byte>> _entries;
+        private Dictionary<int /* recordIndex */, byte[]> _entries;
 
         public RelationShipSegmentReader(FileReader reader) : base(reader)
         {
@@ -26,7 +26,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             var entryCount = FileReader.ReadInt32();
             FileReader.BaseStream.Seek(4 + 4, SeekOrigin.Current);
 
-            _entries = new Dictionary<int, Memory<byte>>();
+            _entries = new Dictionary<int, byte[]>();
 
             for (var i = 0; i < entryCount; ++i)
                 _entries[FileReader.ReadInt32()] = FileReader.ReadBytes(4);
@@ -44,7 +44,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
                 return default;
             
             var fk = _entries[recordIndex];
-            return MemoryMarshal.Read<U>(fk.Span);
+            return MemoryMarshal.Read<U>(fk);
         }
     }
 }

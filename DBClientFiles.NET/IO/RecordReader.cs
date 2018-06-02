@@ -2,6 +2,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -85,7 +86,6 @@ namespace DBClientFiles.NET.IO
     internal unsafe class RecordReader : IDisposable
     {
         private byte[] _recordData;
-        private Memory<byte> _recordMemory;
         //private GCHandle _dataHandle;
         //private IntPtr _dataPointer;
 
@@ -95,7 +95,7 @@ namespace DBClientFiles.NET.IO
         public int ReadInt32() => Read<int>(_byteCursor, 32, true);
         public short ReadInt16() => Read<short>(_byteCursor, 16, true);
         public byte ReadByte() => Read<byte>(_byteCursor, 8, true);
-        
+
         public ulong ReadUInt64() => Read<ulong>(_byteCursor, 64, true);
         public uint ReadUInt32() => Read<uint>(_byteCursor, 32, true);
         public ushort ReadUInt16() => Read<ushort>(_byteCursor, 16, true);
@@ -116,11 +116,6 @@ namespace DBClientFiles.NET.IO
             _fileReader = fileReader;
 
             _recordData = fileReader.ReadBytes(recordSize);
-            _recordMemory = new Memory<byte>(_recordData);
-
-
-            //_dataHandle = GCHandle.Alloc(_recordData, GCHandleType.Pinned);
-            //_dataPointer = _dataHandle.AddrOfPinnedObject();
         }
 
         public void Dispose()
@@ -255,19 +250,17 @@ namespace DBClientFiles.NET.IO
             if (advanceCursor)
                 _byteCursor += SizeCache<T>.Size * 8;
 
-            var spanSlice = _recordMemory.Slice(bitOffset / 8, (bitCount + (bitOffset & 7) + 7) / 8);
+            Span<byte> recordMemory = _recordData;
+
+            var spanSlice = recordMemory.Slice(bitOffset / 8, (bitCount + (bitOffset & 7) + 7) / 8);
             if (SizeCache<T>.Size > spanSlice.Length)
             {
-                using (var sliceHandle = spanSlice.Pin())
-                    return FastStructure.PtrToStructure<T>(new IntPtr(sliceHandle.Pointer));
+                fixed (byte* pointer = _recordData)
+                    return FastStructure.PtrToStructure<T>(new IntPtr(pointer + bitOffset / 8));
             }
 
-            var typeMemory = MemoryMarshal.Cast<byte, T>(spanSlice.Span);
-            return typeMemory[0];
-
-            //T v = FastStructure.PtrToStructure<T>(IntPtr.Add(_dataPointer, bitOffset / 8));
-
-            //return v;
+            var typeMemory = MemoryMarshal.Read<T>(spanSlice);
+            return typeMemory;
         }
 
         /// <summary>
@@ -309,7 +302,7 @@ namespace DBClientFiles.NET.IO
             for (var i = 0; i < byteCount; ++i)
                 value |= (long)(_recordData[i + byteOffset] << (8 * i));
 
-            value = (value >> (bitOffset & 7));
+            value = value >> (bitOffset & 7);
 
             // Prevent possible masking overflows from clamping the actual result.
             if (bitCount != 64)
@@ -318,20 +311,24 @@ namespace DBClientFiles.NET.IO
             return value;
         }
 
-        public T[] ReadArray<T>(int arraySize, int bitOffset, int bitCount) where T : struct
+        public T[] ReadArray<T>(int arraySize, int bitOffset, int bitCount)
+            where T : struct
         {
+            if (arraySize == 0)
+                throw new InvalidOperationException("Trying to read an empty array?");
+
             var arr = new T[arraySize];
             for (var i = 0; i < arraySize; ++i)
                 arr[i] = Read<T>(bitOffset + i * SizeCache<T>.Size, bitCount);
             return arr;
         }
 
-        public T[] ReadArray<T>(int arraySize) where T : struct
+        public T[] ReadArray<T>(int arraySize)
+            where T : struct
         {
             var arr = new T[arraySize];
             for (var i = 0; i < arraySize; ++i)
                 arr[i] = Read<T>(_byteCursor, SizeCache<T>.Size, true);
-            // _byteCursor += SizeCache<T>.Size * 8 * arraySize;
             return arr;
         }
 

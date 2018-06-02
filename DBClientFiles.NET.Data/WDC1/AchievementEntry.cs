@@ -2,7 +2,7 @@
 
 namespace DBClientFiles.NET.Data.WDC1
 {
-    [DBFileName(Name = "Achievement", Extension = FileExtension.DB2)]
+    //[DBFileName(Name = "Achievement", Extension = FileExtension.DB2)]
     public sealed class AchievementEntry
     {
         public string Title { get; set; }

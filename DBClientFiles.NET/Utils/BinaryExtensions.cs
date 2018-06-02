@@ -14,7 +14,8 @@ namespace DBClientFiles.NET.Utils
         /// <typeparam name="T"></typeparam>
         /// <param name="br"></param>
         /// <returns></returns>
-        public static T ReadStruct<T>(this BinaryReader br) where T : struct
+        public static T ReadStruct<T>(this BinaryReader br)
+            where T : struct
         {
             if (SizeCache<T>.TypeRequiresMarshal)
             {
@@ -33,6 +34,7 @@ namespace DBClientFiles.NET.Utils
         }
 
         public static T[] ReadStructs<T>(this BinaryReader br, int count)
+            where T : struct
         {
             if (SizeCache<T>.TypeRequiresMarshal)
             {
@@ -42,17 +44,13 @@ namespace DBClientFiles.NET.Utils
                 // Unfortunate part of the marshaler, is that each instance needs to be pulled in separately.
                 // Can't just do a bulk memcpy.
                 for (var i = 0; i < count; i++)
-                {
-                    arr[i] = Marshal.PtrToStructure<T>(ptr + (SizeCache<T>.Size * i));
-                }
+                    arr[i] = FastStructure.PtrToStructure<T>(ptr + (SizeCache<T>.Size * i));
                 Marshal.FreeHGlobal(ptr);
                 return arr;
             }
  
             if (count == 0)
-            {
                 return new T[0];
-            }
  
             var ret = new T[count];
             fixed (byte* pB = br.ReadBytes(SizeCache<T>.Size * count))

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using DBClientFiles.NET.IO;
+using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
@@ -14,8 +15,42 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     internal sealed class CommonTableReader<TKey> : SegmentReader
         where TKey : struct
     {
-        private Memory<byte>[] _dataBlocks;
-        private int[] _dataSizes;
+        private class DataBlock : IDisposable
+        {
+            private byte[] _dataBlock;
+            private Dictionary<TKey, int> _valueOffsets;
+
+            public DataBlock(FileReader reader, int segmentSize)
+            {
+                _dataBlock = reader.ReadBytes(segmentSize);
+                Span<byte> blockSpan = _dataBlock;
+
+                _valueOffsets = new Dictionary<TKey, int>(segmentSize / 8);
+                for (var i = 0; i < _dataBlock.Length; i += 8)
+                {
+                    var key = MemoryMarshal.Read<TKey>(blockSpan.Slice(i, 8));
+                    _valueOffsets[key] = i;
+                }
+            }
+
+            public void Dispose()
+            {
+                _valueOffsets.Clear();
+                _dataBlock = null;
+            }
+
+            public unsafe T ExtractValue<T>(TKey key, T defaultValue)
+                where T : struct
+            {
+                if (!_valueOffsets.TryGetValue(key, out var offset))
+                    return defaultValue;
+
+                fixed (byte* pointer = _dataBlock)
+                    return FastStructure.PtrToStructure<T>(new IntPtr(pointer + offset));
+            }
+        }
+
+        private DataBlock[] _dataBlocks;
 
         public CommonTableReader(FileReader reader) : base(reader)
         {
@@ -23,48 +58,33 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
         protected override void Release()
         {
+            for (var i = 0; i < _dataBlocks.Length; ++i)
+                _dataBlocks[i].Dispose();
         }
 
         public void Initialize(IEnumerable<int> blockLengths)
-        {
-            _dataSizes = blockLengths.ToArray();
-            _dataBlocks = new Memory<byte>[_dataSizes.Length];
-        }
-
-        public override void Read()
         {
             if (Segment.Length == 0)
                 return;
 
             FileReader.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
-            for (var i = 0; i < _dataSizes.Length; ++i)
-                _dataBlocks[i] = FileReader.ReadBytes(_dataSizes[i]);
+
+            var blocks = blockLengths.ToArray();
+            _dataBlocks = new DataBlock[blocks.Length];
+            for (var i = 0; i < blocks.Length; ++i)
+                _dataBlocks[i] = new DataBlock(FileReader, blocks[i]);
+        }
+
+        public override void Read()
+        {
         }
 
         public T ExtractValue<T>(int columnIndex, T defaultValue, TKey recordKey) where T : struct
         {
-            // TODO: This is horribly slow.
-            var slice = _dataBlocks[columnIndex];
-            var nodesSlice = MemoryMarshal.Cast<byte, Node<T>>(slice.Span);
-            
-            for (var i = 0; i < nodesSlice.Length; ++i)
-                if (nodesSlice[i].Key.Equals(recordKey))
-                    return nodesSlice[i].Value;
+            if (_dataBlocks.Length <= columnIndex)
+                return defaultValue;
 
-            return defaultValue;
-        }
-        
-        private struct Node<T> where T : struct
-        {
-#pragma warning disable 649
-            public TKey Key;
-            public T Value;
-#pragma warning restore 649
-
-            public override string ToString()
-            {
-                return $"[{Key}] = {Value}";
-            }
+            return _dataBlocks[columnIndex].ExtractValue(recordKey, defaultValue);
         }
     }
 }

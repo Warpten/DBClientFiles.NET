@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using DBClientFiles.NET.Attributes;
@@ -35,26 +36,12 @@ namespace DBClientFiles.NET.Utils
             FileMembers.AddRange(fileMembers);
         }
 
-        public int ToCompressionSpecificIndex(int memberIndex)
+        public void AddFileMemberInfo(BinaryReader reader)
         {
-            //! TODO: Cache this
-
-            var targetMember = FileMembers[memberIndex];
-            var targetIndex = 0;
-            for (var i = 0; i < memberIndex; ++i)
-                if (targetMember.CompressionOptions.CompressionType == FileMembers[i].CompressionOptions.CompressionType)
-                    ++targetIndex;
-            return targetIndex;
-        }
-
-        public void AddFileMemberInfo(int byteSize, int byteOffset)
-        {
-            FileMembers.Add(new FileMemberInfo
-            {
-                Offset = byteOffset * 8,
-                ByteSize = byteSize,
-                Index = FileMembers.Count
-            });
+            var instance = new FileMemberInfo();
+            instance.Initialize(reader);
+            instance.Index = FileMembers.Count;
+            FileMembers.Add(instance);
         }
 
         private int RecursiveMemberAssignment(ExtendedMemberInfo memberInfo, int fileIndex, ref int memberOffset)
@@ -89,7 +76,7 @@ namespace DBClientFiles.NET.Utils
                 memberInfo.MappedTo.Offset = memberOffset;
                 memberInfo.MappedTo.Index = fileIndex;
                 memberInfo.MappedTo.Cardinality = memberInfo.Cardinality;
-                memberInfo.MappedTo.CompressionOptions.CompressionType = MemberCompressionType.RelationshipData;
+                memberInfo.MappedTo.CompressionType = MemberCompressionType.RelationshipData;
 
                 memberOffset += memberInfo.MappedTo.ByteSize * 8 * memberInfo.MappedTo.Cardinality;
 
@@ -109,7 +96,7 @@ namespace DBClientFiles.NET.Utils
                 var currentFileMember = FileMembers[i];
 
                 // Don't need to calculate cardinality for these, we already got the info.
-                if (currentFileMember.CompressionOptions.CompressionType == MemberCompressionType.BitpackedPalletArrayData)
+                if (currentFileMember.CompressionType == MemberCompressionType.BitpackedPalletArrayData)
                     continue;
 
                 if (currentFileMember.ByteSize > 0)
@@ -129,6 +116,15 @@ namespace DBClientFiles.NET.Utils
                 if (!currentMember.Type.IsArray && currentMember.MappedTo.Cardinality > 1)
                     throw new InvalidStructureException($"Field {currentMember.MemberInfo.Name} is declared as a simple type but maps to an array. Is your structure accurate?");
             }
+
+            // And finally, set category specific indices
+            for (var i = 0; i < FileMembers.Count; ++i)
+            {
+                var currentFileMember = FileMembers[i];
+                for (var j = 0; j < i; ++j)
+                    if (FileMembers[j].CompressionType == currentFileMember.CompressionType)
+                        ++currentFileMember.CategoryIndex;
+            }
         }
 
         public void MapMembers()
@@ -144,7 +140,7 @@ namespace DBClientFiles.NET.Utils
 
         public IEnumerable<int> GetBlockLengths(MemberCompressionType compressionType)
         {
-            return FileMembers.Where(f => f.CompressionOptions.CompressionType == compressionType).Select(f => f.CompressionOptions.CompressedDataSize);
+            return FileMembers.Where(f => f.CompressionType == compressionType).Select(f => f.CompressedDataSize);
         }
 
         public ExtendedMemberInfo IndexMember

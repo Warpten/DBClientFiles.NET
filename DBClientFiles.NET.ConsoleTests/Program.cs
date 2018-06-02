@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DBClientFiles.NET.Collections;
 
@@ -15,18 +16,44 @@ namespace DBClientFiles.NET.ConsoleTests
     {
         static void Main(string[] args)
         {
-            //using (var fs = File.OpenRead(@"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\bin\Release\net472\Data\WDBC\AreaTrigger.dbc"))
+            if (args.Contains("--preJT"))
+                PrepareLibrary();
+
+            var idxCount = Array.IndexOf(args, "--count");
+            if (!int.TryParse(args[idxCount + 1], out var iterationCount))
+                iterationCount = 1;
+
+            //using (var fs = File.OpenRead(@"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\bin\Release\net472\Data\WDC1\SpellEffect.db2"))
             //{
-            //    var sl = new StorageList<Data.WDBC.AreaTriggerEntry>(fs);
+            //    var sl = new StorageList<Data.WDC1.SpellEffectEntry>(fs);
             //}
 
-            TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC", 1);
-            TestStructuresInNamespace("DBClientFiles.NET.Data.WDB2", 1);
-            TestStructuresInNamespace("DBClientFiles.NET.Data.WDC1", 1);
-            TestStructuresInNamespace("DBClientFiles.NET.Data.WDC2", 1);
+            TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC", iterationCount);
+            TestStructuresInNamespace("DBClientFiles.NET.Data.WDB2", iterationCount);
+            TestStructuresInNamespace("DBClientFiles.NET.Data.WDC1", iterationCount);
+            TestStructuresInNamespace("DBClientFiles.NET.Data.WDC2", iterationCount);
 
             Console.WriteLine("Press a key to exit");
             Console.ReadKey();
+        }
+
+        private static void PrepareLibrary()
+        {
+            var types = Assembly.GetExecutingAssembly().GetReferencedAssemblies()
+                .Where(a => a.Name == "DBClientFiles.NET")
+                .Select(Assembly.Load)
+                .SelectMany(a => a.GetTypes());
+
+            foreach (var type in types)
+            {
+                foreach (var method in type.GetMethods(BindingFlags.DeclaredOnly |
+                                                       BindingFlags.NonPublic |
+                                                       BindingFlags.Public | BindingFlags.Instance |
+                                                       BindingFlags.Static))
+                {
+                    RuntimeHelpers.PrepareMethod(method.MethodHandle);
+                }
+            }
         }
 
         private static Dictionary<Type, BenchmarkResult> _dataStores = new Dictionary<Type, BenchmarkResult>();
@@ -40,8 +67,6 @@ namespace DBClientFiles.NET.ConsoleTests
 
         private static void TestStructuresInNamespace(string @namespace, int count = 1)
         {
-            _dataStores.Clear();
-
             var fileType = @namespace.Split('.').Last();
 
             var types = Assembly.GetExecutingAssembly().GetReferencedAssemblies()
@@ -49,6 +74,8 @@ namespace DBClientFiles.NET.ConsoleTests
                 .Select(Assembly.Load)
                 .SelectMany(a => a.GetTypes());
 
+            Console.WriteLine(BenchmarkResult.Header);
+            Console.WriteLine(BenchmarkResult.HeaderSep);
             foreach (var typeInfo in types.Where(t => t.Namespace == @namespace))
             {
                 if (!typeInfo.IsDefined(typeof(DBFileNameAttribute), false))
@@ -70,8 +97,6 @@ namespace DBClientFiles.NET.ConsoleTests
                 genericMethodInfo.Invoke(null, new object[] {resourcePath, count});
             }
 
-            Console.WriteLine(BenchmarkResult.Header);
-            Console.WriteLine(BenchmarkResult.HeaderSep);
             foreach (var kv in _dataStores)
             {
                 Console.WriteLine(kv.Value.ToString());
@@ -94,7 +119,10 @@ namespace DBClientFiles.NET.ConsoleTests
 
                 var structureTester = new StructureTester<TValue>();
                 var benchmarkResult = structureTester.Benchmark<StorageList<TValue>>(out var dataStore, ms, count);
-                _dataStores[typeof(TValue)] = benchmarkResult;
+
+                Console.WriteLine(benchmarkResult.ToString());
+                using (var writer = new StreamWriter($"./perf_{benchmarkResult.RecordType.Name.Replace("Entry", "").ToLower()}_{benchmarkResult.Signature}.csv"))
+                    benchmarkResult.WriteCSV(writer);
             }
         }
     }

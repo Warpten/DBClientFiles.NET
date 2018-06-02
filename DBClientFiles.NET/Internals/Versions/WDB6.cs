@@ -79,7 +79,7 @@ namespace DBClientFiles.NET.Internals.Versions
             #endregion
 
             for (var i = 0; i < fieldCount; ++i)
-                MemberStore.AddFileMemberInfo(4 - ReadInt16() / 8, ReadInt16());
+                MemberStore.AddFileMemberInfo(this);
 
             // TODO: Check that the mapped index column corresponds to metadata
             _codeGenerator.IndexColumn = indexColumn;
