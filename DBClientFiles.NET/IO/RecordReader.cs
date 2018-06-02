@@ -115,7 +115,10 @@ namespace DBClientFiles.NET.IO
             _usesStringTable = usesStringTable;
             _fileReader = fileReader;
 
-            _recordData = fileReader.ReadBytes(recordSize);
+            // See comment block in Read<T> for an in-depth explanation about this.
+            // We are only allocating an extra byte because as of now it is extremely unlikely for an int64 to be packed at the end of a record.
+            _recordData = new byte[recordSize + 1];
+            fileReader.BaseStream.Read(_recordData, 0, recordSize);
         }
 
         public void Dispose()
@@ -243,21 +246,16 @@ namespace DBClientFiles.NET.IO
         /// </remarks>
         private T Read<T>(int bitOffset, int bitCount, bool advanceCursor = false) where T : struct
         {
-            //! TODO: This needs to be more robust: Ideally speaking, the size check condition needs to go.
-            //! TODO: Unfortunately, some types make be less bytes wide than SizeCache<T>.Size but still
-            //! TODO: larger than the next smaller primitive type. We would need int24, int40, int48, int56...
-
             if (advanceCursor)
                 _byteCursor += SizeCache<T>.Size * 8;
 
             Span<byte> recordMemory = _recordData;
 
-            var spanSlice = recordMemory.Slice(bitOffset / 8, (bitCount + (bitOffset & 7) + 7) / 8);
-            if (SizeCache<T>.Size > spanSlice.Length)
-            {
-                fixed (byte* pointer = _recordData)
-                    return FastStructure.PtrToStructure<T>(new IntPtr(pointer + bitOffset / 8));
-            }
+            //! Reading whichever is most from SizeCache<T>.Size and (bitCount + (bitOffset & 7) + 7) / 8.
+            //! Consider this: Given a field that uses 17 bits, it deserializes as an int32. However, 17 bits fit on 3 bytes, so we would only read three bytes.
+            //! MemoryMarshal.Read<int> expects a Span<byte> of Length = 4.
+            //! What about reading 33 bits? That deserializes to an int64, so we need 8 bytes instead of 5.
+            var spanSlice = recordMemory.Slice(bitOffset / 8, Math.Max(SizeCache<T>.Size, (bitCount + (bitOffset & 7) + 7) / 8));
 
             var typeMemory = MemoryMarshal.Read<T>(spanSlice);
             return typeMemory;
@@ -319,7 +317,7 @@ namespace DBClientFiles.NET.IO
 
             var arr = new T[arraySize];
             for (var i = 0; i < arraySize; ++i)
-                arr[i] = Read<T>(bitOffset + i * SizeCache<T>.Size, bitCount);
+                arr[i] = Read<T>(bitOffset + i * SizeCache<T>.Size * 8, bitCount);
             return arr;
         }
 
@@ -328,7 +326,7 @@ namespace DBClientFiles.NET.IO
         {
             var arr = new T[arraySize];
             for (var i = 0; i < arraySize; ++i)
-                arr[i] = Read<T>(_byteCursor, SizeCache<T>.Size, true);
+                arr[i] = Read<T>(_byteCursor, SizeCache<T>.Size * 8, true);
             return arr;
         }
 

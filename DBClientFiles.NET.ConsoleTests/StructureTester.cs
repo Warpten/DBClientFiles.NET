@@ -158,9 +158,9 @@ namespace DBClientFiles.NET.ConsoleTests
             {
                 var stringBuilder = new StringBuilder();
                 stringBuilder.Append("| File name".PadRight(67) + " | ");
-                stringBuilder.Append("Avg".PadRight(20) + " | ");
-                stringBuilder.Append("Best".PadRight(20) + " | ");
-                stringBuilder.Append("Worst".PadRight(20) + " | ");
+                stringBuilder.Append("Avg (s)".PadRight(20) + " | ");
+                stringBuilder.Append("Best (s)".PadRight(20) + " | ");
+                stringBuilder.Append("Worst (s)".PadRight(20) + " | ");
                 return stringBuilder.ToString();
             }
         }

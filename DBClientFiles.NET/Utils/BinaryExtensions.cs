@@ -26,11 +26,8 @@ namespace DBClientFiles.NET.Utils
                 return mret;
             }
 
-            // OPTIMIZATION!
-            var dataBytes = br.ReadBytes(SizeCache<T>.Size);
-            var dataSpan = new Span<byte>(dataBytes);
-            var structSpan = MemoryMarshal.Cast<byte, T>(dataSpan);
-            return structSpan[0];
+            Span<byte> dataBytes = br.ReadBytes(SizeCache<T>.Size);
+            return MemoryMarshal.Read<T>(dataBytes);
         }
 
         public static T[] ReadStructs<T>(this BinaryReader br, int count)
@@ -41,10 +38,8 @@ namespace DBClientFiles.NET.Utils
                 var ptr = Marshal.AllocHGlobal(SizeCache<T>.Size * count);
                 Marshal.Copy(br.ReadBytes(SizeCache<T>.Size * count), 0, ptr, SizeCache<T>.Size * count);
                 var arr = new T[count];
-                // Unfortunate part of the marshaler, is that each instance needs to be pulled in separately.
-                // Can't just do a bulk memcpy.
                 for (var i = 0; i < count; i++)
-                    arr[i] = FastStructure.PtrToStructure<T>(ptr + (SizeCache<T>.Size * i));
+                    arr[i] = Marshal.PtrToStructure<T>(ptr + (SizeCache<T>.Size * i));
                 Marshal.FreeHGlobal(ptr);
                 return arr;
             }
