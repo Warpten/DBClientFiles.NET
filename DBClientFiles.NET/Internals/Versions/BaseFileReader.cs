@@ -176,5 +176,7 @@ namespace DBClientFiles.NET.Internals.Versions
         {
             return StringTable[tableOffset];
         }
+
+        public U ExtractKey<U>(TValue instance) => Generator.ExtractKey<U>(instance);
     }
 }

@@ -60,6 +60,11 @@ namespace DBClientFiles.NET.Collections.Generic
                 Stream = dataStream;
         }
 
+        public TKey ExtractKey<TKey>(T instance) where TKey : struct
+        {
+            return _fileReader.ExtractKey<TKey>(instance);
+        }
+
         public IEnumerable<T> Enumerate() => Enumerate<int>();
 
         public void Initialize<TKey>()

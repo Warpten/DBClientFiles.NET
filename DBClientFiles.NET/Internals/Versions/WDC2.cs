@@ -191,7 +191,6 @@ namespace DBClientFiles.NET.Internals.Versions
         private int _recordSize;
         private int _currentlyParsedSegment;
 
-        private CodeGenerator<TValue, TKey>[] _codeGenerator;
 
         public override CodeGenerator<TValue> Generator => _segments[_currentlyParsedSegment].Generator;
         
@@ -207,7 +206,6 @@ namespace DBClientFiles.NET.Internals.Versions
             base.ReleaseResources();
         
             _palletTable.Dispose();
-            _codeGenerator = null;
 
             for (var i = 0; i < _segments.Length; ++i)
                 _segments[i].Dispose();

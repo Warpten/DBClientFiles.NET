@@ -161,6 +161,16 @@ namespace DBClientFiles.NET.Internals.Serializers
             return instance;
         }
 
+        #region Hack for StorageDictionary
+        public TKey ExtractKey<TKey>(T instance)
+        {
+            if (!(this is CodeGenerator<T, TKey> codeGen))
+                throw new InvalidOperationException();
+
+            return codeGen.ExtractKey(instance);
+        }
+        #endregion
+
         /// <summary>
         /// Produces a shallow copy of the provided object.
         /// </summary>

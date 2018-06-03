@@ -19,5 +19,7 @@ namespace DBClientFiles.NET.Internals
 
         uint TableHash { get; }
         uint LayoutHash { get; }
+
+        U ExtractKey<U>(T instance);
     }
 }

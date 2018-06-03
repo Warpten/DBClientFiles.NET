@@ -75,10 +75,14 @@ namespace DBClientFiles.NET.Collections.Generic
         /// <param name="options">The options with which to load the file.</param>
         public StorageDictionary(Stream dataStream, StorageOptions options)
         {
+            if (!typeof(TKey).IsAssignableFrom(typeof(int)))
+                if (_keyGetter == null)
+                    throw new InvalidOperationException("Key getter required");
+
             using (var implementation = new StorageImpl<TValue>(dataStream, options))
             {
                 foreach (var item in implementation.Enumerate<TKey>())
-                    _container[_keyGetter.Invoke(item)] = item;
+                    _container[_keyGetter?.Invoke(item) ?? implementation.ExtractKey<TKey>(item)] = item;
 
                 Signature = implementation.Signature;
                 TableHash = implementation.TableHash;
@@ -103,7 +107,7 @@ namespace DBClientFiles.NET.Collections.Generic
         public void Add(KeyValuePair<TKey, TValue> item) => ((IDictionary<TKey, TValue>)_container).Add(item);
         public void Clear() => _container.Clear();
         public bool Contains(KeyValuePair<TKey, TValue> item) => _container.Contains(item);
-        public bool ContainsKey(TKey key) => ((IDictionary<TKey, TValue>)_container).ContainsKey(key);
+        public bool ContainsKey(TKey key) => _container.ContainsKey(key);
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) => ((IDictionary<TKey, TValue>)_container).CopyTo(array, arrayIndex);
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() => _container.GetEnumerator();
         public bool Remove(TKey key) => _container.Remove(key);
