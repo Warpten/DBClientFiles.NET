@@ -222,11 +222,18 @@ namespace DBClientFiles.NET.Internals.Serializers
             for (var index = 0; index < Reader.MemberStore.Members.Count; index++)
             {
                 var memberInfo = Reader.MemberStore.Members[index];
-                if (memberInfo.MappedTo == null && memberInfo.Children.Count == 0)
+
+                if (memberInfo.MemberInfo.IsDefined(typeof(IgnoreAttribute), false))
                     continue;
 
-                if (!IsIndexStreamed && memberInfo.Index == IndexColumn)
+                if (memberInfo.MappedTo == null)
+                {
+                    if (memberInfo.Children.Count == 0)
+                        continue;
+                }
+                else if (!IsIndexStreamed && memberInfo.MappedTo.Index == IndexColumn)
                     continue;
+
 
                 var memberAccess = memberInfo.MakeMemberAccess(_instance);
                 BindMember(bodyBlock, binaryReader, recordReader, ref memberAccess);

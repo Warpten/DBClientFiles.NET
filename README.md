@@ -1,56 +1,111 @@
+
 # DBClientFiles.NET
-The new version of DBFilesClient.NET.
 
-## Status
+A blazing-fast DBC & DB2 reader for World of Warcraft's serialized database format.
 
-* Fix CodeGenerator.Clone to handle deep copying instead of shallow.
-* Implement recursive calls to CodeGenerator so that users can more easily integrate complex types into their definitions (`C3Vector`, etc).
-* Optimize all this shit.
+## Usage
 
-## Preliminary performance tests
+DBClientFiles.NET exposes three collection types:
 
-### .NET Framework 4.7.2
+ - `StorageList<T>` and `StorageList<TKey, T>`
+ - `StorageDictionary<TKey, T>` 
+ - `StorageEnumerable<T>`
 
-| File name (WoTLK)                                                 | Avg                  | Best                 | Worst                |
-| ----------------------------------------------------------------- | -------------------- | -------------------- | -------------------- |
-| AchievementEntry [1030 entries - (WDBC)]                          | 0.006914 (0.000006)  | 0.004838 (0.000004)  | 0.078434 (0.000076)  |
-| AreaTriggerEntry [964 entries - (WDBC)]                           | 0.002568 (0.000002)  | 0.001717 (0.000001)  | 0.008293 (0.000008)  |
-| AuctionHouseEntry [7 entries - (WDBC)]                            | 0.001368 (0.000195)  | 0.000906 (0.000129)  | 0.004312 (0.000616)  |
-| BankBagSlotPricesEntry [12 entries - (WDBC)]                      | 0.000823 (0.000068)  | 0.000461 (0.000038)  | 0.003093 (0.000257)  |
+Each exposed type requires `T : class, new()` and `TKey : struct`, and is constructed with `System.IO.Stream` and optionally `StorageOptions` instances. If `StorageOptions` is not provided, the library automatically uses `StorageOptions.Default`.
 
-| File name (Cataclysm)										        | Avg                  | Best                 | Worst                |
-| ----------------------------------------------------------------- | -------------------- | -------------------- | -------------------- |
-| AchievementCategoryEntry [107 entries - (WDBC)]                   | 0.001224 (0.000011)  | 0.000742 (0.000006)  | 0.009284 (0.000086)  |
-| AchievementCriteriaEntry [10755 entries - (WDBC)]                 | 0.024145 (0.000002)  | 0.016185 (0.000001)  | 0.039396 (0.000003)  |
-| ItemSparseEntry [54086 entries - (WDB2)]                          | 0.539168 (0.000009)  | 0.477780 (0.000008)  | 0.642253 (0.000011)  |
+As well as being collections, these types implement `IStorage`, which exposes metadata information about the file that was deserialized, such as **signature**, **table hash** and **layout hash**. 
 
-| File name                                                         | Avg                  | Best                 | Worst                |
-| ----------------------------------------------------------------- | -------------------- | -------------------- | -------------------- |
-| SpellEffectEntry [269548 entries - (WDC1)]                        | 1.356972 (0.000005)  | 1.026742 (0.000003)  | 1.944185 (0.000007)  |
+## Supported file types
 
-| File name                                                         | Avg                  | Best                 | Worst                |
-| ----------------------------------------------------------------- | -------------------- | -------------------- | -------------------- |
-| AchievementEntry [6138 entries - (WDC2)]                          | 0.020731 (0.000003)  | 0.015760 (0.000002)  | 0.069604 (0.000011)  |
+|Signature|WDBC|WDB2|WDB3|WDB4|WDB5|WDB6|WDC1|WDC2|
+|--|--|--|--|--|--|--|--|--|
+|Read|:heavy_check_mark:|:heavy_check_mark:|:x:|:x:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
+|Write|:x:|:x:|:x:|:x:|:x:|:x:|:x:|:x:|
 
-### .NET Core 2.1
+## Attributes
 
-| File name (WoTLK)                                                 | Avg                  | Best                 | Worst                |
-| ----------------------------------------------------------------- | -------------------- | -------------------- | -------------------- |
-| AchievementEntry [1030 entries - (WDBC)]                          | 0.004196 (0.000004)  | 0.002565 (0.000002)  | 0.051523 (0.000050)  |
-| AreaTriggerEntry [964 entries - (WDBC)]                           | 0.001621 (0.000001)  | 0.000815 (0.000000)  | 0.006066 (0.000006)  |
-| AuctionHouseEntry [7 entries - (WDBC)]                            | 0.001393 (0.000199)  | 0.000536 (0.000076)  | 0.010879 (0.001554)  |
-| BankBagSlotPricesEntry [12 entries - (WDBC)]                      | 0.001121 (0.000093)  | 0.000260 (0.000021)  | 0.025948 (0.002162)  |
+### `CardinalityAttribute`
 
-| File name (Cataclysme)                                            | Avg                  | Best                 | Worst                |
-| ----------------------------------------------------------------- | -------------------- | -------------------- | -------------------- |
-| AchievementCategoryEntry [107 entries - (WDBC)]                   | 0.001359 (0.000012)  | 0.000449 (0.000004)  | 0.007028 (0.000065)  |
-| AchievementCriteriaEntry [10755 entries - (WDBC)]                 | 0.016716 (0.000001)  | 0.007673 (0.000000)  | 0.052237 (0.000004)  |
-| ItemSparseEntry [54086 entries - (WDB2)]                          | 0.342379 (0.000006)  | 0.262717 (0.000004)  | 0.612497 (0.000011)  |
+This attribute is used to indicate the size of an array *field* or *property*. Behavior depends on the file format:
+- For **WDBC** and **WDB2**: this attribute is required.
+- For **WDB5** and **WDB6**: the library is able to guess proper array sizes for the given members **except** the last one.
+- For **WDC1** and **WDC2**: the library is able to guess proper array size for all given members.
 
-| File name                                                         | Avg                  | Best                 | Worst                |
-| ----------------------------------------------------------------- | -------------------- | -------------------- | -------------------- |
-| SpellEffectEntry [269548 entries - (WDC1)]                        | 1.140182 (0.000004)  | 0.812695 (0.000003)  | 1.475365 (0.000005)  |
+If you don't know what you should be doing, decorate your arrays.
 
-| File name                                                         | Avg                  | Best                 | Worst                |
-| ----------------------------------------------------------------- | -------------------- | -------------------- | -------------------- |
-| AchievementEntry [6138 entries - (WDC2)]                          | 0.016460 (0.000002)  | 0.009948 (0.000001)  | 0.054470 (0.000008)  |
+### `IgnoreAttribute`
+
+This attribute is used to indicate that a field or property is to be ignored by the library. It is **redundant** as the library already does sanity checks and **ignores** `readonly` fields and properties without setter.
+
+### `IndexAttribute`
+
+This attribute is used to decorate the member of a record that is it's key. Behavior varies depending on the file format:
+- For **WDBC** and **WDB2** : If `IndexAttribute` is lacking, the first member is assumed to be the key.
+- For **WDB5** and higher: This attribute is considered redundant as files already identify their index column.
+
+## API
+
+### `StorageEnumerable<T>`
+
+- `public StorageEnumerable(Stream fileStream)`
+- `public StorageEnumerable(Stream fileStream, StorageOptions options)`
+
+If `StorageOptions` is not provided, `StorageOptions.Default` is used instead.
+
+### `StorageList<T>`
+
+- `public StorageList(Stream dataStream)`
+- `public StorageList(Stream dataStream, StorageOptions options)`
+
+If `StorageOptions` is not provided, `StorageOptions.Default` is used instead.
+
+### `StorageDictionary<TKey, T>`
+
+- `public StorageDictionary(Stream dataStream, StorageOptions options, Func<TValue, TKey> keyGetter)`
+- `public StorageDictionary(Stream dataStream, Func<TValue, TKey> keyGetter)`
+- `public StorageDictionary(Stream dataStream)`
+- `public StorageDictionary(Stream dataStream, StorageOptions options)`
+
+Creates an instance of `StorageDictionary<TKey, T>` given the provided data stream and options.
+> :warning: `keyGetter` is used to extract the key from the record and use it as this container's key. It has **nothing** to do with the member that is flagged as index in the file (see `IndexAttribute`). :warning:
+> 
+> It has the limitation to need to return the same type than what the actual key is. For example:
+> ```cs
+> public sealed class DummyStructure
+> {
+>    [Index]
+>    public int ID { get; set; }
+>    public uint Dummy { get; set; }
+> }
+> ```
+> The below compiles and runs.
+> ```cs
+> var dict1 = new Dictionary<int, DummyStructure>(data, options, instance => instance.ID);
+> ```
+> This one, however, will compile but give out a runtime exception,  since Dummy and ID have different types (the library does no casting).
+> ```cs
+> var dict2 = new Dictionary<uint, DummyStructure(data, options, instance => instance.Dummy); 
+> ```
+> This limitation will hopefully be removed in a future version.
+
+If you use one of the constructors not involving `keyGetter`, that function is autogenerated, targetting the member decorated with `IndexAttribute`.
+
+### StorageOptions
+
+    public sealed class StorageOptions
+    {
+    	public MemberTypes MemberType { get; set; } = MemberTypes.Property;
+    	public LoadMask LoadMask { get; set; } = LoadMask.Records;
+    
+    	public bool InternStrings { get; set; } = true;
+    	public bool KeepStringTable { get; set; } = false;
+    
+    	/// <summary>
+    	/// If set to to <code>true</code>, the stream used as source will be copied to memory before being used.
+    	/// This is set to true by default for anything but MemoryStream.
+    	/// </summary>
+    	public bool CopyToMemory { get; set; } = false;
+    
+    	public static StorageOptions Default { get; }
+    }
+
