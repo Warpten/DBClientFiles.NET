@@ -1,5 +1,4 @@
-﻿using DBClientFiles.NET.Attributes;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -7,9 +6,34 @@ using System.Linq;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
-    public sealed class StorageDictionary<TKey, TValue> : IStorage, IDictionary<TKey, TValue>
+    /// <summary>
+    /// Acts as a shorthand for <see cref="StorageDictionary{TKey, TFileKey, TValue}"/>, with the two generic key types being the same.
+    /// </summary>
+    /// <typeparam name="TKey"></typeparam>
+    /// <typeparam name="TValue"></typeparam>
+    public sealed class StorageDictionary<TKey, TValue> : StorageDictionary<TKey, TKey, TValue>
         where TKey : struct
         where TValue : class, new()
+    {
+        public StorageDictionary(Stream dataStream) : base(dataStream)
+        {
+        }
+
+        public StorageDictionary(Stream dataStream, StorageOptions options) : base(dataStream, options)
+        {
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="TKey">The type of the dictionary's key.</typeparam>
+    /// <typeparam name="TFileKey">The type of the key declared by the file.</typeparam>
+    /// <typeparam name="TValue">The record type.</typeparam>
+    public class StorageDictionary<TKey, TFileKey, TValue> : IStorage, IDictionary<TKey, TValue>
+        where TKey : struct
+        where TValue : class, new()
+        where TFileKey : struct
     {
         #region IStorage
         public Signatures Signature { get; }
@@ -75,15 +99,22 @@ namespace DBClientFiles.NET.Collections.Generic
         /// <param name="options">The options with which to load the file.</param>
         public StorageDictionary(Stream dataStream, StorageOptions options)
         {
-            if (!typeof(TKey).IsAssignableFrom(typeof(int)))
-                if (_keyGetter == null)
-                    throw new InvalidOperationException("Key getter required");
-
             using (var implementation = new StorageImpl<TValue>(dataStream, options))
             {
-                foreach (var item in implementation.Enumerate<TKey>())
-                    _container[_keyGetter?.Invoke(item) ?? implementation.ExtractKey<TKey>(item)] = item;
-
+                implementation.InitializeReader<TFileKey>();
+                implementation.ReadHeader();
+                
+                if (_keyGetter == null)
+                {
+                    foreach (var item in implementation.Enumerate())
+                        _container[implementation.ExtractKey<TKey>(item)] = item;
+                }
+                else
+                {
+                    foreach (var item in implementation.Enumerate())
+                        _container[_keyGetter(item)] = item;
+                }
+                
                 Signature = implementation.Signature;
                 TableHash = implementation.TableHash;
                 LayoutHash = implementation.LayoutHash;

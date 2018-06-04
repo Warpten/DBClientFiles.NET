@@ -31,10 +31,11 @@ namespace DBClientFiles.NET.Collections.Generic
         
         private StorageOptions Options { get; set; }
         private Stream Stream { get; set; }
-        private IReader<T> _fileReader;
+        public IReader<T> FileReader { get; private set; }
 
         public CodeGenerator<T> Generator { get; private set; }
 
+        #region Life and death
         public void Dispose()
         {
             if (Options.CopyToMemory)
@@ -43,7 +44,7 @@ namespace DBClientFiles.NET.Collections.Generic
 
             Options = null;
 
-            _fileReader = null;
+            FileReader = null;
         }
 
         public StorageImpl(Stream dataStream, StorageOptions options)
@@ -58,69 +59,82 @@ namespace DBClientFiles.NET.Collections.Generic
             }
             else
                 Stream = dataStream;
+
+            _memberInfos = new ExtendedMemberInfoCollection(typeof(T), options);
         }
+        #endregion
+
+        private ExtendedMemberInfoCollection _memberInfos;
 
         public TKey ExtractKey<TKey>(T instance) where TKey : struct
         {
-            return _fileReader.ExtractKey<TKey>(instance);
+            return FileReader.ExtractKey<TKey>(instance);
         }
 
-        public IEnumerable<T> Enumerate() => Enumerate<int>();
+        public void InitializeReader(bool forced = false) => InitializeReader<int>(forced);
 
-        public void Initialize<TKey>()
+        public void InitializeReader<TKey>(bool forced = false)
             where TKey : struct
         {
-            if (_fileReader != null)
-                return;
+            if (FileReader != null)
+            {
+                if (forced)
+                    FileReader.Dispose();
+                else
+                    return;
+            }
 
-            Signature = (Signatures)((Stream.ReadByte()) | (Stream.ReadByte() << 8) | (Stream.ReadByte() << 16) | (Stream.ReadByte() << 24));
+            Signature = (Signatures)(Stream.ReadByte() | (Stream.ReadByte() << 8) | (Stream.ReadByte() << 16) | (Stream.ReadByte() << 24));
 
             switch (Signature)
             {
                 case Signatures.WDBC:
-                    _fileReader = new WDBC<T>(Stream);
+                    FileReader = new WDBC<T>(Stream, Options);
                     break;
                 case Signatures.WDB2:
-                    _fileReader = new WDB2<T>(Stream);
+                    FileReader = new WDB2<T>(Stream, Options);
                     break;
                 case Signatures.WDB5:
-                    _fileReader = new WDB5<TKey, T>(Stream);
+                    FileReader = new WDB5<TKey, T>(Stream, Options);
                     break;
                 case Signatures.WDB6:
-                    _fileReader = new WDB6<TKey, T>(Stream);
+                    FileReader = new WDB6<TKey, T>(Stream, Options);
                     break;
                 case Signatures.WDB3:
                 case Signatures.WDB4:
                     throw new NotSupportedVersionException($"{Signature} files cannot be read without client metadata.");
                 case Signatures.WDC1:
-                    _fileReader = new WDC1<TKey, T>(Stream);
+                    FileReader = new WDC1<TKey, T>(Stream, Options);
                     break;
                 case Signatures.WDC2:
-                    _fileReader = new WDC2<TKey, T>(Stream);
+                    FileReader = new WDC2<TKey, T>(Stream, Options);
                     break;
                 default:
                     throw new NotSupportedVersionException($"Unknown signature 0x{(int)Signature:X8}!");
             }
-
-            _fileReader.Options = Options;
-            
-            if (!_fileReader.ReadHeader())
-                throw new InvalidOperationException("Unable to read file header!");
         }
 
-        public IEnumerable<T> Enumerate<TKey>()
-            where TKey : struct
+        public void ReadHeader()
         {
-            Initialize<TKey>();
+            FileReader.MemberStore = _memberInfos;
 
+            if (!FileReader.ReadHeader())
+                throw new InvalidOperationException("Unable to read file header!");
+
+            FileReader.MapRecords();
+            FileReader.MemberStore.MapMembers();
+        }
+
+        public IEnumerable<T> Enumerate()
+        {
             // Steal the generator
-            Generator = _fileReader.Generator;
+            Generator = FileReader.Generator;
 
-            TableHash = _fileReader.TableHash;
-            LayoutHash = _fileReader.LayoutHash;
+            TableHash = FileReader.TableHash;
+            LayoutHash = FileReader.LayoutHash;
 
-            _fileReader.ReadSegments();
-            return _fileReader.ReadRecords();
+            FileReader.ReadSegments();
+            return FileReader.ReadRecords();
         }
     }
 }

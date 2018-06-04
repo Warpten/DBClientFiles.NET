@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Exceptions;
-using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.Internals.Segments.Readers;
 using DBClientFiles.NET.Internals.Serializers;
 using DBClientFiles.NET.IO;
@@ -45,12 +44,6 @@ namespace DBClientFiles.NET.Internals.Versions
             }
 
             private readonly WDC2<TKey, TValue> _parent;
-
-            public override StorageOptions Options
-            {
-                get => _parent.Options;
-                set => throw new InvalidOperationException();
-            }
             
             private readonly CopyTableReader<TKey> _copyTable;
             private readonly RelationShipSegmentReader<TKey> _relationshipData;
@@ -66,7 +59,7 @@ namespace DBClientFiles.NET.Internals.Versions
             private int _indexListSize;
             private int _relationshipDataSize;
 
-            public Section(WDC2<TKey, TValue> parent, Stream strm) : base(strm)
+            public Section(WDC2<TKey, TValue> parent, Stream strm) : base(strm, parent.Options)
             {
                 _parent = parent;
                 
@@ -164,7 +157,7 @@ namespace DBClientFiles.NET.Internals.Versions
                 using (var recordReader = GetRecordReader(recordSize))
                 {
                     var instance = IndexTable.Exists
-                        ? _codeGenerator.Deserialize(this, recordReader, IndexTable[recordIndex])
+                        ? _codeGenerator.Deserialize(this, recordReader, IndexTable.GetValue<TKey>(recordIndex))
                         : _codeGenerator.Deserialize(this, recordReader);
 
                     foreach (var copyInstanceID in _copyTable[_codeGenerator.ExtractKey(instance)])
@@ -181,7 +174,7 @@ namespace DBClientFiles.NET.Internals.Versions
         }
 
         #region Segments
-        private Section[] _segments;
+        private Section[] _sections;
 
         private readonly BinarySegmentReader _palletTable;
         private readonly CommonTableReader<TKey> _commonTable;
@@ -189,13 +182,13 @@ namespace DBClientFiles.NET.Internals.Versions
 
         private int _flags;
         private int _recordSize;
-        private int _currentlyParsedSegment;
+        private int _currentlyParsedSection;
 
 
-        public override CodeGenerator<TValue> Generator => _segments[_currentlyParsedSegment].Generator;
+        public override CodeGenerator<TValue> Generator => _sections[_currentlyParsedSection].Generator;
         
         #region Life and Death
-        public WDC2(Stream strm) : base(strm, true)
+        public WDC2(Stream strm, StorageOptions options) : base(strm, options)
         {
             _palletTable = new BinarySegmentReader(this);
             _commonTable = new CommonTableReader<TKey>(this);
@@ -207,8 +200,8 @@ namespace DBClientFiles.NET.Internals.Versions
         
             _palletTable.Dispose();
 
-            for (var i = 0; i < _segments.Length; ++i)
-                _segments[i].Dispose();
+            for (var i = 0; i < _sections.Length; ++i)
+                _sections[i].Dispose();
         }
         #endregion
 
@@ -236,13 +229,13 @@ namespace DBClientFiles.NET.Internals.Versions
             _flags = flags;
             _recordSize = recordSize;
 
-            _segments = new Section[sectionCount];
-            for (var i = 0; i < _segments.Length; ++i)
+            _sections = new Section[sectionCount];
+            for (var i = 0; i < _sections.Length; ++i)
             {
-                _segments[i] = new Section(this, BaseStream);
-                _segments[i].Generator.IndexColumn = indexColumn;
+                _sections[i] = new Section(this, BaseStream);
+                _sections[i].Generator.IndexColumn = indexColumn;
 
-                if (!_segments[i].ReadHeader())
+                if (!_sections[i].ReadHeader())
                     return false;
             }
 
@@ -261,8 +254,8 @@ namespace DBClientFiles.NET.Internals.Versions
 
             for (var i = 0; i < sectionCount; ++i)
             {
-                _segments[i].PopulateSegmentOffsets();
-                _segments[i].SetFileMemberInfo(MemberStore.FileMembers);
+                _sections[i].PopulateSegmentOffsets();
+                _sections[i].SetFileMemberInfo(MemberStore.FileMembers);
             }
 
             return true;
@@ -273,15 +266,15 @@ namespace DBClientFiles.NET.Internals.Versions
             _palletTable.Read();
             _commonTable.Read();
 
-            for (var i = 0; i < _segments.Length; ++i)
-                _segments[i].ReadSegments();
+            for (var i = 0; i < _sections.Length; ++i)
+                _sections[i].ReadSegments();
         }
 
         public override IEnumerable<TValue> ReadRecords()
         {
-            for (_currentlyParsedSegment = 0; _currentlyParsedSegment < _segments.Length; ++_currentlyParsedSegment)
+            for (_currentlyParsedSection = 0; _currentlyParsedSection < _sections.Length; ++_currentlyParsedSection)
             {
-                var currentSection = _segments[_currentlyParsedSegment];
+                var currentSection = _sections[_currentlyParsedSection];
                 foreach (var record in currentSection.ReadRecords())
                     yield return record;
             }
@@ -291,14 +284,14 @@ namespace DBClientFiles.NET.Internals.Versions
         {
             var memberInfo = MemberStore.FileMembers[memberIndex];
 
-            return _palletTable.ReadArray<T>(memberInfo.Offset, memberInfo.Cardinality);
+            return _palletTable.ReadArray<T>(memberInfo.CategoryIndex, memberInfo.Offset, memberInfo.Cardinality);
         }
 
         public override T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
             var memberInfo = MemberStore.FileMembers[memberIndex];
 
-            return _palletTable.Read<T>(memberInfo.Offset);
+            return _palletTable.Read<T>(memberInfo.CategoryIndex, memberInfo.Offset);
         }
 
         public override T ReadCommonMember<T>(int memberIndex, TValue value)
@@ -307,18 +300,18 @@ namespace DBClientFiles.NET.Internals.Versions
 
             return _commonTable.ExtractValue(memberInfo.CategoryIndex, 
                 memberInfo.GetDefaultValue<T>(),
-                _segments[_currentlyParsedSegment].ExtractRecordKey(value)); //! TODO FIXME
+                _sections[_currentlyParsedSection].ExtractRecordKey(value)); //! TODO FIXME
         }
 
         public override T ReadForeignKeyMember<T>()
         {
-            return _segments[_currentlyParsedSegment].ReadForeignKeyMember<T>();
+            return _sections[_currentlyParsedSection].ReadForeignKeyMember<T>();
         }
 
         public override string FindStringByOffset(int tableOffset)
         {
             // Forward the call to the current segment
-            return _segments[_currentlyParsedSegment].FindStringByOffset(tableOffset);
+            return _sections[_currentlyParsedSection].FindStringByOffset(tableOffset);
         }
 
         protected override IEnumerable<TValue> ReadRecords(int recordIndex, long recordOffset, int recordSize)

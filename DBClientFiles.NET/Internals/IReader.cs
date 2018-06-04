@@ -11,15 +11,15 @@ namespace DBClientFiles.NET.Internals
     {
         bool ReadHeader();
         void ReadSegments();
+        void MapRecords();
         IEnumerable<T> ReadRecords();
         
-        StorageOptions Options { get; set; }
         CodeGenerator<T> Generator { get; }
-        ExtendedMemberInfoCollection MemberStore { get; }
+        ExtendedMemberInfoCollection MemberStore { get; set; }
 
         uint TableHash { get; }
         uint LayoutHash { get; }
 
-        U ExtractKey<U>(T instance);
+        U ExtractKey<U>(T instance) where U : struct;
     }
 }

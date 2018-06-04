@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DBClientFiles.NET.Internals.Segments
+﻿namespace DBClientFiles.NET.Internals.Segments
 {
     internal struct Segment
     {

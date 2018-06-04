@@ -9,7 +9,7 @@ using DBClientFiles.NET.Utils;
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
     /// <summary>
-    /// A segment reader for legacy common table (as seen in WDB6 file format).
+    /// A segment reader for the new common table (as seen in WDB6 file format).
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     internal sealed class CommonTableReader<TKey> : SegmentReader

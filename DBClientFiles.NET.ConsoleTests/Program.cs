@@ -7,8 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using DBClientFiles.NET.Collections;
 
 namespace DBClientFiles.NET.ConsoleTests
 {
@@ -24,10 +22,12 @@ namespace DBClientFiles.NET.ConsoleTests
             if (idxCount != -1 && args.Length >= idxCount + 1)
                 int.TryParse(args[idxCount + 1], out iterationCount);
 
-            //using (var fs = File.OpenRead(@"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\bin\Release\net472\Data\WDC1\SpellEffect.db2"))
-            //{
-            //    var sl = new StorageList<Data.WDC1.SpellEffectEntry>(fs);
-            //}
+
+            using (var fs = File.OpenRead(@"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\bin\Release\net472\Data\WDC1\SpellEffect.db2"))
+            {
+                // var sl = new StorageList<Data.WDC1.SpellEffectEntry>(fs);
+                var d = new StorageDictionary<int, Data.WDC1.SpellEffectEntry>(fs);
+            }
 
             TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC", iterationCount);
             TestStructuresInNamespace("DBClientFiles.NET.Data.WDB2", iterationCount);
@@ -122,7 +122,11 @@ namespace DBClientFiles.NET.ConsoleTests
                 var benchmarkResult = structureTester.Benchmark<StorageList<TValue>>(out var dataStore, ms, count);
 
                 Console.WriteLine(benchmarkResult.ToString());
-                using (var writer = new StreamWriter($"./perf_{benchmarkResult.RecordType.Name.Replace("Entry", "").ToLower()}_{benchmarkResult.Signature}.csv"))
+#if NETCOREAPP2_1
+                using (var writer = new StreamWriter($"./perf_{benchmarkResult.RecordType.Name.Replace("Entry", "").ToLower()}_{benchmarkResult.Signature}_netcore21.csv"))
+#else
+                using (var writer = new StreamWriter($"./perf_{benchmarkResult.RecordType.Name.Replace("Entry", "").ToLower()}_{benchmarkResult.Signature}_netframework472.csv"))
+#endif
                     benchmarkResult.WriteCSV(writer);
             }
         }

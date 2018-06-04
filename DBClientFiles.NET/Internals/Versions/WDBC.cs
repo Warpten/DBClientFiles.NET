@@ -1,14 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Exceptions;
 using DBClientFiles.NET.IO;
-using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
     internal class WDBC<TValue> : BaseFileReader<TValue> where TValue : class, new()
     {
-        public WDBC(Stream fileStream): base(fileStream, true)
+        public WDBC(Stream strm, StorageOptions options) : base(strm, options)
         {
         }
 

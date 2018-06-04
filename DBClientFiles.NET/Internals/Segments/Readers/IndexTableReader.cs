@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers.Binary;
 using System.Runtime.InteropServices;
 using DBClientFiles.NET.IO;
 using DBClientFiles.NET.Utils;
@@ -10,10 +9,9 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     /// A segment reader that produces an enumeration of keys for the given segment of DB2 files.
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
-    internal sealed class IndexTableReader<TKey> : SegmentReader
-        where TKey : struct
+    internal sealed class IndexTableReader : SegmentReader
     {
-        private TKey[] _keys;
+        private byte[] _segmentData;
 
         public IndexTableReader(FileReader reader) : base(reader) { }
 
@@ -23,14 +21,20 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
                 return;
 
             FileReader.BaseStream.Position = Segment.StartOffset;
-            _keys = FileReader.ReadStructs<TKey>(Segment.Length / SizeCache<TKey>.Size);
+            _segmentData = FileReader.ReadBytes(Segment.Length);
         }
-
-        public TKey this[int index] => _keys[index];
+        
+        public T GetValue<T>(int index)
+            where T : struct
+        {
+            ReadOnlySpan<byte> block = _segmentData;
+            var tBlock = MemoryMarshal.Cast<byte, T>(block);
+            return tBlock[index];
+        }
 
         protected override void Release()
         {
-            _keys = null;
+            _segmentData = null;
         }
     }
 }

@@ -30,6 +30,27 @@ namespace DBClientFiles.NET.Utils
             }
         }
 
+        public ExtendedMemberInfo IndexMember
+        {
+            get
+            {
+                if (HasIndexTable)
+                    return Members[0];
+
+                for (var i = 0; i < Members.Count; ++i)
+                {
+                    var memberInfo = Members[i];
+                    if (memberInfo.MemberInfo.IsDefined(typeof(IndexAttribute), false))
+                        return memberInfo;
+
+                    if (memberInfo.MappedTo != null && memberInfo.MappedTo.Index == IndexColumn)
+                        return memberInfo;
+                }
+
+                throw new InvalidOperationException();
+            }
+        }
+
         public void SetFileMemberInfo(IEnumerable<FileMemberInfo> fileMembers)
         {
             FileMembers.Clear();
@@ -46,7 +67,7 @@ namespace DBClientFiles.NET.Utils
 
         private int RecursiveMemberAssignment(ExtendedMemberInfo memberInfo, int fileIndex, ref int memberOffset)
         {
-            if (memberInfo.Index == IndexColumn && !IsIndexStreamed)
+            if (fileIndex == IndexColumn && HasIndexTable && memberInfo.Index == IndexColumn)
                 return fileIndex;
 
             if (memberInfo.Children.Count != 0)
@@ -122,8 +143,19 @@ namespace DBClientFiles.NET.Utils
             {
                 var currentFileMember = FileMembers[i];
                 for (var j = 0; j < i; ++j)
-                    if (FileMembers[j].CompressionType == currentFileMember.CompressionType)
+                {
+                    var currentCategory = currentFileMember.CompressionType;
+                    var otherCategory = FileMembers[j].CompressionType;
+
+                    var incrementCategoryIndex = false;
+                    if (currentCategory == MemberCompressionType.BitpackedPalletArrayData || currentCategory == MemberCompressionType.BitpackedPalletData)
+                        incrementCategoryIndex = (otherCategory == MemberCompressionType.BitpackedPalletArrayData || otherCategory == MemberCompressionType.BitpackedPalletData);
+                    else
+                        incrementCategoryIndex = otherCategory == currentCategory;
+
+                    if (incrementCategoryIndex)
                         ++currentFileMember.CategoryIndex;
+                }
             }
         }
 
@@ -136,22 +168,16 @@ namespace DBClientFiles.NET.Utils
         }
 
         public int IndexColumn { get; set; } = 0;
-        public bool IsIndexStreamed { get; set; } = true;
+        public bool HasIndexTable { get; set; } = false;
 
         public IEnumerable<int> GetBlockLengths(MemberCompressionType compressionType)
         {
             return FileMembers.Where(f => f.CompressionType == compressionType).Select(f => f.CompressedDataSize);
         }
 
-        public ExtendedMemberInfo IndexMember
+        public IEnumerable<int> GetBlockLengths(Func<FileMemberInfo, bool> compressionType)
         {
-            get
-            {
-                var indexMember = Members.FirstOrDefault(m => m.MemberInfo.IsDefined(typeof(IndexAttribute), false));
-                if (indexMember == null)
-                    return Members[0];
-                return indexMember;
-            }
+            return FileMembers.Where(compressionType).Select(f => f.CompressedDataSize);
         }
     }
 }

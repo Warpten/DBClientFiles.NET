@@ -1,11 +1,9 @@
-﻿using DBClientFiles.NET.Internals.Segments;
-using DBClientFiles.NET.Internals.Segments.Readers;
+﻿using DBClientFiles.NET.Internals.Segments.Readers;
 using DBClientFiles.NET.Internals.Serializers;
 using DBClientFiles.NET.IO;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using DBClientFiles.NET.Utils;
+using DBClientFiles.NET.Collections;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
@@ -26,7 +24,7 @@ namespace DBClientFiles.NET.Internals.Versions
         public override CodeGenerator<TValue> Generator => _codeGenerator;
 
         #region Life and death
-        public WDC1(Stream strm) : base(strm, true)
+        public WDC1(Stream strm, StorageOptions options) : base(strm, options)
         {
             _palletTable      = new BinarySegmentReader(this);
             _copyTable        = new CopyTableReader<TKey>(this);
@@ -134,11 +132,13 @@ namespace DBClientFiles.NET.Internals.Versions
         public override void ReadSegments()
         {
             base.ReadSegments();
-
-            _palletTable.Read();
+            
             _relationshipData.Read();
 
             _commonTable.Initialize(MemberStore.GetBlockLengths(MemberCompressionType.CommonData));
+            _palletTable.Initialize(MemberStore.GetBlockLengths(f =>
+                f.CompressionType == MemberCompressionType.BitpackedPalletArrayData ||
+                f.CompressionType == MemberCompressionType.BitpackedPalletData));
         }
 
         public override T ReadCommonMember<T>(int memberIndex, TValue value)
@@ -158,7 +158,7 @@ namespace DBClientFiles.NET.Internals.Versions
             var memberInfo = MemberStore.FileMembers[memberIndex];
 
             var palletOffset = recordReader.ReadBits(memberInfo.Offset, memberInfo.BitSize);
-            return _palletTable.ReadArray<T>((int)palletOffset, memberInfo.Cardinality);
+            return _palletTable.ReadArray<T>(memberInfo.CategoryIndex, (int)palletOffset, memberInfo.Cardinality);
         }
 
         public override T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value)
@@ -166,7 +166,7 @@ namespace DBClientFiles.NET.Internals.Versions
             var memberInfo = MemberStore.FileMembers[memberIndex];
 
             var palletOffset = recordReader.ReadBits(memberInfo.Offset, memberInfo.BitSize);
-            return _palletTable.Read<T>((int)palletOffset);
+            return _palletTable.Read<T>(memberInfo.CategoryIndex, (int)palletOffset);
         }
 
         public virtual RecordReader GetRecordReader(int recordSize)
@@ -180,7 +180,7 @@ namespace DBClientFiles.NET.Internals.Versions
             using (var recordReader = GetRecordReader(recordSize))
             {
                 var instance = IndexTable.Exists
-                    ? _codeGenerator.Deserialize(this, recordReader, IndexTable[recordIndex])
+                    ? _codeGenerator.Deserialize(this, recordReader, IndexTable.GetValue<TKey>(recordIndex))
                     : _codeGenerator.Deserialize(this, recordReader);
 
                 foreach (var copyInstanceID in _copyTable[_codeGenerator.ExtractKey(instance)])

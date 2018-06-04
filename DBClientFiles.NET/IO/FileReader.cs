@@ -1,7 +1,6 @@
 ﻿using DBClientFiles.NET.Collections;
 using System.IO;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Text;
 
 namespace DBClientFiles.NET.IO
@@ -25,7 +24,7 @@ namespace DBClientFiles.NET.IO
             return Encoding.UTF8.GetString(byteList.ToArray());
         }
 
-        public abstract StorageOptions Options { get; set; }
+        public abstract StorageOptions Options { get; }
         
         public abstract string FindStringByOffset(int tableOffset);
         

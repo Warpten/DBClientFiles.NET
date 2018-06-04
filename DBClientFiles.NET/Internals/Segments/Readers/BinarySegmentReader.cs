@@ -1,5 +1,6 @@
 ﻿using System;
-using System.Runtime.InteropServices;
+using System.Collections.Generic;
+using System.Linq;
 using DBClientFiles.NET.IO;
 using DBClientFiles.NET.Utils;
 
@@ -11,36 +12,59 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     /// <typeparam name="TValue"></typeparam>
     internal sealed class BinarySegmentReader : SegmentReader
     {
-        private byte[] _data;
+        private SegmentBlock[] _segments;
+
+        private struct SegmentBlock
+        {
+            private byte[] _blockData;
+
+            public SegmentBlock(FileReader reader, int segmentLength)
+            {
+                _blockData = reader.ReadBytes(segmentLength);
+            }
+
+            public unsafe T ExtractValue<T>(int offset) where T : struct
+            {
+                fixed (byte* buffer = _blockData)
+                    return FastStructure.PtrToStructure<T>(new IntPtr(buffer + offset));
+            }
+        }
 
         public BinarySegmentReader(FileReader reader) : base(reader) { }
 
         protected override void Release()
         {
-            _data = null;
+            _segments = null;
         }
 
-        public override void Read()
+        public void Initialize(IEnumerable<int> blockLengths)
         {
             if (Segment.Length == 0)
                 return;
 
             FileReader.BaseStream.Position = Segment.StartOffset;
-            _data = FileReader.ReadBytes(Segment.Length);
+            var blockSizes = blockLengths.ToArray();
+            _segments = new SegmentBlock[blockSizes.Length];
+            for (var i = 0; i < _segments.Length; ++i)
+                _segments[i] = new SegmentBlock(FileReader, blockSizes[i]);
         }
 
-        public T[] ReadArray<T>(int offset, int arraySize) where T : struct
+        public override void Read()
+        {
+
+        }
+
+        public T[] ReadArray<T>(int blockIndex, int offset, int arraySize) where T : struct
         {
             var buffer = new T[arraySize];
             for (var i = 0; i < arraySize; ++i)
-                buffer[i] = Read<T>(offset + SizeCache<T>.Size * i);
+                buffer[i] = Read<T>(blockIndex, offset + SizeCache<T>.Size * i);
             return buffer;
         }
 
-        public unsafe T Read<T>(int offset) where T : struct
+        public unsafe T Read<T>(int blockIndex, int offset) where T : struct
         {
-            fixed (byte* ptr = _data)
-               return FastStructure.PtrToStructure<T>(new IntPtr(ptr + offset));
+            return _segments[blockIndex].ExtractValue<T>(offset);
         }
     }
 }

@@ -4,6 +4,7 @@ using DBClientFiles.NET.Internals.Serializers;
 using DBClientFiles.NET.IO;
 using System.Collections.Generic;
 using System.IO;
+using DBClientFiles.NET.Collections;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
@@ -19,7 +20,7 @@ namespace DBClientFiles.NET.Internals.Versions
         public override CodeGenerator<TValue> Generator => _codeGenerator;
         
         #region Life and death
-        public WDB5(Stream strm) : base(strm, true)
+        public WDB5(Stream strm, StorageOptions options) : base(strm, options)
         {
             _copyTable = new CopyTableReader<TKey>(this);
         }
@@ -90,7 +91,7 @@ namespace DBClientFiles.NET.Internals.Versions
             using (var recordReader = new RecordReader(this, StringTable.Exists, recordSize))
             {
                 oldStructure = IndexTable.Exists
-                    ? _codeGenerator.Deserialize(this, recordReader, IndexTable[recordIndex])
+                    ? _codeGenerator.Deserialize(this, recordReader, IndexTable.GetValue<TKey>(recordIndex))
                     : _codeGenerator.Deserialize(this, recordReader);
             }
             

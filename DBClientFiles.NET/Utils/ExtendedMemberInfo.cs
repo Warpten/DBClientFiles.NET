@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using DBClientFiles.NET.Internals;
 
 namespace DBClientFiles.NET.Utils
 {

@@ -13,6 +13,7 @@ namespace DBClientFiles.NET.Internals.Serializers
 {
     internal class CodeGenerator<T, TKey> : CodeGenerator<T>
         where T : class, new()
+        where TKey : struct
     {
         private Func<T, TKey> _keyGetter;
         private Action<T, TKey> _keySetter;
@@ -75,13 +76,13 @@ namespace DBClientFiles.NET.Internals.Serializers
             return _keyGetter;
         }
 
-        public T Deserialize(BaseFileReader<T> reader, RecordReader recordReader, TKey valueOfKey)
+        public T Deserialize(BaseFileReader<T> reader, RecordReader recordReader, TKey recordKey)
         {
             if (_keySetter == null)
                 _keySetter = GenerateKeySetter();
 
             var instance = CreateInstance();
-            _keySetter(instance, valueOfKey);
+            _keySetter(instance, recordKey);
             return Deserialize(instance, reader, recordReader);
         }
 
@@ -163,6 +164,7 @@ namespace DBClientFiles.NET.Internals.Serializers
 
         #region Hack for StorageDictionary
         public TKey ExtractKey<TKey>(T instance)
+            where TKey : struct
         {
             if (!(this is CodeGenerator<T, TKey> codeGen))
                 throw new InvalidOperationException();
@@ -235,16 +237,13 @@ namespace DBClientFiles.NET.Internals.Serializers
 
                 if (memberInfo.MemberInfo.IsDefined(typeof(IgnoreAttribute), false))
                     continue;
-
+                
                 if (memberInfo.MappedTo == null)
                 {
                     if (memberInfo.Children.Count == 0)
                         continue;
                 }
-                else if (!IsIndexStreamed && memberInfo.MappedTo.Index == IndexColumn)
-                    continue;
-
-
+                
                 var memberAccess = memberInfo.MakeMemberAccess(_instance);
                 BindMember(bodyBlock, binaryReader, recordReader, ref memberAccess);
             }

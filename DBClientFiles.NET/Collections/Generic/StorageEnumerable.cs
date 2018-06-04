@@ -5,12 +5,26 @@ using System.IO;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
+    public sealed class StorageEnumerable<T> : StorageEnumerable<int, T>
+        where T : class, new()
+    {
+        public StorageEnumerable(Stream fileStream) : base(fileStream)
+        {
+        }
+
+        public StorageEnumerable(Stream fileStream, StorageOptions options) : base(fileStream, options)
+        {
+        }
+    }
+
     /// <summary>
     /// An enumerable storage representation of dbc and db2 files.
     /// </summary>
+    /// <typeparam name="TKey">The key type declared by the file.</typeparam>
     /// <typeparam name="T">The element type.</typeparam>
-    public sealed class StorageEnumerable<T> : IStorage, IEnumerable<T>
+    public class StorageEnumerable<TKey, T> : IStorage, IEnumerable<T>
         where T : class, new()
+        where TKey : struct
     {
         #region IStorage
         public Signatures Signature { get; }
@@ -34,6 +48,8 @@ namespace DBClientFiles.NET.Collections.Generic
         public StorageEnumerable(Stream fileStream, StorageOptions options)
         {
             _implementation = new StorageImpl<T>(fileStream, options);
+            _implementation.InitializeReader<TKey>();
+            _implementation.ReadHeader();
             _enumerable = _implementation.Enumerate();
 
             Signature = _implementation.Signature;

@@ -1,7 +1,7 @@
 ﻿using DBClientFiles.NET.Internals.Segments.Readers;
-using DBClientFiles.NET.IO;
 using DBClientFiles.NET.Utils;
 using System.IO;
+using DBClientFiles.NET.Collections;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
@@ -17,7 +17,7 @@ namespace DBClientFiles.NET.Internals.Versions
         private int _commonTableStartColumn;
 
         #region Life and death
-        public WDB6(Stream dataStream) : base(dataStream)
+        public WDB6(Stream strm, StorageOptions options) : base(strm, options)
         {
             _copyTable   = new CopyTableReader<TKey>(this);
             _commonTable = new LegacyCommonTableReader<TKey>(this);

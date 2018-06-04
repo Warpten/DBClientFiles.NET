@@ -17,11 +17,11 @@ namespace DBClientFiles.NET.Internals.Versions
         private CodeGenerator<TValue, TKey> _codeGenerator;
         public override CodeGenerator<TValue> Generator => _codeGenerator;
 
-        public IndexTableReader<TKey> IndexTable { get; }
+        public IndexTableReader IndexTable { get; }
 
-        protected BaseFileReader(Stream strm, bool keepOpen) : base(strm, keepOpen)
+        protected BaseFileReader(Stream strm, StorageOptions options) : base(strm, options)
         {
-            IndexTable = new IndexTableReader<TKey>(this);
+            IndexTable = new IndexTableReader(this);
         }
 
         public override bool ReadHeader()
@@ -32,9 +32,14 @@ namespace DBClientFiles.NET.Internals.Versions
             return true;
         }
 
+        public sealed override void MapRecords()
+        {
+            MemberStore.CalculateCardinalities();
+            MemberStore.HasIndexTable = IndexTable.Exists;
+        }
+
         public override void ReadSegments()
         {
-            MemberStore.IsIndexStreamed = !IndexTable.Exists;
             base.ReadSegments();
 
             IndexTable.Read();
@@ -51,11 +56,13 @@ namespace DBClientFiles.NET.Internals.Versions
     internal abstract class BaseFileReader<TValue> : FileReader, IReader<TValue> where TValue : class, new()
     {
         #region Life and death
-        protected BaseFileReader(Stream strm, bool keepOpen) : base(strm, keepOpen)
+        protected BaseFileReader(Stream strm, StorageOptions options) : base(strm, true)
         {
             StringTable = new StringTableSegment(this);
             OffsetMap = new OffsetMapReader(this);
             Records = new Segment();
+
+            Options = options;
         }
 
         protected override void ReleaseResources()
@@ -69,7 +76,7 @@ namespace DBClientFiles.NET.Internals.Versions
         public uint LayoutHash { get; protected set; }
         #endregion
         
-        public ExtendedMemberInfoCollection MemberStore { get; protected set; }
+        public ExtendedMemberInfoCollection MemberStore { get; set; }
 
         #region Methods that may be called through deserialization
         // These are called through code generation, don't trust ReSharper.
@@ -78,21 +85,8 @@ namespace DBClientFiles.NET.Internals.Versions
         public abstract T ReadForeignKeyMember<T>() where T : struct;
         public abstract T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : struct;
         #endregion
-
-        private StorageOptions _options;
-
-        public override StorageOptions Options
-        {
-            get => _options;
-            set
-            {
-                if (_options != null && _options.MemberType == value.MemberType)
-                    return;
-
-                _options = value;
-                MemberStore = new ExtendedMemberInfoCollection(typeof(TValue), Options);
-            }
-        }
+        
+        public sealed override StorageOptions Options { get; }
 
         private CodeGenerator<TValue> _codeGenerator;
         public virtual CodeGenerator<TValue> Generator => _codeGenerator;
@@ -157,9 +151,6 @@ namespace DBClientFiles.NET.Internals.Versions
         /// </summary>
         public virtual void ReadSegments()
         {
-            MemberStore.MapMembers();
-            MemberStore.CalculateCardinalities();
-
             if (StringTable.Segment.Exists)
             {
                 if (Options.LoadMask.HasFlag(LoadMask.StringTable))
@@ -172,11 +163,17 @@ namespace DBClientFiles.NET.Internals.Versions
             }
         }
 
+        public virtual void MapRecords()
+        {
+            MemberStore.CalculateCardinalities();
+            MemberStore.HasIndexTable = false;
+        }
+
         public override string FindStringByOffset(int tableOffset)
         {
             return StringTable[tableOffset];
         }
 
-        public U ExtractKey<U>(TValue instance) => Generator.ExtractKey<U>(instance);
+        public U ExtractKey<U>(TValue instance) where U : struct => Generator.ExtractKey<U>(instance);
     }
 }
