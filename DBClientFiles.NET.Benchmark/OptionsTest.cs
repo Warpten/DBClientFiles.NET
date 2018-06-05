@@ -1,17 +1,24 @@
 ﻿using System.IO;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes.Columns;
+using BenchmarkDotNet.Attributes.Exporters;
+using DBClientFiles.NET.Benchmark.Attributes;
 using WDBC = DBClientFiles.NET.Data.WDBC;
 using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Collections.Generic;
 
 namespace DBClientFiles.NET.Benchmark
 {
+    [NetCoreJob]
+    [RPlotExporter, CsvMeasurementsExporter, MarkdownExporter]
+    [MinColumn, MaxColumn, StdDevColumn, MedianColumn, StdErrorColumn] 
     public class OptionsTest
     {
         private static string PATH_ROOT = @"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\bin\Release\net472\Data";
 
-        [Benchmark(Description = "Spell.dbc")]
-        public StorageList<WDBC.SpellEntry> Spell() => TestList<WDBC.SpellEntry>(_spell);
+        // [Benchmark(Description = "Spell.dbc")]
+        // public StorageList<WDBC.SpellEntry> Spell() => TestList<WDBC.SpellEntry>(_spell);
+
         [Benchmark(Description = "Achievement.dbc")]
         public StorageList<WDBC.AchievementEntry> Achievement() => TestList<WDBC.AchievementEntry>(_achievement);
 
@@ -19,8 +26,8 @@ namespace DBClientFiles.NET.Benchmark
             where TStorage : class, new()
         {
             var options = new StorageOptions {
-                CopyToMemory = _copyToMemory,
-                InternStrings = _internStrings
+                CopyToMemory = CopyToMemory,
+                InternStrings = InternStrings
             };
 
             inputStream.Position = 0;
@@ -28,10 +35,10 @@ namespace DBClientFiles.NET.Benchmark
         }
 
         [Params(true, false)]
-        public bool _internStrings;
+        public bool InternStrings;
 
         [Params(true, false)]
-        public bool _copyToMemory;
+        public bool CopyToMemory;
 
         [GlobalSetup]
         public void PrepareDataStreams()
