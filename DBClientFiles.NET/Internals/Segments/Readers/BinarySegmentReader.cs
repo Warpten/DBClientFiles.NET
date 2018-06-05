@@ -10,7 +10,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     /// A segment reader that treats the entirety of its content as byte data that is to be deserialized as need may be.
     /// </summary>
     /// <typeparam name="TValue"></typeparam>
-    internal sealed class BinarySegmentReader : SegmentReader
+    internal sealed class PalletSegmentReader : SegmentReader
     {
         private SegmentBlock[] _segments;
 
@@ -30,7 +30,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             }
         }
 
-        public BinarySegmentReader(FileReader reader) : base(reader) { }
+        public PalletSegmentReader(FileReader reader) : base(reader) { }
 
         protected override void Release()
         {

@@ -15,7 +15,12 @@ namespace DBClientFiles.NET.Internals
         IEnumerable<T> ReadRecords();
         
         CodeGenerator<T> Generator { get; }
-        ExtendedMemberInfoCollection MemberStore { get; set; }
+
+        ExtendedMemberInfoCollection MemberStore
+        {
+            get;
+            set;
+        }
 
         uint TableHash { get; }
         uint LayoutHash { get; }

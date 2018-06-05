@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BenchmarkDotNet.Exporters.Csv;
 
 namespace DBClientFiles.NET.Benchmark
 {
@@ -22,14 +23,17 @@ namespace DBClientFiles.NET.Benchmark
     {
         public BenchmarkConfiguration()
         {
-            Add(Job.Default.With(Platform.X64).With(CsProjClassicNetToolchain.Net471));
-            Add(Job.Default.With(Platform.X64).With(CsProjCoreToolchain.NetCoreApp21));
+            Add(Job.Default.With(Runtime.Core).With(Jit.RyuJit).With(Platform.X64).With(CsProjCoreToolchain.NetCoreApp21));
+            Add(Job.Default.With(Runtime.Clr).With(Jit.RyuJit).With(Platform.X64).With(CsProjClassicNetToolchain.From("net472")));
 
-            Add(MemoryDiagnoser.Default);
             Add(new MinimalColumnProvider());
-            Add(MemoryDiagnoser.Default.GetColumnProvider());
             Set(new DefaultOrderProvider(SummaryOrderPolicy.SlowestToFastest));
+
             Add(MarkdownExporter.GitHub);
+            Add(RPlotExporter.Default);
+            Add(CsvMeasurementsExporter.Default);
+            Add(AsciiDocExporter.Default);
+
             Add(new ConsoleLogger());
         }
 

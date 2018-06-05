@@ -87,19 +87,22 @@ namespace DBClientFiles.NET.IO
         //private GCHandle _dataHandle;
         //private IntPtr _dataPointer;
 
-        protected int _byteCursor = 0;
+        protected int _bitCursor {
+            get;
+            set; 
+        } = 0;
     
-        public long ReadInt64() => Read<long>(_byteCursor, 64, true);
-        public int ReadInt32() => Read<int>(_byteCursor, 32, true);
-        public short ReadInt16() => Read<short>(_byteCursor, 16, true);
-        public byte ReadByte() => Read<byte>(_byteCursor, 8, true);
+        public long ReadInt64() => Read<long>(_bitCursor, 64, true);
+        public int ReadInt32() => Read<int>(_bitCursor, 32, true);
+        public short ReadInt16() => Read<short>(_bitCursor, 16, true);
+        public byte ReadByte() => Read<byte>(_bitCursor, 8, true);
 
-        public ulong ReadUInt64() => Read<ulong>(_byteCursor, 64, true);
-        public uint ReadUInt32() => Read<uint>(_byteCursor, 32, true);
-        public ushort ReadUInt16() => Read<ushort>(_byteCursor, 16, true);
-        public sbyte ReadSByte() => Read<sbyte>(_byteCursor, 8, true);
+        public ulong ReadUInt64() => Read<ulong>(_bitCursor, 64, true);
+        public uint ReadUInt32() => Read<uint>(_bitCursor, 32, true);
+        public ushort ReadUInt16() => Read<ushort>(_bitCursor, 16, true);
+        public sbyte ReadSByte() => Read<sbyte>(_bitCursor, 8, true);
 
-        public float ReadSingle() => Read<float>(_byteCursor, 32, true);
+        public float ReadSingle() => Read<float>(_bitCursor, 32, true);
 
         protected FileReader _fileReader;
         protected readonly bool _usesStringTable;
@@ -132,7 +135,7 @@ namespace DBClientFiles.NET.IO
             if (bitCount <= 32)
                 return ReadInt32(bitOffset, bitCount);
 
-            _byteCursor = bitOffset + bitCount;
+            _bitCursor = bitOffset + bitCount;
 
             var longValue = Read<long>(bitOffset, bitCount) >> (bitOffset & 7);
             if (bitCount != 64)
@@ -146,7 +149,7 @@ namespace DBClientFiles.NET.IO
             if (bitCount <= 32)
                 return ReadUInt32(bitOffset, bitCount);
 
-            _byteCursor = bitOffset + bitCount;
+            _bitCursor = bitOffset + bitCount;
 
             var longValue = Read<ulong>(bitOffset, bitCount) >> (bitOffset & 7);
             if (bitCount != 64)
@@ -160,7 +163,7 @@ namespace DBClientFiles.NET.IO
             if (bitCount <= 16)
                 return ReadInt16(bitOffset, bitCount);
 
-            _byteCursor = bitOffset + bitCount;
+            _bitCursor = bitOffset + bitCount;
 
             var intValue = Read<int>(bitOffset, bitCount) >> (bitOffset & 7);
             if (bitCount != 32)
@@ -174,7 +177,7 @@ namespace DBClientFiles.NET.IO
             if (bitCount <= 16)
                 return ReadUInt16(bitOffset, bitCount);
 
-            _byteCursor = bitOffset + bitCount;
+            _bitCursor = bitOffset + bitCount;
 
             var intValue = Read<uint>(bitOffset, bitCount) >> (bitOffset & 7);
             if (bitCount != 32)
@@ -188,7 +191,7 @@ namespace DBClientFiles.NET.IO
             if (bitCount <= 8)
                 return ReadSByte(bitOffset, bitCount);
 
-            _byteCursor = bitOffset + bitCount;
+            _bitCursor = bitOffset + bitCount;
 
             var shortValue = Read<short>(bitOffset, bitCount) >> (bitOffset & 7);
             if (bitCount != 16)
@@ -202,7 +205,7 @@ namespace DBClientFiles.NET.IO
             if (bitCount <= 8)
                 return ReadByte(bitOffset, bitCount);
 
-            _byteCursor = bitOffset + bitCount;
+            _bitCursor = bitOffset + bitCount;
 
             var shortValue = Read<short>(bitOffset, bitCount) >> (bitOffset & 7);
             if (bitCount != 16)
@@ -213,7 +216,7 @@ namespace DBClientFiles.NET.IO
 
         public byte ReadByte(int bitOffset, int bitCount)
         {
-            _byteCursor = bitOffset + bitCount;
+            _bitCursor = bitOffset + bitCount;
 
             var byteValue = Read<byte>(bitOffset, bitCount) >> (bitOffset & 7);
             if (bitCount != 8)
@@ -224,7 +227,7 @@ namespace DBClientFiles.NET.IO
 
         public sbyte ReadSByte(int bitOffset, int bitCount)
         {
-            _byteCursor = bitOffset + bitCount;
+            _bitCursor = bitOffset + bitCount;
 
             var byteValue = Read<sbyte>(bitOffset, bitCount) >> (bitOffset & 7);
             if (bitCount != 8)
@@ -235,7 +238,6 @@ namespace DBClientFiles.NET.IO
 
         public float ReadSingle(int bitOffset)
         {
-            _byteCursor += 32;
             return Read<float>(bitOffset, 32);
         }
 
@@ -245,7 +247,7 @@ namespace DBClientFiles.NET.IO
         private T Read<T>(int bitOffset, int bitCount, bool advanceCursor = false) where T : struct
         {
             if (advanceCursor)
-                _byteCursor += SizeCache<T>.Size * 8;
+                _bitCursor += SizeCache<T>.Size * 8;
 
             Span<byte> recordMemory = _recordData;
 
@@ -324,7 +326,7 @@ namespace DBClientFiles.NET.IO
         {
             var arr = new T[arraySize];
             for (var i = 0; i < arraySize; ++i)
-                arr[i] = Read<T>(_byteCursor, SizeCache<T>.Size * 8, true);
+                arr[i] = Read<T>(_bitCursor, SizeCache<T>.Size * 8, true);
             return arr;
         }
 

@@ -12,7 +12,7 @@ namespace DBClientFiles.NET.Internals.Versions
         where TKey : struct
     {
         #region Segments
-        private readonly BinarySegmentReader _palletTable;
+        private readonly PalletSegmentReader _palletTable;
         private readonly CopyTableReader<TKey> _copyTable;
         private readonly RelationShipSegmentReader<TKey> _relationshipData;
         private readonly CommonTableReader<TKey> _commonTable;
@@ -26,7 +26,7 @@ namespace DBClientFiles.NET.Internals.Versions
         #region Life and death
         public WDC1(Stream strm, StorageOptions options) : base(strm, options)
         {
-            _palletTable      = new BinarySegmentReader(this);
+            _palletTable      = new PalletSegmentReader(this);
             _copyTable        = new CopyTableReader<TKey>(this);
             _relationshipData = new RelationShipSegmentReader<TKey>(this);
             _commonTable      = new CommonTableReader<TKey>(this);

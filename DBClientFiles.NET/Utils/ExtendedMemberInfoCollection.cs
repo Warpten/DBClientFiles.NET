@@ -30,6 +30,26 @@ namespace DBClientFiles.NET.Utils
             }
         }
 
+        public int DeclaredMemberCount(bool includeArrays = true, bool deepTraverse = true)
+        {
+            var memberCount = 0;
+            for (var i = 0; i < Members.Count; ++i)
+                memberCount += GetMemberCount(Members[i], deepTraverse, includeArrays);
+
+            return memberCount;
+        }
+
+        public static int GetMemberCount(ExtendedMemberInfo memberInfo, bool deepTraverse = true, bool includeArrays = true)
+        {
+            if (memberInfo.Children.Count == 0)
+                return includeArrays ? memberInfo.Cardinality : 1;
+
+            var memberCount = 0;
+            for (var i = 0; i < memberInfo.Children.Count; ++i)
+                memberCount += GetMemberCount(memberInfo.Children[i], deepTraverse, includeArrays);
+            return memberCount;
+        }
+
         public ExtendedMemberInfo IndexMember
         {
             get

@@ -6,7 +6,9 @@ using DBClientFiles.NET.IO;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
-    internal class WDB2<TValue> : BaseFileReader<TValue> where TValue : class, new()
+    internal class WDB2<TKey, TValue> : BaseFileReader<TKey, TValue>
+        where TValue : class, new()
+        where TKey : struct
     {
         public WDB2(Stream fileStream, StorageOptions options) : base(fileStream, options)
         {

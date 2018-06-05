@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Exceptions;
@@ -6,7 +7,9 @@ using DBClientFiles.NET.IO;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
-    internal class WDBC<TValue> : BaseFileReader<TValue> where TValue : class, new()
+    internal class WDBC<TKey, TValue> : BaseFileReader<TKey, TValue>
+        where TValue : class, new()
+        where TKey : struct
     {
         public WDBC(Stream strm, StorageOptions options) : base(strm, options)
         {
@@ -23,8 +26,7 @@ namespace DBClientFiles.NET.Internals.Versions
             if (recordCount == 0)
                 return false;
 
-            BaseStream.Seek(4, SeekOrigin.Current); // fieldcount
-
+            var fieldCount = ReadInt32();
             var recordSize = ReadInt32();
             var stringTableSize = ReadInt32();
 
@@ -34,6 +36,10 @@ namespace DBClientFiles.NET.Internals.Versions
 
             StringTable.Length = stringTableSize;
             StringTable.StartOffset = Records.EndOffset;
+
+            var declaredMemberCount = MemberStore.DeclaredMemberCount();
+            if (declaredMemberCount != fieldCount)
+                throw new InvalidOperationException($"{typeof(TValue).FullName} declares {declaredMemberCount} members (including arrays), but there should only be {fieldCount}");
 
             // sets up a default generator
             return base.ReadHeader();

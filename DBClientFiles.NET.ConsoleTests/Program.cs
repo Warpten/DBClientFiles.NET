@@ -23,10 +23,10 @@ namespace DBClientFiles.NET.ConsoleTests
                 int.TryParse(args[idxCount + 1], out iterationCount);
 
 
-            using (var fs = File.OpenRead(@"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\bin\Release\net472\Data\WDC1\SpellEffect.db2"))
+            using (var fs = File.OpenRead(@"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\bin\Release\net472\Data\WDBC\Spell.dbc"))
             {
                 // var sl = new StorageList<Data.WDC1.SpellEffectEntry>(fs);
-                var d = new StorageDictionary<int, Data.WDC1.SpellEffectEntry>(fs);
+                var d = new StorageDictionary<int, Data.WDBC.SpellEntry>(fs);
             }
 
             TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC", iterationCount);

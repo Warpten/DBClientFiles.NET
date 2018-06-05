@@ -26,7 +26,7 @@ namespace DBClientFiles.NET.Internals.Versions
                 {
                     // Part one of adjusting the value read to be a relative offset from the field's start offset.
                     if (_usesStringTable)
-                        return _fileReader.FindStringByOffset(StartOffset + _byteCursor / 8 + ReadInt32());
+                        return _fileReader.FindStringByOffset(StartOffset + _bitCursor / 8 + ReadInt32());
 
                     return base.ReadString();
                 }
@@ -34,7 +34,7 @@ namespace DBClientFiles.NET.Internals.Versions
                 public override string ReadString(int bitOffset, int bitCount)
                 {
                     if (_usesStringTable)
-                        return _fileReader.FindStringByOffset(_byteCursor / 8 + StartOffset + ReadInt32(bitOffset, bitCount));
+                        return _fileReader.FindStringByOffset(_bitCursor / 8 + StartOffset + ReadInt32(bitOffset, bitCount));
 
                     if ((bitOffset & 7) == 0)
                         return _fileReader.ReadString();
@@ -176,7 +176,7 @@ namespace DBClientFiles.NET.Internals.Versions
         #region Segments
         private Section[] _sections;
 
-        private readonly BinarySegmentReader _palletTable;
+        private readonly PalletSegmentReader _palletTable;
         private readonly CommonTableReader<TKey> _commonTable;
         #endregion
 
@@ -190,7 +190,7 @@ namespace DBClientFiles.NET.Internals.Versions
         #region Life and Death
         public WDC2(Stream strm, StorageOptions options) : base(strm, options)
         {
-            _palletTable = new BinarySegmentReader(this);
+            _palletTable = new PalletSegmentReader(this);
             _commonTable = new CommonTableReader<TKey>(this);
         }
 

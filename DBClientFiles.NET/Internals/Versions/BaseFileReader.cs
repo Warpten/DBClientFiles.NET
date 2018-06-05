@@ -75,8 +75,12 @@ namespace DBClientFiles.NET.Internals.Versions
         public uint TableHash { get; protected set; }
         public uint LayoutHash { get; protected set; }
         #endregion
-        
-        public ExtendedMemberInfoCollection MemberStore { get; set; }
+
+        public ExtendedMemberInfoCollection MemberStore
+        {
+            get;
+            set;
+        }
 
         #region Methods that may be called through deserialization
         // These are called through code generation, don't trust ReSharper.

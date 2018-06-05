@@ -89,10 +89,10 @@ namespace DBClientFiles.NET.Collections.Generic
             switch (Signature)
             {
                 case Signatures.WDBC:
-                    FileReader = new WDBC<T>(Stream, Options);
+                    FileReader = new WDBC<TKey, T>(Stream, Options);
                     break;
                 case Signatures.WDB2:
-                    FileReader = new WDB2<T>(Stream, Options);
+                    FileReader = new WDB2<TKey, T>(Stream, Options);
                     break;
                 case Signatures.WDB5:
                     FileReader = new WDB5<TKey, T>(Stream, Options);
