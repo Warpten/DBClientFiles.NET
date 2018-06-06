@@ -7,9 +7,16 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using DBClientFiles.NET.Attributes;
 
 namespace DBClientFiles.NET.ConsoleTests
 {
+    class Dummy
+    {
+        [Index]
+        public int ID { get; set; }
+    }
+
     class Program
     {
         static void Main(string[] args)
@@ -26,7 +33,7 @@ namespace DBClientFiles.NET.ConsoleTests
             using (var fs = File.OpenRead(@"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\bin\Release\net472\Data\WDBC\Spell.dbc"))
             {
                 // var sl = new StorageList<Data.WDC1.SpellEffectEntry>(fs);
-                var d = new StorageDictionary<int, Data.WDBC.SpellEntry>(fs);
+                var d = new DBClientFiles.NET.Collections.Generic.StorageDictionary<int, SpellEntry>(fs);
             }
 
             TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC", iterationCount);
