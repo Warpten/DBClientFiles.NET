@@ -7,8 +7,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Attributes;
-using DBClientFiles.NET.Data.WDB2;
-using DBClientFiles.NET.Data.WDC1;
 using AchievementEntry = DBClientFiles.NET.Data.WDBC.AchievementEntry;
 
 namespace DBClientFiles.NET.ConsoleTests

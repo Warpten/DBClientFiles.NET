@@ -81,5 +81,22 @@ namespace DBClientFiles.NET.Utils
                 return _typeSizes[t] = totalSize;
             }
         }
+
+        public static bool IsSigned(this Type t)
+        {
+            if (t == typeof(int))
+                return true;
+
+            if (t == typeof(short))
+                return true;
+
+            if (t == typeof(sbyte))
+                return true;
+
+            if (t == typeof(float))
+                return true;
+
+            return false;
+        }
     }
 }

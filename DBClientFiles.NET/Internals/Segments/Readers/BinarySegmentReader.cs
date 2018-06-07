@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using DBClientFiles.NET.IO;
 using DBClientFiles.NET.Utils;
 
@@ -22,10 +23,10 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
                 _blockData = reader.ReadBytes(segmentLength);
             }
 
-            public unsafe T ExtractValue<T>(int offset) where T : struct
+            public T ExtractValue<T>(int offset) where T : struct
             {
-                fixed (byte* buffer = _blockData)
-                    return FastStructure.PtrToStructure<T>(new IntPtr(buffer + offset));
+                Span<byte> asSpan = _blockData;
+                return MemoryMarshal.Read<T>(asSpan.Slice(offset, SizeCache<T>.Size));
             }
         }
 

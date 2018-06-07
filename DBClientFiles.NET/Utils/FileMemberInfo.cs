@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using DBClientFiles.NET.Internals;
 
 namespace DBClientFiles.NET.Utils
@@ -49,12 +50,12 @@ namespace DBClientFiles.NET.Utils
         public byte[] DefaultValue { get; set; }
         public bool IsSigned { get; set; }
 
-        public unsafe T GetDefaultValue<T>() where T : struct
+        public T GetDefaultValue<T>() where T : struct
         {
             Debug.Assert(CompressionType == MemberCompressionType.CommonData);
 
-            fixed (byte* buffer = DefaultValue)
-                return FastStructure.PtrToStructure<T>(new IntPtr(buffer));
+            var asSpan = DefaultValue.AsSpan();
+            return MemoryMarshal.Read<T>(asSpan);
         }
 
         public void Initialize(BinaryReader reader)
@@ -77,6 +78,9 @@ namespace DBClientFiles.NET.Utils
                     reader.BaseStream.Seek(4 + 4, SeekOrigin.Current);
                     IsSigned = (reader.ReadInt32() & 0x01) != 0;
                     break;
+                case MemberCompressionType.SignedImmediate:
+                    IsSigned = true;
+                    goto case MemberCompressionType.None;
                 case MemberCompressionType.CommonData:
                     DefaultValue = reader.ReadBytes(4);
                     reader.BaseStream.Seek(4 + 4, SeekOrigin.Current);
@@ -85,9 +89,11 @@ namespace DBClientFiles.NET.Utils
                     reader.BaseStream.Seek(4 + 4, SeekOrigin.Current);
                     Cardinality = reader.ReadInt32();
                     break;
-                default:
+                case MemberCompressionType.None:
                     reader.BaseStream.Seek(4 + 4 + 4, SeekOrigin.Current);
                     break;
+                default:
+                    throw new InvalidOperationException();
             }
 
             if (ByteSize != 0 && CompressionType != MemberCompressionType.BitpackedPalletArrayData)

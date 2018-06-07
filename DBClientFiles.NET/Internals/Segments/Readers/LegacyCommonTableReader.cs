@@ -3,6 +3,7 @@ using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {
@@ -16,7 +17,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     {
         private Type[] _memberTypes;
 
-        private Dictionary<TKey, byte[]>[] _valueOffsets;
+        private Dictionary<TKey, int>[] _valueOffsets;
 
         public LegacyCommonTableReader(FileReader reader) : base(reader)
         {
@@ -36,9 +37,9 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             var columnCount = FileReader.ReadInt32();
 
             _memberTypes = new Type[columnCount];
-            _valueOffsets = new Dictionary<TKey, byte[]>[columnCount];
+            _valueOffsets = new Dictionary<TKey, int>[columnCount];
             for (var i = 0; i < columnCount; ++i)
-                _valueOffsets[i] = new Dictionary<TKey, byte[]>();
+                _valueOffsets[i] = new Dictionary<TKey, int>();
 
             // Try to read everything as unpacked.
             // If reading fails (probably because the cursor is now beyond the end of the file), then the structure is packed.
@@ -123,7 +124,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
                 for (var i = 0; i < entryCount; ++i)
                 {
-                    _valueOffsets[columnIndex][FileReader.ReadStruct<TKey>()] = FileReader.ReadBytes(dataSize);
+                    _valueOffsets[columnIndex][FileReader.ReadStruct<TKey>()] = FileReader.ReadInt32();
                     var newPosition = FileReader.BaseStream.Seek(keySize + dataSize, SeekOrigin.Current);
 
                     // And same as the comment above here.
@@ -136,12 +137,13 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
         public unsafe T ExtractValue<T>(int columnIndex, TKey recordKey) where T : struct
         {
+            Span<int> asInt = stackalloc int[1];
+
             var dict = _valueOffsets[columnIndex];
-            if (!dict.TryGetValue(recordKey, out var dataBlock))
+            if (!dict.TryGetValue(recordKey, out asInt[0]))
                 return default;
 
-            fixed (byte* buffer = dataBlock)
-                return FastStructure.PtrToStructure<T>(new IntPtr(buffer));
+            return MemoryMarshal.Cast<int, T>(asInt)[0];
         }
     }
 }

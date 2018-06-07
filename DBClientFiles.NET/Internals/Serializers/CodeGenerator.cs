@@ -8,6 +8,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using DBClientFiles.NET.Exceptions;
 
 namespace DBClientFiles.NET.Internals.Serializers
 {
@@ -59,9 +60,10 @@ namespace DBClientFiles.NET.Internals.Serializers
         public Func<T, TKey> GenerateKeyGetter()
         {
             var keyMemberInfo = Reader.MemberStore.IndexMember;
+#if DEBUG
             if (keyMemberInfo == null)
                 throw new InvalidOperationException("Unable to find a key column for type `" + typeof(T).Name + "`.");
-
+#endif
             var recordArgExpr = Expression.Parameter(typeof(T), "record");
             var memberAccessExpr = Expression.MakeMemberAccess(recordArgExpr, keyMemberInfo.MemberInfo);
             var expressionLambda = Expression.Lambda<Func<T, TKey>>(memberAccessExpr, recordArgExpr);
@@ -89,9 +91,10 @@ namespace DBClientFiles.NET.Internals.Serializers
         public Action<T, TKey> GenerateKeySetter()
         {
             var keyMemberInfo = Reader.MemberStore.IndexMember;
+#if DEBUG
             if (keyMemberInfo == null)
                 throw new InvalidOperationException("Unable to find a key column for type `" + typeof(T).Name + "`.");
-
+#endif
             var newKeyArgExpr = Expression.Parameter(typeof(TKey), "key");
             var recordArgExpr = Expression.Parameter(typeof(T), "record");
             var memberAccessExpr = Expression.MakeMemberAccess(recordArgExpr, keyMemberInfo.MemberInfo);
@@ -159,7 +162,7 @@ namespace DBClientFiles.NET.Internals.Serializers
             return instance;
         }
 
-        #region Hack for StorageDictionary
+#region Hack for StorageDictionary
         public TKey ExtractKey<TKey>(T instance)
             where TKey : struct
         {
@@ -168,7 +171,7 @@ namespace DBClientFiles.NET.Internals.Serializers
 
             return codeGen.ExtractKey(instance);
         }
-        #endregion
+#endregion
 
         /// <summary>
         /// Produces a shallow copy of the provided object.
@@ -220,8 +223,10 @@ namespace DBClientFiles.NET.Internals.Serializers
         /// <returns></returns>
         public Action<BaseFileReader<T>, RecordReader, T> GenerateDeserializationMethod()
         {
+#if DEBUG
             if (Reader.MemberStore.Members.Count == 0)
                 throw new InvalidOperationException("Missing member informations in CodeGenerator<T>");
+#endif
 
             var binaryReader = Expression.Parameter(typeof(BaseFileReader<T>), "fileReader");
             var recordReader = Expression.Parameter(typeof(RecordReader), "recordReader");
@@ -245,6 +250,9 @@ namespace DBClientFiles.NET.Internals.Serializers
                 BindMember(bodyBlock, binaryReader, recordReader, ref memberAccess);
             }
 
+            if (bodyBlock.Count == 0)
+                throw new InvalidOperationException($"Unable to find any member to deserialize in {typeof(T).FullName}");
+
             var expressionBody = Expression.Block(bodyBlock);
             var expressionLambda = Expression.Lambda<Action<BaseFileReader<T>, RecordReader, T>>(expressionBody, binaryReader, recordReader, _instance);
 
@@ -261,8 +269,9 @@ namespace DBClientFiles.NET.Internals.Serializers
         {
             if (memberAccess.MemberInfo.Children.Count != 0)
             {
+                //! TODO Implement (weird things like C3Vector[2])
                 if (memberAccess.MemberInfo.Type.IsArray)
-                    throw new NotImplementedException("Structures may not contain substructure arrays!");
+                    throw new InvalidStructureException("Structures may not contain substructure arrays!");
 
                 if (!memberAccess.MemberInfo.Type.IsValueType)
                     bodyBlock.Add(Expression.Assign(memberAccess.Expression, CreateTypeInitializer(memberAccess.MemberInfo.Type)));
@@ -284,6 +293,7 @@ namespace DBClientFiles.NET.Internals.Serializers
                 case MemberCompressionType.None:
                     InsertSimpleMemberAssignment(bodyBlock, recordReader, ref memberAccess);
                     break;
+                case MemberCompressionType.SignedImmediate:
                 case MemberCompressionType.Immediate:
                     InsertBitpackedMemberAssignment(bodyBlock, recordReader, ref memberAccess);
                     break;
@@ -299,7 +309,7 @@ namespace DBClientFiles.NET.Internals.Serializers
                         InsertRelationshipMemberAssignment(bodyBlock, binaryReader, recordReader, ref memberAccess);
                     break;
                 default:
-                    throw new NotImplementedException();
+                    throw new ArgumentOutOfRangeException(nameof(memberAccess.MemberInfo.MappedTo.CompressionType));
             }
         }
 
@@ -317,8 +327,10 @@ namespace DBClientFiles.NET.Internals.Serializers
 
         private void InsertPalletMemberAssignment(List<Expression> bodyBlock, Expression binaryReader, Expression recordReader, ref ExtendedMemberExpression memberAccess)
         {
-            if (memberAccess.MemberInfo.Type.IsArray && (memberAccess.MemberInfo.MappedTo.CompressionType == MemberCompressionType.BitpackedPalletData))
-                throw new InvalidOperationException();
+            if (memberAccess.MemberInfo.Type.IsArray &&
+                (memberAccess.MemberInfo.MappedTo.CompressionType == MemberCompressionType.BitpackedPalletData))
+                throw new InvalidMemberException(memberAccess.MemberInfo.MemberInfo,
+                    "Member {0} of type {1} is declared as an array but file metadata tells us it's not!");
             
             if (memberAccess.MemberInfo.MappedTo.BitSize == 0)
                 throw new InvalidOperationException();
@@ -333,7 +345,8 @@ namespace DBClientFiles.NET.Internals.Serializers
                 throw new InvalidOperationException();
 
             if (memberAccess.MemberInfo.Type.IsArray)
-                throw new InvalidOperationException();
+                throw new InvalidMemberException(memberAccess.MemberInfo.MemberInfo,
+                    "Member {0} of type {1} is declared as an array but file metadata tells us it's not!");
 
             var binaryReader = GenerateBinaryReader(recordReader, memberAccess.MemberInfo);
             bodyBlock.Add(Expression.Assign(memberAccess.Expression, binaryReader));
@@ -373,6 +386,11 @@ namespace DBClientFiles.NET.Internals.Serializers
             var elementType = memberInfo.Type.IsArray ? memberInfo.Type.GetElementType() : memberInfo.Type;
             var elementCode = Type.GetTypeCode(elementType);
 
+            if (elementType.IsSigned() != memberInfo.MappedTo.IsSigned)
+                throw new InvalidMemberException(memberInfo.MemberInfo,
+                    "Member {0} of type {1} is declared as {2} but file metadata says otherwise. Is your structure correct?",
+                    elementType.IsSigned() ? "signed" : "unsigned");
+
             if (memberInfo.MappedTo.BitSize != 0)
             {
                 if (memberInfo.Type.IsArray)
@@ -386,8 +404,16 @@ namespace DBClientFiles.NET.Internals.Serializers
 
                 if (elementCode == TypeCode.Single)
                 {
-                    if (memberInfo.MappedTo.BitSize != 32 || (memberInfo.MappedTo.Offset & 7) != 0)
-                        throw new InvalidOperationException("Found a bitpacked/unaligned float. Impossible");
+                    if ((memberInfo.MappedTo.Offset & 7) != 0)
+                        throw new InvalidMemberException(memberInfo.MemberInfo,
+                            "Member {0} of type {1} is declared as unaligned (spanning bits {2}-{3}) by file data. Floats have to be aligned. Is your structure correct?",
+                            memberInfo.MappedTo.Offset,
+                            memberInfo.MappedTo.Offset + memberInfo.MappedTo.BitSize);
+                    
+                    if (memberInfo.MappedTo.BitSize != 32)
+                        throw new InvalidMemberException(memberInfo.MemberInfo,
+                            "Member {0} of type {1} is declared as packed (Occupying {2} bits) by file data. Floats cannot be packed. Is your structure correct?",
+                            memberInfo.MappedTo.BitSize);
 
                     return Expression.Call(recordReader, _RecordReader.ReadPackedSingle, Expression.Constant(memberInfo.MappedTo.Offset));
                 }

@@ -7,6 +7,9 @@
         CommonData,
         BitpackedPalletData,
         BitpackedPalletArrayData,
-        RelationshipData
+        SignedImmediate,
+
+        // Not an actual compression type, here for convenience
+        RelationshipData = 10
     }
 }

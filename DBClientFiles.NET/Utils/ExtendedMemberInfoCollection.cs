@@ -67,7 +67,7 @@ namespace DBClientFiles.NET.Utils
                         return memberInfo;
                 }
 
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("Unable to find index");
             }
         }
 

@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if DEBUG
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -903,3 +904,4 @@ namespace DBClientFiles.NET.Utils
         #endregion
     }
 }
+#endif

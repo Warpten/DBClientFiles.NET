@@ -13,15 +13,33 @@ namespace DBClientFiles.NET.Benchmark
         [Benchmark(Description = "stackalloc", Baseline = true)]
         public int SpanSmall()
         {
-            Span<byte> smallData = stackalloc byte[20];
-            return MemoryMarshal.Read<int>(smallData);
+            var asSpan = b.AsSpan();
+            return MemoryMarshal.Read<int>(asSpan);
         }
 
-        [Benchmark(Description = "new byte[]")]
-        public unsafe int FastStructureSmall()
+        [Benchmark(Description = "union")]
+        public int FastStructureSmall()
         {
-            Span<byte> smallData = new byte[20];
-            return MemoryMarshal.Read<int>(smallData);
+            return u.i;
+        }
+        
+        private _union u;
+        private byte[] b;
+
+        [GlobalSetup]
+        public void setup()
+        {
+            u = new _union {u = 0xDEADBEEF};
+            b = new byte[] {0xEF, 0xBE, 0xAD, 0xDE};
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        unsafe struct _union
+        {
+            [FieldOffset(0)] public int i;
+            [FieldOffset(0)] public float f;
+            [FieldOffset(0)] public fixed byte b[4];
+            [FieldOffset(0)] public uint u;
         }
     }
 }

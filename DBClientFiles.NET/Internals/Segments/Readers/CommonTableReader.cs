@@ -39,14 +39,14 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
                 _dataBlock = null;
             }
 
-            public unsafe T ExtractValue<T>(TKey key, T defaultValue)
+            public T ExtractValue<T>(TKey key, T defaultValue)
                 where T : struct
             {
                 if (!_valueOffsets.TryGetValue(key, out var offset))
                     return defaultValue;
 
-                fixed (byte* pointer = _dataBlock)
-                    return FastStructure.PtrToStructure<T>(new IntPtr(pointer + offset));
+                var auto = _dataBlock.AsSpan(offset);
+                return MemoryMarshal.Read<T>(auto);
             }
         }
 
