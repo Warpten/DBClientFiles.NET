@@ -53,6 +53,7 @@ This attribute is used to decorate the member of a record that is it's key. Beha
 - `public StorageEnumerable(Stream fileStream, StorageOptions options)`
 
 If `StorageOptions` is not provided, `StorageOptions.Default` is used instead.
+
 :exclamation: This type is inherited by `StorageEnumerable<T>` where `TKey` is constrained to be of type `int`.
 
 ### `StorageList<TKey, T>`
@@ -60,6 +61,7 @@ If `StorageOptions` is not provided, `StorageOptions.Default` is used instead.
 - `public StorageList(Stream dataStream, StorageOptions options)`
 
 If `StorageOptions` is not provided, `StorageOptions.Default` is used instead.
+
 :exclamation: This type is inherited by `StorageList<T>` where `TKey` is constrained to be of type `int`.
 
 ### `StorageDictionary<...>`
@@ -92,8 +94,8 @@ Two different generic types with the name `StorageDictionary` exist:
  This is a simpler type where the key defaults to the member decorated with `IndexAttribute`.
 
 Obviously, for both types, if `StorageOptions` is not provided, `StorageOptions.Default` is used instead.
-:exclamation: `StorageDictionary` is very much a work in progress and is continuously worked on.
 
+:exclamation: `StorageDictionary` is very much a work in progress and is continuously worked on.
 
 ### StorageOptions
 
@@ -119,6 +121,7 @@ Obviously, for both types, if `StorageOptions` is not provided, `StorageOptions.
 * `LoadMask` will (in the future) be used when a user does not necessarily want to deserialize a file but instead have access to various elements of the file, such as the string table, the index table, or whatever they may like. This may prove useful for structure matching files across versions.
 * `InternStrings`. By default, the CLR does not intern strings when they are not explicit in source. This means that any string that is in the file's string table and may be duplicated  will appear more than once in memory and use twice the space. 
 `DBClientFiles.NET` uses C#'s own internal string pool, which lives until the runtime terminates.
+
 :exclamation: Be careful with this. The performance impact of interning strings can be huge, since it leads to unnecessary allocations, hash table lookups, and garbage collections. Use only with files where a majority of the strings are duplicates.
 * `KeepStringTable`: Unused.
 * `CopyToMemory`: When loading from the provided `Stream` instance, if this property is set the true, the entirety of the stream's content will be loaded into a `MemoryStream` which will then be entirely managed by the collection. This can help for slow drives.
