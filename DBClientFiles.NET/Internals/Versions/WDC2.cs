@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Exceptions;
+using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.Internals.Segments.Readers;
 using DBClientFiles.NET.Internals.Serializers;
 using DBClientFiles.NET.IO;
@@ -59,7 +61,7 @@ namespace DBClientFiles.NET.Internals.Versions
             private int _indexListSize;
             private int _relationshipDataSize;
 
-            public Section(WDC2<TKey, TValue> parent, Stream strm) : base(strm, parent.Options)
+            public Section(WDC2<TKey, TValue> parent, Stream strm) : base(parent.Header, strm, parent.Options)
             {
                 _parent = parent;
                 
@@ -84,7 +86,7 @@ namespace DBClientFiles.NET.Internals.Versions
                 MemberStore.SetFileMemberInfo(fileMembers);
             }
 
-            public override bool ReadHeader()
+            public override bool PrepareMemberInformations()
             {
                 BaseStream.Seek(4 + 4, SeekOrigin.Current); // unk_header[2]
                 _fileOffset           = ReadInt32(); // Absolute offset to the beginning of this section
@@ -102,11 +104,10 @@ namespace DBClientFiles.NET.Internals.Versions
             {
                 MemberStore = new ExtendedMemberInfoCollection(typeof(TValue), _parent.Options);
 
-                if ((_parent._flags & 0x1) == 0)
+                if (!Header.HasOffsetMap)
                 {
                     Records.StartOffset = _fileOffset;
-                    Records.Length = _recordCount * _parent._recordSize;
-                    Records.ItemLength = _parent._recordSize;
+                    Records.Length = _recordCount * Header.RecordSize;
 
                     StringTable.StartOffset = Records.EndOffset;
                     StringTable.Length = _stringTableSize;
@@ -122,7 +123,6 @@ namespace DBClientFiles.NET.Internals.Versions
                 }
 
                 IndexTable.Length = _indexListSize;
-                _codeGenerator.IsIndexStreamed = !IndexTable.Exists;
 
                 _copyTable.StartOffset = IndexTable.EndOffset;
                 _copyTable.Length = _copyTableSize;
@@ -180,15 +180,12 @@ namespace DBClientFiles.NET.Internals.Versions
         private readonly CommonTableReader<TKey> _commonTable;
         #endregion
 
-        private int _flags;
-        private int _recordSize;
         private int _currentlyParsedSection;
-
 
         public override CodeGenerator<TValue> Generator => _sections[_currentlyParsedSection].Generator;
         
         #region Life and Death
-        public WDC2(Stream strm, StorageOptions options) : base(strm, options)
+        public WDC2(IFileHeader header, Stream strm, StorageOptions options) : base(header, strm, options)
         {
             _palletTable = new PalletSegmentReader(this);
             _commonTable = new CommonTableReader<TKey>(this);
@@ -205,20 +202,10 @@ namespace DBClientFiles.NET.Internals.Versions
         }
         #endregion
 
-        public override bool ReadHeader()
+        public override bool PrepareMemberInformations()
         {
-            var recordCount          = ReadInt32();
-            if (recordCount == 0)
-                return false;
+            Debug.Assert(BaseStream.Position == 48);
 
-            BaseStream.Seek(4, SeekOrigin.Current); // field_count
-            var recordSize           = ReadInt32();
-            BaseStream.Seek(4, SeekOrigin.Current); // string_table_size combined
-            TableHash                = ReadUInt32();
-            LayoutHash               = ReadUInt32();
-            BaseStream.Seek(4 + 4 + 4, SeekOrigin.Current); // minIndex, maxIndex, locale
-            var flags                = ReadInt16();
-            var indexColumn          = ReadInt16();
             var totalFieldCount      = ReadInt32();
             BaseStream.Seek(4 + 4, SeekOrigin.Current); // bitpacked_data_ofs, lookup_column_count
             var fieldStorageInfoSize = ReadInt32();
@@ -226,16 +213,12 @@ namespace DBClientFiles.NET.Internals.Versions
             var palletDataSize       = ReadInt32();
             var sectionCount         = ReadInt32();
 
-            _flags = flags;
-            _recordSize = recordSize;
-
             _sections = new Section[sectionCount];
             for (var i = 0; i < _sections.Length; ++i)
             {
                 _sections[i] = new Section(this, BaseStream);
-                _sections[i].Generator.IndexColumn = indexColumn;
 
-                if (!_sections[i].ReadHeader())
+                if (!_sections[i].PrepareMemberInformations())
                     return false;
             }
 

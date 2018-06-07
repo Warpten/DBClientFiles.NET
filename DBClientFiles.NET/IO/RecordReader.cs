@@ -81,7 +81,7 @@ namespace DBClientFiles.NET.IO
     /// <summary>
     /// This class acts as a thing wrapper around the record data for a row. It can read either packed or unpacked elements.
     /// </summary>
-    internal unsafe class RecordReader : IDisposable
+    internal class RecordReader : IDisposable
     {
         private byte[] _recordData;
         //private GCHandle _dataHandle;

@@ -7,33 +7,13 @@ using System.Linq;
 namespace DBClientFiles.NET.Collections.Generic
 {
     /// <summary>
-    /// Acts as a shorthand for <see cref="StorageDictionary{TKey, TFileKey, TValue}"/>, with the two generic key types being the same.
+    /// 
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TValue"></typeparam>
-    public sealed class StorageDictionary<TKey, TValue> : StorageDictionary<TKey, TKey, TValue>
+    public sealed class StorageDictionary<TKey, TValue> : IStorage, IDictionary<TKey, TValue>
         where TKey : struct
         where TValue : class, new()
-    {
-        public StorageDictionary(Stream dataStream) : base(dataStream)
-        {
-        }
-
-        public StorageDictionary(Stream dataStream, StorageOptions options) : base(dataStream, options)
-        {
-        }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <typeparam name="TKey">The type of the dictionary's key.</typeparam>
-    /// <typeparam name="TFileKey">The type of the key declared by the file.</typeparam>
-    /// <typeparam name="TValue">The record type.</typeparam>
-    public class StorageDictionary<TKey, TFileKey, TValue> : IStorage, IDictionary<TKey, TValue>
-        where TKey : struct
-        where TValue : class, new()
-        where TFileKey : struct
     {
         #region IStorage
         public Signatures Signature { get; }
@@ -41,83 +21,50 @@ namespace DBClientFiles.NET.Collections.Generic
         public uint LayoutHash { get; }
         #endregion
 
-        private readonly Func<TValue, TKey> _keyGetter;
-        private readonly Dictionary<TKey, TValue> _container = new Dictionary<TKey, TValue>();
+        private readonly Dictionary<TKey, TValue> _container;
 
-        /// <summary>
-        /// Create a new dictionary keyed by a specific column.
-        /// </summary>
-        /// <param name="dataStream">The stream from which to load data.</param>
-        /// <param name="options">The storage options to use.</param>
-        /// <param name="keyGetter">A custom function used to select the key from the record.</param>
-        /// <remarks><paramref name="keyGetter"/> is not to be confused with <see cref="IndexAttribute"/>, which is a decoration purely reserved 
-        /// to the metadata parsing and not related to actual data storage.
-        /// 
-        /// Also note that it is <b>however</b> mandatory (for now) for the key provided by <paramref name="keyGetter"/> to be of the same type than 
-        /// the member decoared with <see cref="IndexAttribute"/>. This limitation will hopefully be raised in a later version.
-        /// </remarks>
-        public StorageDictionary(Stream dataStream, StorageOptions options, Func<TValue, TKey> keyGetter) : this(dataStream, options)
-        {
-            _keyGetter = keyGetter;
-        }
-
-        /// <summary>
-        /// Create a new dictionary keyed by a specific column. This constructor uses <see cref="StorageOptions.Default"/>.
-        /// </summary>
-        /// <param name="dataStream">The stream from which to load data.</param>
-        /// <param name="keyGetter">A custom function used to select the key from the record.</param>
-        /// <remarks><paramref name="keyGetter"/> is not to be confused with <see cref="IndexAttribute"/>, which is a decoration purely reserved 
-        /// to the metadata parsing and not related to actual data storage.
-        /// 
-        /// Also note that it is <b>however</b> mandatory (for now) for the key provided by <paramref name="keyGetter"/> to be of the same type than 
-        /// the member decoared with <see cref="IndexAttribute"/>. This limitation will hopefully be raised in a later version.
-        /// </remarks>
-        public StorageDictionary(Stream dataStream, Func<TValue, TKey> keyGetter) : this(dataStream, StorageOptions.Default, keyGetter)
-        {
-        }
-
-        /// <summary>
-        /// Create a new dictionary keyed by a specific column.
-        /// 
-        /// This constructor uses <see cref="StorageOptions.Default"/>.
-        /// They key is selected from <see cref="TValue"/>'s <see cref="System.Reflection.PropertyInfo"/> or <see cref="System.Reflection.FieldInfo"/> which is decorated by <see cref="Attributes.IndexAttribute"/>.
-        /// If no member is decorated with <see cref="Attributes.IndexAttribute"/>, it is assumed for the key to be the first declared & used member of the record type.
-        /// </summary>
-        /// <param name="dataStream">The stream from which to load data.</param>
         public StorageDictionary(Stream dataStream) : this(dataStream, StorageOptions.Default)
         {
         }
 
-        /// <summary>
-        /// Create a new dictionary keyed by a specific column.
-        /// 
-        /// This constructor uses <see cref="StorageOptions.Default"/>.
-        /// They key is selected from <see cref="TValue"/>'s <see cref="PropertyInfo"/> or <see cref="FieldInfo"/> which is decorated by <see cref="Attributes.IndexAttribute"/>.
-        /// If no member is decorated with <see cref="Attributes.IndexAttribute"/>, it is assumed for the key to be the first declared & used member of the record type.
-        /// </summary>
-        /// <param name="dataStream">The stream from which to load data.</param>
-        /// <param name="options">The options with which to load the file.</param>
-        public StorageDictionary(Stream dataStream, StorageOptions options)
+        public StorageDictionary(Stream dataStream, Func<TValue, TKey> keySelector = null) : this(dataStream, StorageOptions.Default, keySelector)
         {
-            using (var implementation = new StorageImpl<TValue>(dataStream, options))
+        }
+
+        public StorageDictionary(Stream dataStream, StorageOptions options, Func<TValue, TKey> keySelector = null)
+        {
+            if (keySelector == null)
             {
-                implementation.InitializeReader<TFileKey>();
-                implementation.ReadHeader();
-                
-                if (_keyGetter == null)
+                _container = new Dictionary<TKey, TValue>();
+                using (var implementation = new StorageImpl<TValue>(dataStream, options))
                 {
+                    implementation.InitializeHeaderInfo();
+
+                    var indexMember = implementation.Members.IndexMember;
+                    if (indexMember.Type != typeof(TKey))
+                        throw new InvalidOperationException();
+
+                    if (!typeof(TKey).IsValueType)
+                        throw new InvalidOperationException();
+
+                    implementation.InitializeFileReader<TKey>();
+                    implementation.PrepareMemberInfo();
                     foreach (var item in implementation.Enumerate())
                         _container[implementation.ExtractKey<TKey>(item)] = item;
+
+                    Signature = implementation.Header.Signature;
+                    TableHash = implementation.Header.TableHash;
+                    LayoutHash = implementation.Header.LayoutHash;
                 }
-                else
-                {
-                    foreach (var item in implementation.Enumerate())
-                        _container[_keyGetter(item)] = item;
-                }
-                
-                Signature = implementation.Signature;
-                TableHash = implementation.TableHash;
-                LayoutHash = implementation.LayoutHash;
+            }
+            else
+            {
+                var enumerable = new StorageEnumerable<TValue>(dataStream, options);
+                Signature = enumerable.Signature;
+                TableHash = enumerable.TableHash;
+                LayoutHash = enumerable.LayoutHash;
+
+                _container = enumerable.ToDictionary(keySelector);
             }
         }
 

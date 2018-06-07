@@ -2,26 +2,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
-    public sealed class StorageList<T> : StorageList<int, T>
+    public class StorageList<T> : IStorage, IList<T>, IList, IReadOnlyList<T>
         where T : class, new()
     {
-        public StorageList(Stream dataStream) : base(dataStream)
-        {
-        }
-
-        public StorageList(Stream dataStream, StorageOptions options) : base(dataStream, options)
-        {
-        }
-    }
-
-    public class StorageList<TKey, T> : IStorage, IList<T>, IList, IReadOnlyList<T>
-        where T : class, new()
-        where TKey : struct
-    {
-        private readonly List<T> _container = new List<T>();
+        private readonly List<T> _container;
 
         public StorageList(Stream dataStream) : this(dataStream, StorageOptions.Default)
         {
@@ -29,17 +17,13 @@ namespace DBClientFiles.NET.Collections.Generic
 
         public StorageList(Stream dataStream, StorageOptions options)
         {
-            using (var implementation = new StorageImpl<T>(dataStream, options))
-            {
-                implementation.InitializeReader<TKey>();
-                implementation.ReadHeader();
-                foreach (var element in implementation.Enumerate())
-                    _container.Add(element);
+            var enumerable = new StorageEnumerable<T>(dataStream, options);
 
-                Signature = implementation.Signature;
-                TableHash = implementation.TableHash;
-                LayoutHash = implementation.LayoutHash;
-            }
+            TableHash = enumerable.TableHash;
+            LayoutHash = enumerable.LayoutHash;
+            Signature = enumerable.Signature;
+
+            _container = enumerable.ToList();
         }
 
         #region IStorage

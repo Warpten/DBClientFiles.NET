@@ -1,6 +1,5 @@
 ﻿using DBClientFiles.NET.Collections.Generic;
 using DBClientFiles.NET.Data;
-using DBClientFiles.NET.Data.WDBC;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,6 +7,9 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Attributes;
+using DBClientFiles.NET.Data.WDB2;
+using DBClientFiles.NET.Data.WDC1;
+using AchievementEntry = DBClientFiles.NET.Data.WDBC.AchievementEntry;
 
 namespace DBClientFiles.NET.ConsoleTests
 {
@@ -30,10 +32,10 @@ namespace DBClientFiles.NET.ConsoleTests
                 int.TryParse(args[idxCount + 1], out iterationCount);
 
 
-            using (var fs = File.OpenRead(@"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\bin\Release\net472\Data\WDBC\Spell.dbc"))
+            using (var fs = File.OpenRead(@"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\bin\Release\net472\Data\WDC2\Achievement.db2"))
             {
                 // var sl = new StorageList<Data.WDC1.SpellEffectEntry>(fs);
-                var d = new DBClientFiles.NET.Collections.Generic.StorageDictionary<int, SpellEntry>(fs);
+                var d = new StorageDictionary<int, Data.WDC2.AchievementEntry>(fs);
             }
 
             TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC", iterationCount);

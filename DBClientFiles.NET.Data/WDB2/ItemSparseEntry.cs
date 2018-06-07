@@ -6,7 +6,7 @@ namespace DBClientFiles.NET.Data.WDB2
     public sealed class ItemSparseEntry
     {
         [Index]
-        public uint ID { get; set; }
+        public int ID { get; set; }
         public uint Quality { get; set; }
         public uint Flags { get; set; }
         public uint Flags2 { get; set; }

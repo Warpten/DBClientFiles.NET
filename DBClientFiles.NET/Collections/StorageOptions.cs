@@ -10,20 +10,25 @@ namespace DBClientFiles.NET.Collections
         StringTable
     }
 
-    public sealed class StorageOptions
+    public class StorageOptions
     {
-        public MemberTypes MemberType { get; set; } = MemberTypes.Property;
-        public LoadMask LoadMask { get; set; } = LoadMask.Records;
+        public MemberTypes MemberType { get; set; }
+        public LoadMask LoadMask { get; set; }
 
-        public bool InternStrings { get; set; } = true;
-        public bool KeepStringTable { get; set; } = false;
+        public bool InternStrings { get; set; }
 
         /// <summary>
         /// If set to to <code>true</code>, the stream used as source will be copied to RAM before being used.
         /// This is set to true by default for anything but MemoryStream.
         /// </summary>
-        public bool CopyToMemory { get; set; } = false;
+        public bool CopyToMemory { get; set; }
 
-        public static StorageOptions Default { get; } = new StorageOptions();
+        public static StorageOptions Default { get; } = new StorageOptions()
+        {
+            MemberType = MemberTypes.Property,
+            LoadMask = LoadMask.Records,
+            InternStrings = false,
+            CopyToMemory = false
+        };
     }
 }

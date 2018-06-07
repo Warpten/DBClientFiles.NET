@@ -6,7 +6,6 @@
         public int Length { get; set; }
 
         public long EndOffset => StartOffset + Length;
-        public int ItemLength { get; set; }
 
         public bool Exists {
             set {

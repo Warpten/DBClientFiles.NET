@@ -2,8 +2,10 @@
 using DBClientFiles.NET.Internals.Serializers;
 using DBClientFiles.NET.IO;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using DBClientFiles.NET.Collections;
+using DBClientFiles.NET.Internals.Segments;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
@@ -24,7 +26,7 @@ namespace DBClientFiles.NET.Internals.Versions
         public override CodeGenerator<TValue> Generator => _codeGenerator;
 
         #region Life and death
-        public WDC1(Stream strm, StorageOptions options) : base(strm, options)
+        public WDC1(IFileHeader header, Stream strm, StorageOptions options) : base(header, strm, options)
         {
             _palletTable      = new PalletSegmentReader(this);
             _copyTable        = new CopyTableReader<TKey>(this);
@@ -44,23 +46,10 @@ namespace DBClientFiles.NET.Internals.Versions
         }
         #endregion
 
-        public override bool ReadHeader()
+        public override bool PrepareMemberInformations()
         {
-            var recordCount = ReadInt32();
-            if (recordCount == 0)
-                return true;
+            Debug.Assert(BaseStream.Position == 48);
 
-            var fieldCount           = ReadInt32();
-            var recordSize           = ReadInt32();
-            var stringTableSize      = ReadInt32();
-            TableHash                = ReadUInt32();
-            LayoutHash               = ReadUInt32();
-            var minIndex             = ReadInt32();
-            var maxIndex             = ReadInt32();
-            BaseStream.Seek(4, SeekOrigin.Current); // locale
-            var copyTableSize        = ReadInt32();
-            var flags                = ReadInt16();
-            var indexColumn          = ReadInt16(); // this is the index of the field containing ID values; this is ignored if flags & 0x04 != 0
             BaseStream.Seek(4 + 4 + 4, SeekOrigin.Current); // total_field_count, bitpacked_data_ofs, lookup_column_count
             var offsetMapOffset      = ReadInt32();
             var idListSize           = ReadInt32();
@@ -68,22 +57,20 @@ namespace DBClientFiles.NET.Internals.Versions
             var commonDataSize       = ReadInt32();
             var palletDataSize       = ReadInt32();
             var relationshipDataSize = ReadInt32();
-
-            MemberStore.IndexColumn = indexColumn;
+            
             IndexTable.Length = idListSize;
 
-            for (var i = 0; i < fieldCount; ++i)
+            for (var i = 0; i < Header.FieldCount; ++i)
                 MemberStore.AddFileMemberInfo(this);
 
             #region Initialize the first set of segments
-            if ((flags & 0x01) == 0)
+            if (!Header.HasOffsetMap)
             {
                 Records.StartOffset = BaseStream.Position;
-                Records.Length = recordSize * recordCount;
-                Records.ItemLength = recordSize;
+                Records.Length = Header.RecordSize * Header.RecordCount;
 
                 StringTable.StartOffset = Records.EndOffset;
-                StringTable.Length = stringTableSize;
+                StringTable.Length = Header.StringTableLength;
 
                 OffsetMap.Exists = false;
                 IndexTable.StartOffset = StringTable.EndOffset;
@@ -94,14 +81,14 @@ namespace DBClientFiles.NET.Internals.Versions
                 Records.Length = (int)(offsetMapOffset - BaseStream.Position);
 
                 OffsetMap.StartOffset = Records.EndOffset;
-                OffsetMap.Length = (4 + 2) * (maxIndex - minIndex + 1);
+                OffsetMap.Length = (4 + 2) * (Header.MaxIndex - Header.MinIndex + 1);
 
                 StringTable.Exists = false;
                 IndexTable.StartOffset = OffsetMap.EndOffset;
             }
 
             _copyTable.StartOffset = IndexTable.EndOffset;
-            _copyTable.Length = copyTableSize;
+            _copyTable.Length = Header.CopyTableLength;
             #endregion
             
             BaseStream.Position = _copyTable.EndOffset;
@@ -120,12 +107,7 @@ namespace DBClientFiles.NET.Internals.Versions
             _relationshipData.Length = relationshipDataSize;
             #endregion
 
-            _codeGenerator = new CodeGenerator<TValue, TKey>(this)
-            {
-                IndexColumn = indexColumn,
-                IsIndexStreamed = !IndexTable.Exists
-            };
-            
+            _codeGenerator = new CodeGenerator<TValue, TKey>(this);
             return true;
         }
 

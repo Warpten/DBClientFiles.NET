@@ -55,7 +55,7 @@ namespace DBClientFiles.NET.Utils
             get
             {
                 if (HasIndexTable)
-                    return Members[0];
+                    return Members[IndexColumn];
 
                 for (var i = 0; i < Members.Count; ++i)
                 {

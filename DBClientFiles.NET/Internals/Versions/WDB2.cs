@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Exceptions;
+using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.IO;
 
 namespace DBClientFiles.NET.Internals.Versions
@@ -10,7 +12,7 @@ namespace DBClientFiles.NET.Internals.Versions
         where TValue : class, new()
         where TKey : struct
     {
-        public WDB2(Stream fileStream, StorageOptions options) : base(fileStream, options)
+        public WDB2(IFileHeader header, Stream fileStream, StorageOptions options) : base(header, fileStream, options)
         {
         }
 
@@ -18,37 +20,20 @@ namespace DBClientFiles.NET.Internals.Versions
         {
         }
 
-        public override bool ReadHeader()
+        public override bool PrepareMemberInformations()
         {
-            var recordCount = ReadInt32();
-            if (recordCount == 0)
-                return false;
+            if (Header.MaxIndex == 0)
+                Debug.Assert(BaseStream.Position == 48);
+            else
+                Debug.Assert(BaseStream.Position == 48 + (Header.MaxIndex - Header.MinIndex + 1) * (4 + 2));
 
-            BaseStream.Seek(4, SeekOrigin.Current); // field_count
-            var recordSize      = ReadInt32();
-            StringTable.Length  = ReadInt32();
-            TableHash           = ReadUInt32();
-            LayoutHash          = ReadUInt32(); // technically build
-
-            BaseStream.Seek(4, SeekOrigin.Current); // timestamp_last_written
-
-            var minIndex = ReadInt32();
-            var maxIndex = ReadInt32();
-
-            BaseStream.Seek(4 + 4, SeekOrigin.Current); // locale, copy_table_size
-
-            // Skip string length information (unused by nearly everyone)
-            if (maxIndex != 0)
-                BaseStream.Position += (maxIndex - minIndex + 1) * (4 + 2);
-
-            // Set up segments
             Records.StartOffset = BaseStream.Position;
-            Records.Length = recordSize * recordCount;
-            Records.ItemLength = recordSize;
+            Records.Length = Header.RecordSize * Header.RecordCount;
 
             StringTable.StartOffset = Records.EndOffset;
+            StringTable.Length = Header.StringTableLength;
 
-            return base.ReadHeader();
+            return base.PrepareMemberInformations();
         }
 
         protected override IEnumerable<TValue> ReadRecords(int recordIndex, long recordOffset, int recordSize)

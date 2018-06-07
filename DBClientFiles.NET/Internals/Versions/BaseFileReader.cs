@@ -19,23 +19,15 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public IndexTableReader IndexTable { get; }
 
-        protected BaseFileReader(Stream strm, StorageOptions options) : base(strm, options)
+        protected BaseFileReader(IFileHeader header, Stream strm, StorageOptions options) : base(header, strm, options)
         {
             IndexTable = new IndexTableReader(this);
         }
 
-        public override bool ReadHeader()
+        public override bool PrepareMemberInformations()
         {
-            _codeGenerator = new CodeGenerator<TValue, TKey>(this) {
-                IsIndexStreamed = !IndexTable.Exists
-            };
+            _codeGenerator = new CodeGenerator<TValue, TKey>(this);
             return true;
-        }
-
-        public sealed override void MapRecords()
-        {
-            MemberStore.CalculateCardinalities();
-            MemberStore.HasIndexTable = IndexTable.Exists;
         }
 
         public override void ReadSegments()
@@ -56,7 +48,7 @@ namespace DBClientFiles.NET.Internals.Versions
     internal abstract class BaseFileReader<TValue> : FileReader, IReader<TValue> where TValue : class, new()
     {
         #region Life and death
-        protected BaseFileReader(Stream strm, StorageOptions options) : base(strm, true)
+        protected BaseFileReader(IFileHeader header, Stream strm, StorageOptions options) : base(header, strm, true)
         {
             StringTable = new StringTableSegment(this);
             OffsetMap = new OffsetMapReader(this);
@@ -103,9 +95,9 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public event Action<int> OnStringTableEntry;
 
-        public virtual bool ReadHeader()
+        public virtual bool PrepareMemberInformations()
         {
-            _codeGenerator = new CodeGenerator<TValue>(this) { IsIndexStreamed = true };
+            _codeGenerator = new CodeGenerator<TValue>(this);
             return true;
         }
         
@@ -125,14 +117,12 @@ namespace DBClientFiles.NET.Internals.Versions
             }
             else
             {
-                System.Diagnostics.Debug.Assert(Records.ItemLength != 0, "An implementation forgot to set Records.ItemLength");
-
                 var recordIndex = 0;
                 BaseStream.Seek(Records.StartOffset, SeekOrigin.Begin);
 
                 while (BaseStream.Position < Records.EndOffset)
                 {
-                    foreach (var node in ReadRecords(recordIndex, BaseStream.Position, Records.ItemLength))
+                    foreach (var node in ReadRecords(recordIndex, BaseStream.Position, Header.RecordSize))
                         yield return node;
 
                     ++recordIndex;
@@ -165,12 +155,6 @@ namespace DBClientFiles.NET.Internals.Versions
                 if (Options.LoadMask.HasFlag(LoadMask.StringTable))
                     StringTable.OnStringRead -= OnStringTableEntry;
             }
-        }
-
-        public virtual void MapRecords()
-        {
-            MemberStore.CalculateCardinalities();
-            MemberStore.HasIndexTable = false;
         }
 
         public override string FindStringByOffset(int tableOffset)

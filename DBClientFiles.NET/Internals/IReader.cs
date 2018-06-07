@@ -9,9 +9,8 @@ namespace DBClientFiles.NET.Internals
     internal interface IReader<T> : IDisposable
         where T : class, new()
     {
-        bool ReadHeader();
+        bool PrepareMemberInformations();
         void ReadSegments();
-        void MapRecords();
         IEnumerable<T> ReadRecords();
         
         CodeGenerator<T> Generator { get; }

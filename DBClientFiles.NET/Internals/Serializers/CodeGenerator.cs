@@ -119,9 +119,6 @@ namespace DBClientFiles.NET.Internals.Serializers
         private Action<BaseFileReader<T>, RecordReader, T> _deserializationMethod;
         private Func<T, T> _memberwiseClone;
 
-        public bool IsIndexStreamed { get; set; }
-        public int IndexColumn { get; set; }
-
         public CodeGenerator(BaseFileReader<T> reader)
         {
             _deserializationMethod = null;

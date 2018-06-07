@@ -3,8 +3,10 @@ using DBClientFiles.NET.Internals.Segments.Readers;
 using DBClientFiles.NET.Internals.Serializers;
 using DBClientFiles.NET.IO;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using DBClientFiles.NET.Collections;
+using DBClientFiles.NET.Internals.Segments;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
@@ -20,7 +22,7 @@ namespace DBClientFiles.NET.Internals.Versions
         public override CodeGenerator<TValue> Generator => _codeGenerator;
         
         #region Life and death
-        public WDB5(Stream strm, StorageOptions options) : base(strm, options)
+        public WDB5(IFileHeader header, Stream strm, StorageOptions options) : base(header, strm, options)
         {
             _copyTable = new CopyTableReader<TKey>(this);
         }
@@ -33,55 +35,34 @@ namespace DBClientFiles.NET.Internals.Versions
         }
         #endregion
 
-        public override bool ReadHeader()
+        public override bool PrepareMemberInformations()
         {
-            var recordCount = ReadInt32();
-            if (recordCount == 0)
-                return false;
-
-            var fieldCount       = ReadInt32();
-            var recordSize       = ReadInt32();
-            var stringTableSize  = ReadInt32();
-            TableHash            = ReadUInt32();
-            LayoutHash           = ReadUInt32();
-            var minIndex         = ReadInt32();
-            var maxIndex         = ReadInt32();
-            BaseStream.Seek(4, SeekOrigin.Current); // locale
-            var copyTableSize    = ReadInt32();
-            var flags            = ReadInt16();
-            var indexColumn      = ReadInt16();
-
-            MemberStore.IndexColumn = indexColumn;
+            Debug.Assert(BaseStream.Position == 48);
 
             #region Initialize segments
             Records.StartOffset = BaseStream.Position;
-            Records.Length = recordSize * recordCount;
-            Records.ItemLength = recordSize;
+            Records.Length = Header.RecordSize * Header.RecordCount;
 
-            StringTable.Exists = (flags & 0x01) == 0;
+            StringTable.Exists = !Header.HasOffsetMap;
             StringTable.StartOffset = Records.EndOffset;
-            StringTable.Length = stringTableSize;
+            StringTable.Length = Header.StringTableLength;
 
-            OffsetMap.Exists = (flags & 0x01) != 0;
-            OffsetMap.StartOffset = stringTableSize;
-            OffsetMap.Length = (maxIndex - minIndex + 1) * (4 + 2);
+            OffsetMap.Exists = Header.HasOffsetMap;
+            OffsetMap.StartOffset = Header.StringTableLength;
+            OffsetMap.Length = (Header.MaxIndex - Header.MinIndex + 1) * (4 + 2);
 
-            IndexTable.Exists = (flags & 0x04) != 0;
+            IndexTable.Exists = Header.HasIndexTable;
             IndexTable.StartOffset = OffsetMap.EndOffset;
-            IndexTable.Length = recordCount * 4;
+            IndexTable.Length = Header.RecordCount * 4;
 
             _copyTable.StartOffset = IndexTable.EndOffset;
-            _copyTable.Length = copyTableSize;
+            _copyTable.Length = Header.CopyTableLength;
             #endregion
             
-            for (var i = 0; i < fieldCount; ++i)
+            for (var i = 0; i < Header.FieldCount; ++i)
                 MemberStore.AddFileMemberInfo(this);
 
-            _codeGenerator = new CodeGenerator<TValue, TKey>(this)
-            {
-                IndexColumn = indexColumn,
-                IsIndexStreamed = !IndexTable.Exists
-            };
+            _codeGenerator = new CodeGenerator<TValue, TKey>(this);
             return true;
         }
         

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Exceptions;
+using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.IO;
 
 namespace DBClientFiles.NET.Internals.Versions
@@ -11,7 +13,7 @@ namespace DBClientFiles.NET.Internals.Versions
         where TValue : class, new()
         where TKey : struct
     {
-        public WDBC(Stream strm, StorageOptions options) : base(strm, options)
+        public WDBC(IFileHeader header, Stream strm, StorageOptions options) : base(header, strm, options)
         {
         }
 
@@ -20,29 +22,22 @@ namespace DBClientFiles.NET.Internals.Versions
             StringTable.Dispose();
         }
 
-        public override bool ReadHeader()
+        public override bool PrepareMemberInformations()
         {
-            var recordCount = ReadInt32();
-            if (recordCount == 0)
-                return false;
-
-            var fieldCount = ReadInt32();
-            var recordSize = ReadInt32();
-            var stringTableSize = ReadInt32();
+            Debug.Assert(BaseStream.Position == 20);
 
             Records.StartOffset = BaseStream.Position;
-            Records.Length = recordSize * recordCount;
-            Records.ItemLength = recordSize;
+            Records.Length = Header.RecordCount * Header.RecordSize;
 
-            StringTable.Length = stringTableSize;
             StringTable.StartOffset = Records.EndOffset;
+            StringTable.Length = Header.StringTableLength;
 
             var declaredMemberCount = MemberStore.DeclaredMemberCount();
-            if (declaredMemberCount != fieldCount)
-                throw new InvalidOperationException($"{typeof(TValue).FullName} declares {declaredMemberCount} members (including arrays), but there should only be {fieldCount}");
+            if (declaredMemberCount != Header.FieldCount)
+                throw new InvalidOperationException($"{typeof(TValue).FullName} declares {declaredMemberCount} members (including arrays), but there should only be {Header.FieldCount}");
 
             // sets up a default generator
-            return base.ReadHeader();
+            return base.PrepareMemberInformations();
         }
 
         protected override IEnumerable<TValue> ReadRecords(int recordIndex, long recordOffset, int recordSize)

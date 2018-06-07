@@ -4,7 +4,10 @@ using DBClientFiles.NET.Internals.Versions;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
+using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.Internals.Serializers;
+using DBClientFiles.NET.Internals.Versions.Headers;
 using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.Collections.Generic
@@ -16,22 +19,22 @@ namespace DBClientFiles.NET.Collections.Generic
         uint LayoutHash { get; }
     }
 
+    internal static class _StorageImpl
+    {
+        public static MethodInfo InitializeReader { get; } = typeof(StorageImpl<>).GetMethod("InitializeFileReader", Type.EmptyTypes);
+    }
+
     /// <summary>
     /// A basic implementation of IStorage that does all the heavy lifting. Used by DI in exposed containers.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    internal sealed class StorageImpl<T> : IStorage, IDisposable
+    internal sealed class StorageImpl<T> : IDisposable
         where T : class, new()
     {
-        #region IStorage
-        public Signatures Signature { get; private set; }
-        public uint TableHash { get; private set; }
-        public uint LayoutHash { get; private set; }
-        #endregion
-        
         private StorageOptions Options { get; set; }
         private Stream Stream { get; set; }
-        public IReader<T> FileReader { get; private set; }
+        public IReader<T> File { get; private set; }
+        public IFileHeader Header { get; private set; }
 
         public CodeGenerator<T> Generator { get; private set; }
 
@@ -40,101 +43,101 @@ namespace DBClientFiles.NET.Collections.Generic
         {
             if (Options.CopyToMemory)
                 Stream?.Dispose();
+
             Stream = null;
-
-            Options = null;
-
-            FileReader = null;
+            File = null;
         }
 
         public StorageImpl(Stream dataStream, StorageOptions options)
         {
             Options = options;
 
-            if (options.CopyToMemory)
+            if (options.CopyToMemory && !(dataStream is MemoryStream))
             {
-                Stream = new MemoryStream((int)dataStream.Length);
+                Stream = new MemoryStream((int)(dataStream.Length - dataStream.Position));
+
                 dataStream.CopyTo(Stream);
-                Stream.Position = 0;
             }
             else
                 Stream = dataStream;
 
-            _memberInfos = new ExtendedMemberInfoCollection(typeof(T), options);
+            Members = new ExtendedMemberInfoCollection(typeof(T), options);
         }
         #endregion
 
-        private ExtendedMemberInfoCollection _memberInfos;
+        public ExtendedMemberInfoCollection Members { get; }
 
         public TKey ExtractKey<TKey>(T instance) where TKey : struct
         {
-            return FileReader.ExtractKey<TKey>(instance);
+            return File.ExtractKey<TKey>(instance);
         }
 
-        public void InitializeReader(bool forced = false) => InitializeReader<int>(forced);
+        public IFileHeader InitializeHeaderInfo()
+        {
+            var signature = (Signatures)(Stream.ReadByte() | (Stream.ReadByte() << 8) | (Stream.ReadByte() << 16) | (Stream.ReadByte() << 24));
+            Header = HeaderFactory.ReadHeader(signature, Stream);
 
-        public void InitializeReader<TKey>(bool forced = false)
+            Members.IndexColumn = Header.IndexColumn;
+            Members.HasIndexTable = Header.HasIndexTable;
+
+            return Header;
+        }
+
+        public void InitializeFileReader<TKey>()
             where TKey : struct
         {
-            if (FileReader != null)
-            {
-                if (forced)
-                    FileReader.Dispose();
-                else
-                    return;
-            }
+            if (File != null)
+                return;
 
-            Signature = (Signatures)(Stream.ReadByte() | (Stream.ReadByte() << 8) | (Stream.ReadByte() << 16) | (Stream.ReadByte() << 24));
-
-            switch (Signature)
+            switch (Header.Signature)
             {
                 case Signatures.WDBC:
-                    FileReader = new WDBC<TKey, T>(Stream, Options);
+                    File = new WDBC<TKey, T>(Header, Stream, Options);
                     break;
                 case Signatures.WDB2:
-                    FileReader = new WDB2<TKey, T>(Stream, Options);
+                    File = new WDB2<TKey, T>(Header, Stream, Options);
                     break;
                 case Signatures.WDB5:
-                    FileReader = new WDB5<TKey, T>(Stream, Options);
+                    File = new WDB5<TKey, T>(Header, Stream, Options);
                     break;
                 case Signatures.WDB6:
-                    FileReader = new WDB6<TKey, T>(Stream, Options);
+                    File = new WDB6<TKey, T>(Header, Stream, Options);
                     break;
                 case Signatures.WDB3:
                 case Signatures.WDB4:
-                    throw new NotSupportedVersionException($"{Signature} files cannot be read without client metadata.");
+                    throw new NotSupportedVersionException($"{Header.Signature} files cannot be read without client metadata.");
                 case Signatures.WDC1:
-                    FileReader = new WDC1<TKey, T>(Stream, Options);
+                    File = new WDC1<TKey, T>(Header, Stream, Options);
                     break;
                 case Signatures.WDC2:
-                    FileReader = new WDC2<TKey, T>(Stream, Options);
+                    File = new WDC2<TKey, T>(Header, Stream, Options);
                     break;
                 default:
-                    throw new NotSupportedVersionException($"Unknown signature 0x{(int)Signature:X8}!");
+                    throw new NotSupportedVersionException($"Unknown signature 0x{(int)Header.Signature:X8}!");
             }
         }
 
-        public void ReadHeader()
+        public void PrepareMemberInfo()
         {
-            FileReader.MemberStore = _memberInfos;
+            File.MemberStore = Members;
 
-            if (!FileReader.ReadHeader())
-                throw new InvalidOperationException("Unable to read file header!");
+            // Prepare member informations as declared by the file.
+            File.PrepareMemberInformations();
 
-            FileReader.MapRecords();
-            FileReader.MemberStore.MapMembers();
+            // Map structure to fields.
+            Members.MapMembers();
+
+            // Prepare arity of arrays and validate
+            Members.CalculateCardinalities();
         }
 
         public IEnumerable<T> Enumerate()
         {
             // Steal the generator
-            Generator = FileReader.Generator;
+            Generator = File.Generator;
 
-            TableHash = FileReader.TableHash;
-            LayoutHash = FileReader.LayoutHash;
-
-            FileReader.ReadSegments();
-            return FileReader.ReadRecords();
+            File.ReadSegments();
+            return File.ReadRecords();
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Text;
+using DBClientFiles.NET.Internals.Segments;
 
 namespace DBClientFiles.NET.IO
 {
@@ -10,8 +11,11 @@ namespace DBClientFiles.NET.IO
     /// </summary>
     internal abstract class FileReader : BinaryReader
     {
-        protected FileReader(Stream strm, bool keepOpen = false) : base(strm, Encoding.UTF8, keepOpen)
+        protected IFileHeader Header { get; }
+
+        protected FileReader(IFileHeader header, Stream strm, bool keepOpen = false) : base(strm, Encoding.UTF8, keepOpen)
         {
+            Header = header;
         }
 
         public override string ReadString()
