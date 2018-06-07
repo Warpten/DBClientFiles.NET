@@ -25,8 +25,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
             public T ExtractValue<T>(int offset) where T : struct
             {
-                Span<byte> asSpan = _blockData;
-                return MemoryMarshal.Read<T>(asSpan.Slice(offset, SizeCache<T>.Size));
+                return MemoryMarshal.Read<T>(_blockData.AsSpan(offset, SizeCache<T>.Size));
             }
         }
 

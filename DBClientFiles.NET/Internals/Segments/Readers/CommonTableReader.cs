@@ -23,12 +23,11 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             public DataBlock(FileReader reader, int segmentSize)
             {
                 _dataBlock = reader.ReadBytes(segmentSize);
-                Span<byte> blockSpan = _dataBlock;
-
+                
                 _valueOffsets = new Dictionary<TKey, int>(segmentSize / 8);
                 for (var i = 0; i < _dataBlock.Length; i += 8)
                 {
-                    var key = MemoryMarshal.Read<TKey>(blockSpan.Slice(i, 8));
+                    var key = MemoryMarshal.Read<TKey>(_dataBlock.AsSpan(i, 8));
                     _valueOffsets[key] = i;
                 }
             }

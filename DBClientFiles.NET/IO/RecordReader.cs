@@ -248,14 +248,12 @@ namespace DBClientFiles.NET.IO
         {
             if (advanceCursor)
                 _bitCursor += SizeCache<T>.Size * 8;
-
-            Span<byte> recordMemory = _recordData;
-
+            
             //! Reading whichever is most from SizeCache<T>.Size and (bitCount + (bitOffset & 7) + 7) / 8.
             //! Consider this: Given a field that uses 17 bits, it deserializes as an int32. However, 17 bits fit on 3 bytes, so we would only read three bytes.
             //! MemoryMarshal.Read<int> expects a Span<byte> of Length = 4.
             //! What about reading 33 bits? That deserializes to an int64, so we need 8 bytes instead of 5.
-            var spanSlice = recordMemory.Slice(bitOffset / 8, Math.Max(SizeCache<T>.Size, (bitCount + (bitOffset & 7) + 7) / 8));
+            var spanSlice = _recordData.AsSpan(bitOffset / 8, Math.Max(SizeCache<T>.Size, (bitCount + (bitOffset & 7) + 7) / 8));
 
             var typeMemory = MemoryMarshal.Read<T>(spanSlice);
             return typeMemory;
