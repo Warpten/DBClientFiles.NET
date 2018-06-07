@@ -74,8 +74,6 @@ namespace DBClientFiles.NET.Internals.Versions
 
             public void PopulateSegmentOffsets()
             {
-                MemberStore = new ExtendedMemberInfoCollection(typeof(TValue), _parent.Options);
-
                 if (!Header.HasOffsetMap)
                 {
                     Records.StartOffset = _fileOffset;
@@ -95,7 +93,10 @@ namespace DBClientFiles.NET.Internals.Versions
                 }
 
                 IndexTable.Length = _indexListSize;
+
+                MemberStore = new ExtendedMemberInfoCollection(typeof(TValue), _parent.Options);
                 MemberStore.HasIndexTable = IndexTable.Exists;
+                MemberStore.IndexColumn = _parent.MemberStore.IndexColumn;
 
                 _copyTable.StartOffset = IndexTable.EndOffset;
                 _copyTable.Length = _copyTableSize;

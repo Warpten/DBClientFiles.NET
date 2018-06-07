@@ -16,7 +16,7 @@ namespace DBClientFiles.NET.Exceptions
             var @params = new object[args.Length + 2];
             @params[0] = targetMember.Name;
             @params[1] = targetMember.DeclaringType?.FullName ?? "[Unknown type]";
-            Buffer.BlockCopy(args, 0, @params, 2, args.Length);
+            Array.Copy(args, 0, @params, 2, args.Length);
 
             Message = string.Format(fmt, @params);
         }

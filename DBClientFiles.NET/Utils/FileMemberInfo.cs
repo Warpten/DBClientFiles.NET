@@ -39,7 +39,7 @@ namespace DBClientFiles.NET.Utils
         /// <summary>
         /// Cardinality of the field, defined by file metadata. This is guessed for old formats.
         /// </summary>
-        public int Cardinality { get; set; }
+        public int Cardinality { get; set; } = 1;
 
         public int CompressedDataSize { get; set; }
         public MemberCompressionType CompressionType { get; set; }
@@ -48,7 +48,7 @@ namespace DBClientFiles.NET.Utils
         /// If <see cref="CompressionType"/> is <see cref="MemberCompressionType.CommonData"/>, this is set. null otherwise.
         /// </summary>
         public byte[] DefaultValue { get; set; }
-        public bool IsSigned { get; set; }
+        public bool? IsSigned { get; set; }
 
         public T GetDefaultValue<T>() where T : struct
         {
@@ -89,6 +89,7 @@ namespace DBClientFiles.NET.Utils
                     reader.BaseStream.Seek(4 + 4, SeekOrigin.Current);
                     Cardinality = reader.ReadInt32();
                     break;
+                case MemberCompressionType.BitpackedPalletData:
                 case MemberCompressionType.None:
                     reader.BaseStream.Seek(4 + 4 + 4, SeekOrigin.Current);
                     break;

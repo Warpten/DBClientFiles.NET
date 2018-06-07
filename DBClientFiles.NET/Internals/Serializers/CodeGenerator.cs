@@ -386,7 +386,7 @@ namespace DBClientFiles.NET.Internals.Serializers
             var elementType = memberInfo.Type.IsArray ? memberInfo.Type.GetElementType() : memberInfo.Type;
             var elementCode = Type.GetTypeCode(elementType);
 
-            if (elementType.IsSigned() != memberInfo.MappedTo.IsSigned)
+            if (elementType.IsSigned() != memberInfo.MappedTo.IsSigned && memberInfo.MappedTo.IsSigned.HasValue)
                 throw new InvalidMemberException(memberInfo.MemberInfo,
                     "Member {0} of type {1} is declared as {2} but file metadata says otherwise. Is your structure correct?",
                     elementType.IsSigned() ? "signed" : "unsigned");

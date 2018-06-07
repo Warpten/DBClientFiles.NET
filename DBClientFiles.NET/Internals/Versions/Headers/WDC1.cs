@@ -22,7 +22,7 @@ namespace DBClientFiles.NET.Internals.Versions.Headers
             var flags = reader.ReadInt16();
             IndexColumn = reader.ReadInt16();
 
-            HasIndexTable = true;
+            HasIndexTable = (flags & 0x04) != 0;
             HasOffsetMap = (flags & 0x01) != 0;
         }
 

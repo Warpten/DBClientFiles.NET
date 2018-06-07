@@ -2,6 +2,7 @@
 
 namespace DBClientFiles.NET.Data.WDC1
 {
+    [DBFileName(Name = "AreaTable", Extension = FileExtension.DB2)]
     public sealed class AreaTableEntry
     {
         [Index]

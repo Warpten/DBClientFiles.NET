@@ -15,7 +15,6 @@ namespace DBClientFiles.NET.Utils
     {
         public MemberInfo MemberInfo { get; }
         public int Index { get; set; }
-        public int CompressionIndex { get; set; }
 
         /// <summary>
         /// If this describes a member with underlying members, this only contains the first file member this is mapped to.
@@ -27,7 +26,19 @@ namespace DBClientFiles.NET.Utils
 
         public Type Type { get; }
 
-        public int Cardinality { get; set; } = 1;
+        private int _cardinality = 1;
+        // Cardinality as declared by attributes
+        public int Cardinality
+        {
+            get
+            {
+                if (MappedTo != null)
+                    return MappedTo.Cardinality;
+                return _cardinality;
+            }
+
+            set => _cardinality = value;
+        }
 
         public ExtendedMemberInfo(MemberInfo memberInfo, int index, ExtendedMemberInfo parent = null)
         {

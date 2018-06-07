@@ -2,7 +2,7 @@
 
 namespace DBClientFiles.NET.Data.WDB2
 {
-    [DBFileName(Name = "Item-sparse", Extension = FileExtension.DB2)]
+    // [DBFileName(Name = "Item-sparse", Extension = FileExtension.DB2)]
     public sealed class ItemSparseEntry
     {
         [Index]

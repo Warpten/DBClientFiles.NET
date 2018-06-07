@@ -10,17 +10,17 @@ namespace DBClientFiles.NET.Benchmark
     [NetCoreJob]
     public class SpanTest
     {
-        [Benchmark(Description = "stackalloc", Baseline = true)]
-        public int SpanSmall()
+        [Benchmark(Description = "AsSpan", Baseline = true)]
+        public Span<byte> SpanSmall()
         {
-            var asSpan = b.AsSpan();
-            return MemoryMarshal.Read<int>(asSpan);
+            return b.AsSpan();
         }
 
-        [Benchmark(Description = "union")]
-        public int FastStructureSmall()
+        [Benchmark(Description = "implicit cast")]
+        public Span<byte> FastStructureSmall()
         {
-            return u.i;
+            Span<byte> b_ = b;
+            return b_;
         }
         
         private _union u;

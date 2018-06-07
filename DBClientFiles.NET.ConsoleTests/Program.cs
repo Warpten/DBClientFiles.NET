@@ -30,11 +30,11 @@ namespace DBClientFiles.NET.ConsoleTests
                 int.TryParse(args[idxCount + 1], out iterationCount);
 
 
-            using (var fs = File.OpenRead(@"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\bin\Release\net472\Data\WDC2\Achievement.db2"))
-            {
-                // var sl = new StorageList<Data.WDC1.SpellEffectEntry>(fs);
-                var d = new StorageDictionary<int, Data.WDC2.AchievementEntry>(fs);
-            }
+            //using (var fs = File.OpenRead(@"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\bin\Release\net472\Data\WDC1\ItemSearchName.db2"))
+            //{
+            //    // var sl = new StorageList<Data.WDC1.SpellEffectEntry>(fs);
+            //    var d = new StorageDictionary<int, Data.WDC1.ItemSearchNameEntry>(fs);
+            //}
 
             TestStructuresInNamespace("DBClientFiles.NET.Data.WDBC", iterationCount);
             TestStructuresInNamespace("DBClientFiles.NET.Data.WDB2", iterationCount);

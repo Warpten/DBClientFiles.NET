@@ -87,6 +87,8 @@ namespace DBClientFiles.NET.Utils
 
         private int RecursiveMemberAssignment(ExtendedMemberInfo memberInfo, int fileIndex, ref int memberOffset)
         {
+            // Don't map the index if it's contained in the index table - Mapping defines how we deserialize later on
+            // (an unmapped member is skipped)
             if (fileIndex == IndexColumn && HasIndexTable && memberInfo.Index == IndexColumn)
                 return fileIndex;
 
@@ -99,11 +101,13 @@ namespace DBClientFiles.NET.Utils
 
             if (FileMembers.Count == 0)
             {
-                memberInfo.MappedTo = new FileMemberInfo();
-                memberInfo.MappedTo.ByteSize = memberInfo.Type.GetBinarySize();
-                memberInfo.MappedTo.Offset = memberOffset;
-                memberInfo.MappedTo.Index = fileIndex;
-                memberInfo.MappedTo.Cardinality = memberInfo.Cardinality;
+                memberInfo.MappedTo = new FileMemberInfo
+                {
+                    ByteSize = memberInfo.Type.GetBinarySize(),
+                    Offset = memberOffset,
+                    Index = fileIndex,
+                    Cardinality = memberInfo.Cardinality
+                };
 
                 memberOffset += memberInfo.MappedTo.ByteSize * 8 * memberInfo.MappedTo.Cardinality;
 
@@ -112,12 +116,14 @@ namespace DBClientFiles.NET.Utils
 
             if (fileIndex >= FileMembers.Count)
             {
-                memberInfo.MappedTo = new FileMemberInfo();
-                memberInfo.MappedTo.ByteSize = memberInfo.Type.GetBinarySize();
-                memberInfo.MappedTo.Offset = memberOffset;
-                memberInfo.MappedTo.Index = fileIndex;
-                memberInfo.MappedTo.Cardinality = memberInfo.Cardinality;
-                memberInfo.MappedTo.CompressionType = MemberCompressionType.RelationshipData;
+                memberInfo.MappedTo = new FileMemberInfo
+                {
+                    ByteSize = memberInfo.Type.GetBinarySize(),
+                    Offset = memberOffset,
+                    Index = fileIndex,
+                    Cardinality = memberInfo.Cardinality,
+                    CompressionType = MemberCompressionType.RelationshipData
+                };
 
                 memberOffset += memberInfo.MappedTo.ByteSize * 8 * memberInfo.MappedTo.Cardinality;
 
@@ -125,6 +131,7 @@ namespace DBClientFiles.NET.Utils
             }
 
             memberInfo.MappedTo = FileMembers[fileIndex];
+            memberInfo.Cardinality = memberInfo.MappedTo.Cardinality;
             memberOffset += Math.Max(memberInfo.MappedTo.BitSize, memberInfo.MappedTo.ByteSize * 8);
 
             return fileIndex + 1;
@@ -152,10 +159,10 @@ namespace DBClientFiles.NET.Utils
                     continue;
 
                 if (currentMember.Type.IsArray && currentMember.MappedTo.Cardinality <= 1)
-                    throw new InvalidStructureException($"Field {currentMember.MemberInfo.Name} is declared as an array but maps to a regular type. Is your structure accurate?");
+                    throw new InvalidStructureException($"Member {currentMember.MemberInfo.Name} of {currentMember.MemberInfo.DeclaringType.FullName} is declared as an array but maps to a regular type. Is your structure accurate?");
 
                 if (!currentMember.Type.IsArray && currentMember.MappedTo.Cardinality > 1)
-                    throw new InvalidStructureException($"Field {currentMember.MemberInfo.Name} is declared as a simple type but maps to an array. Is your structure accurate?");
+                    throw new InvalidStructureException($"Member {currentMember.MemberInfo.Name} of {currentMember.MemberInfo.DeclaringType.FullName} is declared as a simple type but maps to an array. Is your structure accurate?");
             }
 
             // And finally, set category specific indices
