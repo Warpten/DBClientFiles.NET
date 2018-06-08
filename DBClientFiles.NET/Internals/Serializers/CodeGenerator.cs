@@ -205,17 +205,62 @@ namespace DBClientFiles.NET.Internals.Serializers
             {
                 var memberInfo = Reader.MemberStore.Members[i];
 
-                //! TODO: Handle deep copy
                 var oldMember = memberInfo.MakeMemberAccess(inputNode);
                 var newMember = memberInfo.MakeMemberAccess(outputNode);
-                body.Add(Expression.Assign(newMember.Expression, oldMember.Expression));
+
+                CloneMember(body, ref oldMember, ref newMember);
             }
 
             body.Add(outputNode);
             var block = Expression.Block(new[] { outputNode }, body);
             var lmbda = Expression.Lambda<Func<T, T>>(block, inputNode);
+#if DEBUG
+            var resultStringView = ExpressionStringBuilder.ExpressionToString(lmbda);
+            Console.WriteLine($"Cloner for {typeof(T).Name}");
+            Console.WriteLine(resultStringView);
+#endif
+
             _memberwiseClone = lmbda.Compile();
             return _memberwiseClone;
+        }
+
+        private static void CloneMember(List<Expression> bodyBlock, ref ExtendedMemberExpression inputNode, ref ExtendedMemberExpression outputNode)
+        {
+            var memberInfo = inputNode.MemberInfo;
+            if (memberInfo.Children.Count != 0)
+            {
+                //! TODO Implement (weird things like C3Vector[2])
+                if (memberInfo.Type.IsArray)
+                    throw new InvalidStructureException("Structures may not contain substructure arrays!");
+
+                if (!memberInfo.Type.IsValueType)
+                    bodyBlock.Add(Expression.Assign(outputNode.Expression, CreateTypeInitializer(memberInfo.Type)));
+
+                foreach (var childInfo in memberInfo.Children)
+                {
+                    var inputChildExpression = childInfo.MakeMemberAccess(inputNode.Expression);
+                    var outputChildExpression = childInfo.MakeMemberAccess(outputNode.Expression);
+                    CloneMember(bodyBlock, ref inputChildExpression, ref outputChildExpression);
+                }
+            }
+            else if (memberInfo.Type.IsArray)
+            {
+                bodyBlock.Add(Expression.Assign(outputNode.Expression,
+                    Expression.NewArrayBounds(memberInfo.Type.GetElementType(),
+                        Expression.Constant(memberInfo.Cardinality))));
+
+                for (var i = 0; i < memberInfo.Cardinality; ++i)
+                {
+                    var itr = Expression.Constant(i);
+                    var inputArrayElement = Expression.ArrayIndex(inputNode.Expression, itr);
+                    var outputArrayElement = Expression.ArrayIndex(outputNode.Expression, itr);
+                    bodyBlock.Add(Expression.Assign(outputArrayElement, inputArrayElement));
+                }
+            }
+            else
+            {
+                bodyBlock.Add(Expression.Assign(outputNode.Expression, inputNode.Expression));
+            }
         }
 
         /// <summary>
@@ -421,7 +466,6 @@ namespace DBClientFiles.NET.Internals.Serializers
 
                     return Expression.Call(recordReader, _RecordReader.ReadPackedSingle, Expression.Constant(memberInfo.MappedTo.Offset));
                 }
-                
 
                 var methodInfo = _RecordReader.PackedReaders[elementCode];
                 return Expression.Call(recordReader, methodInfo, Expression.Constant(memberInfo.MappedTo.Offset), Expression.Constant(memberInfo.MappedTo.BitSize));
@@ -442,11 +486,12 @@ namespace DBClientFiles.NET.Internals.Serializers
         }
 
         private Expression CreateTypeInitializer() => CreateTypeInitializer(_instance.Type);
-        private Expression CreateTypeInitializer(Type instanceType) => Expression.New(instanceType);
-        
+
         private Expression CreateTypeInitializer(params Expression[] arguments) => CreateTypeInitializer(_instance.Type, arguments);
 
-        private Expression CreateTypeInitializer(Type instanceType, params Expression[] arguments)
+        private static Expression CreateTypeInitializer(Type instanceType) => Expression.New(instanceType);
+        
+        private static Expression CreateTypeInitializer(Type instanceType, params Expression[] arguments)
         {
             // If a constructor is found with the provided parameters, use it.
             // Otherwise, well, fuck.
