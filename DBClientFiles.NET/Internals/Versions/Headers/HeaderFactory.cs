@@ -19,7 +19,6 @@ namespace DBClientFiles.NET.Internals.Versions.Headers
                     case Signatures.WDB4:
                         break;
                     case Signatures.WDB5: return new WDB5(binaryReader);
-                    // TODO FIXME: I was lazy.
                     case Signatures.WDB6: return new WDB6(binaryReader);
                     case Signatures.WDC1: return new WDC1(binaryReader);
                     case Signatures.WDC2: return new WDC2(binaryReader);

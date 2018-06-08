@@ -11,7 +11,6 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     /// A segment reader for legacy common table (as seen in WDB6 file format).
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
-    /// <typeparam name="TValue">The record type of the currently operated file.</typeparam>
     internal sealed class LegacyCommonTableReader<TKey> : SegmentReader
         where TKey : struct
     {
@@ -135,7 +134,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             }
         }
 
-        public unsafe T ExtractValue<T>(int columnIndex, TKey recordKey) where T : struct
+        public T ExtractValue<T>(int columnIndex, TKey recordKey) where T : struct
         {
             Span<int> asInt = stackalloc int[1];
 

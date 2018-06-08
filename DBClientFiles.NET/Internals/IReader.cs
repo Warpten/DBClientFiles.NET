@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using DBClientFiles.NET.Internals.Binding;
 using DBClientFiles.NET.Internals.Serializers;
 using DBClientFiles.NET.Utils;
 
@@ -19,9 +20,6 @@ namespace DBClientFiles.NET.Internals
             get;
             set;
         }
-
-        uint TableHash { get; }
-        uint LayoutHash { get; }
 
         U ExtractKey<U>(T instance) where U : struct;
     }

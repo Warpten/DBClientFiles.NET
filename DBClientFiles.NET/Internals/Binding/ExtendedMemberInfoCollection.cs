@@ -6,9 +6,9 @@ using System.Reflection;
 using DBClientFiles.NET.Attributes;
 using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Exceptions;
-using DBClientFiles.NET.Internals;
+using DBClientFiles.NET.Utils;
 
-namespace DBClientFiles.NET.Utils
+namespace DBClientFiles.NET.Internals.Binding
 {
     internal class ExtendedMemberInfoCollection
     {

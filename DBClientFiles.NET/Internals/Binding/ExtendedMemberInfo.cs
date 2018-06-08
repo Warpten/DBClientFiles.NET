@@ -1,11 +1,11 @@
-﻿using DBClientFiles.NET.Attributes;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using DBClientFiles.NET.Attributes;
 
-namespace DBClientFiles.NET.Utils
+namespace DBClientFiles.NET.Internals.Binding
 {
     /// <summary>
     /// This class wraps around <see cref="MemberInfo"/>. It is internally used to map elements of a defined structure to the elements

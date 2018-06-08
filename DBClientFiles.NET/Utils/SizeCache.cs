@@ -9,7 +9,7 @@ namespace DBClientFiles.NET.Utils
     ///     Also provides a way to get the pointer of a generic type (useful for fast memcpy and other operations)
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public static class SizeCache<T> // where T : struct
+    public static class SizeCache<T> where T : struct
     {
         /// <summary> The size of the Type </summary>
         public static readonly int Size;

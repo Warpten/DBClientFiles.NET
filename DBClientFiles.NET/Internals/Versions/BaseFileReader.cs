@@ -7,6 +7,7 @@ using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using DBClientFiles.NET.Internals.Binding;
 
 namespace DBClientFiles.NET.Internals.Versions
 {

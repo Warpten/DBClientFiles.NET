@@ -11,7 +11,7 @@ namespace DBClientFiles.NET.IO
     /// </summary>
     internal abstract class FileReader : BinaryReader
     {
-        protected IFileHeader Header { get; }
+        public IFileHeader Header { get; }
 
         protected FileReader(IFileHeader header, Stream strm, bool keepOpen = false) : base(strm, Encoding.UTF8, keepOpen)
         {

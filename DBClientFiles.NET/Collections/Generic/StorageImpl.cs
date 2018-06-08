@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using DBClientFiles.NET.Internals.Binding;
 using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.Internals.Serializers;
 using DBClientFiles.NET.Internals.Versions.Headers;

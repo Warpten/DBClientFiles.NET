@@ -50,7 +50,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
         public override void Read()
         {
-            throw new InvalidOperationException("Should not be called");
+            throw new InvalidOperationException("Should not be called. Call Initialize instead");
         }
 
         public T[] ReadArray<T>(int blockIndex, int offset, int arraySize) where T : struct
@@ -61,7 +61,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             return buffer;
         }
 
-        public unsafe T Read<T>(int blockIndex, int offset) where T : struct
+        public T Read<T>(int blockIndex, int offset) where T : struct
         {
             return _segments[blockIndex].ExtractValue<T>(offset);
         }

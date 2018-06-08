@@ -2,9 +2,8 @@
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using DBClientFiles.NET.Internals;
 
-namespace DBClientFiles.NET.Utils
+namespace DBClientFiles.NET.Internals.Binding
 {
     /// <summary>
     /// This class representes an element described in a given DBC|DB2 file.

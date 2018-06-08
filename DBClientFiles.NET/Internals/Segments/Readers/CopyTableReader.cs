@@ -14,20 +14,12 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
     {
         public CopyTableReader(FileReader reader) : base(reader)
         {
-            _parsedContent = new Dictionary<TKey, TKey>();
+            _parsedContent = new Dictionary<TKey, List<TKey>>(reader.Header.RecordCount);
         }
 
-        private readonly Dictionary<TKey /* newRow */, TKey /* oldRow */> _parsedContent;
+        private readonly Dictionary<TKey /* oldRow */, List<TKey> /* newRows */> _parsedContent;
 
-        public IEnumerable<TKey> this[TKey oldKey]
-        {
-            get
-            {
-                foreach (var kv in _parsedContent)
-                    if (kv.Value.Equals(oldKey))
-                        yield return kv.Key;
-            }
-        }
+        public IEnumerable<TKey> this[TKey oldKey] => _parsedContent[oldKey];
 
         public override void Read()
         {
@@ -39,7 +31,11 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             {
                 var newKey = FileReader.ReadStruct<TKey>();
                 var copiedRow = FileReader.ReadStruct<TKey>();
-                _parsedContent[newKey] = copiedRow;
+
+                if (!_parsedContent.TryGetValue(copiedRow, out var block))
+                    block = _parsedContent[copiedRow] = new List<TKey>();
+
+                block.Add(newKey);
             }
         }
 

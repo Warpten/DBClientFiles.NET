@@ -1,11 +1,11 @@
 ﻿using System.Linq.Expressions;
 
-namespace DBClientFiles.NET.Utils
+namespace DBClientFiles.NET.Internals.Binding
 {
     /// <summary>
     /// A simple wrapper around <see cref="MemberExpression"/> and <see cref="ExtendedMemberInfo"/>.
     /// </summary>
-    internal struct ExtendedMemberExpression
+    internal readonly struct ExtendedMemberExpression
     {
         public MemberExpression Expression { get; }
         public ExtendedMemberInfo MemberInfo { get; }

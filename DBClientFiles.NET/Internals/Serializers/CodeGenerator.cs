@@ -9,6 +9,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Exceptions;
+using DBClientFiles.NET.Internals.Binding;
 
 namespace DBClientFiles.NET.Internals.Serializers
 {

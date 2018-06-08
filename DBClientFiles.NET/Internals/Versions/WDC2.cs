@@ -135,7 +135,6 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override string FindStringByOffset(int tableOffset)
         {
-            // Forward the call to the current segment
             return _sections[_currentlyParsedSection].FindStringByOffset(tableOffset);
         }
 
