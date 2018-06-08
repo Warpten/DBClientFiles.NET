@@ -108,6 +108,9 @@ namespace DBClientFiles.NET.Internals.Versions
         /// <returns></returns>
         public virtual IEnumerable<TValue> ReadRecords()
         {
+            if (!Options.LoadMask.HasFlag(LoadMask.Records))
+                yield break;
+            
             if (OffsetMap.Exists)
             {
                 for (var i = 0; i < OffsetMap.Count; ++i)

@@ -6,8 +6,8 @@ namespace DBClientFiles.NET.Attributes
     /// <summary>
     /// This attribute is used to indicate the size of an array field or property.
     /// For older file formats (WDBC, WDB2 and WDB5 to some extent), it is non-trivial (or borderline impossible)
-    /// to guess the size of arrays from the file itself alone. As such, this allows
-    /// <see cref="StorageBase{TValue}"/> to continue execution where it would otherwise fail.
+    /// to guess the size of arrays from the file itself alone. As such, this allows us
+    /// to continue execution where we would otherwise fail.
     ///
     /// Not that when serializing a record, if this attribute is absent from an array, the member's
     /// actual size will be used instead - resulting in possible situations where you would expect your structure to

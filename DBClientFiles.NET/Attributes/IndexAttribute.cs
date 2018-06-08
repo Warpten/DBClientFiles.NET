@@ -9,9 +9,11 @@ namespace DBClientFiles.NET.Attributes
     /// the record for newer file formats, or in the middle of the record. If you are unsure, try it one way, the library
     /// will complain if you're wrong.
     /// </summary>
-    /// <remarks>This attribute is not to be confused with <see cref="StorageDictionary{TKey,TValue}"/>'s lambda argument,
-    /// which is instead used to define a member to key with in the storage.</remarks>
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+    /// <remarks>
+    /// This attribute is not to be confused with <see cref="StorageDictionary{TKey,TValue}"/>'s optional lambda argument,
+    /// which is instead used to define a member to key with in the storage.
+    /// </remarks>
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
     public sealed class IndexAttribute : Attribute
     {
     }

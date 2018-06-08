@@ -4,12 +4,10 @@ using DBClientFiles.NET.Internals.Versions;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using DBClientFiles.NET.Internals.Binding;
 using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.Internals.Serializers;
 using DBClientFiles.NET.Internals.Versions.Headers;
-using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
@@ -18,11 +16,6 @@ namespace DBClientFiles.NET.Collections.Generic
         Signatures Signature { get; }
         uint TableHash { get; }
         uint LayoutHash { get; }
-    }
-
-    internal static class _StorageImpl
-    {
-        public static MethodInfo InitializeReader { get; } = typeof(StorageImpl<>).GetMethod("InitializeFileReader", Type.EmptyTypes);
     }
 
     /// <summary>
@@ -137,6 +130,10 @@ namespace DBClientFiles.NET.Collections.Generic
             Generator = File.Generator;
 
             File.ReadSegments();
+            
+            // TODO: Move the LoadMask.Records check here instead of having to use it in subclasses.
+            // Currently a compiler problem.
+
             return File.ReadRecords();
         }
     }

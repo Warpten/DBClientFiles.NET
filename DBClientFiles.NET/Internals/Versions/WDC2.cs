@@ -99,6 +99,9 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override IEnumerable<TValue> ReadRecords()
         {
+            if (!Options.LoadMask.HasFlag(LoadMask.Records))
+                yield break;
+
             for (_currentlyParsedSection = 0; _currentlyParsedSection < _sections.Length; ++_currentlyParsedSection)
             {
                 var currentSection = _sections[_currentlyParsedSection];
