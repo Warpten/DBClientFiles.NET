@@ -90,7 +90,9 @@ Otherwise, you may use any key type you want. If you happen to use a field which
 - `InternStrings`
 
   By default, the CLR does not intern strings when they are not explicit in source. This means that any string that is in the file's string table and may be duplicated  will appear more than once in memory and use twice the space. 
+  
   `DBClientFiles.NET` uses C#'s own internal string pool, which lives until the runtime terminates.
+  
   :exclamation: Be careful with this. The performance impact of interning strings can be huge, since it leads to unnecessary allocations, hash table lookups, and garbage collections. Use only with files where a majority of the strings are duplicates.
 
 * `OverrideSignedChecks`
