@@ -2,7 +2,7 @@
 
 namespace DBClientFiles.NET.Data.WDBC
 {
-    [DBFileName(Name = "Achievement", Extension = FileExtension.DBC)]
+    [DBFileName(Name = "Achievement.WDBC", Extension = FileExtension.DBC)]
     public sealed class AchievementEntry
     {
         [Index]

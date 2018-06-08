@@ -90,8 +90,10 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override void ReadSegments()
         {
-            _palletTable.Read();
-            _commonTable.Read();
+            _commonTable.Initialize(MemberStore.GetBlockLengths(MemberCompressionType.CommonData));
+            _palletTable.Initialize(MemberStore.GetBlockLengths(f =>
+                f.CompressionType == MemberCompressionType.BitpackedPalletArrayData ||
+                f.CompressionType == MemberCompressionType.BitpackedPalletData));
 
             for (var i = 0; i < _sections.Length; ++i)
                 _sections[i].ReadSegments();

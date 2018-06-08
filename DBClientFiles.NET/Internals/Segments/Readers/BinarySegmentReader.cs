@@ -50,7 +50,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
         public override void Read()
         {
-
+            throw new InvalidOperationException("Should not be called");
         }
 
         public T[] ReadArray<T>(int blockIndex, int offset, int arraySize) where T : struct

@@ -73,6 +73,12 @@ namespace DBClientFiles.NET.ConsoleTests
         private volatile AchievementEntry entry;
 #pragma warning restore 169
 
+        private static Stream OpenFile(string resourceName)
+        {
+            return File.OpenRead($@"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\Files\{resourceName}");
+        }
+
+
         private static void TestStructuresInNamespace(string @namespace, int count = 1)
         {
             var fileType = @namespace.Split('.').Last();
@@ -90,19 +96,10 @@ namespace DBClientFiles.NET.ConsoleTests
                     continue;
 
                 var genericMethodInfo = methodInfo.MakeGenericMethod(typeInfo);
-                var fileName = typeInfo.Name.Replace("Entry", "");
                 var nameAttr = typeInfo.GetCustomAttribute<DBFileNameAttribute>();
-                if (nameAttr != null)
-                {
-                    fileName = nameAttr.Name + "." + (nameAttr.Extension == FileExtension.DB2 ? "db2" : "dbc");
-                }
-                else
-                {
-                    fileName += ".dbc";
-                }
+                var fileName = nameAttr.Name + "." + (nameAttr.Extension == FileExtension.DB2 ? "db2" : "dbc");
                 
-                var resourcePath = $@"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\bin\Release\net472\Data\{fileType}\{fileName}";
-                genericMethodInfo.Invoke(null, new object[] {resourcePath, count});
+                genericMethodInfo.Invoke(null, new object[] {fileName, count});
             }
 
             foreach (var kv in _dataStores)
@@ -119,7 +116,7 @@ namespace DBClientFiles.NET.ConsoleTests
         {
             var correctedPath = File.Exists(resourcePath) ? resourcePath : resourcePath.Replace(".dbc", ".db2");
 
-            using (var fs = File.OpenRead(correctedPath))
+            using (var fs = OpenFile(resourcePath))
             using (var ms = new MemoryStream((int)fs.Length))
             {
                 fs.CopyTo(ms);

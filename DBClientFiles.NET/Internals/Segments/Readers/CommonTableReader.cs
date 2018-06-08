@@ -76,6 +76,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
         public override void Read()
         {
+            throw new InvalidOperationException("Should not be called");
         }
 
         public T ExtractValue<T>(int columnIndex, T defaultValue, TKey recordKey) where T : struct

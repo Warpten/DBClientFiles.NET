@@ -48,7 +48,11 @@ namespace DBClientFiles.NET.Utils
         /// If <see cref="CompressionType"/> is <see cref="MemberCompressionType.CommonData"/>, this is set. null otherwise.
         /// </summary>
         public byte[] DefaultValue { get; set; }
-        public bool? IsSigned { get; set; }
+
+        public bool? IsSigned {
+            get;
+            set;
+        }
 
         public T GetDefaultValue<T>() where T : struct
         {
@@ -96,6 +100,8 @@ namespace DBClientFiles.NET.Utils
                 default:
                     throw new InvalidOperationException();
             }
+
+            Console.WriteLine($"[{Index}] {CompressionType} {(IsSigned.HasValue && IsSigned.Value ? "Signed" : "Unsigned")}");
 
             if (ByteSize != 0 && CompressionType != MemberCompressionType.BitpackedPalletArrayData)
                 Cardinality = BitSize / (8 * ByteSize);

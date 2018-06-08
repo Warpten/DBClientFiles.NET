@@ -9,6 +9,26 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Files\Achievement.WDB2.db2" />
+    <None Remove="Files\Achievement.WDB3.db2" />
+    <None Remove="Files\Achievement.WDB5.db2" />
+    <None Remove="Files\Achievement.WDB6.db2" />
+    <None Remove="Files\Achievement.WDBC.dbc" />
+    <None Remove="Files\Achievement.WDC1.db2" />
+    <None Remove="Files\Achievement.WDC2.db2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Files\Achievement.WDB2.db2" />
+    <EmbeddedResource Include="Files\Achievement.WDB3.db2" />
+    <EmbeddedResource Include="Files\Achievement.WDB5.db2" />
+    <EmbeddedResource Include="Files\Achievement.WDB6.db2" />
+    <EmbeddedResource Include="Files\Achievement.WDBC.dbc" />
+    <EmbeddedResource Include="Files\Achievement.WDC1.db2" />
+    <EmbeddedResource Include="Files\Achievement.WDC2.db2" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.10.14" />
   </ItemGroup>
 

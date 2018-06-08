@@ -166,22 +166,25 @@ namespace DBClientFiles.NET.Utils
             }
 
             // And finally, set category specific indices
-            for (var i = 0; i < FileMembers.Count; ++i)
+            for (var i = 1; i < FileMembers.Count; ++i)
             {
                 var currentFileMember = FileMembers[i];
-                for (var j = 0; j < i; ++j)
+                for (var j = i - 1; j >= 0; --j)
                 {
                     var currentCategory = currentFileMember.CompressionType;
                     var otherCategory = FileMembers[j].CompressionType;
 
-                    var incrementCategoryIndex = false;
+                    bool incrementCategoryIndex;
                     if (currentCategory == MemberCompressionType.BitpackedPalletArrayData || currentCategory == MemberCompressionType.BitpackedPalletData)
                         incrementCategoryIndex = (otherCategory == MemberCompressionType.BitpackedPalletArrayData || otherCategory == MemberCompressionType.BitpackedPalletData);
                     else
                         incrementCategoryIndex = otherCategory == currentCategory;
 
                     if (incrementCategoryIndex)
-                        ++currentFileMember.CategoryIndex;
+                    {
+                        currentFileMember.CategoryIndex = FileMembers[j].CategoryIndex + 1;
+                        break;
+                    }
                 }
             }
         }

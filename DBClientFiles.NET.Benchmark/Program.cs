@@ -8,9 +8,9 @@ namespace DBClientFiles.NET.Benchmark
         {
             var switcher = new BenchmarkSwitcher(new[]
             {
-                typeof(SimpleSpeedMeasurements),
                 typeof(OptionsTest),
-                typeof(SpanTest)
+                typeof(SpanTest),
+                typeof(AchievementTest)
             });
 
             switcher.Run();
