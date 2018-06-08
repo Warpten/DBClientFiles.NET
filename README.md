@@ -80,17 +80,26 @@ Otherwise, you may use any key type you want. If you happen to use a field which
 ### StorageOptions
 
 - `MemberType`
-This is a simple way to tell the library you declared members as either **fields** or **properties**. Any other type obviously makes zero sense. This defaults to `MemberTypes.Property`.
+
+  This is a simple way to tell the library you declared members as either **fields** or **properties**. Any other type obviously makes zero sense. This defaults to `MemberTypes.Property`.
+
 - `LoadMask`
-This property is a way to change the purpose of the library. Usually, you would want `LoadMask.Records`, but there are situations where you would open a file just to take a look at it's string table, or maybe just its structure. This property allows you to speed up execution by loading what you need. Defaults to `LoadMask.Records`.
+
+  This property is a way to change the purpose of the library. Usually, you would want `LoadMask.Records`, but there are situations where you would open a file just to take a look at it's string table, or maybe just its structure. This property allows you to speed up execution by loading what you need. Defaults to `LoadMask.Records`.
+
 - `InternStrings`
-By default, the CLR does not intern strings when they are not explicit in source. This means that any string that is in the file's string table and may be duplicated  will appear more than once in memory and use twice the space. 
-`DBClientFiles.NET` uses C#'s own internal string pool, which lives until the runtime terminates.
-:exclamation: Be careful with this. The performance impact of interning strings can be huge, since it leads to unnecessary allocations, hash table lookups, and garbage collections. Use only with files where a majority of the strings are duplicates.
+
+  By default, the CLR does not intern strings when they are not explicit in source. This means that any string that is in the file's string table and may be duplicated  will appear more than once in memory and use twice the space. 
+  `DBClientFiles.NET` uses C#'s own internal string pool, which lives until the runtime terminates.
+  :exclamation: Be careful with this. The performance impact of interning strings can be huge, since it leads to unnecessary allocations, hash table lookups, and garbage collections. Use only with files where a majority of the strings are duplicates.
+
 * `OverrideSignedChecks`
-Starting from *WDC1*, files contain additional information on their type, namely wether or not they are signed. Use this property to avoid enforced checks on the types you declared in your file. Defaults to `false`.
+
+  Starting from *WDC1*, files contain additional information on their type, namely wether or not they are signed. Use this property to avoid enforced checks on the types you declared in your file. Defaults to `false`.
+
 * `CopyToMemory`
-If set to true and the `Stream` provided to any of the types exposed by the library is not a `MemoryStream`, the library will instanciate a `MemoryStream` into which the input stream is copied. This can help when dealing with network streams (which are typically not seekable). This is ignored if the input stream does not support seek operations - in which case the `MemoryStream` mentionned above is created.
+
+  If set to true and the `Stream` provided to any of the types exposed by the library is not a `MemoryStream`, the library will instanciate a `MemoryStream` into which the input stream is copied. This can help when dealing with network streams (which are typically not seekable). This is ignored if the input stream does not support seek operations - in which case the `MemoryStream` mentionned above is created.
  
 ## Usage
 
