@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using DBClientFiles.NET.IO;
-using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
 {

@@ -18,28 +18,28 @@ namespace DBClientFiles.NET.Benchmark
             return File.OpenRead($@"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\Files\{resourceName}");
         }
 
-        [Benchmark(Description = "Achievement (WDBC)", OperationsPerInvoke = 5)]
+        [Benchmark(Description = "Achievement (WDBC)", OperationsPerInvoke = 1)]
         public StorageList<WDBC.AchievementEntry> WDBC()
         {
             using (var fs = OpenFile("Achievement.WDBC.dbc"))
                 return new StorageList<WDBC.AchievementEntry>(fs);
         }
 
-        [Benchmark(Description = "Achievement (WDB2)", OperationsPerInvoke = 5)]
+        [Benchmark(Description = "Achievement (WDB2)", OperationsPerInvoke = 1)]
         public StorageList<WDB2.AchievementEntry> WDB2()
         {
             using (var fs = OpenFile("Achievement.WDB2.db2"))
                 return new StorageList<WDB2.AchievementEntry>(fs);
         }
 
-        [Benchmark(Description = "Achievement (WDC1)", OperationsPerInvoke = 5)]
+        [Benchmark(Description = "Achievement (WDC1)", OperationsPerInvoke = 1)]
         public StorageList<WDC1.AchievementEntry> WDC1()
         {
             using (var fs = OpenFile("Achievement.WDC1.db2"))
                 return new StorageList<WDC1.AchievementEntry>(fs);
         }
 
-        [Benchmark(Description = "Achievement (WDC2)", OperationsPerInvoke = 5)]
+        [Benchmark(Description = "Achievement (WDC2)", OperationsPerInvoke = 1)]
         public StorageList<WDC2.AchievementEntry> WDC2()
         {
             using (var fs = OpenFile("Achievement.WDC2.db2"))

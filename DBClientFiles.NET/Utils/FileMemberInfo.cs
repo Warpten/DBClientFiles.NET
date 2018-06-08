@@ -101,8 +101,6 @@ namespace DBClientFiles.NET.Utils
                     throw new InvalidOperationException();
             }
 
-            Console.WriteLine($"[{Index}] {CompressionType} {(IsSigned.HasValue && IsSigned.Value ? "Signed" : "Unsigned")}");
-
             if (ByteSize != 0 && CompressionType != MemberCompressionType.BitpackedPalletArrayData)
                 Cardinality = BitSize / (8 * ByteSize);
         }

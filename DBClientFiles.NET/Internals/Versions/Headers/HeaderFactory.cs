@@ -1,20 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using DBClientFiles.NET.Internals.Segments;
 
 namespace DBClientFiles.NET.Internals.Versions.Headers
 {
     internal static class HeaderFactory
     {
-        public static IFileHeader ReadHeader(Signatures signature, Stream dataStream)
+        public static IFileHeader ReadHeader(Stream dataStream)
         {
             using (var binaryReader = new BinaryReader(dataStream, Encoding.UTF8, true))
             {
-                switch (signature)
+                switch ((Signatures)binaryReader.ReadInt32())
                 {
                     case Signatures.WDBC: return new WDBC(binaryReader);
                     case Signatures.WDB2: return new WDB2(binaryReader);
@@ -26,11 +23,10 @@ namespace DBClientFiles.NET.Internals.Versions.Headers
                     case Signatures.WDB6: return new WDB6(binaryReader);
                     case Signatures.WDC1: return new WDC1(binaryReader);
                     case Signatures.WDC2: return new WDC2(binaryReader);
-
                 }
             }
 
-            return null;
+            throw new InvalidOperationException();
         }
     }
 }

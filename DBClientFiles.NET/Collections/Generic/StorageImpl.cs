@@ -74,8 +74,7 @@ namespace DBClientFiles.NET.Collections.Generic
 
         public IFileHeader InitializeHeaderInfo()
         {
-            var signature = (Signatures)(Stream.ReadByte() | (Stream.ReadByte() << 8) | (Stream.ReadByte() << 16) | (Stream.ReadByte() << 24));
-            Header = HeaderFactory.ReadHeader(signature, Stream);
+            Header = HeaderFactory.ReadHeader(Stream);
 
             Members.IndexColumn = Header.IndexColumn;
             Members.HasIndexTable = Header.HasIndexTable;

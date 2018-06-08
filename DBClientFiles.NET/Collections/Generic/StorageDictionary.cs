@@ -42,7 +42,7 @@ namespace DBClientFiles.NET.Collections.Generic
 
                     var indexMember = implementation.Members.IndexMember;
                     if (indexMember.Type != typeof(TKey))
-                        throw new InvalidOperationException($"The type {typeof(TKey).Name} does not match the declared key type of {typeof(TValue).Name}. Did you forget to provide a key getter?");
+                        throw new InvalidOperationException($"The type {typeof(TKey).Name} does not match the declared key type of {typeof(TValue).FullName}.{indexMember.MemberInfo.Name}. Did you forget to provide a key getter?");
 
                     if (!typeof(TKey).IsValueType)
                         throw new InvalidOperationException($"The type {typeof(TKey).Name} used as a key to StorageDictionary can only be a value type, unless a key getter is provided");
