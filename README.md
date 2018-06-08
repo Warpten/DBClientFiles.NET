@@ -19,8 +19,12 @@ As well as being collections, these types implement `IStorage`, which exposes me
 
 |Signature|WDBC|WDB2|WDB3|WDB4|WDB5|WDB6|WDC1|WDC2|
 |--|--|--|--|--|--|--|--|--|
-|Read|:heavy_check_mark:|:heavy_check_mark:|:x:|:x:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|:heavy_check_mark:|
+|Read|:heavy_check_mark:|:heavy_check_mark:|:x:|:x:|:question:|:question:|:heavy_check_mark:|:heavy_check_mark:|
 |Write|:x:|:x:|:x:|:x:|:x:|:x:|:x:|:x:|
+
+:heavy_check_mark: Verified and tested.
+:question: Implemented but not tested.
+:x: Not supported.
 
 WDB3 and WDB4 cannot be handled due to the files not being self-sufficient (~~and also because I'm lazy~~).
 Write support is on the way.
