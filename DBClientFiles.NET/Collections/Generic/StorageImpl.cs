@@ -46,7 +46,7 @@ namespace DBClientFiles.NET.Collections.Generic
         {
             Options = options;
 
-            if (options.CopyToMemory && !(dataStream is MemoryStream))
+            if (options.CopyToMemory && (!dataStream.CanSeek || !(dataStream is MemoryStream)))
             {
                 Stream = new MemoryStream((int)(dataStream.Length - dataStream.Position));
 
