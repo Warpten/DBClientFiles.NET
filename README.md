@@ -53,13 +53,11 @@ This attribute is used to decorate the member of a record that is it's key. Beha
 
 ## API
 
-### `StorageEnumerable<TKey, T>`
+### `StorageEnumerable<T>`
 - `public StorageEnumerable(Stream fileStream)`
 - `public StorageEnumerable(Stream fileStream, StorageOptions options)`
 
 If `StorageOptions` is not provided, `StorageOptions.Default` is used instead.
-
-:exclamation: This type is inherited by `StorageEnumerable<T>` where `TKey` is constrained to be of type `int`.
 
 ### `StorageList<T>`
 - `public StorageList(Stream dataStream)`
