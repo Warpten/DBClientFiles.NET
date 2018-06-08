@@ -1,4 +1,5 @@
 
+
 # DBClientFiles.NET
 
 A blazing-fast DBC & DB2 reader for World of Warcraft's serialized database format.
@@ -60,72 +61,136 @@ If `StorageOptions` is not provided, `StorageOptions.Default` is used instead.
 
 :exclamation: This type is inherited by `StorageEnumerable<T>` where `TKey` is constrained to be of type `int`.
 
-### `StorageList<TKey, T>`
+### `StorageList<T>`
 - `public StorageList(Stream dataStream)`
+Forwards to the following constructor, using `StorageOptions.Default`.
 - `public StorageList(Stream dataStream, StorageOptions options)`
 
-If `StorageOptions` is not provided, `StorageOptions.Default` is used instead.
+### `StorageDictionary<TKey, T>`
 
-:exclamation: This type is inherited by `StorageList<T>` where `TKey` is constrained to be of type `int`.
+- `public StorageDictionary(Stream dataStream)`
+- `public StorageDictionary(Stream dataStream, Func<T, TKey> keySelector = null)`
+- `public StorageDictionary(Stream dataStream, StorageOptions options, Func<T, TKey> keySelector = null)`
 
-### `StorageDictionary<...>`
+The behavior of `StorageDictionary` varies depending on the arguments passed. 
 
-Two different generic types with the name `StorageDictionary` exist:
+If  `keySelector` is null, the library assumes that `TKey` corresponds to the type of the index field declared by file metadata. In this case, `TKey` can **only** be a *value* type; a **reference** type will throw an `InvalidOperationException`. Similarly, if `TKey` does not match the file's declared index's type, an `InvalidOperationException` is also thrown.
 
- * `StorageDictionary<TKey, TFileKey, T>`
-   * `public StorageDictionary(..., Func<TValue, TKey> keyGetter)`
-   Creates an instance of the dictionary, using the provided lambda to store its result as a key.
-   Example:
-    ```cs
-   public sealed class DummyStructure
-   {
-       [Index] public int ID { get; set; }
-       public uint OtherIdentifier { get; set; }
-       // ... data
-   }
-   ...
-   var dictionary = new StorageDictionary<uint, int, DummyStructure>(..., dummyStructure => dummyStructure.OtherIdentifier);
-   ```
-   Note that `keyGetter` has no relation to the member decorated with `IndexAttribute`.
-   A simpler, and possibly more efficient way to do this, is to use `StorageEnumerable` and LINQ:
-   ```cs
-   var enumerable = new StorageEnumerable<DummyStructure>(...);
-   var dictionary = enumerable.ToDictionary(record => record.OtherIdentifier);
-   ```
-   Which may not be the same type but exposes the same interfaces (lest `IStorage`).
-   
- * `StorageDictionary<TKey, T> : StorageDictionary<TKey, TKey, T>`
- This is a simpler type where the key defaults to the member decorated with `IndexAttribute`.
+Otherwise, you may use any key type you want. If you happen to use a field which has shared values across multiple records, all entries will be overriden by the last one (There is no built-in uniquity check).
 
-Obviously, for both types, if `StorageOptions` is not provided, `StorageOptions.Default` is used instead.
-
-:exclamation: `StorageDictionary` is very much a work in progress and is continuously worked on.
 
 ### StorageOptions
 
-    public sealed class StorageOptions
-    {
-    	public MemberTypes MemberType { get; set; } = MemberTypes.Property;
-    	public LoadMask LoadMask { get; set; } = LoadMask.Records;
-    
-    	public bool InternStrings { get; set; } = true;
-    	public bool KeepStringTable { get; set; } = false;
-    
-    	/// <summary>
-    	/// If set to to <code>true</code>, the stream used as source will be copied to memory before being used.
-    	/// This is set to true by default for anything but MemoryStream.
-    	/// </summary>
-    	public bool CopyToMemory { get; set; } = false;
-    
-    	public static StorageOptions Default { get; }
-    }
-
-`StorageOptions` allows you to define and control how a DBC/DB2 file is loaded from disk.
-* `MemberType` is a simple way to tell the library that the matching members in your type are declared as either fields or properties. Anything else not supported.
-* `LoadMask` will (in the future) be used when a user does not necessarily want to deserialize a file but instead have access to various elements of the file, such as the string table, the index table, or whatever they may like. This may prove useful for structure matching files across versions.
-* `InternStrings`. By default, the CLR does not intern strings when they are not explicit in source. This means that any string that is in the file's string table and may be duplicated  will appear more than once in memory and use twice the space. 
+- `MemberType`
+This is a simple way to tell the library you declared members as either **fields** or **properties**. Any other type obviously makes zero sense. This defaults to `MemberTypes.Property`.
+- `LoadMask`
+This property is a way to change the purpose of the library. Usually, you would want `LoadMask.Records`, but there are situations where you would open a file just to take a look at it's string table, or maybe just its structure. This property allows you to speed up execution by loading what you need. Defaults to `LoadMask.Records`.
+- `InternStrings`
+By default, the CLR does not intern strings when they are not explicit in source. This means that any string that is in the file's string table and may be duplicated  will appear more than once in memory and use twice the space. 
 `DBClientFiles.NET` uses C#'s own internal string pool, which lives until the runtime terminates.
-
 :exclamation: Be careful with this. The performance impact of interning strings can be huge, since it leads to unnecessary allocations, hash table lookups, and garbage collections. Use only with files where a majority of the strings are duplicates.
-* `KeepStringTable`: Unused.
-* `CopyToMemory`: When loading from the provided `Stream` instance, if this property is set the true, the entirety of the stream's content will be loaded into a `MemoryStream` which will then be entirely managed by the collection. This can help for slow drives.
+* `OverrideSignedChecks`
+Starting from *WDC1*, files contain additional information on their type, namely wether or not they are signed. Use this property to avoid enforced checks on the types you declared in your file. Defaults to `false`.
+* `CopyToMemory`
+If set to true and the `Stream` provided to any of the types exposed by the library is not a `MemoryStream`, the library will instanciate a `MemoryStream` into which the input stream is copied. This can help when dealing with network streams (which are typically not seekable). This is ignored if the input stream does not support seek operations - in which case the `MemoryStream` mentionned above is created.
+ 
+## Usage
+
+### Declaring structures - Quirks and tips
+
+:information_source: Older formats such as `WDBC` and `WDB2` do not contain much informations about fields, except their amount (including array sizes). This means that you should be very verbose about your structures:
+
+```cs
+public sealed class AchievementEntry
+{
+    [Index]
+    public int ID { get; set; }
+    ...
+    [Cardinality(SizeConst = 16)]
+    public string[] Title { get; set; }
+    ...
+    [Cardinality(SizeConst = 16)]
+    public string[] Description { get; set; }
+    ...
+    [Cardinality(SizeConst = 16)]
+    public string[] Rewards { get; set; }
+    ...
+}
+```
+
+This is not the case with `WDB5` and `WDB6`, to some extend. The library is able to guess the cardinality of arrays if they are not the last member of the structure, because that information is contained in the file.
+
+:information_source: On the other hand, `WDC1` and `WDC2` contain so much information about members that you almost don't require attributes to make your structure work:
+
+```cs
+public sealed class AchievementEntry // WDC1
+{
+    public string Title { get; set; }
+    public string Description { get; set; }
+    public string Reward { get; set; }
+    public int Flags { get; set; }
+    public short InstanceID { get; set; }
+    public short Supercedes { get; set; }
+    public short Category { get; set; }
+    public short UiOrder { get; set; }
+    public short SharesCriteria { get; set; }
+    public byte Faction { get; set; }
+    public byte Points { get; set; }
+    public byte MinimumCriteria { get; set; }
+    [Index]
+    public int ID { get; set; }
+    public int IconFileID { get; set; }
+    public uint CriteriaTree { get; set; }
+}
+```
+
+Even then, `IndexAttribute` isn't actually required.
+
+:exclamation: :exclamation: The library does not support substructures arrays. They will compile, but you will get an `InvalidStructureException` at runtime:
+
+```cs
+public struct C3Vector // Can also be a class
+{
+    public float X { get; set; }
+    public float Y { get; set; }
+    public float Z { get; set; }
+}
+
+// This is fine
+public sealed class SomeFile
+{
+    public int ID { get; set; }
+    public C3Vector Position { get; set; }
+}
+
+// Runtime InvalidStructureException
+public sealed class SomeFile
+{
+    public int ID { get; set; }
+    public C3Vector[] Positions { get; set; }
+}
+```
+
+:information_source: It is also possible to nest substructures:
+```cs
+public struct C2Vector
+{
+    public float X { get; set; }
+    public float Y { get; set; }
+}
+
+public struct C3Vector
+{
+    public C2Vector XY { get; set;} // Ignored if private, encapsulation is respected.
+    public float Z { get; }
+    public float X => XY.X; // These are skipped because there are no setter.
+    [Ignore] // Explicitely skipping - redundant here.
+    public float Y => XY.Y; 
+}
+
+public sealed class Structure
+{
+    public int ID { get; set; }
+    public C3Vector Position { get; set; }
+}
+```
