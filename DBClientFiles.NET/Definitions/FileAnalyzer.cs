@@ -15,10 +15,16 @@ namespace DBClientFiles.NET.Definitions
     /// </summary>
     public sealed class FileAnalyzer : IDisposable
     {
-        private StorageOptions Options { get; }
-        private Stream Stream { get; set; }
+        public StorageOptions Options { get; }
+        public Stream Stream { get; private set; }
+        public Type RecordType { get; set; }
+
         private IReader File { get; set; }
         private IFileHeader Header { get; set; }
+        
+        public Signatures Signature => Header.Signature;
+        public int IndexColumn => Header.IndexColumn;
+        public uint LayoutHash => Header.LayoutHash;
 
         #region Life and death
         public void Dispose()
@@ -30,15 +36,21 @@ namespace DBClientFiles.NET.Definitions
             File = null;
         }
 
+        public FileAnalyzer(Stream dataStream, StorageOptions options) : this(null, dataStream, options)
+        {
+        }
+
         public FileAnalyzer(Type proposedType, Stream dataStream, StorageOptions options)
         {
             Options = options;
+            RecordType = proposedType;
 
             if (options.CopyToMemory && (!dataStream.CanSeek || !(dataStream is MemoryStream)))
             {
                 Stream = new MemoryStream((int)(dataStream.Length - dataStream.Position));
 
                 dataStream.CopyTo(Stream);
+                Stream.Position = 0;
             }
             else
                 Stream = dataStream;
@@ -52,12 +64,7 @@ namespace DBClientFiles.NET.Definitions
         public void Analyze()
         {
             InitializeHeaderInfo();
-
-            //! Slow.
-            var indexMember = Members.IndexMember;
-            var initializerMethod = GetType().GetMethod("InitializeFileReader", Type.EmptyTypes).MakeGenericMethod(indexMember.Type);
-            initializerMethod.Invoke(this, null);
-
+            InitializeFileReader();
             PrepareMemberInfo();
         }
 
@@ -103,13 +110,14 @@ namespace DBClientFiles.NET.Definitions
                     {
                         Stream.Position = 48;
                         var totalFieldCount = binaryReader.ReadInt32();
+                        Stream.Position = 68;
+                        var totalFieldInfoSize = binaryReader.ReadInt32();
                         Stream.Position = 80;
                         var relationShipBlockSize = binaryReader.ReadInt32();
-
                         for (var i = 0; i < Header.FieldCount; ++i)
                             Members.AddFileMemberInfo(binaryReader);
 
-                        Stream.Seek(-relationShipBlockSize, SeekOrigin.End);
+                        Stream.Seek(-(totalFieldInfoSize + relationShipBlockSize), SeekOrigin.End);
                         for (var i = 0; i < totalFieldCount; ++i)
                             Members.FileMembers[i].ReadExtra(binaryReader);
                     }
@@ -140,11 +148,6 @@ namespace DBClientFiles.NET.Definitions
 
         private void PrepareMemberInfo()
         {
-            File.MemberStore = Members;
-
-            // Prepare member informations as declared by the file.
-            File.PrepareMemberInformations();
-
             if (Options.LoadMask.HasFlag(LoadMask.Records))
                 Members.MapMembers();
 

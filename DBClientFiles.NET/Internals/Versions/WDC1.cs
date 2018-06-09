@@ -116,6 +116,7 @@ namespace DBClientFiles.NET.Internals.Versions
             base.ReadSegments();
             
             _relationshipData.Read();
+            _copyTable.Read();
 
             _commonTable.Initialize(MemberStore.GetBlockLengths(MemberCompressionType.CommonData));
             _palletTable.Initialize(MemberStore.GetBlockLengths(f =>
@@ -165,11 +166,14 @@ namespace DBClientFiles.NET.Internals.Versions
                     ? _codeGenerator.Deserialize(this, recordReader, IndexTable.GetValue<TKey>(recordIndex))
                     : _codeGenerator.Deserialize(this, recordReader);
 
-                foreach (var copyInstanceID in _copyTable[_codeGenerator.ExtractKey(instance)])
+                if (_copyTable.Count != 0)
                 {
-                    var cloneInstance = _codeGenerator.Clone(instance);
-                    _codeGenerator.InsertKey(cloneInstance, copyInstanceID);
-                    yield return cloneInstance;
+                    foreach (var copyInstanceID in _copyTable[_codeGenerator.ExtractKey(instance)])
+                    {
+                        var cloneInstance = _codeGenerator.Clone(instance);
+                        _codeGenerator.InsertKey(cloneInstance, copyInstanceID);
+                        yield return cloneInstance;
+                    }
                 }
 
                 yield return instance;

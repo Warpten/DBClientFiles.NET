@@ -19,7 +19,17 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 
         private readonly Dictionary<TKey /* oldRow */, List<TKey> /* newRows */> _parsedContent;
 
-        public IEnumerable<TKey> this[TKey oldKey] => _parsedContent[oldKey];
+        public IEnumerable<TKey> this[TKey oldKey]
+        {
+            get
+            {
+                return _parsedContent[oldKey];
+            }
+        }
+
+        public bool ContainsKey(TKey oldKey) => _parsedContent.ContainsKey(oldKey);
+
+        public int Count => _parsedContent.Count;
 
         public override void Read()
         {

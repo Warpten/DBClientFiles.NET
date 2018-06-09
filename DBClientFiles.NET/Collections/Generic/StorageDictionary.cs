@@ -11,7 +11,7 @@ namespace DBClientFiles.NET.Collections.Generic
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TValue"></typeparam>
-    public sealed class StorageDictionary<TKey, TValue> : IStorage, IDictionary<TKey, TValue>
+    public sealed class StorageDictionary<TKey, TValue> : IStorage, IDictionary<TKey, TValue>, IDictionary
         where TKey : struct
         where TValue : class, new()
     {
@@ -31,7 +31,12 @@ namespace DBClientFiles.NET.Collections.Generic
         {
         }
 
-        public StorageDictionary(Stream dataStream, StorageOptions options, Func<TValue, TKey> keySelector = null)
+        public StorageDictionary(Stream dataStream, StorageOptions options) : this(dataStream, options, null)
+        {
+
+        }
+
+        public StorageDictionary(Stream dataStream, StorageOptions options, Func<TValue, TKey> keySelector)
         {
             if (keySelector == null)
             {
@@ -68,7 +73,7 @@ namespace DBClientFiles.NET.Collections.Generic
             }
         }
 
-        #region IDictionary<TKey, TValue> implementation
+        #region IDictionary(<TKey, TValue>) implementation
         /// <inheritdoc/>
         public TValue this[TKey key]
         {
@@ -77,13 +82,54 @@ namespace DBClientFiles.NET.Collections.Generic
         }
 
         public ICollection<TKey> Keys => _container.Keys;
+        ICollection IDictionary.Values => ((IDictionary) _container).Values;
+
+        ICollection IDictionary.Keys => ((IDictionary) _container).Keys;
+
         public ICollection<TValue> Values => _container.Values;
 
+        public void CopyTo(Array array, int index)
+        {
+            ((ICollection) _container).CopyTo(array, index);
+        }
+
         public int Count => _container.Count;
+        public object SyncRoot => ((ICollection) _container).SyncRoot;
+
+        public bool IsSynchronized => ((ICollection) _container).IsSynchronized;
+
         public bool IsReadOnly => ((IDictionary<TKey, TValue>)_container).IsReadOnly;
+        public bool IsFixedSize => ((IDictionary) _container).IsFixedSize;
+
         public void Add(TKey key, TValue value) => _container.Add(key, value);
         public void Add(KeyValuePair<TKey, TValue> item) => ((IDictionary<TKey, TValue>)_container).Add(item);
+        public bool Contains(object key)
+        {
+            return ((IDictionary) _container).Contains(key);
+        }
+
+        public void Add(object key, object value)
+        {
+            ((IDictionary) _container).Add(key, value);
+        }
+
         public void Clear() => _container.Clear();
+        IDictionaryEnumerator IDictionary.GetEnumerator()
+        {
+            return ((IDictionary) _container).GetEnumerator();
+        }
+
+        public void Remove(object key)
+        {
+            ((IDictionary) _container).Remove(key);
+        }
+
+        public object this[object key]
+        {
+            get => ((IDictionary) _container)[key];
+            set => ((IDictionary) _container)[key] = value;
+        }
+
         public bool Contains(KeyValuePair<TKey, TValue> item) => _container.Contains(item);
         public bool ContainsKey(TKey key) => _container.ContainsKey(key);
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) => ((IDictionary<TKey, TValue>)_container).CopyTo(array, arrayIndex);

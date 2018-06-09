@@ -18,6 +18,9 @@ namespace DBClientFiles.NET.Internals.Binding
         
         internal ExtendedMemberInfoCollection(Type parentType, StorageOptions options)
         {
+            if (parentType == null)
+                return;
+
             var memberIndex = 0;
             foreach (var memberInfo in parentType.GetMembers(BindingFlags.Public | BindingFlags.Instance))
             {
@@ -50,11 +53,11 @@ namespace DBClientFiles.NET.Internals.Binding
             return memberCount;
         }
 
-        internal ExtendedMemberInfo IndexMember
+        public ExtendedMemberInfo IndexMember
         {
             get
             {
-                if (HasIndexTable)
+                if (IndexColumn != 0)
                     return Members[IndexColumn];
 
                 for (var i = 0; i < Members.Count; ++i)
@@ -66,7 +69,7 @@ namespace DBClientFiles.NET.Internals.Binding
                     if (memberInfo.MappedTo != null && memberInfo.MappedTo.Index == IndexColumn)
                         return memberInfo;
                 }
-
+                
                 throw new InvalidOperationException("Unable to find index");
             }
         }
@@ -197,8 +200,8 @@ namespace DBClientFiles.NET.Internals.Binding
                 fileCursor = RecursiveMemberAssignment(memberInfo, fileCursor, ref memberOffset);
         }
 
-        internal int IndexColumn { get; set; } = 0;
-        internal bool HasIndexTable { get; set; } = false;
+        public int IndexColumn { get; internal set; } = 0;
+        public bool HasIndexTable { get; internal set; } = false;
 
         internal IEnumerable<int> GetBlockLengths(MemberCompressionType compressionType)
         {
