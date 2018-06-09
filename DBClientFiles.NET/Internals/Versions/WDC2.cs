@@ -59,7 +59,6 @@ namespace DBClientFiles.NET.Internals.Versions
             for (var i = 0; i < _sections.Length; ++i)
             {
                 _sections[i] = new Section(this, BaseStream);
-
                 if (!_sections[i].PrepareMemberInformations())
                     return false;
             }
@@ -138,6 +137,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override string FindStringByOffset(int tableOffset)
         {
+            // Strings are mapped as absolute offset => value
             return _sections[_currentlyParsedSection].FindStringByOffset(tableOffset);
         }
 

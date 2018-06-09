@@ -41,7 +41,8 @@ namespace DBClientFiles.NET.Internals.Binding
         public int Cardinality { get; internal set; } = 1;
 
         public int CompressedDataSize { get; internal set; }
-        internal MemberCompressionType CompressionType { get; set; }
+
+        public MemberCompressionType CompressionType { get; internal set; }
 
         /// <summary>
         /// If <see cref="CompressionType"/> is <see cref="MemberCompressionType.CommonData"/>, this is set. null otherwise.

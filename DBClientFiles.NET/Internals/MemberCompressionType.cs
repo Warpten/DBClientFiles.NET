@@ -1,6 +1,6 @@
 ﻿namespace DBClientFiles.NET.Internals
 {
-    internal enum MemberCompressionType
+    public enum MemberCompressionType
     {
         None,
         Immediate,

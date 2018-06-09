@@ -10,7 +10,10 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Text;
 using System.Threading;
+using DBClientFiles.NET.AutoMapper.Utils;
+using DBClientFiles.NET.Internals;
 
 namespace DBClientFiles.NET.AutoMapper
 {
@@ -28,6 +31,9 @@ namespace DBClientFiles.NET.AutoMapper
         private AssemblyBuilder _assemblyBuilder;
         private ModuleBuilder _module;
 
+        private readonly Dictionary<long, string> _sourceStrings = new Dictionary<long, string>();
+        private readonly Dictionary<long, string> _targetStrings = new Dictionary<long, string>();
+
         public MappingResolver(FileAnalyzer source, FileAnalyzer target)
         {
             var assemblyName = new AssemblyName { Name = "TemporaryAssembly" };
@@ -38,14 +44,14 @@ namespace DBClientFiles.NET.AutoMapper
             {
                 //todo : should throw here, anchor needs to exist
                 source.Stream.Position = 0;
-                source = new FileAnalyzer(CreateTypeFromAnalyzer(source), source.Stream, source.Options);
+                source = new FileAnalyzer(CreateTypeFromAnalyzer(source, "SourceType"), source.Stream, source.Options);
                 source.Analyze();
             }
 
             if (target.RecordType == null)
             {
                 target.Stream.Position = 0;
-                target = new FileAnalyzer(CreateTypeFromAnalyzer(target), target.Stream, target.Options);
+                target = new FileAnalyzer(CreateTypeFromAnalyzer(target, "TargetType"), target.Stream, target.Options);
                 target.Analyze();
             }
 
@@ -92,6 +98,8 @@ namespace DBClientFiles.NET.AutoMapper
             // Construct containers for each node
             var sourceList = CreateStore(source.RecordType, source.Members.IndexMember.Type, source.Options, source.Stream);
             var targetList = CreateStore(target.RecordType, target.Members.IndexMember.Type, target.Options, target.Stream);
+            var sourceStorage = (IStorage)sourceList;
+            var targetStorage = (IStorage)targetList;
 
             var mappingStore = new Dictionary<MemberInfo, List<MemberInfo>>();
 
@@ -100,47 +108,86 @@ namespace DBClientFiles.NET.AutoMapper
                 if (!targetList.Contains(sourceKey))
                     continue;
 
-                var sourceValue = sourceList[sourceKey];
-                var targetValue = targetList[sourceKey];
+                var sourceElement = sourceList[sourceKey];
+                object targetElement;
+                try {
+                    targetElement = targetList[sourceKey];
+                } catch { // Silence the exception (which means item does not belong to collection)
+                    continue;
+                }
 
                 foreach (var sourceExtendedMemberInfo in source.Members.Members)
                 {
-                    var sourceTargetValue = (sourceExtendedMemberInfo.MemberInfo as PropertyInfo)?.GetValue(sourceValue);
-                    if (sourceTargetValue == null)
+                    var sourceMemberInfo = sourceExtendedMemberInfo.MemberInfo;
+                    var sourceMemberValue = (sourceMemberInfo as PropertyInfo)?.GetValue(sourceElement);
+                    if (sourceMemberValue == null)
                         continue;
 
-                    var memberInfo = sourceExtendedMemberInfo.MemberInfo;
-                    if (!mappingStore.TryGetValue(memberInfo, out var mappingList))
+                    Console.WriteLine($"[*] source.{sourceMemberInfo.Name} = {sourceMemberValue}");
+
+                    if (!mappingStore.TryGetValue(sourceMemberInfo, out var mappingList))
                     {
                         // At first, pretend everything matches
-                        mappingStore[memberInfo] = mappingList = new List<MemberInfo>();
+                        mappingStore[sourceMemberInfo] = mappingList = new List<MemberInfo>();
                         mappingList.AddRange(target.Members.Members.Select(m => m.MemberInfo));
                     }
 
                     var itr = 0;
                     while (mappingList.Count != 0 && itr < mappingList.Count)
                     {
-                        var targetTestMember = mappingList[itr];
-                        var targetMemberValue = (targetTestMember as PropertyInfo)?.GetValue(targetValue);
-                        if (targetMemberValue == null)
-                            throw new InvalidCastException("Unreachable");
+                        var targetMemberInfo = mappingList[itr] as PropertyInfo;
+                        if (targetMemberInfo == null)
+                            throw new InvalidOperationException("Unreachable");
 
-                        if (sourceExtendedMemberInfo.Type == typeof(string))
-                        {
-                            // Types generated are not strings, so we just treat anything that isnt 32bits a mismatch.
-                            if (targetMemberValue.GetType() != typeof(Value32))
-                            {
-                                mappingList.Remove(targetTestMember);
-                                itr = 0;
-                            }
-
-                            // Strings are dealt with last
-                            continue;
-                        }
+                        var targetMemberValue = targetMemberInfo.GetValue(targetElement);
                         
-                        if (!targetMemberValue.Equals(sourceTargetValue))
+                        Console.WriteLine($"     Testing against target.{targetMemberInfo.Name} ({targetMemberValue})");
+                        
+                        var isSourceStringRef = sourceExtendedMemberInfo.Type == typeof(int);
+                        var isTargetStringRef = targetMemberValue is int;
+
+                        //! TODO: For WDC2 offsets read as int are now relative to its start.
+                        //! TODO: This is gross.
+                        if (isSourceStringRef)
                         {
-                            mappingList.Remove(targetTestMember);
+                            var stringTableOffset = (int)sourceMemberValue;
+
+                            if (source.Signature == Signatures.WDC2)
+                            {
+                                using (var binaryReader = new BinaryReader(source.Stream, Encoding.UTF8, true))
+                                {
+                                    source.Stream.Position = stringTableOffset;
+                                    sourceMemberValue = binaryReader.ReadCString();
+                                }
+                            }
+                            else
+                            {
+                                if (sourceStorage.StringTable.ContainsKey(stringTableOffset))
+                                    sourceMemberValue = sourceStorage.StringTable[stringTableOffset];
+                            }
+                        }
+
+                        if (isTargetStringRef)
+                        {
+                            var stringTableOffset = (int)targetMemberValue;
+                            if (target.Signature == Signatures.WDC2)
+                            {
+                                using (var binaryReader = new BinaryReader(target.Stream, Encoding.UTF8, true))
+                                {
+                                    target.Stream.Position = stringTableOffset;
+                                    targetMemberValue = binaryReader.ReadCString();
+                                }
+                            }
+                            else
+                            {
+                                if (sourceStorage.StringTable.ContainsKey(stringTableOffset))
+                                    targetMemberValue = sourceStorage.StringTable[stringTableOffset];
+                            }
+                        }
+
+                        if (!targetMemberValue.Equals(sourceMemberValue))
+                        {
+                            mappingList.Remove(targetMemberInfo);
                             itr = 0;
                         }
                         else ++itr;
@@ -169,32 +216,14 @@ namespace DBClientFiles.NET.AutoMapper
             }
         }
 
-        private object BoxValueType(object input)
-        {
-            var type = input.GetType();
-            if (type == typeof(long))
-                return (Value64)input;
-
-            if (type == typeof(int))
-                return (Value32)input;
-
-            if (type == typeof(short))
-                return (Value16)input;
-
-            if (type == typeof(byte))
-                return (Value8)input;
-
-            throw new InvalidOperationException();
-        }
-
-        private Type CreateTypeFromAnalyzer(FileAnalyzer target)
+        private Type CreateTypeFromAnalyzer(FileAnalyzer target, string name = null)
         {
             if (target.Members.FileMembers.Count == 0)
                 throw new InvalidOperationException();
 
             var randomTypeName = Path.GetRandomFileName().GetHashCode().ToString();
 
-            var typeBuilder = _module.DefineType($"GeneratedType_{randomTypeName}");
+            var typeBuilder = _module.DefineType(name ?? $"GeneratedType_{randomTypeName}");
 
             var fileMemberIndex = 0;
             foreach (var fileMemberInfo in target.Members.FileMembers)
@@ -204,6 +233,8 @@ namespace DBClientFiles.NET.AutoMapper
                     DefineProperty(typeBuilder, typeof(int), "ID").SetCustomAttribute(new CustomAttributeBuilder(typeof(IndexAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
                     ++fileMemberIndex;
                 }
+
+                var isIndexInlinedMember = fileMemberIndex == target.Members.IndexColumn && !target.Members.HasIndexTable;
 
                 var propertyType = typeof(int);
                 if (fileMemberInfo.ByteSize == 8 || (fileMemberInfo.BitSize > 32 && fileMemberInfo.BitSize <= 64))
@@ -216,7 +247,7 @@ namespace DBClientFiles.NET.AutoMapper
                 if (fileMemberInfo.Cardinality > 1)
                     propertyType = propertyType.MakeArrayType(fileMemberInfo.Cardinality);
 
-                var propBuilder = DefineProperty(typeBuilder, propertyType, $"UnkMember{fileMemberIndex}");
+                var propBuilder = DefineProperty(typeBuilder, propertyType, isIndexInlinedMember ? "ID" : $"UnkMember{fileMemberIndex}");
 
                 if (fileMemberInfo.Cardinality > 1)
                 {
@@ -227,7 +258,7 @@ namespace DBClientFiles.NET.AutoMapper
                         new object[] { fileMemberInfo.Cardinality }));
                 }
 
-                if (fileMemberIndex == target.Members.IndexColumn && !target.Members.HasIndexTable)
+                if (isIndexInlinedMember)
                 {
                     propBuilder.SetCustomAttribute(new CustomAttributeBuilder(typeof(IndexAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
                 }

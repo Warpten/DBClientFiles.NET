@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -69,5 +70,16 @@ namespace DBClientFiles.NET.AutoMapper.Utils
             public static implicit operator uint(ftou ftou) => ftou.UInt32;
             public static implicit operator float(ftou ftou) => ftou.Single;
         }
+
+        public static string ReadCString(this BinaryReader reader)
+        {
+            var byteList = new List<byte>();
+            byte currChar;
+            while ((currChar = reader.ReadByte()) != '\0')
+                byteList.Add(currChar);
+
+            return Encoding.UTF8.GetString(byteList.ToArray());
+        }
+
     }
 }

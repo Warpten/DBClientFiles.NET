@@ -3,7 +3,6 @@ using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.Internals.Segments.Readers;
 using DBClientFiles.NET.Internals.Serializers;
 using DBClientFiles.NET.IO;
-using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -94,7 +93,7 @@ namespace DBClientFiles.NET.Internals.Versions
         protected Segment Records;
         #endregion
 
-        public event Action<int> OnStringTableEntry;
+        public event Action<long, string> OnStringTableEntry;
 
         public virtual bool PrepareMemberInformations()
         {

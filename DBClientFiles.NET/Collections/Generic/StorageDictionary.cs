@@ -22,6 +22,7 @@ namespace DBClientFiles.NET.Collections.Generic
         #endregion
 
         private readonly Dictionary<TKey, TValue> _container;
+        public Dictionary<long, string> StringTable { get; }
 
         public StorageDictionary(Stream dataStream) : this(dataStream, StorageOptions.Default)
         {
@@ -40,9 +41,12 @@ namespace DBClientFiles.NET.Collections.Generic
         {
             if (keySelector == null)
             {
+                StringTable = new Dictionary<long, string>();
                 _container = new Dictionary<TKey, TValue>();
                 using (var implementation = new StorageImpl<TValue>(dataStream, options))
                 {
+                    implementation.OnStringTableEntry += StringTable.Add;
+
                     implementation.InitializeHeaderInfo();
 
                     var indexMember = implementation.Members.IndexMember;
@@ -65,6 +69,9 @@ namespace DBClientFiles.NET.Collections.Generic
             else
             {
                 var enumerable = new StorageEnumerable<TValue>(dataStream, options);
+                foreach (var kv in enumerable.StringTable)
+                    StringTable.Add(kv.Key, kv.Value);
+
                 Signature = enumerable.Signature;
                 TableHash = enumerable.TableHash;
                 LayoutHash = enumerable.LayoutHash;

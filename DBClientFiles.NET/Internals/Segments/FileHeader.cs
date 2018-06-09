@@ -1,9 +1,11 @@
-﻿using DBClientFiles.NET.Collections.Generic;
-
-namespace DBClientFiles.NET.Internals.Segments
+﻿namespace DBClientFiles.NET.Internals.Segments
 {
-    internal interface IFileHeader : IStorage
+    internal interface IFileHeader
     {
+        Signatures Signature { get; }
+        uint TableHash { get; }
+        uint LayoutHash { get; }
+
         int RecordSize { get; }
         int RecordCount { get; }
         int FieldCount { get; }

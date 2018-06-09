@@ -14,7 +14,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
         
         private readonly Dictionary<int, string> _cachedStringValues;
 
-        public event Action<int> OnStringRead;
+        public event Action<long, string> OnStringRead;
 
         public override void Read()
         {
@@ -45,7 +45,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
                     var stringValue = System.Text.Encoding.UTF8.GetString(stringSegment, stringOffset, stringLength);
 #endif
                     _cachedStringValues[stringOffset] = FileReader.Options.InternStrings ? string.Intern(stringValue) : stringValue;
-                    OnStringRead?.Invoke(stringOffset);
+                    OnStringRead?.Invoke(stringOffset, stringValue);
 
                     stringEnd = --i;
                 }

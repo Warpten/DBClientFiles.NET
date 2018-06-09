@@ -12,7 +12,7 @@ namespace DBClientFiles.NET.AutoMapper
             var options = new StorageOptions
             {
                 LoadMask = LoadMask.Records | LoadMask.StringTable,
-                CopyToMemory = true,
+                CopyToMemory = false,
                 InternStrings = true,
                 MemberType = System.Reflection.MemberTypes.Property,
                 OverrideSignedChecks = true

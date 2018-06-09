@@ -20,6 +20,8 @@ namespace DBClientFiles.NET.Collections.Generic
 
         private StorageImpl<T> _implementation;
         private IEnumerable<T> _enumerable;
+        
+        public Dictionary<long, string> StringTable { get; }
 
         public StorageEnumerable(Stream fileStream) : this(fileStream, StorageOptions.Default)
         {
@@ -33,7 +35,11 @@ namespace DBClientFiles.NET.Collections.Generic
 
         public StorageEnumerable(Stream fileStream, StorageOptions options)
         {
+            if (options.LoadMask.HasFlag(LoadMask.StringTable))
+                StringTable = new Dictionary<long, string>();
+
             _implementation = new StorageImpl<T>(fileStream, options);
+            _implementation.OnStringTableEntry += StringTable.Add;
             _implementation.InitializeHeaderInfo();
 
             //! Slow.

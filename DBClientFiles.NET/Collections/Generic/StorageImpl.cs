@@ -16,6 +16,8 @@ namespace DBClientFiles.NET.Collections.Generic
         Signatures Signature { get; }
         uint TableHash { get; }
         uint LayoutHash { get; }
+
+        Dictionary<long, string> StringTable { get; }
     }
 
     /// <summary>
@@ -32,6 +34,8 @@ namespace DBClientFiles.NET.Collections.Generic
 
         public CodeGenerator<T> Generator { get; private set; }
 
+        public event Action<long, string> OnStringTableEntry;
+        
         #region Life and death
         public void Dispose()
         {
@@ -108,6 +112,9 @@ namespace DBClientFiles.NET.Collections.Generic
                 default:
                     throw new NotSupportedVersionException($"Unknown signature 0x{(int)Header.Signature:X8}!");
             }
+
+            if (Options.LoadMask.HasFlag(LoadMask.StringTable))
+                File.OnStringTableEntry += OnStringTableEntry;
         }
 
         public void PrepareMemberInfo()

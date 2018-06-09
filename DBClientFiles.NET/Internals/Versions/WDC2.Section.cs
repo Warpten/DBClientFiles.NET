@@ -4,7 +4,6 @@ using DBClientFiles.NET.Internals.Binding;
 using DBClientFiles.NET.Internals.Segments.Readers;
 using DBClientFiles.NET.Internals.Serializers;
 using DBClientFiles.NET.IO;
-using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
@@ -118,7 +117,7 @@ namespace DBClientFiles.NET.Internals.Versions
             {
                 // Part 2 of string handling: convert the absolute offset into a relative one
                 var adjustedPos = tableOffset - StringTable.StartOffset;
-                return base.FindStringByOffset((int)adjustedPos);
+                return base.FindStringByOffset((int) adjustedPos);
             }
 
             public override RecordReader GetRecordReader(int recordSize)
