@@ -46,7 +46,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
         public override bool PrepareMemberInformations()
         {
-            Debug.Assert(BaseStream.Position == 48);
+            Debug.Assert(BaseStream.Position == 44);
 
             var totalFieldCount      = ReadInt32();
             BaseStream.Seek(4 + 4, SeekOrigin.Current); // bitpacked_data_ofs, lookup_column_count
