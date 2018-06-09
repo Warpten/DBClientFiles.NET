@@ -34,7 +34,6 @@ namespace DBClientFiles.NET.Collections.Generic
         public StorageEnumerable(Stream fileStream, StorageOptions options)
         {
             _implementation = new StorageImpl<T>(fileStream, options);
-
             _implementation.InitializeHeaderInfo();
 
             //! Slow.

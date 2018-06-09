@@ -10,13 +10,13 @@ using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.Internals.Binding
 {
-    internal class ExtendedMemberInfoCollection
+    public class ExtendedMemberInfoCollection
     {
         public List<ExtendedMemberInfo> Members { get; } = new List<ExtendedMemberInfo>();
 
         public List<FileMemberInfo> FileMembers { get; } = new List<FileMemberInfo>();
         
-        public ExtendedMemberInfoCollection(Type parentType, StorageOptions options)
+        internal ExtendedMemberInfoCollection(Type parentType, StorageOptions options)
         {
             var memberIndex = 0;
             foreach (var memberInfo in parentType.GetMembers(BindingFlags.Public | BindingFlags.Instance))
@@ -30,7 +30,7 @@ namespace DBClientFiles.NET.Internals.Binding
             }
         }
 
-        public int DeclaredMemberCount(bool includeArrays = true, bool deepTraverse = true)
+        internal int DeclaredMemberCount(bool includeArrays = true, bool deepTraverse = true)
         {
             var memberCount = 0;
             for (var i = 0; i < Members.Count; ++i)
@@ -39,7 +39,7 @@ namespace DBClientFiles.NET.Internals.Binding
             return memberCount;
         }
 
-        public static int GetMemberCount(ExtendedMemberInfo memberInfo, bool deepTraverse = true, bool includeArrays = true)
+        internal static int GetMemberCount(ExtendedMemberInfo memberInfo, bool deepTraverse = true, bool includeArrays = true)
         {
             if (memberInfo.Children.Count == 0)
                 return includeArrays ? memberInfo.Cardinality : 1;
@@ -50,7 +50,7 @@ namespace DBClientFiles.NET.Internals.Binding
             return memberCount;
         }
 
-        public ExtendedMemberInfo IndexMember
+        internal ExtendedMemberInfo IndexMember
         {
             get
             {
@@ -71,13 +71,13 @@ namespace DBClientFiles.NET.Internals.Binding
             }
         }
 
-        public void SetFileMemberInfo(IEnumerable<FileMemberInfo> fileMembers)
+        internal void SetFileMemberInfo(IEnumerable<FileMemberInfo> fileMembers)
         {
             FileMembers.Clear();
             FileMembers.AddRange(fileMembers);
         }
 
-        public void AddFileMemberInfo(BinaryReader reader)
+        internal void AddFileMemberInfo(BinaryReader reader)
         {
             var instance = new FileMemberInfo();
             instance.Initialize(reader);
@@ -85,7 +85,7 @@ namespace DBClientFiles.NET.Internals.Binding
             FileMembers.Add(instance);
         }
 
-        private int RecursiveMemberAssignment(ExtendedMemberInfo memberInfo, int fileIndex, ref int memberOffset)
+        internal int RecursiveMemberAssignment(ExtendedMemberInfo memberInfo, int fileIndex, ref int memberOffset)
         {
             // Don't map the index if it's contained in the index table - Mapping defines how we deserialize later on
             // (an unmapped member is skipped)
@@ -137,7 +137,7 @@ namespace DBClientFiles.NET.Internals.Binding
             return fileIndex + 1;
         }
 
-        public void CalculateCardinalities()
+        internal void CalculateCardinalities()
         {
             for (var i = 0; i < FileMembers.Count; ++i)
             {
@@ -189,7 +189,7 @@ namespace DBClientFiles.NET.Internals.Binding
             }
         }
 
-        public void MapMembers()
+        internal void MapMembers()
         {
             var fileCursor = 0;
             var memberOffset = 0;
@@ -197,15 +197,15 @@ namespace DBClientFiles.NET.Internals.Binding
                 fileCursor = RecursiveMemberAssignment(memberInfo, fileCursor, ref memberOffset);
         }
 
-        public int IndexColumn { get; set; } = 0;
-        public bool HasIndexTable { get; set; } = false;
+        internal int IndexColumn { get; set; } = 0;
+        internal bool HasIndexTable { get; set; } = false;
 
-        public IEnumerable<int> GetBlockLengths(MemberCompressionType compressionType)
+        internal IEnumerable<int> GetBlockLengths(MemberCompressionType compressionType)
         {
             return FileMembers.Where(f => f.CompressionType == compressionType).Select(f => f.CompressedDataSize);
         }
 
-        public IEnumerable<int> GetBlockLengths(Func<FileMemberInfo, bool> compressionType)
+        internal IEnumerable<int> GetBlockLengths(Func<FileMemberInfo, bool> compressionType)
         {
             return FileMembers.Where(compressionType).Select(f => f.CompressedDataSize);
         }

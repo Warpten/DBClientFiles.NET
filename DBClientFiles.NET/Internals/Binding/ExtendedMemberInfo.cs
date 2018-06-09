@@ -11,18 +11,18 @@ namespace DBClientFiles.NET.Internals.Binding
     /// This class wraps around <see cref="MemberInfo"/>. It is internally used to map elements of a defined structure to the elements
     /// declared in the file being parsed.
     /// </summary>
-    internal class ExtendedMemberInfo
+    public sealed class ExtendedMemberInfo
     {
         public MemberInfo MemberInfo { get; }
-        public int Index { get; set; }
+        public int Index { get; internal set; }
 
         /// <summary>
         /// If this describes a member with underlying members, this only contains the first file member this is mapped to.
         /// </summary>
-        public FileMemberInfo MappedTo { get; set; }
+        public FileMemberInfo MappedTo { get; internal set; }
 
         public List<ExtendedMemberInfo> Children { get; } = new List<ExtendedMemberInfo>();
-        public ExtendedMemberInfo Parent { get; set; }
+        public ExtendedMemberInfo Parent { get; internal set; }
 
         public Type Type { get; }
 
@@ -40,7 +40,7 @@ namespace DBClientFiles.NET.Internals.Binding
             set => _cardinality = value;
         }
 
-        public ExtendedMemberInfo(MemberInfo memberInfo, int index, ExtendedMemberInfo parent = null)
+        internal ExtendedMemberInfo(MemberInfo memberInfo, int index, ExtendedMemberInfo parent = null)
         {
             Index = index;
             if (parent != null)
@@ -102,7 +102,7 @@ namespace DBClientFiles.NET.Internals.Binding
             return memberInstance;
         }
 
-        public ExtendedMemberExpression MakeMemberAccess(Expression instance)
+        internal ExtendedMemberExpression MakeMemberAccess(Expression instance)
         {
             return new ExtendedMemberExpression(instance, this);
         }
