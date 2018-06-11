@@ -71,5 +71,16 @@ namespace DBClientFiles.NET.AutoMapper.Utils
 
             return knownKeys.Where(kv => kv.Value.Count == 1).SelectMany(kv => kv.Value);
         }
+
+        public static void RemoveWhere<TSource>(this ICollection<TSource> source, Func<TSource, bool> keySelector)
+        {
+            for (var itr = 0; itr < source.Count;)
+            {
+                if (keySelector(source.ElementAt(itr)))
+                    source.Remove(source.ElementAt(itr));
+                else
+                    ++itr;
+            }
+        }
     }
 }

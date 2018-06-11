@@ -29,6 +29,16 @@ namespace DBClientFiles.NET.ConsoleTests
             if (idxCount != -1 && args.Length >= idxCount + 1)
                 int.TryParse(args[idxCount + 1], out iterationCount);
 
+            using (var fs =
+                File.OpenRead(
+                    @"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\Files\WDC2\Achievement.db2")
+            )
+            {
+                var store = new StorageDictionary<int, Data.WDC2.AchievementEntry>(fs);
+                StructureTester.InspectInstance(store.First().Value);
+                return;
+            }
+
 
             //using (var fs = File.OpenRead(@"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\bin\Release\net472\Data\WDC1\ItemSearchName.db2"))
             //{

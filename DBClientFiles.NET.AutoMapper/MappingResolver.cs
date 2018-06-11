@@ -19,40 +19,55 @@ namespace DBClientFiles.NET.AutoMapper
 {
     public class MappingResolver
     {
-        private struct ResolvedMapping
+        private class ResolvedMapping
         {
             public MemberInfo From { get; set; }
             public MemberInfo To { get; set; }
+            public List<MemberInfo> Candidates { get; } = new List<MemberInfo>();
         }
 
         private readonly List<ResolvedMapping> _resolvedMappings = new List<ResolvedMapping>();
         private List<ExtendedMemberInfo> _availableTargetPool = new List<ExtendedMemberInfo>();
         private List<ExtendedMemberInfo> _availableSourcePool = new List<ExtendedMemberInfo>();
-        private AssemblyBuilder _assemblyBuilder;
-        private ModuleBuilder _module;
 
-        private readonly Dictionary<long, string> _sourceStrings = new Dictionary<long, string>();
-        private readonly Dictionary<long, string> _targetStrings = new Dictionary<long, string>();
+        public int Count => _resolvedMappings.Count;
+
+        private TypeGenerator _sourceTypeGenerator;
+        private TypeGenerator _targetTypeGenerator;
 
         public MappingResolver(FileAnalyzer source, FileAnalyzer target)
         {
-            var assemblyName = new AssemblyName { Name = "TemporaryAssembly" };
-            _assemblyBuilder = Thread.GetDomain().DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
-            _module = _assemblyBuilder.DefineDynamicModule("TemporaryModule");
-
             if (source.RecordType == null)
             {
+                _sourceTypeGenerator = CreateTypeFromAnalyzer(source, "SourceType");
+
                 //todo : should throw here, anchor needs to exist
                 source.Stream.Position = 0;
-                source = new FileAnalyzer(CreateTypeFromAnalyzer(source, "SourceType"), source.Stream, source.Options);
+                source = new FileAnalyzer(_sourceTypeGenerator.Generate(), source.Stream, source.Options);
                 source.Analyze();
+
+                if (AdjustStringMembers(_sourceTypeGenerator, source))
+                {
+                    source.Stream.Position = 0;
+                    source = new FileAnalyzer(_sourceTypeGenerator.Generate(), source.Stream, source.Options);
+                    source.Analyze();
+                }
             }
 
             if (target.RecordType == null)
             {
+                _targetTypeGenerator = CreateTypeFromAnalyzer(target, "TargetType");
+
                 target.Stream.Position = 0;
-                target = new FileAnalyzer(CreateTypeFromAnalyzer(target, "TargetType"), target.Stream, target.Options);
+                target = new FileAnalyzer(_targetTypeGenerator.Generate(), target.Stream, target.Options);
                 target.Analyze();
+
+                if (AdjustStringMembers(_targetTypeGenerator, target))
+                {
+                    target.Stream.Position = 0;
+                    target = new FileAnalyzer(_targetTypeGenerator.Generate(), target.Stream, target.Options);
+                    target.Analyze();
+                }
             }
 
             if (source.IndexColumn != target.IndexColumn)
@@ -63,43 +78,43 @@ namespace DBClientFiles.NET.AutoMapper
 
             // Do a simple pass where we map by array sizes only.
             // We have to look for members with unique sizes
-            
-            //var availableArraySourcePool = _availableSourcePool.UniqueBy(n => n.Cardinality).ToArray();
-            //var availableArrayTargetPool = _availableTargetPool.UniqueBy(n => n.Cardinality).ToArray();
-            //if (availableArraySourcePool.Length != 0 && availableArrayTargetPool.Length != 0)
-            //{
-            //    foreach (var availableArraySource in availableArraySourcePool)
-            //    {
-            //        foreach (var availableArrayTarget in availableArrayTargetPool)
-            //        {
-            //            if (availableArrayTarget.Cardinality != availableArraySource.Cardinality)
-            //                continue;
 
-            //            _resolvedMappings.Add(new ResolvedMapping
-            //            {
-            //                From = availableArraySource.MemberInfo,
-            //                To = availableArrayTarget.MemberInfo
-            //            });
-            //            break;
-            //        }
-            //    }
+            var availableArraySourcePool = _availableSourcePool.UniqueBy(n => n.Cardinality).ToArray();
+            var availableArrayTargetPool = _availableTargetPool.UniqueBy(n => n.Cardinality).ToArray();
+            if (availableArraySourcePool.Length != 0 && availableArrayTargetPool.Length != 0)
+            {
+                foreach (var availableArraySource in availableArraySourcePool)
+                {
+                    foreach (var availableArrayTarget in availableArrayTargetPool)
+                    {
+                        if (availableArrayTarget.Cardinality != availableArraySource.Cardinality)
+                            continue;
 
-            //    // Prune out used nodes from each pool
-            //    foreach (var resolvedMapping in _resolvedMappings)
-            //    {
-            //        _availableSourcePool.Remove(resolvedMapping.From);
-            //        _availableTargetPool.Remove(resolvedMapping.To);
-            //    }
-            //}
+                        _resolvedMappings.Add(new ResolvedMapping
+                        {
+                            From = availableArraySource.MemberInfo,
+                            To = availableArrayTarget.MemberInfo
+                        });
+                        break;
+                    }
+                }
+
+                // Prune out used nodes from each pool
+                foreach (var resolvedMapping in _resolvedMappings)
+                {
+                    _availableSourcePool.RemoveWhere(m => m.MemberInfo == resolvedMapping.From);
+                    _availableTargetPool.RemoveWhere(m => m.MemberInfo == resolvedMapping.To);
+                }
+            }
 
             // This time, we are gonna need to enumerate records and compare members one-by-one.
             // Given a set of values for a SOURCE column, we will iterate the entirety of the TARGET's columns, and build a list 
-            
+
             // Construct containers for each node
-            var sourceList = CreateStore(source.RecordType, source.Members.IndexMember.Type, source.Options, source.Stream);
-            var targetList = CreateStore(target.RecordType, target.Members.IndexMember.Type, target.Options, target.Stream);
-            var sourceStorage = (IStorage)sourceList;
-            var targetStorage = (IStorage)targetList;
+            var sourceList = CreateStore(source);
+            var targetList = CreateStore(target);
+            var sourceStorage = (IStorage) sourceList;
+            var targetStorage = (IStorage) targetList;
 
             var mappingStore = new Dictionary<MemberInfo, List<MemberInfo>>();
 
@@ -110,20 +125,25 @@ namespace DBClientFiles.NET.AutoMapper
 
                 var sourceElement = sourceList[sourceKey];
                 object targetElement;
-                try {
+                try
+                {
                     targetElement = targetList[sourceKey];
-                } catch { // Silence the exception (which means item does not belong to collection)
+                }
+                catch
+                {
+                    // Silence the exception (which means item does not belong to collection)
                     continue;
                 }
 
                 foreach (var sourceExtendedMemberInfo in source.Members.Members)
                 {
+                    if (_resolvedMappings.Any(m => m.From == sourceExtendedMemberInfo.MemberInfo))
+                        break;
+
                     var sourceMemberInfo = sourceExtendedMemberInfo.MemberInfo;
                     var sourceMemberValue = (sourceMemberInfo as PropertyInfo)?.GetValue(sourceElement);
                     if (sourceMemberValue == null)
                         continue;
-
-                    Console.WriteLine($"[*] source.{sourceMemberInfo.Name} = {sourceMemberValue}");
 
                     if (!mappingStore.TryGetValue(sourceMemberInfo, out var mappingList))
                     {
@@ -131,180 +151,183 @@ namespace DBClientFiles.NET.AutoMapper
                         mappingStore[sourceMemberInfo] = mappingList = new List<MemberInfo>();
                         mappingList.AddRange(target.Members.Members.Select(m => m.MemberInfo));
                     }
+                    else if (mappingList.Count == 1)
+                        continue;
+
+                    Console.WriteLine($"[#{sourceKey}] source.{sourceMemberInfo.Name} = {sourceMemberValue}");
 
                     var itr = 0;
                     while (mappingList.Count != 0 && itr < mappingList.Count)
                     {
+                        if (mappingList.Count == 1)
+                        {
+                            Console.WriteLine("     [RESOLVED]");
+                            break;
+                        }
+
                         var targetMemberInfo = mappingList[itr] as PropertyInfo;
                         if (targetMemberInfo == null)
                             throw new InvalidOperationException("Unreachable");
 
                         var targetMemberValue = targetMemberInfo.GetValue(targetElement);
-                        
-                        Console.WriteLine($"     Testing against target.{targetMemberInfo.Name} ({targetMemberValue})");
-                        
-                        var isSourceStringRef = sourceExtendedMemberInfo.Type == typeof(int);
-                        var isTargetStringRef = targetMemberValue is int;
 
-                        //! TODO: For WDC2 offsets read as int are now relative to its start.
-                        //! TODO: This is gross.
-                        if (isSourceStringRef)
-                        {
-                            var stringTableOffset = (int)sourceMemberValue;
+                        bool valueMatch = sourceMemberValue.Equals(targetMemberValue);
 
-                            if (source.Signature == Signatures.WDC2)
-                            {
-                                using (var binaryReader = new BinaryReader(source.Stream, Encoding.UTF8, true))
-                                {
-                                    source.Stream.Position = stringTableOffset;
-                                    sourceMemberValue = binaryReader.ReadCString();
-                                }
-                            }
-                            else
-                            {
-                                if (sourceStorage.StringTable.ContainsKey(stringTableOffset))
-                                    sourceMemberValue = sourceStorage.StringTable[stringTableOffset];
-                            }
-                        }
+                        Console.WriteLine(
+                            $"     [#{sourceKey}] Testing against target.{targetMemberInfo.Name} ({targetMemberValue}) [{(!valueMatch ? "MISMATCH" : "MATCHES")}]");
 
-                        if (isTargetStringRef)
-                        {
-                            var stringTableOffset = (int)targetMemberValue;
-                            if (target.Signature == Signatures.WDC2)
-                            {
-                                using (var binaryReader = new BinaryReader(target.Stream, Encoding.UTF8, true))
-                                {
-                                    target.Stream.Position = stringTableOffset;
-                                    targetMemberValue = binaryReader.ReadCString();
-                                }
-                            }
-                            else
-                            {
-                                if (sourceStorage.StringTable.ContainsKey(stringTableOffset))
-                                    targetMemberValue = sourceStorage.StringTable[stringTableOffset];
-                            }
-                        }
-
-                        if (!targetMemberValue.Equals(sourceMemberValue))
-                        {
+                        if (!valueMatch)
                             mappingList.Remove(targetMemberInfo);
-                            itr = 0;
-                        }
-                        else ++itr;
+                        else
+                            ++itr;
                     }
                 }
             }
 
-            for (var i = 0; i < mappingStore.Count;)
+            // Map all the members we are certain about first.
+            // We do this a couple of times. This should be recursive but cba.
+            var iterationCount = mappingStore.Count;
+            while (iterationCount != 0)
             {
-                var possibleMappings = mappingStore.ElementAt(i);
-
-                if (possibleMappings.Value.Count == 1)
+                var uniqueMatches = mappingStore.Where(m => m.Value.Count == 1).ToArray(); // Gay way to copy from source
+                foreach (var uniqueMatch in uniqueMatches)
                 {
-                    _resolvedMappings.Add(new ResolvedMapping
+                    if (_resolvedMappings.All(m => m.From != uniqueMatch.Key))
                     {
-                        From = possibleMappings.Key,
-                        To = possibleMappings.Value[0]
-                    });
+                        _resolvedMappings.Add(new ResolvedMapping
+                        {
+                            From = uniqueMatch.Key,
+                            To = uniqueMatch.Value[0]
+                        });
 
-                    mappingStore.Remove(possibleMappings.Key);
-
-                    i = 0;
+                        // Remove ourselves from the unresolved pool
+                        mappingStore.Remove(uniqueMatch.Key);
+                    }
                 }
-                else
-                    ++i;
+
+                --iterationCount;
             }
-        }
 
-        private Type CreateTypeFromAnalyzer(FileAnalyzer target, string name = null)
-        {
-            if (target.Members.FileMembers.Count == 0)
-                throw new InvalidOperationException();
-
-            var randomTypeName = Path.GetRandomFileName().GetHashCode().ToString();
-
-            var typeBuilder = _module.DefineType(name ?? $"GeneratedType_{randomTypeName}");
-
-            var fileMemberIndex = 0;
-            foreach (var fileMemberInfo in target.Members.FileMembers)
+            // The remains get pooled
+            foreach (var sourceExtendedMemberInfo in source.Members.Members)
             {
-                if (fileMemberIndex == target.Members.IndexColumn && target.Members.HasIndexTable && target.Signature != Signatures.WDC2)
+                var sourceMemberInfo = sourceExtendedMemberInfo.MemberInfo;
+                if (!mappingStore.TryGetValue(sourceMemberInfo, out var mappingList))
+                    continue;
+
+                _resolvedMappings.First(f => f.From == sourceMemberInfo).Candidates.AddRange(mappingList);
+            }
+        }
+
+        public string this[int index]
+        {
+            get
+            {
+                var node = _resolvedMappings[index];
+                if (node.Candidates.Count > 1)
+                    return $"source.{node.From.Name} = Either({{ {string.Join(", ", node.Candidates)} }})";
+                else if (node.Candidates.Count == 0 && node.To == null)
+                    return $"source.{node.From.Name} = ????";
+                else
+                    return $"source.{node.From.Name} = target.{node.To.Name}";
+            }
+        }
+
+        private IDictionary CreateStore(FileAnalyzer source)
+        {
+            var dictType = typeof(StorageDictionary<,>).MakeGenericType(source.Members.IndexMember.Type, source.RecordType);
+
+            source.Stream.Position = 0;
+            return (IDictionary) Activator.CreateInstance(dictType, source.Stream, source.Options);
+        }
+
+        private bool AdjustStringMembers(TypeGenerator generator, FileAnalyzer analyzer)
+        {
+            analyzer.Stream.Position = 0;
+
+            var enumerableType = typeof(StorageEnumerable<>).MakeGenericType(analyzer.RecordType);
+            var enumerable = (IEnumerable) Activator.CreateInstance(enumerableType, analyzer.Stream, analyzer.Options);
+
+            var isValidString = new bool[analyzer.Members.FileMembers.Count];
+            for (var itr = 0; itr < isValidString.Length; ++itr)
+                isValidString[itr] = false;
+            
+            foreach (var node in enumerable)
+            {
+                var memberIndex = 0;
+                foreach (var exMemberInfo in analyzer.Members.Members)
                 {
-                    DefineProperty(typeBuilder, typeof(int), "ID").SetCustomAttribute(new CustomAttributeBuilder(typeof(IndexAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
-                    ++fileMemberIndex;
+                    if (memberIndex == analyzer.Members.IndexColumn)
+                        continue;
+
+                    var memberInfo = (PropertyInfo)exMemberInfo.MemberInfo;
+                    var memberValue = memberInfo.GetValue(node);
+                    
+                    if (exMemberInfo.Type == typeof(string) && exMemberInfo.MappedTo.BitSize > 16)
+                        isValidString[memberIndex] = memberValue != null;
+                    //{
+                    //    if (analyzer.Signature == Signatures.WDC2)
+                    //        intValue = (int)(recordOffset + memberOffsetInRecord / 8 + intValue);
+
+                    //    if (((IStorage) enumerable).StringTable.ContainsKey(intValue))
+                    //    {
+                    //        var memberStringValue = ((IStorage) enumerable).StringTable[intValue];
+
+                    //        // String table returns null if not in table (empty is a valid string!)
+                    //        if (exMemberInfo.MappedTo.BitSize > 16)
+                    //            isValidString[memberIndex] &= memberStringValue != null;
+                    //    }
+                    //    else
+                    //        isValidString[memberIndex] = false;
+                    //}
+
+                    ++memberIndex;
                 }
-
-                var isIndexInlinedMember = fileMemberIndex == target.Members.IndexColumn && !target.Members.HasIndexTable;
-
-                var propertyType = typeof(int);
-                if (fileMemberInfo.ByteSize == 8 || (fileMemberInfo.BitSize > 32 && fileMemberInfo.BitSize <= 64))
-                    propertyType = typeof(long);
-                if (fileMemberInfo.ByteSize == 2 || (fileMemberInfo.BitSize > 8 && fileMemberInfo.BitSize <= 16))
-                    propertyType = typeof(short);
-                else if (fileMemberInfo.ByteSize == 1 || fileMemberInfo.BitSize <= 8)
-                    propertyType = typeof(byte);
-
-                if (fileMemberInfo.Cardinality > 1)
-                    propertyType = propertyType.MakeArrayType(fileMemberInfo.Cardinality);
-
-                var propBuilder = DefineProperty(typeBuilder, propertyType, isIndexInlinedMember ? "ID" : $"UnkMember{fileMemberIndex}");
-
-                if (fileMemberInfo.Cardinality > 1)
-                {
-                    propBuilder.SetCustomAttribute(new CustomAttributeBuilder(
-                        typeof(CardinalityAttribute).GetConstructor(Type.EmptyTypes),
-                        new object[0],
-                        new [] { typeof(CardinalityAttribute).GetProperty("SizeConst") },
-                        new object[] { fileMemberInfo.Cardinality }));
-                }
-
-                if (isIndexInlinedMember)
-                {
-                    propBuilder.SetCustomAttribute(new CustomAttributeBuilder(typeof(IndexAttribute).GetConstructor(Type.EmptyTypes), new object[0]));
-                }
-
-                ++fileMemberIndex;
             }
 
-            return typeBuilder.CreateType();
+            for (var itr = 0; itr < isValidString.Length; ++itr)
+                if (!isValidString[itr])
+                    generator.GetMember(itr).Type = typeof(int);
+
+            if (isValidString.Any())
+                generator.Generate();
+
+            return isValidString.Any();
         }
 
-        private IDictionary CreateStore(Type instanceType, Type keyType, StorageOptions options, Stream inputStream)
+        private TypeGenerator CreateTypeFromAnalyzer(FileAnalyzer source, string name)
         {
-            inputStream.Position = 0;
+            var typeGen = new TypeGenerator(name);
+            
+            foreach (var memberInfo in source.Members.FileMembers)
+            {
+                var fieldName = $"UnkMember{memberInfo.Index}";
+                var fieldType = typeof(string);
+                if (memberInfo.Index == source.Members.IndexColumn)
+                {
+                    fieldName = "ID";
+                    fieldType = typeof(int);
+                }
 
-            var dictionaryType = typeof(StorageDictionary<,>).MakeGenericType(keyType, instanceType);
+                switch (memberInfo.CompressionType)
+                {
+                    case MemberCompressionType.BitpackedPalletArrayData:
+                    case MemberCompressionType.BitpackedPalletData:
+                    case MemberCompressionType.CommonData:
+                        fieldType = typeof(int);
+                        break;
+                }
+                
+                // We don't really care if we are an int or whatever, because bit sizes automatically make us properly deserialize.
+                if (memberInfo.Cardinality > 1)
+                    fieldType = fieldType.MakeArrayType();
 
-            var instance = Activator.CreateInstance(dictionaryType, inputStream, options);
-            return (IDictionary) instance;
+                typeGen.CreateProperty(fieldName, fieldType, memberInfo.Cardinality, fieldName == "ID");
+            }
+
+            return typeGen;
         }
-
-        private PropertyBuilder DefineProperty(TypeBuilder typeBuilder, Type propType, string propName)
-        {
-            var fieldBuilder = typeBuilder.DefineField($"{propName}_backingField", propType, FieldAttributes.Private | FieldAttributes.SpecialName);
-
-            var propBuilder = typeBuilder.DefineProperty(propName, PropertyAttributes.None, propType, Type.EmptyTypes);
-            var getSetAttr = MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig;
-
-            var getBuilder = typeBuilder.DefineMethod($"get_{propName}", getSetAttr, propType, Type.EmptyTypes);
-            var getGenerator = getBuilder.GetILGenerator();
-
-            getGenerator.Emit(OpCodes.Ldarg_0);
-            getGenerator.Emit(OpCodes.Ldfld, fieldBuilder);
-            getGenerator.Emit(OpCodes.Ret);
-
-            var setBuilder = typeBuilder.DefineMethod($"set_{propName}", getSetAttr, null, new[] { propType });
-            var setGenerator = setBuilder.GetILGenerator();
-
-            setGenerator.Emit(OpCodes.Ldarg_0);
-            setGenerator.Emit(OpCodes.Ldarg_1);
-            setGenerator.Emit(OpCodes.Stfld, fieldBuilder);
-            setGenerator.Emit(OpCodes.Ret);
-
-            propBuilder.SetSetMethod(setBuilder);
-            propBuilder.SetGetMethod(getBuilder);
-
-            return propBuilder;
-        }
+        
+        
     }
 }
