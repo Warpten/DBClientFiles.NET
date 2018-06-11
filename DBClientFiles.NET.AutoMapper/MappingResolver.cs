@@ -1,36 +1,22 @@
-﻿using DBClientFiles.NET.Attributes;
-using DBClientFiles.NET.Collections;
-using DBClientFiles.NET.Collections.Generic;
+﻿using DBClientFiles.NET.Collections.Generic;
 using DBClientFiles.NET.Definitions;
-using DBClientFiles.NET.Internals.Binding;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
-using System.Text;
-using System.Threading;
-using DBClientFiles.NET.AutoMapper.Utils;
+using DBClientFiles.NET.Definitions.Attributes;
 using DBClientFiles.NET.Internals;
 
 namespace DBClientFiles.NET.AutoMapper
 {
-    public class MappingResolver
+    public unsafe class MappingResolver : Dictionary<MemberInfo /* to */, MappingResolver.ResolvedMapping>
     {
-        private class ResolvedMapping
+        public class ResolvedMapping 
         {
             public MemberInfo From { get; set; }
-            public MemberInfo To { get; set; }
             public List<MemberInfo> Candidates { get; } = new List<MemberInfo>();
         }
-
-        private readonly List<ResolvedMapping> _resolvedMappings = new List<ResolvedMapping>();
-        private List<ExtendedMemberInfo> _availableTargetPool = new List<ExtendedMemberInfo>();
-        private List<ExtendedMemberInfo> _availableSourcePool = new List<ExtendedMemberInfo>();
-
-        public int Count => _resolvedMappings.Count;
 
         private TypeGenerator _sourceTypeGenerator;
         private TypeGenerator _targetTypeGenerator;
@@ -40,8 +26,7 @@ namespace DBClientFiles.NET.AutoMapper
             if (source.RecordType == null)
             {
                 _sourceTypeGenerator = CreateTypeFromAnalyzer(source, "SourceType");
-
-                //todo : should throw here, anchor needs to exist
+                
                 source.Stream.Position = 0;
                 source = new FileAnalyzer(_sourceTypeGenerator.Generate(), source.Stream, source.Options);
                 source.Analyze();
@@ -73,48 +58,9 @@ namespace DBClientFiles.NET.AutoMapper
             if (source.IndexColumn != target.IndexColumn)
                 Console.WriteLine("Index column moved!");
 
-            _availableSourcePool.AddRange(source.Members.Members);
-            _availableTargetPool.AddRange(target.Members.Members);
-
-            // Do a simple pass where we map by array sizes only.
-            // We have to look for members with unique sizes
-
-            var availableArraySourcePool = _availableSourcePool.UniqueBy(n => n.Cardinality).ToArray();
-            var availableArrayTargetPool = _availableTargetPool.UniqueBy(n => n.Cardinality).ToArray();
-            if (availableArraySourcePool.Length != 0 && availableArrayTargetPool.Length != 0)
-            {
-                foreach (var availableArraySource in availableArraySourcePool)
-                {
-                    foreach (var availableArrayTarget in availableArrayTargetPool)
-                    {
-                        if (availableArrayTarget.Cardinality != availableArraySource.Cardinality)
-                            continue;
-
-                        _resolvedMappings.Add(new ResolvedMapping
-                        {
-                            From = availableArraySource.MemberInfo,
-                            To = availableArrayTarget.MemberInfo
-                        });
-                        break;
-                    }
-                }
-
-                // Prune out used nodes from each pool
-                foreach (var resolvedMapping in _resolvedMappings)
-                {
-                    _availableSourcePool.RemoveWhere(m => m.MemberInfo == resolvedMapping.From);
-                    _availableTargetPool.RemoveWhere(m => m.MemberInfo == resolvedMapping.To);
-                }
-            }
-
-            // This time, we are gonna need to enumerate records and compare members one-by-one.
-            // Given a set of values for a SOURCE column, we will iterate the entirety of the TARGET's columns, and build a list 
-
             // Construct containers for each node
             var sourceList = CreateStore(source);
             var targetList = CreateStore(target);
-            var sourceStorage = (IStorage) sourceList;
-            var targetStorage = (IStorage) targetList;
 
             var mappingStore = new Dictionary<MemberInfo, List<MemberInfo>>();
 
@@ -137,11 +83,11 @@ namespace DBClientFiles.NET.AutoMapper
 
                 foreach (var sourceExtendedMemberInfo in source.Members.Members)
                 {
-                    if (_resolvedMappings.Any(m => m.From == sourceExtendedMemberInfo.MemberInfo))
+                    if (this.Any(m => m.Value.From == sourceExtendedMemberInfo.MemberInfo))
                         break;
 
                     var sourceMemberInfo = sourceExtendedMemberInfo.MemberInfo;
-                    var sourceMemberValue = (sourceMemberInfo as PropertyInfo)?.GetValue(sourceElement);
+                    var sourceMemberValue = BoxToIntOrSelf((sourceMemberInfo as PropertyInfo)?.GetValue(sourceElement));
                     if (sourceMemberValue == null)
                         continue;
 
@@ -161,7 +107,7 @@ namespace DBClientFiles.NET.AutoMapper
                     {
                         if (mappingList.Count == 1)
                         {
-                            Console.WriteLine("     [RESOLVED]");
+                            Console.WriteLine($"     [RESOLVED] target.{mappingList[0].Name}");
                             break;
                         }
 
@@ -169,68 +115,59 @@ namespace DBClientFiles.NET.AutoMapper
                         if (targetMemberInfo == null)
                             throw new InvalidOperationException("Unreachable");
 
-                        var targetMemberValue = targetMemberInfo.GetValue(targetElement);
+                        var targetMemberValue = BoxToIntOrSelf(targetMemberInfo.GetValue(targetElement));
 
                         bool valueMatch = sourceMemberValue.Equals(targetMemberValue);
+                        if (sourceMemberValue is Array arrSource && targetMemberValue is Array arrTarget)
+                        {
+                            valueMatch = true;
+                            for (var i = 0; i < arrSource.Length && i < arrTarget.Length && valueMatch; ++i)
+                            {
+                                valueMatch = BoxToIntOrSelf(arrSource.GetValue(i)).Equals(BoxToIntOrSelf(arrTarget.GetValue(i)));
+                            }
+                        }
 
-                        Console.WriteLine(
-                            $"     [#{sourceKey}] Testing against target.{targetMemberInfo.Name} ({targetMemberValue}) [{(!valueMatch ? "MISMATCH" : "MATCHES")}]");
+                        Console.WriteLine($"     [#{sourceKey}] Testing against target.{targetMemberInfo.Name} ({targetMemberValue}) [{(!valueMatch ? "MISMATCH" : "MATCHES")}]");
 
                         if (!valueMatch)
                             mappingList.Remove(targetMemberInfo);
                         else
                             ++itr;
-                    }
-                }
-            }
 
-            // Map all the members we are certain about first.
-            // We do this a couple of times. This should be recursive but cba.
-            var iterationCount = mappingStore.Count;
-            while (iterationCount != 0)
-            {
-                var uniqueMatches = mappingStore.Where(m => m.Value.Count == 1).ToArray(); // Gay way to copy from source
-                foreach (var uniqueMatch in uniqueMatches)
-                {
-                    if (_resolvedMappings.All(m => m.From != uniqueMatch.Key))
-                    {
-                        _resolvedMappings.Add(new ResolvedMapping
+                        if (mappingList.Count == 1)
                         {
-                            From = uniqueMatch.Key,
-                            To = uniqueMatch.Value[0]
-                        });
-
-                        // Remove ourselves from the unresolved pool
-                        mappingStore.Remove(uniqueMatch.Key);
+                            Console.WriteLine($"     [RESOLVED] target.{mappingList[0].Name}");
+                            break;
+                        }
                     }
                 }
-
-                --iterationCount;
             }
 
-            // The remains get pooled
-            foreach (var sourceExtendedMemberInfo in source.Members.Members)
+            // invert the map
+            var iterationCount = mappingStore.Count;
+            foreach (var mapInfo in mappingStore)
             {
-                var sourceMemberInfo = sourceExtendedMemberInfo.MemberInfo;
-                if (!mappingStore.TryGetValue(sourceMemberInfo, out var mappingList))
-                    continue;
+                foreach (var targetNode in mapInfo.Value)
+                {
+                    if (!TryGetValue(targetNode, out var map))
+                        map = this[targetNode] = new ResolvedMapping();
 
-                _resolvedMappings.First(f => f.From == sourceMemberInfo).Candidates.AddRange(mappingList);
+                    map.Candidates.Add(mapInfo.Key);
+                }
             }
-        }
 
-        public string this[int index]
-        {
-            get
+            // if only one candidate is found, map it
+            foreach (var t in this)
             {
-                var node = _resolvedMappings[index];
-                if (node.Candidates.Count > 1)
-                    return $"source.{node.From.Name} = Either({{ {string.Join(", ", node.Candidates)} }})";
-                else if (node.Candidates.Count == 0 && node.To == null)
-                    return $"source.{node.From.Name} = ????";
-                else
-                    return $"source.{node.From.Name} = target.{node.To.Name}";
+                if (t.Value.Candidates.Count == 1)
+                    t.Value.From = t.Value.Candidates[0];
             }
+
+            // Sort the set by key, and assing it back to us
+            var sortedSet = this.OrderBy(kv => kv.Key.GetCustomAttribute<OrderAttribute>().Order).ToArray();
+            Clear();
+            foreach (var kv in sortedSet)
+                Add(kv.Key, kv.Value);
         }
 
         private IDictionary CreateStore(FileAnalyzer source)
@@ -301,11 +238,10 @@ namespace DBClientFiles.NET.AutoMapper
             
             foreach (var memberInfo in source.Members.FileMembers)
             {
-                var fieldName = $"UnkMember{memberInfo.Index}";
+                var fieldName = $"UnkMember_{memberInfo.Index}";
                 var fieldType = typeof(string);
                 if (memberInfo.Index == source.Members.IndexColumn)
                 {
-                    fieldName = "ID";
                     fieldType = typeof(int);
                 }
 
@@ -322,12 +258,30 @@ namespace DBClientFiles.NET.AutoMapper
                 if (memberInfo.Cardinality > 1)
                     fieldType = fieldType.MakeArrayType();
 
-                typeGen.CreateProperty(fieldName, fieldType, memberInfo.Cardinality, fieldName == "ID");
+                typeGen.CreateProperty(fieldName, fieldType, memberInfo.Cardinality, memberInfo.Index == source.Members.IndexColumn);
             }
 
             return typeGen;
         }
-        
-        
+
+        public static object BoxToIntOrSelf(object t)
+        {
+            if (t is ushort sourceUshort)
+                return (int)new Value16 { UInt16 = sourceUshort }.Int16;
+
+            if (t is short sourceShort)
+                return (int) sourceShort;
+
+            if (t is byte sourceByte)
+                return (int)new Value8 { UInt8 = sourceByte }.Int8;
+
+            if (t is sbyte sourceSByte)
+                return (int) sourceSByte;
+
+            if (t is float f)
+                return new Value32 { Single = f }.Int32;
+
+            return t;
+        }
     }
 }

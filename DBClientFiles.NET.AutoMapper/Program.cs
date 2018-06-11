@@ -24,9 +24,6 @@ namespace DBClientFiles.NET.AutoMapper
                 
                 var mappingResolver = new MappingResolver(sourceAnalyzer, targetAnalyzer);
                 Console.WriteLine("Mapping done");
-
-                for (var i = 0; i < mappingResolver.Count; ++i)
-                    Console.WriteLine(mappingResolver[i]);
             }
             
         }

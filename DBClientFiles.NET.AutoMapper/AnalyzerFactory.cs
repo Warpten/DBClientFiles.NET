@@ -18,6 +18,7 @@ namespace DBClientFiles.NET.AutoMapper
                 OverrideSignedChecks = true
             };
 
+            fileStream.Position = 0;
             var instance = new FileAnalyzer(recordType, fileStream, options);
             instance.Analyze();
             return instance;

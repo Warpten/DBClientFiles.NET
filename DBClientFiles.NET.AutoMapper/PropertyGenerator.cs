@@ -2,12 +2,13 @@
 using System.Reflection;
 using System.Reflection.Emit;
 using DBClientFiles.NET.Attributes;
+using DBClientFiles.NET.Definitions.Attributes;
 
 namespace DBClientFiles.NET.AutoMapper
 {
     internal sealed class PropertyGenerator : MemberGenerator
     {
-        public PropertyGenerator(TypeGenerator parent, string fieldName, Type fieldType) : base(parent, fieldName, fieldType)
+        public PropertyGenerator(TypeGenerator parent, string fieldName, Type fieldType, int index) : base(parent, fieldName, fieldType, index)
         {
         }
 
@@ -49,8 +50,12 @@ namespace DBClientFiles.NET.AutoMapper
             {
                 propBuilder.SetCustomAttribute(
                     new CustomAttributeBuilder(typeof(IndexAttribute).GetConstructor(Type.EmptyTypes),
-                        new object[0]));
+                    new object[0]));
             }
+
+            propBuilder.SetCustomAttribute(
+                new CustomAttributeBuilder(typeof(OrderAttribute).GetConstructor(new[] { typeof(int) }),
+                new object[] { Index }));
         }
     }
 }

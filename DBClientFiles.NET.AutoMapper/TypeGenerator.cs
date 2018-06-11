@@ -53,10 +53,9 @@ namespace DBClientFiles.NET.AutoMapper
 
         public FieldGenerator CreateField(string name, Type type, int cardinality, bool isIndex)
         {
-            var instance = new FieldGenerator(this, name, type);
+            var instance = new FieldGenerator(this, name, type, _members.Count);
             instance.Cardinality = cardinality;
             instance.IsIndex = isIndex;
-            instance.Index = _members.Count;
 
             _members.Add(instance);
 
@@ -65,10 +64,9 @@ namespace DBClientFiles.NET.AutoMapper
 
         public PropertyGenerator CreateProperty(string name, Type type, int cardinality, bool isIndex)
         {
-            var instance = new PropertyGenerator(this, name, type);
+            var instance = new PropertyGenerator(this, name, type, _members.Count);
             instance.Cardinality = cardinality;
             instance.IsIndex = isIndex;
-            instance.Index = _members.Count;
 
             _members.Add(instance);
 

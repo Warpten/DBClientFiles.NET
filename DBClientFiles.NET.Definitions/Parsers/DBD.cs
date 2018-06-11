@@ -31,7 +31,7 @@ namespace DBClientFiles.NET.Definitions.Parsers
             public ColumnDefinition Definition;
             public int? Size;
             public int? Cardinality;
-            public string[] Annotations;
+            public List<string> Annotations = new List<string>();
         }
 
         private readonly List<ColumnDefinition> _columnDefinitions = new List<ColumnDefinition>();
@@ -39,6 +39,8 @@ namespace DBClientFiles.NET.Definitions.Parsers
         private readonly List<string> _buildAttributes = new List<string>();
         private readonly List<string> _buildRangeAttributes = new List<string>();
         private string _comment;
+
+        private int _memberIndex;
 
         private ModuleBuilder _module;
         private string _fileName;
@@ -63,6 +65,15 @@ namespace DBClientFiles.NET.Definitions.Parsers
             }
         }
 
+        public bool ContainsKey(uint layoutHash)
+        {
+            foreach (var t in _createdTypes)
+                if (t.GetCustomAttributes<LayoutAttribute>().Any(attr => attr.LayoutHash == layoutHash))
+                    return true;
+
+            return false;
+        }
+
         public DBD(string fileName, Stream fileStream) : base(fileStream, Encoding.UTF8)
         {
             _fileName = fileName;
@@ -77,23 +88,20 @@ namespace DBClientFiles.NET.Definitions.Parsers
             {
                 if (line.StartsWith("COLUMNS"))
                     ReadColumnDefinitions();
-
-                if (line.StartsWith("LAYOUT"))
+                else if (line.StartsWith("LAYOUT"))
                     ReadLayoutDefinition(line);
-
-                if (line.StartsWith("BUILD"))
+                else if (line.StartsWith("BUILD"))
                     ReadBuildDefinition(line);
-
-                if (line.StartsWith("COMMENT"))
+                else if (line.StartsWith("COMMENT"))
                     ReadCommentDefinition(line);
-
-                ProduceType();
+                else 
+                    ProduceType(line);
             }
         }
 
-        private static Regex _colUsageRegex = new Regex(@"^(?:\$(?<annotations>[a-z,]+)\$)?(?<name>[a-z0-9_]+)(?:<(?<size>[0-9]+)>)?(?:\[(?<array>[0-9]+)\])?(?: \/\/ (?<comments>.+))?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private static Regex _colRegex = new Regex(@"^(?<type>.+)(?:<(?<fk_type>.+)::(?<fk_field>.+)>)? (?<name>[a-z0-9_]+)(?<verified>\?)?(?: \/\/ (?<comments>.+))?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private AssemblyBuilder _assemblyBuilder;
+        private static readonly Regex _colUsageRegex = new Regex(@"^(?:\$(?<annotations>[a-z,]+)\$)?(?<name>[a-z0-9_]+)(?:<(?<size>u?[0-9]+)>)?(?:\[(?<array>[0-9]+)\])?(?: \/\/ (?<comments>.+))?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex _colRegex = new Regex(@"^(?<type>.+)(?:<(?<fk_type>.+)::(?<fk_field>.+)>)? (?<name>[a-z0-9_]+)(?<verified>\?)?(?: \/\/ (?<comments>.+))?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private readonly AssemblyBuilder _assemblyBuilder;
 
         private void ReadColumnDefinitions()
         {
@@ -162,12 +170,12 @@ namespace DBClientFiles.NET.Definitions.Parsers
             _comment = line.Substring("COMMENT ".Length);
         }
 
-        private void ProduceType()
+        private void ProduceType(string line)
         {
             var columns = new List<ColumnImplementation>();
+            _memberIndex = 0;
 
-            string line;
-            while ((line = ReadLine()) != null)
+            while (line != null)
             {
                 if (string.IsNullOrEmpty(line))
                     break;
@@ -187,12 +195,14 @@ namespace DBClientFiles.NET.Definitions.Parsers
                     impl.Comment = regexMatch.Groups["comments"].Value;
 
                 if (regexMatch.Groups["annotations"].Success)
-                    impl.Annotations = regexMatch.Groups["annotations"].Value.Split(new[] {','}, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim()).ToArray();
+                    impl.Annotations = regexMatch.Groups["annotations"].Value.Split(new[] {','}, StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim()).ToList();
 
                 columns.Add(impl);
+
+                line = ReadLine();
             }
 
-            var type = _module.DefineType($"{_fileName}");
+            var type = _module.DefineType($"{_fileName}_{Math.Abs(Path.GetRandomFileName().GetHashCode())}");
             foreach (var layoutAttr in _layoutAttributes)
             {
                 var attrBuilder = new CustomAttributeBuilder(typeof(LayoutAttribute).GetConstructor(new[] { typeof(uint) }), new object[] { layoutAttr });
@@ -235,10 +245,32 @@ namespace DBClientFiles.NET.Definitions.Parsers
             if (columnInfo.Size.HasValue)
                 nodeType = nodeType.AdjustBitCount(columnInfo.Size.Value);
 
-            if (columnInfo.Size.HasValue)
-                nodeType = nodeType.MakeArrayType(columnInfo.Size.Value);
+            if (columnInfo.Cardinality.HasValue && columnInfo.Cardinality.Value > 1)
+                nodeType = nodeType.MakeArrayType();
 
+            var backingField = typeBuilder.DefineField(columnInfo.Definition.Name + "_backingField", nodeType,
+                FieldAttributes.Private | FieldAttributes.SpecialName);
             var memberBuilder = typeBuilder.DefineProperty(columnInfo.Definition.Name, PropertyAttributes.None, nodeType, Type.EmptyTypes);
+
+            var getSetAttr = MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig;
+
+            var getBuilder = typeBuilder.DefineMethod($"get_{columnInfo.Definition.Name}", getSetAttr, nodeType, Type.EmptyTypes);
+            var getGenerator = getBuilder.GetILGenerator();
+
+            getGenerator.Emit(OpCodes.Ldarg_0);
+            getGenerator.Emit(OpCodes.Ldfld, backingField);
+            getGenerator.Emit(OpCodes.Ret);
+
+            var setBuilder = typeBuilder.DefineMethod($"set_{columnInfo.Definition.Name}", getSetAttr, null, new[] { nodeType });
+            var setGenerator = setBuilder.GetILGenerator();
+
+            setGenerator.Emit(OpCodes.Ldarg_0);
+            setGenerator.Emit(OpCodes.Ldarg_1);
+            setGenerator.Emit(OpCodes.Stfld, backingField);
+            setGenerator.Emit(OpCodes.Ret);
+
+            memberBuilder.SetSetMethod(setBuilder);
+            memberBuilder.SetGetMethod(getBuilder);
 
             CustomAttributeBuilder arraySize = null;
             if (columnInfo.Cardinality.HasValue)
@@ -280,6 +312,10 @@ namespace DBClientFiles.NET.Definitions.Parsers
                     typeof(UnverifiedAttribute).GetConstructor(Type.EmptyTypes),
                     new object[0]));
             }
+
+            memberBuilder.SetCustomAttribute(
+                new CustomAttributeBuilder(typeof(OrderAttribute).GetConstructor(new[] { typeof(int) }),
+                new object[] { _memberIndex++ }));
         }
 
         public void Save(string fileName)
