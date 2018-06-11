@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using DBClientFiles.NET.Collections.Events;
 using DBClientFiles.NET.Internals.Binding;
 using DBClientFiles.NET.Internals.Serializers;
 
@@ -16,7 +17,7 @@ namespace DBClientFiles.NET.Internals
             set;
         }
 
-        event Action<long, string> OnStringTableEntry;
+        event EventHandler<StringTableChangedEventArgs> StringTableChanged;
     }
 
     internal interface IReader<T> : IReader, IDisposable

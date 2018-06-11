@@ -99,7 +99,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
                 _relationshipData.StartOffset = _copyTable.EndOffset;
                 _relationshipData.Length = _relationshipDataSize;
-
+                
             }
 
             public override void ReadSegments()
@@ -115,9 +115,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
             public override string FindStringByOffset(int tableOffset)
             {
-                // Part 2 of string handling: convert the absolute offset into a relative one
-                var adjustedPos = tableOffset - StringTable.StartOffset;
-                return base.FindStringByOffset((int) adjustedPos);
+                return StringTable[tableOffset];
             }
 
             public override RecordReader GetRecordReader(int recordSize)

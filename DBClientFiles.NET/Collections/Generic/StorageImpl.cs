@@ -113,8 +113,8 @@ namespace DBClientFiles.NET.Collections.Generic
                     throw new NotSupportedVersionException($"Unknown signature 0x{(int)Header.Signature:X8}!");
             }
 
-            if (Options.LoadMask.HasFlag(LoadMask.StringTable))
-                File.OnStringTableEntry += OnStringTableEntry;
+            if (Options.LoadMask.HasFlag(LoadMask.StringTable) && OnStringTableEntry != null)
+                File.StringTableChanged += (_, e) => OnStringTableEntry(e.Offset, e.Value);
         }
 
         public void PrepareMemberInfo()

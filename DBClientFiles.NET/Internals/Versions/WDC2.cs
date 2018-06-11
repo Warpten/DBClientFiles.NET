@@ -93,7 +93,10 @@ namespace DBClientFiles.NET.Internals.Versions
                 f.CompressionType == MemberCompressionType.BitpackedPalletData));
 
             for (var i = 0; i < _sections.Length; ++i)
+            {
+                _sections[i].StringTableChanged += (_, e) => OnStringTableEntry(e);
                 _sections[i].ReadSegments();
+            }
         }
 
         public override IEnumerable<TValue> ReadRecords()

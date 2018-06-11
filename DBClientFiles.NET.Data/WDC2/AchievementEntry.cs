@@ -8,8 +8,6 @@ namespace DBClientFiles.NET.Data.WDC2
         public string Title { get; set; }
         public string Description { get; set; }
         public string Reward { get; set; }
-        [Index]
-        public int ID { get; set; }
         public int Flags { get; set; }
         public short InstanceID { get; set; }
         public short Supercedes { get; set; }
@@ -19,7 +17,9 @@ namespace DBClientFiles.NET.Data.WDC2
         public sbyte Faction { get; set; }
         public sbyte Points { get; set; }
         public sbyte MinimumCriteria { get; set; }
-        public uint IconFileID { get; set; }
-        public int CriteriaTree { get; set; }
+        [Index]
+        public int ID { get; set; }
+        public int IconFileID { get; set; }
+        public uint CriteriaTree { get; set; }
     }
 }

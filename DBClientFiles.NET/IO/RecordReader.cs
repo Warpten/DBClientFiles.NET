@@ -280,6 +280,9 @@ namespace DBClientFiles.NET.IO
         /// <returns></returns>
         public virtual string ReadString(int bitOffset, int bitCount)
         {
+            if (bitCount != 32)
+                return null;
+
             if (_usesStringTable)
                 return _fileReader.FindStringByOffset(ReadInt32(bitOffset, bitCount));
 

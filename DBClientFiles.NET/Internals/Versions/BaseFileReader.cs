@@ -6,6 +6,8 @@ using DBClientFiles.NET.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using DBClientFiles.NET.Collections.Events;
 using DBClientFiles.NET.Internals.Binding;
 
 namespace DBClientFiles.NET.Internals.Versions
@@ -93,12 +95,18 @@ namespace DBClientFiles.NET.Internals.Versions
         protected Segment Records;
         #endregion
 
-        public event Action<long, string> OnStringTableEntry;
+        public event EventHandler<StringTableChangedEventArgs> StringTableChanged;
 
         public virtual bool PrepareMemberInformations()
         {
             _codeGenerator = new CodeGenerator<TValue>(this);
             return true;
+        }
+
+        protected void OnStringTableEntry(StringTableChangedEventArgs args)
+        {
+            var hndlr = StringTableChanged;
+            hndlr?.Invoke(this, args);
         }
         
         /// <summary>
@@ -151,18 +159,18 @@ namespace DBClientFiles.NET.Internals.Versions
             if (StringTable.Segment.Exists)
             {
                 if (Options.LoadMask.HasFlag(LoadMask.StringTable))
-                    StringTable.OnStringRead += OnStringTableEntry;
+                    StringTable.OnStringRead += StringTableChanged;
 
                 StringTable.Read();
 
                 if (Options.LoadMask.HasFlag(LoadMask.StringTable))
-                    StringTable.OnStringRead -= OnStringTableEntry;
+                    StringTable.OnStringRead -= StringTableChanged;
             }
         }
 
         public override string FindStringByOffset(int tableOffset)
         {
-            return StringTable[tableOffset];
+            return StringTable[(int)(tableOffset + StringTable.StartOffset)];
         }
 
         public U ExtractKey<U>(TValue instance) where U : struct => Generator.ExtractKey<U>(instance);

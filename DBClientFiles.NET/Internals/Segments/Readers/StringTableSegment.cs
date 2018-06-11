@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using DBClientFiles.NET.Collections.Events;
 using DBClientFiles.NET.IO;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
@@ -14,7 +16,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
         
         private readonly Dictionary<int, string> _cachedStringValues;
 
-        public event Action<long, string> OnStringRead;
+        public event EventHandler<StringTableChangedEventArgs> OnStringRead;
 
         public override void Read()
         {
@@ -24,15 +26,15 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             FileReader.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
 
             var stringSegment = FileReader.ReadBytes(Segment.Length);
-
-            var stringEnd = Segment.Length - 1;
-            for (var i = Segment.Length - 2; i >= 0;)
+            
+            var stringStart = 2;
+            for (var i = 3; i < Segment.Length;)
             {
                 var isStringTermination = stringSegment[i] == 0;
                 if (isStringTermination)
                 {
-                    var stringOffset = i + 1;
-                    var stringLength = stringEnd - i;
+                    var stringOffset = stringStart;
+                    var stringLength = i - stringStart;
 
 #if NETCOREAPP2_1
                     var stringValue = string.Create(stringLength, stringSegment,
@@ -44,14 +46,17 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 #else
                     var stringValue = System.Text.Encoding.UTF8.GetString(stringSegment, stringOffset, stringLength);
 #endif
-                    _cachedStringValues[stringOffset] = FileReader.Options.InternStrings ? string.Intern(stringValue) : stringValue;
-                    OnStringRead?.Invoke(stringOffset, stringValue);
+                    var correctedOffset = (int) (stringOffset + Segment.StartOffset);
 
-                    stringEnd = --i;
+                    _cachedStringValues[correctedOffset] = FileReader.Options.InternStrings ? string.Intern(stringValue) : stringValue;
+
+                    OnStringRead?.Invoke(this, new StringTableChangedEventArgs(correctedOffset, stringValue));
+
+                    stringStart = ++i;
                 }
                 else
                 {
-                    --i;
+                    ++i;
                 }
             }
         }
@@ -71,7 +76,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
                 if (_cachedStringValues.TryGetValue(offset, out var cachedStringValue))
                     return cachedStringValue;
 
-                return string.Empty;
+                return null;
             }
         }
     }
