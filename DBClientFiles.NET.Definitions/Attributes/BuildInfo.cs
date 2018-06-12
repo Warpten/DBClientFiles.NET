@@ -1,6 +1,6 @@
 ﻿namespace DBClientFiles.NET.Definitions.Attributes
 {
-    public struct BuildInfo
+    public class BuildInfo
     {
         public int Version { get; set; }
         public int Major { get; set; }

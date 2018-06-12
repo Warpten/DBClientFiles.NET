@@ -74,7 +74,10 @@
       <DependentUpon>SettingsForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Utils\MiscExtensions.cs" />
+    <Compile Include="Utils\Value16.cs" />
     <Compile Include="Utils\Value32.cs" />
+    <Compile Include="Utils\Value64.cs" />
+    <Compile Include="Utils\Value8.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

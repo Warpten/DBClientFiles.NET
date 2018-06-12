@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using DBClientFiles.NET.Attributes;
 using DBClientFiles.NET.Collections.Generic;
 using DBClientFiles.NET.Definitions;
@@ -301,6 +302,45 @@ namespace DBClientFiles.NET.Mapper.Mapping
                 return new Value32 { Single = f }.Int32;
 
             return t;
+        }
+
+        public string ToString(FormatType formatType)
+        {
+            switch (formatType)
+            {
+                case FormatType.CS:
+                    return ToCS();
+            }
+
+            return Type.ToString();
+        }
+
+        private string ToCS()
+        {
+            var builder = new StringBuilder();
+            foreach (var layoutAttr in Type.GetCustomAttributes<LayoutAttribute>())
+                builder.AppendLine($"[Layout(LayoutHash = 0x{layoutAttr.LayoutHash:X8})]");
+
+            foreach (var buildAttr in Type.GetCustomAttributes<BuildAttribute>())
+                builder.AppendLine($"[Build(Version = {buildAttr.Version}, Major = {buildAttr.Major}, Minor = {buildAttr.Minor}, ClientBuild = {buildAttr.ClientBuild})]");
+
+            builder.AppendLine($"public sealed class {Type.Name}Entry");
+            builder.AppendLine("{");
+
+            foreach (var propInfo in Type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (propInfo.IsDefined(typeof(IndexAttribute), false))
+                    builder.AppendLine("    [Index]");
+
+                var arrayAttr = propInfo.GetCustomAttribute<CardinalityAttribute>();
+                if (arrayAttr != null)
+                    builder.AppendLine($"    [Cardinality(SizeConst = {arrayAttr.SizeConst}]");
+
+                builder.AppendLine($"    public {propInfo.PropertyType.ToAlias()} {propInfo.Name}");
+            }
+            builder.AppendLine("}");
+
+            return builder.ToString();
         }
     }
 }

@@ -131,9 +131,8 @@ namespace DBClientFiles.NET.ConsoleTests
             {
                 fs.CopyTo(ms);
                 ms.Position = 0;
-
-                var structureTester = new StructureTester<TValue>();
-                var benchmarkResult = structureTester.Benchmark<StorageList<TValue>>(out var dataStore, ms, count);
+                
+                var benchmarkResult = StructureTester<TValue>.Benchmark<StorageList<TValue>>(out var dataStore, ms, count);
 
                 Console.WriteLine(benchmarkResult.ToString());
 #if NETCOREAPP2_1

@@ -12,6 +12,10 @@ namespace DBClientFiles.NET.Definitions
 {
     /// <summary>
     /// If you need to load files, look in <see cref="Collections.Generic"/> instead.
+    ///
+    /// This object is a helper to be used when generating DBD definitions. It does not
+    /// have any enumerating capabilities and will only read metadata informations from
+    /// database files.
     /// </summary>
     public sealed class FileAnalyzer : IDisposable
     {

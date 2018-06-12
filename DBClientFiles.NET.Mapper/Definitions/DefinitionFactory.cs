@@ -21,7 +21,7 @@ namespace DBClientFiles.NET.Mapper.Definitions
             using (var fs = new FileStream(completePath, FileMode.Open))
             {
                 var definition = new DBD(definitionName, fs);
-                definition.Save(newDefinition);
+                //definition.Save(newDefinition);
             }
         }
     }

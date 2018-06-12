@@ -280,6 +280,7 @@ namespace DBClientFiles.NET.Internals.Serializers
 
             var bodyBlock = new List<Expression>();
 
+            // ReSharper disable once ForCanBeConvertedToForeach
             for (var index = 0; index < Reader.MemberStore.Members.Count; index++)
             {
                 var memberInfo = Reader.MemberStore.Members[index];
