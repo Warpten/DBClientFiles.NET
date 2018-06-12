@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection.Emit;
 
-namespace DBClientFiles.NET.AutoMapper
+namespace DBClientFiles.NET.Mapper.Generator
 {
     internal abstract class MemberGenerator
     {

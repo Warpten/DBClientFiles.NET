@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace DBClientFiles.NET.AutoMapper
+namespace DBClientFiles.NET.Mapper.Utils
 {
     // All the Equals implementation treat 0 as a false positive and move on
 

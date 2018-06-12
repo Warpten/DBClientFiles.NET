@@ -3,7 +3,7 @@ using System.IO;
 using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Definitions;
 
-namespace DBClientFiles.NET.AutoMapper
+namespace DBClientFiles.NET.Mapper.Mapping
 {
     public static class AnalyzerFactory
     {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace DBClientFiles.NET.AutoMapper.Utils
+namespace DBClientFiles.NET.Mapper.Utils
 {
     internal static class EnumerableUtils
     {

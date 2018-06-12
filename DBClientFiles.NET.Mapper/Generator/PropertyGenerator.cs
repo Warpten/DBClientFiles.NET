@@ -4,7 +4,7 @@ using System.Reflection.Emit;
 using DBClientFiles.NET.Attributes;
 using DBClientFiles.NET.Definitions.Attributes;
 
-namespace DBClientFiles.NET.AutoMapper
+namespace DBClientFiles.NET.Mapper.Generator
 {
     internal sealed class PropertyGenerator : MemberGenerator
     {

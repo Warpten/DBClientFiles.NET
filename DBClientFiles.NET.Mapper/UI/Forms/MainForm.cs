@@ -4,10 +4,10 @@ using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
 using DBClientFiles.NET.Attributes;
-using DBClientFiles.NET.AutoMapper;
 using DBClientFiles.NET.Definitions;
 using DBClientFiles.NET.Definitions.Parsers;
 using DBClientFiles.NET.Mapper.Definitions;
+using DBClientFiles.NET.Mapper.Mapping;
 
 namespace DBClientFiles.NET.Mapper.UI.Forms
 {

@@ -4,8 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using DBClientFiles.NET.AutoMapper;
 using DBClientFiles.NET.Mapper.Definitions;
+using DBClientFiles.NET.Mapper.Mapping;
 using DBClientFiles.NET.Mapper.UI.Forms;
 
 namespace DBClientFiles.NET.Mapper

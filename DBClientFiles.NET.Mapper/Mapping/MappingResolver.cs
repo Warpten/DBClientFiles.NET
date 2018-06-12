@@ -1,18 +1,19 @@
-﻿using DBClientFiles.NET.Collections.Generic;
-using DBClientFiles.NET.Definitions;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using DBClientFiles.NET.Attributes;
-using DBClientFiles.NET.AutoMapper.Utils;
+using DBClientFiles.NET.Collections.Generic;
+using DBClientFiles.NET.Definitions;
 using DBClientFiles.NET.Definitions.Attributes;
 using DBClientFiles.NET.Internals;
+using DBClientFiles.NET.Mapper.Generator;
+using DBClientFiles.NET.Mapper.Utils;
 
-namespace DBClientFiles.NET.AutoMapper
+namespace DBClientFiles.NET.Mapper.Mapping
 {
-    public unsafe class MappingResolver : Dictionary<MemberInfo /* to */, MappingResolver.ResolvedMapping>
+    public class MappingResolver : Dictionary<MemberInfo /* to */, MappingResolver.ResolvedMapping>
     {
         public class ResolvedMapping 
         {
@@ -245,21 +246,6 @@ namespace DBClientFiles.NET.AutoMapper
                     
                     if (exMemberInfo.Type == typeof(string) && exMemberInfo.MappedTo.BitSize > 16)
                         isValidString[memberIndex] = memberValue != null;
-                    //{
-                    //    if (analyzer.Signature == Signatures.WDC2)
-                    //        intValue = (int)(recordOffset + memberOffsetInRecord / 8 + intValue);
-
-                    //    if (((IStorage) enumerable).StringTable.ContainsKey(intValue))
-                    //    {
-                    //        var memberStringValue = ((IStorage) enumerable).StringTable[intValue];
-
-                    //        // String table returns null if not in table (empty is a valid string!)
-                    //        if (exMemberInfo.MappedTo.BitSize > 16)
-                    //            isValidString[memberIndex] &= memberStringValue != null;
-                    //    }
-                    //    else
-                    //        isValidString[memberIndex] = false;
-                    //}
 
                     ++memberIndex;
                 }

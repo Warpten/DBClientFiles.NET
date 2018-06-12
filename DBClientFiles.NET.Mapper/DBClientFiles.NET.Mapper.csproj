@@ -52,6 +52,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Definitions\DefinitionFactory.cs" />
+    <Compile Include="Generator\FieldGenerator.cs" />
+    <Compile Include="Generator\MemberGenerator.cs" />
+    <Compile Include="Generator\PropertyGenerator.cs" />
+    <Compile Include="Generator\TypeGenerator.cs" />
+    <Compile Include="Mapping\AnalyzerFactory.cs" />
+    <Compile Include="Mapping\MappingResolver.cs" />
+    <Compile Include="Utils\EnumerableUtils.cs" />
     <Compile Include="UI\Forms\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -66,6 +73,8 @@
     <Compile Include="UI\Forms\SettingsForm.Designer.cs">
       <DependentUpon>SettingsForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Utils\MiscExtensions.cs" />
+    <Compile Include="Utils\Value32.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -97,10 +106,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DBClientFiles.NET.AutoMapper\DBClientFiles.NET.AutoMapper.csproj">
-      <Project>{74a316fd-c9c1-49a3-aa4c-37db390af490}</Project>
-      <Name>DBClientFiles.NET.AutoMapper</Name>
-    </ProjectReference>
     <ProjectReference Include="..\DBClientFiles.NET.Definitions\DBClientFiles.NET.Definitions.csproj">
       <Project>{1bd8fd96-a5a9-4088-a633-98a6fb35ee90}</Project>
       <Name>DBClientFiles.NET.Definitions</Name>

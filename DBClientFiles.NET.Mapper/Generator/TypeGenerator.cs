@@ -4,11 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
-namespace DBClientFiles.NET.AutoMapper
+namespace DBClientFiles.NET.Mapper.Generator
 {
     internal sealed class TypeGenerator
     {
