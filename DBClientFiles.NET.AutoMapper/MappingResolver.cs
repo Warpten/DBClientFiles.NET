@@ -5,6 +5,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using DBClientFiles.NET.Attributes;
+using DBClientFiles.NET.AutoMapper.Utils;
 using DBClientFiles.NET.Definitions.Attributes;
 using DBClientFiles.NET.Internals;
 
@@ -21,8 +23,11 @@ namespace DBClientFiles.NET.AutoMapper
         private TypeGenerator _sourceTypeGenerator;
         private TypeGenerator _targetTypeGenerator;
 
+        public Type Type { get; private set; }
+
         public MappingResolver(FileAnalyzer source, FileAnalyzer target)
         {
+            #region setup default source if none - should never be true if you want relevant names
             if (source.RecordType == null)
             {
                 _sourceTypeGenerator = CreateTypeFromAnalyzer(source, "SourceType");
@@ -38,7 +43,9 @@ namespace DBClientFiles.NET.AutoMapper
                     source.Analyze();
                 }
             }
+            #endregion
 
+            #region Setup dummy target structure
             if (target.RecordType == null)
             {
                 _targetTypeGenerator = CreateTypeFromAnalyzer(target, "TargetType");
@@ -54,6 +61,7 @@ namespace DBClientFiles.NET.AutoMapper
                     target.Analyze();
                 }
             }
+            #endregion
 
             if (source.IndexColumn != target.IndexColumn)
                 Console.WriteLine("Index column moved!");
@@ -63,7 +71,7 @@ namespace DBClientFiles.NET.AutoMapper
             var targetList = CreateStore(target);
 
             var mappingStore = new Dictionary<MemberInfo, List<MemberInfo>>();
-
+            #region mapping
             foreach (var sourceKey in sourceList.Keys)
             {
                 if (!targetList.Contains(sourceKey))
@@ -142,9 +150,13 @@ namespace DBClientFiles.NET.AutoMapper
                     }
                 }
             }
-
-            // invert the map
-            var iterationCount = mappingStore.Count;
+            #endregion
+            
+            // Create mappings
+            foreach (var t in target.Members.Members.OrderBy(m => m.MemberInfo.GetCustomAttribute<OrderAttribute>().Order))
+                this[t.MemberInfo] = new ResolvedMapping();
+            
+            // Fill mappings
             foreach (var mapInfo in mappingStore)
             {
                 foreach (var targetNode in mapInfo.Value)
@@ -156,7 +168,7 @@ namespace DBClientFiles.NET.AutoMapper
                 }
             }
 
-            // if only one candidate is found, map it
+            // if only one candidate is found, map the match
             foreach (var t in this)
             {
                 if (t.Value.Candidates.Count == 1)
@@ -168,6 +180,37 @@ namespace DBClientFiles.NET.AutoMapper
             Clear();
             foreach (var kv in sortedSet)
                 Add(kv.Key, kv.Value);
+
+            // Generate resolved type and expose it
+            var typeGen = new TypeGenerator();
+            foreach (var kv in this)
+            {
+                if (kv.Value.From != null)
+                {
+                    typeGen.CreateProperty(kv.Value.From.Name,
+                        kv.Key.GetMemberType(),
+                        kv.Value.From.GetCustomAttribute<CardinalityAttribute>()?.SizeConst ?? 1,
+                        kv.Key.IsDefined(typeof(IndexAttribute), false));
+                }
+                else if (kv.Value.Candidates.Count > 1)
+                {
+                    typeGen.CreateProperty("unverified_" + kv.Key.GetCustomAttribute<OrderAttribute>().Order,
+                        kv.Key.GetMemberType(),
+                        kv.Key.GetCustomAttribute<CardinalityAttribute>()?.SizeConst ?? 1,
+                        kv.Key.IsDefined(typeof(IndexAttribute), false));
+                }
+            }
+            
+            foreach (var attr in target.RecordType.GetCustomAttributes<LayoutAttribute>())
+                typeGen.AddAttribute(attr.GetType().GetConstructor(new[] { typeof(uint) }), new object[] { attr.LayoutHash });
+
+            foreach (var attr in target.RecordType.GetCustomAttributes<BuildAttribute>())
+                typeGen.AddAttribute(attr.GetType().GetConstructor(new[] { typeof(BuildInfo) } ), new object[] { attr.Build });
+
+            foreach (var attr in target.RecordType.GetCustomAttributes<BuildRangeAttribute>())
+                typeGen.AddAttribute(attr.GetType().GetConstructor(new[] { typeof(BuildInfo), typeof(BuildInfo) }), new object[] { attr.From, attr.To });
+
+            Type = typeGen.Generate();
         }
 
         private IDictionary CreateStore(FileAnalyzer source)

@@ -36,6 +36,7 @@ namespace DBClientFiles.NET.Mapper
                     var targetFile = targetFiles.First(f => f == fileName);
 
                     var resolver = MapFiles(sourceFile, targetFile, definitions);
+                    DefinitionFactory.Save(fileName, resolver.Type);
                 }
             }
             else

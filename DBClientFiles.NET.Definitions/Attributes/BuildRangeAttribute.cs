@@ -8,6 +8,25 @@ namespace DBClientFiles.NET.Definitions.Attributes
         public BuildInfo From { get; set; }
         public BuildInfo To { get; set; }
 
+        public BuildRangeAttribute(BuildInfo from, BuildInfo to)
+        {
+            From = new BuildInfo()
+            {
+                Version = from.Version,
+                Major = from.Major,
+                Minor = from.Minor,
+                Build = from.Build
+            };
+
+            To = new BuildInfo()
+            {
+                Version = to.Version,
+                Major = to.Major,
+                Minor = to.Minor,
+                Build = to.Build
+            };
+        }
+
         public BuildRangeAttribute(string inputLine)
         {
             var splits = inputLine.Split('-');

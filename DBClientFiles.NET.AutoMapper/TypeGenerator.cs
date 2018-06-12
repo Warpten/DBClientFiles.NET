@@ -18,6 +18,7 @@ namespace DBClientFiles.NET.AutoMapper
         private string _typeName;
 
         private List<MemberGenerator> _members = new List<MemberGenerator>();
+        private List<CustomAttributeBuilder> _attrs = new List<CustomAttributeBuilder>();
         private int _iteration = 0;
 
         public Type Type { get; private set; }
@@ -31,12 +32,25 @@ namespace DBClientFiles.NET.AutoMapper
             _typeName = name ?? $"GeneratedType_{Path.GetRandomFileName().GetHashCode()}";
         }
 
+        public void AddAttribute(ConstructorInfo ctor, object[] @params)
+        {
+            _attrs.Add(new CustomAttributeBuilder(ctor, @params));
+        }
+
+        public void AddAttribute(ConstructorInfo ctor, object[] @params, PropertyInfo[] props, object[] propValues)
+        {
+            _attrs.Add(new CustomAttributeBuilder(ctor, @params, props, propValues));
+        }
+
         public Type Generate()
         {
             var typeBuilder = _module.DefineType(_typeName + "_" + (_iteration++));
 
             foreach (var memberInfo in _members.OrderBy(s => s.Index))
                 memberInfo.Generate(typeBuilder);
+
+            foreach (var attr in _attrs)
+                typeBuilder.SetCustomAttribute(attr);
 
             return Type = typeBuilder.CreateType();
         }

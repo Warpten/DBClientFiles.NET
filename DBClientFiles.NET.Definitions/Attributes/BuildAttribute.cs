@@ -7,6 +7,28 @@ namespace DBClientFiles.NET.Definitions.Attributes
     {
         public BuildInfo Build { get; set; }
 
+        public BuildAttribute(int v, int a, int i, int b)
+        {
+            Build = new BuildInfo()
+            {
+                Version = v,
+                Major = a,
+                Minor = i,
+                Build = b
+            };
+        }
+
+        public BuildAttribute(BuildInfo b)
+        {
+            Build = new BuildInfo()
+            {
+                Version = b.Version,
+                Major = b.Major,
+                Minor = b.Minor,
+                Build = b.Build
+            };
+        }
+
         public BuildAttribute(string inputLine)
         {
             var tokens = inputLine.Split('.');
