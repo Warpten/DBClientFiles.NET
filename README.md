@@ -2,6 +2,11 @@
 
 # DBClientFiles.NET
 
+<a href="https://scan.coverity.com/projects/warpten-dbclientfiles-net">
+  <img alt="Coverity Scan Build Status"
+       src="https://scan.coverity.com/projects/15970/badge.svg"/>
+</a>
+
 A blazing-fast DBC & DB2 reader for World of Warcraft's serialized database format.
 
 ## Usage
