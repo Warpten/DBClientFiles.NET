@@ -44,7 +44,7 @@ namespace DBClientFiles.NET.Internals.Serializers
         /// <summary>
         /// Sets the value of the member of the provided instance that is supposed to behave like a key.
         /// </summary>
-        /// <param name="instance">The target instance of <see cref="{T}"/></param>
+        /// <param name="instance">The target instance of <see cref="T"/></param>
         /// <param name="key">The value to assign to the member representating a key.</param>
         public void InsertKey(T instance, TKey key)
         {
@@ -143,6 +143,7 @@ namespace DBClientFiles.NET.Internals.Serializers
         /// Given the provided <see cref="FileReader"/>, deserializes the record into a structure.
         /// </summary>
         /// <param name="fileReader"></param>
+        /// <param name="recordReader"></param>
         /// <returns></returns>
         public virtual T Deserialize(BaseFileReader<T> fileReader, RecordReader recordReader)
         {
@@ -201,6 +202,7 @@ namespace DBClientFiles.NET.Internals.Serializers
 
             body.Add(Expression.Assign(outputNode, newNode));
             
+            // ReSharper disable once ForCanBeConvertedToForeach
             for (var i = 0; i < Reader.MemberStore.Members.Count; ++i)
             {
                 var memberInfo = Reader.MemberStore.Members[i];
@@ -229,7 +231,6 @@ namespace DBClientFiles.NET.Internals.Serializers
             var memberInfo = inputNode.MemberInfo;
             if (memberInfo.Children.Count != 0)
             {
-                //! TODO Implement (weird things like C3Vector[2])
                 if (memberInfo.Type.IsArray)
                     throw new InvalidStructureException("Structures may not contain substructure arrays!");
 
@@ -361,13 +362,13 @@ namespace DBClientFiles.NET.Internals.Serializers
 
         private void InsertRelationshipMemberAssignment(List<Expression> bodyBlock, Expression binaryReader, Expression recordReader, ref ExtendedMemberExpression memberAccess)
         {
-            var commonReader = GenerateForeignKeyReader(binaryReader, recordReader, memberAccess.MemberInfo);
+            var commonReader = GenerateForeignKeyReader(binaryReader, memberAccess.MemberInfo);
             bodyBlock.Add(Expression.Assign(memberAccess.Expression, commonReader));
         }
 
         private void InsertCommonMemberAssignment(List<Expression> bodyBlock, Expression binaryReader, Expression recordReader, ref ExtendedMemberExpression memberAccess)
         {
-            var commonReader = GenerateCommonReader(binaryReader, recordReader, memberAccess.MemberInfo);
+            var commonReader = GenerateCommonReader(binaryReader, memberAccess.MemberInfo);
             bodyBlock.Add(Expression.Assign(memberAccess.Expression, commonReader));
         }
 
@@ -404,13 +405,13 @@ namespace DBClientFiles.NET.Internals.Serializers
             bodyBlock.Add(Expression.Assign(memberAccess.Expression, binaryReader));
         }
 
-        protected virtual Expression GenerateForeignKeyReader(Expression binaryReader, Expression recordReader, ExtendedMemberInfo memberInfo)
+        protected virtual Expression GenerateForeignKeyReader(Expression binaryReader, ExtendedMemberInfo memberInfo)
         {
             var methodInfo = binaryReader.Type.GetMethod("ReadForeignKeyMember").MakeGenericMethod(memberInfo.Type);
-            return Expression.Call(binaryReader, methodInfo); // , Expression.Constant(memberInfo.MemberIndex), recordReader, _instance);
+            return Expression.Call(binaryReader, methodInfo);
         }
 
-        protected virtual Expression GenerateCommonReader(Expression binaryReader, Expression recordReader, ExtendedMemberInfo memberInfo)
+        protected virtual Expression GenerateCommonReader(Expression binaryReader, ExtendedMemberInfo memberInfo)
         {
             var methodInfo = binaryReader.Type.GetMethod("ReadCommonMember").MakeGenericMethod(memberInfo.Type);
             return Expression.Call(binaryReader, methodInfo, Expression.Constant(memberInfo.MappedTo.Index), _instance);

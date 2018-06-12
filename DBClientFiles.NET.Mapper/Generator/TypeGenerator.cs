@@ -11,13 +11,13 @@ namespace DBClientFiles.NET.Mapper.Generator
     internal sealed class TypeGenerator
     {
         private AssemblyBuilder _assemblyBuilder;
-        private ModuleBuilder _module;
+        private readonly ModuleBuilder _module;
 
-        private string _typeName;
+        private readonly string _typeName;
 
-        private List<MemberGenerator> _members = new List<MemberGenerator>();
-        private List<CustomAttributeBuilder> _attrs = new List<CustomAttributeBuilder>();
-        private int _iteration = 0;
+        private readonly List<MemberGenerator> _members = new List<MemberGenerator>();
+        private readonly List<CustomAttributeBuilder> _attrs = new List<CustomAttributeBuilder>();
+        private int _iteration;
 
         public Type Type { get; private set; }
 
@@ -65,9 +65,11 @@ namespace DBClientFiles.NET.Mapper.Generator
 
         public FieldGenerator CreateField(string name, Type type, int cardinality, bool isIndex)
         {
-            var instance = new FieldGenerator(this, name, type, _members.Count);
-            instance.Cardinality = cardinality;
-            instance.IsIndex = isIndex;
+            var instance = new FieldGenerator(this, name, type, _members.Count)
+            {
+                Cardinality = cardinality,
+                IsIndex = isIndex
+            };
 
             _members.Add(instance);
 
@@ -76,9 +78,11 @@ namespace DBClientFiles.NET.Mapper.Generator
 
         public PropertyGenerator CreateProperty(string name, Type type, int cardinality, bool isIndex)
         {
-            var instance = new PropertyGenerator(this, name, type, _members.Count);
-            instance.Cardinality = cardinality;
-            instance.IsIndex = isIndex;
+            var instance = new PropertyGenerator(this, name, type, _members.Count)
+            {
+                Cardinality = cardinality,
+                IsIndex = isIndex
+            };
 
             _members.Add(instance);
 

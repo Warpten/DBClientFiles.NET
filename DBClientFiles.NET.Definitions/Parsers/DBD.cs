@@ -42,8 +42,8 @@ namespace DBClientFiles.NET.Definitions.Parsers
 
         private int _memberIndex;
 
-        private ModuleBuilder _module;
-        private string _fileName;
+        private readonly ModuleBuilder _module;
+        private readonly string _fileName;
 
         private struct ForeignKeyInfo
         {

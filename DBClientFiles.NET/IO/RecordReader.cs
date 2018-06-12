@@ -15,38 +15,38 @@ namespace DBClientFiles.NET.IO
         private static Type[] arrayPackedArgs      = { typeof(int), typeof(int), typeof(int) };
         private static Type[] packedArgs           = { typeof(int), typeof(int) };
 
-        public static MethodInfo ReadPackedUInt64  = typeof(RecordReader).GetMethod("ReadUInt64", packedArgs);
-        public static MethodInfo ReadPackedUInt32  = typeof(RecordReader).GetMethod("ReadUInt32", packedArgs);
-        public static MethodInfo ReadPackedUInt16  = typeof(RecordReader).GetMethod("ReadUInt16", packedArgs);
-        public static MethodInfo ReadPackedSByte   = typeof(RecordReader).GetMethod("ReadSByte",  packedArgs);
+        public static readonly MethodInfo ReadPackedUInt64  = typeof(RecordReader).GetMethod("ReadUInt64", packedArgs);
+        public static readonly MethodInfo ReadPackedUInt32  = typeof(RecordReader).GetMethod("ReadUInt32", packedArgs);
+        public static readonly MethodInfo ReadPackedUInt16  = typeof(RecordReader).GetMethod("ReadUInt16", packedArgs);
+        public static readonly MethodInfo ReadPackedSByte   = typeof(RecordReader).GetMethod("ReadSByte",  packedArgs);
 
-        public static MethodInfo ReadPackedInt64   = typeof(RecordReader).GetMethod("ReadInt64", packedArgs);
-        public static MethodInfo ReadPackedInt32   = typeof(RecordReader).GetMethod("ReadInt32", packedArgs);
-        public static MethodInfo ReadPackedInt16   = typeof(RecordReader).GetMethod("ReadInt16", packedArgs);
-        public static MethodInfo ReadPackedByte    = typeof(RecordReader).GetMethod("ReadByte",  packedArgs);
+        public static readonly MethodInfo ReadPackedInt64   = typeof(RecordReader).GetMethod("ReadInt64", packedArgs);
+        public static readonly MethodInfo ReadPackedInt32   = typeof(RecordReader).GetMethod("ReadInt32", packedArgs);
+        public static readonly MethodInfo ReadPackedInt16   = typeof(RecordReader).GetMethod("ReadInt16", packedArgs);
+        public static readonly MethodInfo ReadPackedByte    = typeof(RecordReader).GetMethod("ReadByte",  packedArgs);
 
-        public static MethodInfo ReadPackedSingle  = typeof(RecordReader).GetMethod("ReadSingle", new[] { typeof(int) });
+        public static readonly MethodInfo ReadPackedSingle  = typeof(RecordReader).GetMethod("ReadSingle", new[] { typeof(int) });
 
-        public static MethodInfo ReadPackedString  = typeof(RecordReader).GetMethod("ReadString", packedArgs);
-        public static MethodInfo ReadPackedStrings = typeof(RecordReader).GetMethod("ReadStrings", arrayPackedArgs);
-        public static MethodInfo ReadPackedArray   = typeof(RecordReader).GetMethod("ReadArray", arrayPackedArgs);
+        public static readonly MethodInfo ReadPackedString  = typeof(RecordReader).GetMethod("ReadString", packedArgs);
+        public static readonly MethodInfo ReadPackedStrings = typeof(RecordReader).GetMethod("ReadStrings", arrayPackedArgs);
+        public static readonly MethodInfo ReadPackedArray   = typeof(RecordReader).GetMethod("ReadArray", arrayPackedArgs);
 
-        public static MethodInfo ReadUInt64        = typeof(RecordReader).GetMethod("ReadUInt64", Type.EmptyTypes);
-        public static MethodInfo ReadUInt32        = typeof(RecordReader).GetMethod("ReadUInt32", Type.EmptyTypes);
-        public static MethodInfo ReadUInt16        = typeof(RecordReader).GetMethod("ReadUInt16", Type.EmptyTypes);
-        public static MethodInfo ReadSByte         = typeof(RecordReader).GetMethod("ReadSByte", Type.EmptyTypes);
+        public static readonly MethodInfo ReadUInt64        = typeof(RecordReader).GetMethod("ReadUInt64", Type.EmptyTypes);
+        public static readonly MethodInfo ReadUInt32        = typeof(RecordReader).GetMethod("ReadUInt32", Type.EmptyTypes);
+        public static readonly MethodInfo ReadUInt16        = typeof(RecordReader).GetMethod("ReadUInt16", Type.EmptyTypes);
+        public static readonly MethodInfo ReadSByte         = typeof(RecordReader).GetMethod("ReadSByte", Type.EmptyTypes);
 
-        public static MethodInfo ReadInt64         = typeof(RecordReader).GetMethod("ReadInt64", Type.EmptyTypes);
-        public static MethodInfo ReadInt32         = typeof(RecordReader).GetMethod("ReadInt32", Type.EmptyTypes);
-        public static MethodInfo ReadInt16         = typeof(RecordReader).GetMethod("ReadInt16", Type.EmptyTypes);
-        public static MethodInfo ReadByte          = typeof(RecordReader).GetMethod("ReadByte", Type.EmptyTypes);
+        public static readonly MethodInfo ReadInt64         = typeof(RecordReader).GetMethod("ReadInt64", Type.EmptyTypes);
+        public static readonly MethodInfo ReadInt32         = typeof(RecordReader).GetMethod("ReadInt32", Type.EmptyTypes);
+        public static readonly MethodInfo ReadInt16         = typeof(RecordReader).GetMethod("ReadInt16", Type.EmptyTypes);
+        public static readonly MethodInfo ReadByte          = typeof(RecordReader).GetMethod("ReadByte", Type.EmptyTypes);
 
-        public static MethodInfo ReadSingle        = typeof(RecordReader).GetMethod("ReadSingle", Type.EmptyTypes);
-        public static MethodInfo ReadString        = typeof(RecordReader).GetMethod("ReadString", Type.EmptyTypes);
-        public static MethodInfo ReadStrings       = typeof(RecordReader).GetMethod("ReadStrings", arrayArgs);
-        public static MethodInfo ReadArray         = typeof(RecordReader).GetMethod("ReadArray", arrayArgs);
+        public static readonly MethodInfo ReadSingle        = typeof(RecordReader).GetMethod("ReadSingle", Type.EmptyTypes);
+        public static readonly MethodInfo ReadString        = typeof(RecordReader).GetMethod("ReadString", Type.EmptyTypes);
+        public static readonly MethodInfo ReadStrings       = typeof(RecordReader).GetMethod("ReadStrings", arrayArgs);
+        public static readonly MethodInfo ReadArray         = typeof(RecordReader).GetMethod("ReadArray", arrayArgs);
 
-        public static Dictionary<TypeCode, MethodInfo> PackedReaders = new Dictionary<TypeCode, MethodInfo>()
+        public static readonly Dictionary<TypeCode, MethodInfo> PackedReaders = new Dictionary<TypeCode, MethodInfo>()
         {
             { TypeCode.UInt64, ReadPackedUInt64 },
             { TypeCode.UInt32, ReadPackedUInt32 },

@@ -12,7 +12,7 @@ namespace DBClientFiles.NET.Mapper.Generator
         public bool IsIndex { get; set; }
         public int Index { get; }
 
-        internal MemberGenerator(TypeGenerator parent, string fieldName, Type fieldType, int index)
+        protected MemberGenerator(TypeGenerator parent, string fieldName, Type fieldType, int index)
         {
             Parent = parent;
             Name = fieldName;

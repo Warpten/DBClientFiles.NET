@@ -3,7 +3,7 @@ using DBClientFiles.NET.IO;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
-    internal sealed partial class WDC2
+    internal sealed class WDC2
     {
         public class RecordReader : DBClientFiles.NET.IO.RecordReader
         {

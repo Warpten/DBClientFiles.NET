@@ -21,26 +21,24 @@ namespace DBClientFiles.NET.Mapper.Mapping
             public List<MemberInfo> Candidates { get; } = new List<MemberInfo>();
         }
 
-        private TypeGenerator _sourceTypeGenerator;
-        private TypeGenerator _targetTypeGenerator;
-
-        public Type Type { get; private set; }
+        public Type Type { get; }
 
         public MappingResolver(FileAnalyzer source, FileAnalyzer target)
         {
             #region setup default source if none - should never be true if you want relevant names
+
             if (source.RecordType == null)
             {
-                _sourceTypeGenerator = CreateTypeFromAnalyzer(source, "SourceType");
+                var sourceTypeGenerator = CreateTypeFromAnalyzer(source, "SourceType");
                 
                 source.Stream.Position = 0;
-                source = new FileAnalyzer(_sourceTypeGenerator.Generate(), source.Stream, source.Options);
+                source = new FileAnalyzer(sourceTypeGenerator.Generate(), source.Stream, source.Options);
                 source.Analyze();
 
-                if (AdjustStringMembers(_sourceTypeGenerator, source))
+                if (AdjustStringMembers(sourceTypeGenerator, source))
                 {
                     source.Stream.Position = 0;
-                    source = new FileAnalyzer(_sourceTypeGenerator.Generate(), source.Stream, source.Options);
+                    source = new FileAnalyzer(sourceTypeGenerator.Generate(), source.Stream, source.Options);
                     source.Analyze();
                 }
             }
@@ -49,16 +47,16 @@ namespace DBClientFiles.NET.Mapper.Mapping
             #region Setup dummy target structure
             if (target.RecordType == null)
             {
-                _targetTypeGenerator = CreateTypeFromAnalyzer(target, "TargetType");
+                var targetTypeGenerator = CreateTypeFromAnalyzer(target, "TargetType");
 
                 target.Stream.Position = 0;
-                target = new FileAnalyzer(_targetTypeGenerator.Generate(), target.Stream, target.Options);
+                target = new FileAnalyzer(targetTypeGenerator.Generate(), target.Stream, target.Options);
                 target.Analyze();
 
-                if (AdjustStringMembers(_targetTypeGenerator, target))
+                if (AdjustStringMembers(targetTypeGenerator, target))
                 {
                     target.Stream.Position = 0;
-                    target = new FileAnalyzer(_targetTypeGenerator.Generate(), target.Stream, target.Options);
+                    target = new FileAnalyzer(targetTypeGenerator.Generate(), target.Stream, target.Options);
                     target.Analyze();
                 }
             }
@@ -109,16 +107,11 @@ namespace DBClientFiles.NET.Mapper.Mapping
                     else if (mappingList.Count == 1)
                         continue;
 
-                    Console.WriteLine($"[#{sourceKey}] source.{sourceMemberInfo.Name} = {sourceMemberValue}");
-
                     var itr = 0;
                     while (mappingList.Count != 0 && itr < mappingList.Count)
                     {
                         if (mappingList.Count == 1)
-                        {
-                            Console.WriteLine($"     [RESOLVED] target.{mappingList[0].Name}");
                             break;
-                        }
 
                         var targetMemberInfo = mappingList[itr] as PropertyInfo;
                         if (targetMemberInfo == null)
@@ -136,8 +129,6 @@ namespace DBClientFiles.NET.Mapper.Mapping
                             }
                         }
 
-                        Console.WriteLine($"     [#{sourceKey}] Testing against target.{targetMemberInfo.Name} ({targetMemberValue}) [{(!valueMatch ? "MISMATCH" : "MATCHES")}]");
-
                         if (!valueMatch)
                             mappingList.Remove(targetMemberInfo);
                         else
@@ -145,7 +136,6 @@ namespace DBClientFiles.NET.Mapper.Mapping
 
                         if (mappingList.Count == 1)
                         {
-                            Console.WriteLine($"     [RESOLVED] target.{mappingList[0].Name}");
                             break;
                         }
                     }

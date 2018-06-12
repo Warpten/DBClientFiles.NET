@@ -13,8 +13,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DBClientFiles.NET.Benchmark
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DBClientFiles.NET.Definitions", "DBClientFiles.NET.Definitions\DBClientFiles.NET.Definitions.csproj", "{1BD8FD96-A5A9-4088-A633-98A6FB35EE90}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBClientFiles.NET.AutoMapper", "DBClientFiles.NET.AutoMapper\DBClientFiles.NET.AutoMapper.csproj", "{74A316FD-C9C1-49A3-AA4C-37DB390AF490}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBClientFiles.NET.Mapper", "DBClientFiles.NET.Mapper\DBClientFiles.NET.Mapper.csproj", "{FC857F2A-7C08-4875-ADEE-73DFAB38F041}"
 EndProject
 Global
@@ -131,26 +129,6 @@ Global
 		{1BD8FD96-A5A9-4088-A633-98A6FB35EE90}.RelWithPerformance|Any CPU.Build.0 = Release|Any CPU
 		{1BD8FD96-A5A9-4088-A633-98A6FB35EE90}.RelWithPerformance|x64.ActiveCfg = Release|Any CPU
 		{1BD8FD96-A5A9-4088-A633-98A6FB35EE90}.RelWithPerformance|x64.Build.0 = Release|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.Debug|x64.Build.0 = Debug|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.MinSizeRel|Any CPU.ActiveCfg = Release|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.MinSizeRel|Any CPU.Build.0 = Release|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.MinSizeRel|x64.ActiveCfg = Release|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.MinSizeRel|x64.Build.0 = Release|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.Release|Any CPU.Build.0 = Release|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.Release|x64.ActiveCfg = Release|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.Release|x64.Build.0 = Release|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.RelWithDebInfo|Any CPU.ActiveCfg = Release|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.RelWithDebInfo|Any CPU.Build.0 = Release|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.RelWithDebInfo|x64.ActiveCfg = Release|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.RelWithDebInfo|x64.Build.0 = Release|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.RelWithPerformance|Any CPU.ActiveCfg = Release|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.RelWithPerformance|Any CPU.Build.0 = Release|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.RelWithPerformance|x64.ActiveCfg = Release|Any CPU
-		{74A316FD-C9C1-49A3-AA4C-37DB390AF490}.RelWithPerformance|x64.Build.0 = Release|Any CPU
 		{FC857F2A-7C08-4875-ADEE-73DFAB38F041}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FC857F2A-7C08-4875-ADEE-73DFAB38F041}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FC857F2A-7C08-4875-ADEE-73DFAB38F041}.Debug|x64.ActiveCfg = Debug|Any CPU
