@@ -6,9 +6,9 @@ namespace DBClientFiles.NET.Mapper.Definitions
 {
     internal static class DefinitionFactory
     {
-        public static DBD Open(string definitionName)
+        public static DBD Open(string definitionName, string rootFolder = null)
         {
-            var completePath = Path.Combine(Properties.Settings.Default.DefinitionRoot, definitionName + ".dbd");
+            var completePath = Path.Combine(rootFolder ?? Properties.Settings.Default.DefinitionRoot, definitionName + ".dbd");
 
             using (var fs = File.OpenRead(completePath))
                 return new DBD(definitionName, fs);

@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Reflection;
-using System.Text;
-using DBClientFiles.NET.Attributes;
-using DBClientFiles.NET.Definitions.Attributes;
 
 namespace DBClientFiles.NET.Mapper.Utils
 {
