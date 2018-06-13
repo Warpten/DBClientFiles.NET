@@ -20,7 +20,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
         protected CodeGenerator<TValue, TKey> _codeGenerator;
         public override CodeGenerator<TValue> Generator => _codeGenerator;
-        
+
         #region Life and death
         public WDB5(IFileHeader header, Stream strm, StorageOptions options) : base(header, strm, options)
         {
@@ -39,35 +39,35 @@ namespace DBClientFiles.NET.Internals.Versions
         {
             Debug.Assert(BaseStream.Position == 48);
 
-			for (var i = 0; i < Header.FieldCount; ++i)
-				MemberStore.AddFileMemberInfo(this);
+            for (var i = 0; i < Header.FieldCount; ++i)
+                MemberStore.AddFileMemberInfo(this);
 
-			#region Initialize segments
-			Records.StartOffset = BaseStream.Position;
+            #region Initialize segments
+            Records.StartOffset = BaseStream.Position;
             Records.Length = Header.RecordSize * Header.RecordCount;
 
             StringTable.StartOffset = Records.EndOffset;
             StringTable.Length = Header.StringTableLength;
-			StringTable.Exists = !Header.HasOffsetMap;
+            StringTable.Exists = !Header.HasOffsetMap;
 
             OffsetMap.StartOffset = Header.StringTableLength;
             OffsetMap.Length = (Header.MaxIndex - Header.MinIndex + 1) * (4 + 2);
-			OffsetMap.Exists = Header.HasOffsetMap;
+            OffsetMap.Exists = Header.HasOffsetMap;
 
-			long _foreignIdsLength = Header.HasForeignIds ? (Header.MaxIndex - Header.MinIndex + 1) * 4 : 0;
+            long _foreignIdsLength = Header.HasForeignIds ? (Header.MaxIndex - Header.MinIndex + 1) * 4 : 0;
 
-			IndexTable.StartOffset = (OffsetMap.Exists ? OffsetMap.EndOffset : StringTable.EndOffset) + _foreignIdsLength;
-			IndexTable.Length = Header.RecordCount * 4;
-			IndexTable.Exists = Header.HasIndexTable;
+            IndexTable.StartOffset = (OffsetMap.Exists ? OffsetMap.EndOffset : StringTable.EndOffset) + _foreignIdsLength;
+            IndexTable.Length = Header.RecordCount * 4;
+            IndexTable.Exists = Header.HasIndexTable;
 
-			_copyTable.StartOffset = IndexTable.EndOffset;
+            _copyTable.StartOffset = IndexTable.EndOffset;
             _copyTable.Length = Header.CopyTableLength;
             #endregion
 
             _codeGenerator = new CodeGenerator<TValue, TKey>(this);
             return true;
         }
-        
+
         protected override IEnumerable<TValue> ReadRecords(int recordIndex, long recordOffset, int recordSize)
         {
             TValue oldStructure;
@@ -78,21 +78,21 @@ namespace DBClientFiles.NET.Internals.Versions
                     : _codeGenerator.Deserialize(this, recordReader);
             }
 
-			if(_copyTable.Count > 0)
-			{
-				var sourceID = _codeGenerator.ExtractKey(oldStructure);
-				foreach (var copyEntryID in _copyTable[sourceID])
-				{
-					var clone = _codeGenerator.Clone(oldStructure);
-					_codeGenerator.InsertKey(clone, copyEntryID);
+            if (_copyTable.Count > 0)
+            {
+                var sourceID = _codeGenerator.ExtractKey(oldStructure);
+                foreach (var copyEntryID in _copyTable[sourceID])
+                {
+                    var clone = _codeGenerator.Clone(oldStructure);
+                    _codeGenerator.InsertKey(clone, copyEntryID);
 
-					yield return clone;
-				}
-			}
+                    yield return clone;
+                }
+            }
 
             yield return oldStructure;
         }
-        
+
         public override T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
             throw new UnreachableCodeException("WDB5 does not need to implement ReadPalletMember.");

@@ -16,7 +16,7 @@ namespace DBClientFiles.NET.Internals.Versions.Headers
             StringTableLength = reader.ReadInt32();
 
             HasIndexTable = false;
-			HasForeignIds = false;
+            HasForeignIds = false;
             HasOffsetMap = false;
 
             CopyTableLength = 0;
@@ -42,8 +42,8 @@ namespace DBClientFiles.NET.Internals.Versions.Headers
         public int CopyTableLength { get; }
 
         public bool HasIndexTable { get; }
-		public bool HasForeignIds { get; }
-		public bool HasOffsetMap { get; }
+        public bool HasForeignIds { get; }
+        public bool HasOffsetMap { get; }
 
         public int IndexColumn { get; }
     }
