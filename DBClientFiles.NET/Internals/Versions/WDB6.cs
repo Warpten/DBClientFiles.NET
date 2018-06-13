@@ -4,6 +4,7 @@ using DBClientFiles.NET.Utils;
 using System.IO;
 using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Internals.Segments;
+using DBClientFiles.NET.Internals.Serializers;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
@@ -43,21 +44,24 @@ namespace DBClientFiles.NET.Internals.Versions
 
             _commonTableStartColumn = Header.FieldCount;
 
+            for (var i = 0; i < Header.FieldCount; ++i)
+                MemberStore.AddFileMemberInfo(this);
+
             #region Initialize segments
             Records.StartOffset = BaseStream.Position;
             Records.Length = Header.RecordSize * Header.RecordCount;
 
-            StringTable.Exists = !Header.HasOffsetMap;
             StringTable.StartOffset = Records.EndOffset;
             StringTable.Length = Header.StringTableLength;
+            StringTable.Exists = !Header.HasOffsetMap;
 
-            OffsetMap.Exists = Header.HasOffsetMap;
             OffsetMap.StartOffset = Header.StringTableLength;
             OffsetMap.Length = (Header.MaxIndex - Header.MinIndex + 1) * (4 + 2);
+            OffsetMap.Exists = Header.HasOffsetMap;
 
-            IndexTable.Exists = Header.HasIndexTable;
             IndexTable.StartOffset = OffsetMap.Exists ? OffsetMap.EndOffset : StringTable.EndOffset;
             IndexTable.Length = Header.RecordCount * SizeCache<TKey>.Size;
+            IndexTable.Exists = Header.HasIndexTable;
 
             _copyTable.StartOffset = IndexTable.EndOffset;
             _copyTable.Length = Header.CopyTableLength;
@@ -66,8 +70,7 @@ namespace DBClientFiles.NET.Internals.Versions
             _commonTable.Length = commonDataTableSize;
             #endregion
 
-            for (var i = 0; i < Header.FieldCount; ++i)
-                MemberStore.AddFileMemberInfo(this);
+            _codeGenerator = new CodeGenerator<TValue, TKey>(this);
 
             return true;
         }
