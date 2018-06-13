@@ -8,6 +8,7 @@ using DBClientFiles.NET.Definitions;
 using DBClientFiles.NET.Definitions.Parsers;
 using DBClientFiles.NET.Mapper.Definitions;
 using DBClientFiles.NET.Mapper.Mapping;
+using DBClientFiles.NET.Mapper.Utils;
 
 namespace DBClientFiles.NET.Mapper.UI.Forms
 {
@@ -92,7 +93,7 @@ namespace DBClientFiles.NET.Mapper.UI.Forms
                 var isIndex = mapping.Key.IsDefined(typeof(IndexAttribute), false);
 
                 dataRow.Cells.Add(new DataGridViewTextBoxCell { Value = sourceName });
-                dataRow.Cells.Add(new DataGridViewTextBoxCell { Value = dataType.ToString() });
+                dataRow.Cells.Add(new DataGridViewTextBoxCell { Value = dataType.ToAlias() });
                 dataRow.Cells.Add(new DataGridViewTextBoxCell { Value = arraySize == 0 ? "" : arraySize.ToString() });
                 dataRow.Cells.Add(new DataGridViewCheckBoxCell { Value = isIndex });
                 targetGridView.Rows.Add(dataRow);
@@ -188,7 +189,7 @@ namespace DBClientFiles.NET.Mapper.UI.Forms
 
                 var dataRow = new DataGridViewRow();
                 dataRow.Cells.Add(new DataGridViewTextBoxCell { Value = propInfo.Name });
-                dataRow.Cells.Add(new DataGridViewTextBoxCell { Value = propPype.ToString() });
+                dataRow.Cells.Add(new DataGridViewTextBoxCell { Value = propPype.ToAlias() });
                 dataRow.Cells.Add(new DataGridViewTextBoxCell { Value = arraySize == 0 ? "" : arraySize.ToString() });
                 dataRow.Cells.Add(new DataGridViewCheckBoxCell { Value = isIndex });
                 gridView.Rows.Add(dataRow);
@@ -212,7 +213,6 @@ namespace DBClientFiles.NET.Mapper.UI.Forms
 
         private void InspectSource(object sender, EventArgs e)
         {
-
             var form = new InspectForm();
             form.RecordType = _sourceFileAnalyzer.RecordType;
             form.Stream = _sourceFileAnalyzer.Stream;

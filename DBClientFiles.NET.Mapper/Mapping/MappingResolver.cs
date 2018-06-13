@@ -187,7 +187,7 @@ namespace DBClientFiles.NET.Mapper.Mapping
                         kv.Value.From.GetCustomAttribute<CardinalityAttribute>()?.SizeConst ?? 1,
                         kv.Key.IsDefined(typeof(IndexAttribute), false));
                 }
-                else if (kv.Value.Candidates.Count > 1)
+                else if (kv.Value.Candidates.Count != 1)
                 {
                     typeGen.CreateProperty("unverified_" + kv.Key.GetCustomAttribute<OrderAttribute>().Order,
                         kv.Key.GetMemberType(),
