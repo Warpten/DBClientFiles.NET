@@ -146,6 +146,7 @@
             this.button2.Text = "Inspect";
             this.button2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.InspectSource);
             // 
             // button1
             // 
@@ -233,6 +234,7 @@
             this.button5.Text = "Inspect";
             this.button5.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.button5.UseVisualStyleBackColor = true;
+            this.button5.Click += new System.EventHandler(this.InspectTarget);
             // 
             // button6
             // 

@@ -201,5 +201,22 @@ namespace DBClientFiles.NET.Mapper.UI.Forms
             _sourceStream?.Dispose();
             _targetStream?.Dispose();
         }
+
+        private void InspectTarget(object sender, EventArgs e)
+        {
+            var form = new InspectForm();
+            form.RecordType = _targetFileAnalyzer.RecordType;
+            form.Stream = _targetFileAnalyzer.Stream;
+            form.Show();
+        }
+
+        private void InspectSource(object sender, EventArgs e)
+        {
+
+            var form = new InspectForm();
+            form.RecordType = _sourceFileAnalyzer.RecordType;
+            form.Stream = _sourceFileAnalyzer.Stream;
+            form.Show();
+        }
     }
 }

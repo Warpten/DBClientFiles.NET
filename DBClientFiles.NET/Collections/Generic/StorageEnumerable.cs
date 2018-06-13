@@ -20,8 +20,8 @@ namespace DBClientFiles.NET.Collections.Generic
 
         private StorageImpl<T> _implementation;
         private IEnumerable<T> _enumerable;
-        
-        public Dictionary<long, string> StringTable { get; }
+
+        public Dictionary<long, string> StringTable { get; } = new Dictionary<long, string>();
 
         public StorageEnumerable(Stream fileStream) : this(fileStream, StorageOptions.Default)
         {

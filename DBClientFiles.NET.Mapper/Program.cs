@@ -163,7 +163,7 @@ namespace DBClientFiles.NET.Mapper
             if (shorthand != null && ofs == -1)
                 ofs = Array.IndexOf(args, shorthand);
 
-            if (ofs == -1 || ofs + 1 >= args.Length)
+            if (ofs == -1)
                 return -1;
 
             return ofs;
