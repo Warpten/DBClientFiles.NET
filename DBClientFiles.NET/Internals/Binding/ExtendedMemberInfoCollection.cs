@@ -57,9 +57,9 @@ namespace DBClientFiles.NET.Internals.Binding
         {
             get
             {
-                if (IndexColumn != 0)
-                    return Members[IndexColumn];
-
+                if (IndexColumn == -1)
+                    throw new InvalidOperationException("Index column not bound");
+                
                 for (var i = 0; i < Members.Count; ++i)
                 {
                     var memberInfo = Members[i];
@@ -200,7 +200,7 @@ namespace DBClientFiles.NET.Internals.Binding
                 fileCursor = RecursiveMemberAssignment(memberInfo, fileCursor, ref memberOffset);
         }
 
-        public int IndexColumn { get; internal set; } = 0;
+        public int IndexColumn { get; internal set; } = -1;
         public bool HasIndexTable { get; internal set; } = false;
 
         internal IEnumerable<int> GetBlockLengths(MemberCompressionType compressionType)

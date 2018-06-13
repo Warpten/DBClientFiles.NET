@@ -1,4 +1,5 @@
-﻿using DBClientFiles.NET.Attributes;
+﻿using System.Runtime.InteropServices;
+using DBClientFiles.NET.Attributes;
 
 namespace DBClientFiles.NET.Data.WDC2
 {
