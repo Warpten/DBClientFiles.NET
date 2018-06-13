@@ -271,7 +271,7 @@ namespace DBClientFiles.NET.Mapper.Mapping
                 {
                     fieldType = typeof(int);
 
-                    if (source.Signature == Signatures.WDC2 || !source.Members.HasIndexTable)
+                    if (source.Signature == Signatures.WDC2 || source.Members.HasIndexTable)
                     {
                         typeGen.CreateProperty("forced_id", fieldType, memberInfo.Cardinality, true);
                         if (source.Signature == Signatures.WDC2)
