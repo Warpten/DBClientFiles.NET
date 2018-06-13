@@ -287,7 +287,7 @@ namespace DBClientFiles.NET.Mapper.Mapping
             return typeGen;
         }
 
-        public static object BoxToIntOrSelf(object t)
+        private static object BoxToIntOrSelf(object t)
         {
             if (t is ushort sourceUshort)
                 return (int)new Value16 { UInt16 = sourceUshort }.Int16;
@@ -325,6 +325,7 @@ namespace DBClientFiles.NET.Mapper.Mapping
             var builder = new StringBuilder();
 
             builder.AppendLine("{");
+            builder.AppendLine($@"    fileName: ""{_fileName}"",");
             var layoutAttrs = Type.GetCustomAttributes<LayoutAttribute>().ToArray();
             if (layoutAttrs.Length != 0)
             {
@@ -355,7 +356,7 @@ namespace DBClientFiles.NET.Mapper.Mapping
                 builder.Append($@"        {{ name: ""{propInfo.Name}"", type: ""{propInfo.PropertyType.ToAlias()}"", ");
 
                 if (propInfo.IsDefined(typeof(IndexAttribute), false))
-                    builder.Append(" index: true, ");
+                    builder.Append("index: true, ");
 
                 var arrayAttr = propInfo.GetCustomAttribute<CardinalityAttribute>();
                 if (arrayAttr != null)

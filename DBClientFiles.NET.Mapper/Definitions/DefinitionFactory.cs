@@ -17,12 +17,16 @@ namespace DBClientFiles.NET.Mapper.Definitions
         public static void Save(string definitionName, Type newDefinition)
         {
             var completePath = Path.Combine(Properties.Settings.Default.DefinitionRoot, definitionName + ".dbd");
-
+            
+            DBD definition;
             using (var fs = new FileStream(completePath, FileMode.Open))
             {
-                var definition = new DBD(definitionName, fs);
-                //definition.Save(newDefinition);
+                definition = new DBD(definitionName, fs);
+                definition.AddType(newDefinition);
             }
+
+            using (var fs = new FileStream(completePath, FileMode.Truncate))
+                definition.Save(fs);
         }
     }
 }

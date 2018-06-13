@@ -14,7 +14,7 @@ using System.Threading;
 
 namespace DBClientFiles.NET.Definitions.Parsers
 {
-    public sealed class DBD : StreamReader
+    public sealed class DBD
     {
         private class ColumnDefinition
         {
@@ -74,8 +74,12 @@ namespace DBClientFiles.NET.Definitions.Parsers
             return false;
         }
 
-        public DBD(string fileName, Stream fileStream) : base(fileStream, Encoding.UTF8)
+        private StreamReader _streamReader;
+
+        public DBD(string fileName, Stream fileStream)
         {
+            _streamReader = new StreamReader(fileStream, Encoding.UTF8);
+
             _fileName = fileName;
 
             var assemblyName = new AssemblyName { Name = "TemporaryAssembly" };
@@ -84,7 +88,7 @@ namespace DBClientFiles.NET.Definitions.Parsers
             
             string line;
 
-            while ((line = ReadLine()) != null)
+            while ((line = _streamReader.ReadLine()) != null)
             {
                 if (line.StartsWith("COLUMNS"))
                     ReadColumnDefinitions();
@@ -97,6 +101,8 @@ namespace DBClientFiles.NET.Definitions.Parsers
                 else 
                     ProduceType(line);
             }
+
+            _streamReader.Dispose();
         }
 
         private static readonly Regex _colUsageRegex = new Regex(@"^(?:\$(?<annotations>[a-z,]+)\$)?(?<name>[a-z0-9_]+)(?:<(?<size>u?[0-9]+)>)?(?:\[(?<array>[0-9]+)\])?(?: \/\/ (?<comments>.+))?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -107,7 +113,7 @@ namespace DBClientFiles.NET.Definitions.Parsers
         {
             string line;
 
-            while ((line = ReadLine()) != null)
+            while ((line = _streamReader.ReadLine()) != null)
             {
                 if (string.IsNullOrEmpty(line))
                     return;
@@ -199,7 +205,7 @@ namespace DBClientFiles.NET.Definitions.Parsers
 
                 columns.Add(impl);
 
-                line = ReadLine();
+                line = _streamReader.ReadLine();
             }
 
             var type = _module.DefineType($"{_fileName}_{Math.Abs(Path.GetRandomFileName().GetHashCode())}");
@@ -318,12 +324,27 @@ namespace DBClientFiles.NET.Definitions.Parsers
                 new object[] { _memberIndex++ }));
         }
 
-        public void Save(string fileName)
+        public void AddType(Type newType)
         {
-            if (File.Exists(fileName))
-                File.Delete(fileName);
+            _createdTypes.Add(newType);
 
-            _assemblyBuilder.Save(fileName);
+        }
+
+        public void Save(Stream fileStream)
+        {
+            return;
+
+            using (var writer = new StreamWriter(fileStream, Encoding.UTF8))
+            {
+                var collectedColumnNames = new HashSet<string>();
+                foreach (var type in _createdTypes)
+                foreach (var propInfo in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                    collectedColumnNames.Add(propInfo.Name);
+
+                writer.WriteLine("COLUMNS");
+
+                // :thinking:
+            }
         }
     }
 }
