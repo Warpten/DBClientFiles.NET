@@ -116,14 +116,16 @@ namespace DBClientFiles.NET.Internals.Versions
         {
             var memberInfo = MemberStore.FileMembers[memberIndex];
 
-            return _palletTable.ReadArray<T>(memberInfo.CategoryIndex, memberInfo.Offset, memberInfo.Cardinality);
+            var palletOffset = recordReader.ReadBits(memberInfo.Offset, memberInfo.BitSize);
+            return _palletTable.ReadArray<T>(memberInfo.CategoryIndex, (int)palletOffset, memberInfo.Cardinality);
         }
 
         public override T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value)
         {
             var memberInfo = MemberStore.FileMembers[memberIndex];
 
-            return _palletTable.Read<T>(memberInfo.CategoryIndex, memberInfo.Offset);
+            var palletOffset = recordReader.ReadBits(memberInfo.Offset, memberInfo.BitSize);
+            return _palletTable.Read<T>(memberInfo.CategoryIndex, (int)palletOffset);
         }
 
         public override T ReadCommonMember<T>(int memberIndex, TValue value)

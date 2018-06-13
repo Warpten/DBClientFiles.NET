@@ -223,7 +223,7 @@ namespace DBClientFiles.NET.Mapper.Mapping
             var enumerableType = typeof(StorageEnumerable<>).MakeGenericType(analyzer.RecordType);
             var enumerable = (IEnumerable) Activator.CreateInstance(enumerableType, analyzer.Stream, analyzer.Options);
 
-            var isValidString = new bool[analyzer.Members.FileMembers.Count];
+            var isValidString = new bool[analyzer.Members.Members.Count];
             for (var itr = 0; itr < isValidString.Length; ++itr)
                 isValidString[itr] = false;
             
@@ -233,14 +233,17 @@ namespace DBClientFiles.NET.Mapper.Mapping
                 foreach (var exMemberInfo in analyzer.Members.Members)
                 {
                     if (memberIndex == analyzer.Members.IndexColumn)
+                    {
+                        ++memberIndex;
                         continue;
+                    }
 
-                    var memberInfo = (PropertyInfo)exMemberInfo.MemberInfo;
+                    var memberInfo = (PropertyInfo) exMemberInfo.MemberInfo;
                     var memberValue = memberInfo.GetValue(node);
-                    
-                    if (exMemberInfo.Type == typeof(string) && exMemberInfo.MappedTo.BitSize > 16)
-                        isValidString[memberIndex] = memberValue != null;
 
+                    if (exMemberInfo.Type == typeof(string))
+                        isValidString[memberIndex] = exMemberInfo.MappedTo.BitSize > 16 && memberValue != null;
+            
                     ++memberIndex;
                 }
             }
@@ -263,9 +266,20 @@ namespace DBClientFiles.NET.Mapper.Mapping
             {
                 var fieldName = $"UnkMember_{memberInfo.Index}";
                 var fieldType = typeof(string);
-                if (memberInfo.Index == source.Members.IndexColumn)
+                bool isIndex = memberInfo.Index == source.Members.IndexColumn;
+                if (isIndex)
                 {
                     fieldType = typeof(int);
+
+                    if (source.Signature == Signatures.WDC2 || !source.Members.HasIndexTable)
+                    {
+                        typeGen.CreateProperty("forced_id", fieldType, memberInfo.Cardinality, true);
+                        if (source.Signature == Signatures.WDC2)
+                        {
+                            fieldType = typeof(string);
+                            isIndex = false;
+                        }
+                    }
                 }
 
                 switch (memberInfo.CompressionType)
@@ -281,7 +295,7 @@ namespace DBClientFiles.NET.Mapper.Mapping
                 if (memberInfo.Cardinality > 1)
                     fieldType = fieldType.MakeArrayType();
 
-                typeGen.CreateProperty(fieldName, fieldType, memberInfo.Cardinality, memberInfo.Index == source.Members.IndexColumn);
+                typeGen.CreateProperty(fieldName, fieldType, memberInfo.Cardinality, isIndex);
             }
 
             return typeGen;

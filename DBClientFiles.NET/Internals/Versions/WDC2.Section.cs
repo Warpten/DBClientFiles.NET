@@ -131,9 +131,10 @@ namespace DBClientFiles.NET.Internals.Versions
                         ? _codeGenerator.Deserialize(_parent, recordReader, IndexTable.GetValue<TKey>(recordIndex))
                         : _codeGenerator.Deserialize(_parent, recordReader);
 
-                    if (_copyTable.Count != 0)
+                    var instanceKey = _codeGenerator.ExtractKey(instance);
+                    if (_copyTable.ContainsKey(instanceKey))
                     {
-                        foreach (var copyInstanceID in _copyTable[_codeGenerator.ExtractKey(instance)])
+                        foreach (var copyInstanceID in _copyTable[instanceKey])
                         {
                             var cloneInstance = _codeGenerator.Clone(instance);
                             _codeGenerator.InsertKey(cloneInstance, copyInstanceID);

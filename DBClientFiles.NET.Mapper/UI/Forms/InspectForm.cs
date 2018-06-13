@@ -77,7 +77,6 @@ namespace DBClientFiles.NET.Mapper.UI.Forms
             Stream.Position = 0;
             var enumerable = (IEnumerable) Activator.CreateInstance(storageEnumerable, Stream, options);
             fastObjectListView1.Objects = enumerable;
-            Stream.Dispose();
         }
     }
 }

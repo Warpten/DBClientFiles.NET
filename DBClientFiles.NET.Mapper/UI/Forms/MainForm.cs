@@ -76,9 +76,7 @@ namespace DBClientFiles.NET.Mapper.UI.Forms
             var mappingResolver = new MappingResolver(sourceFile, _sourceFileAnalyzer, _targetFileAnalyzer);
             foreach (var mapping in mappingResolver)
             {
-                var sourceName = mapping.Value.From.Name;
                 var dataRow = new DataGridViewRow();
-
                 var dataType = (mapping.Key as PropertyInfo)?.PropertyType;
                 if (dataType == null)
                     throw new InvalidOperationException("unreachable");
@@ -92,11 +90,22 @@ namespace DBClientFiles.NET.Mapper.UI.Forms
 
                 var isIndex = mapping.Key.IsDefined(typeof(IndexAttribute), false);
 
-                dataRow.Cells.Add(new DataGridViewTextBoxCell { Value = sourceName });
-                dataRow.Cells.Add(new DataGridViewTextBoxCell { Value = dataType.ToAlias() });
-                dataRow.Cells.Add(new DataGridViewTextBoxCell { Value = arraySize == 0 ? "" : arraySize.ToString() });
-                dataRow.Cells.Add(new DataGridViewCheckBoxCell { Value = isIndex });
+                if (mapping.Value.From == null)
+                {
+                    dataRow.Cells.Add(new DataGridViewTextBoxCell { Value = mapping.Key.Name });
+                    dataRow.Cells.Add(new DataGridViewTextBoxCell { Value = dataType.ToAlias() });
+                    dataRow.Cells.Add(new DataGridViewTextBoxCell { Value = arraySize == 0 ? "" : arraySize.ToString() });
+                    dataRow.Cells.Add(new DataGridViewCheckBoxCell { Value = isIndex });
+                }
+                else
+                {
+                    dataRow.Cells.Add(new DataGridViewTextBoxCell {Value = mapping.Value.From.Name });
+                    dataRow.Cells.Add(new DataGridViewTextBoxCell {Value = dataType.ToAlias()});
+                    dataRow.Cells.Add(new DataGridViewTextBoxCell {Value = arraySize == 0 ? "" : arraySize.ToString()});
+                    dataRow.Cells.Add(new DataGridViewCheckBoxCell {Value = isIndex});
+                }
                 targetGridView.Rows.Add(dataRow);
+                _targetFileAnalyzer.RecordType = mappingResolver.Type;
             }
             Console.WriteLine("Mapped");
         }
@@ -174,6 +183,9 @@ namespace DBClientFiles.NET.Mapper.UI.Forms
 
         private void ShowTypeToGUI(Type type, DataGridView gridView)
         {
+            if (type == null)
+                return;
+
             gridView.Rows.Clear();
 
             foreach (var propInfo in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))

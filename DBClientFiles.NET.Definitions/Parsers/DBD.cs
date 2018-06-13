@@ -153,7 +153,7 @@ namespace DBClientFiles.NET.Definitions.Parsers
 
         private void ReadLayoutDefinition(string line)
         {
-            var tokens = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Skip(1).Select(s => Convert.ToUInt32(s, 16));
+            var tokens = line.Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries).Skip(1).Select(s => Convert.ToUInt32(s, 16));
             foreach (var token in tokens)
                 _layoutAttributes.Add(token);
         }
