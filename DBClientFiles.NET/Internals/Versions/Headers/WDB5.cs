@@ -23,7 +23,8 @@ namespace DBClientFiles.NET.Internals.Versions.Headers
             IndexColumn = reader.ReadInt16();
 
             HasIndexTable = (flags & 0x04) != 0;
-            HasOffsetMap = (flags & 0x01) != 0;
+			HasForeignIds = (flags & 0x02) != 0;
+			HasOffsetMap = (flags & 0x01) != 0;
         }
 
         #region IStorage
@@ -43,7 +44,8 @@ namespace DBClientFiles.NET.Internals.Versions.Headers
         public int MaxIndex { get; }
 
         public bool HasIndexTable { get; }
-        public bool HasOffsetMap { get; }
+		public bool HasForeignIds { get; }
+		public bool HasOffsetMap { get; }
 
         public int IndexColumn { get; }
     }

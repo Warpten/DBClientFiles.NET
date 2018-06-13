@@ -39,28 +39,30 @@ namespace DBClientFiles.NET.Internals.Versions
         {
             Debug.Assert(BaseStream.Position == 48);
 
-            #region Initialize segments
-            Records.StartOffset = BaseStream.Position;
+			for (var i = 0; i < Header.FieldCount; ++i)
+				MemberStore.AddFileMemberInfo(this);
+
+			#region Initialize segments
+			Records.StartOffset = BaseStream.Position;
             Records.Length = Header.RecordSize * Header.RecordCount;
 
-            StringTable.Exists = !Header.HasOffsetMap;
             StringTable.StartOffset = Records.EndOffset;
             StringTable.Length = Header.StringTableLength;
+			StringTable.Exists = !Header.HasOffsetMap;
 
-            OffsetMap.Exists = Header.HasOffsetMap;
             OffsetMap.StartOffset = Header.StringTableLength;
             OffsetMap.Length = (Header.MaxIndex - Header.MinIndex + 1) * (4 + 2);
+			OffsetMap.Exists = Header.HasOffsetMap;
 
-            IndexTable.Exists = Header.HasIndexTable;
-            IndexTable.StartOffset = OffsetMap.EndOffset;
-            IndexTable.Length = Header.RecordCount * 4;
+			long _foreignIdsLength = Header.HasForeignIds ? (Header.MaxIndex - Header.MinIndex + 1) * 4 : 0;
 
-            _copyTable.StartOffset = IndexTable.EndOffset;
+			IndexTable.StartOffset = (OffsetMap.Exists ? OffsetMap.EndOffset : StringTable.EndOffset) + _foreignIdsLength;
+			IndexTable.Length = Header.RecordCount * 4;
+			IndexTable.Exists = Header.HasIndexTable;
+
+			_copyTable.StartOffset = IndexTable.EndOffset;
             _copyTable.Length = Header.CopyTableLength;
             #endregion
-            
-            for (var i = 0; i < Header.FieldCount; ++i)
-                MemberStore.AddFileMemberInfo(this);
 
             _codeGenerator = new CodeGenerator<TValue, TKey>(this);
             return true;
@@ -75,15 +77,18 @@ namespace DBClientFiles.NET.Internals.Versions
                     ? _codeGenerator.Deserialize(this, recordReader, IndexTable.GetValue<TKey>(recordIndex))
                     : _codeGenerator.Deserialize(this, recordReader);
             }
-            
-            var sourceID = _codeGenerator.ExtractKey(oldStructure);
-            foreach (var copyEntryID in _copyTable[sourceID])
-            {
-                var clone = _codeGenerator.Clone(oldStructure);
-                _codeGenerator.InsertKey(clone, copyEntryID);
 
-                yield return clone;
-            }
+			if(_copyTable.Count > 0)
+			{
+				var sourceID = _codeGenerator.ExtractKey(oldStructure);
+				foreach (var copyEntryID in _copyTable[sourceID])
+				{
+					var clone = _codeGenerator.Clone(oldStructure);
+					_codeGenerator.InsertKey(clone, copyEntryID);
+
+					yield return clone;
+				}
+			}
 
             yield return oldStructure;
         }
