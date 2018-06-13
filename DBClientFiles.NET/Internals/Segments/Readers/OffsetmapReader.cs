@@ -22,12 +22,10 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
                 long offset = FileReader.ReadInt32();
                 var size = FileReader.ReadInt16();
 
-                ++i;
-
                 if (offset == 0 || size == 0)
                     continue;
 
-                _parsedContent.Add(i, (offset, size));
+                _parsedContent.Add(i++, (offset, size));
             }
         }
 

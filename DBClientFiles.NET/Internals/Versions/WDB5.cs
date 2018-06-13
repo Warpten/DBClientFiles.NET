@@ -68,8 +68,18 @@ namespace DBClientFiles.NET.Internals.Versions
             return true;
         }
 
+        public override void ReadSegments()
+        {
+            base.ReadSegments();
+
+            OffsetMap.Read();
+            _copyTable.Read();
+        }
+
         protected override IEnumerable<TValue> ReadRecords(int recordIndex, long recordOffset, int recordSize)
         {
+            this.BaseStream.Seek(recordOffset, SeekOrigin.Begin);
+
             TValue oldStructure;
             using (var recordReader = new RecordReader(this, StringTable.Exists, recordSize))
             {
