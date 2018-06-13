@@ -5,56 +5,40 @@ namespace DBClientFiles.NET.Definitions.Attributes
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
     public sealed class BuildAttribute : Attribute
     {
-        public BuildInfo Build { get; set; } = new BuildInfo();
+        private BuildInfo _build;
 
         public int Version
         {
-            get => Build.Version;
-            set => Build.Version = value;
+            get => _build.Version;
+            set => _build.Version = value;
         }
 
         public int Major
         {
-            get => Build.Major;
-            set => Build.Major = value;
+            get => _build.Major;
+            set => _build.Major = value;
         }
 
         public int Minor
         {
-            get => Build.Minor;
-            set => Build.Minor = value;
+            get => _build.Minor;
+            set => _build.Minor = value;
         }
 
         public int ClientBuild
         {
-            get => Build.Build;
-            set => Build.Build = value;
+            get => _build.Build;
+            set => _build.Build = value;
         }
-
-        public BuildAttribute(int v, int a, int i, int b)
-        {
-            Build.Version = v;
-            Build.Major = a;
-            Build.Minor = i;
-            Build.Build = b;
-        }
-
-        public BuildAttribute(BuildInfo b)
-        {
-            Build.Version = b.Version;
-            Build.Major = b.Major;
-            Build.Minor = b.Minor;
-            Build.Build = b.Build;
-        }
-
+        
         public BuildAttribute(string inputLine)
         {
-            var tokens = inputLine.Split('.');
+            _build = new BuildInfo(inputLine);
+        }
 
-            Build.Version = int.Parse(tokens[0]);
-            Build.Major = int.Parse(tokens[1]);
-            Build.Minor = int.Parse(tokens[2]);
-            Build.Build = int.Parse(tokens[3]);
+        public override string ToString()
+        {
+            return _build.ToString();
         }
     }
 }

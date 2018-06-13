@@ -22,10 +22,13 @@ namespace DBClientFiles.NET.Mapper.Mapping
             public List<MemberInfo> Candidates { get; } = new List<MemberInfo>();
         }
 
+        private string _fileName;
         public Type Type { get; }
 
-        public MappingResolver(FileAnalyzer source, FileAnalyzer target)
+        public MappingResolver(string fileName, FileAnalyzer source, FileAnalyzer target)
         {
+            _fileName = fileName;
+
             #region setup default source if none - should never be true if you want relevant names
 
             if (source.RecordType == null)
@@ -197,7 +200,7 @@ namespace DBClientFiles.NET.Mapper.Mapping
                 typeGen.AddAttribute(attr.GetType().GetConstructor(new[] { typeof(uint) }), new object[] { attr.LayoutHash });
 
             foreach (var attr in target.RecordType.GetCustomAttributes<BuildAttribute>())
-                typeGen.AddAttribute(attr.GetType().GetConstructor(new[] { typeof(BuildInfo) } ), new object[] { attr.Build });
+                typeGen.AddAttribute(attr.GetType().GetConstructor(new[] { typeof(string) } ), new object[] { attr.ToString() });
 
             foreach (var attr in target.RecordType.GetCustomAttributes<BuildRangeAttribute>())
                 typeGen.AddAttribute(attr.GetType().GetConstructor(new[] { typeof(BuildInfo), typeof(BuildInfo) }), new object[] { attr.From, attr.To });
@@ -310,9 +313,61 @@ namespace DBClientFiles.NET.Mapper.Mapping
             {
                 case FormatType.CS:
                     return ToCS();
+                case FormatType.JSON:
+                    return ToJSON();
             }
 
             return Type.ToString();
+        }
+
+        private string ToJSON()
+        {
+            var builder = new StringBuilder();
+
+            builder.AppendLine("{");
+            var layoutAttrs = Type.GetCustomAttributes<LayoutAttribute>().ToArray();
+            if (layoutAttrs.Length != 0)
+            {
+                builder.Append("    layoutHash: [ ");
+                builder.Append(string.Join(", ", layoutAttrs.Select(l => l.LayoutHash)));
+                builder.AppendLine(" ],");
+            }
+
+            var buildAttrs = Type.GetCustomAttributes<BuildAttribute>().ToArray();
+            if (buildAttrs.Length != 0)
+            {
+                builder.Append(@"    builds: [ """);
+                builder.Append(string.Join(@""", """, buildAttrs.Select(s => s.ToString())));
+                builder.AppendLine(@""" ],");
+            }
+
+            var buildRangeAttrs = Type.GetCustomAttributes<BuildRangeAttribute>().ToArray();
+            if (buildRangeAttrs.Length != 0)
+            {
+                builder.Append("    buildRanges: [ ");
+                builder.Append(string.Join(", ", buildRangeAttrs.Select(s => s.ToString())));
+                builder.AppendLine(" ],");
+            }
+
+            builder.AppendLine("    structure: [");
+            foreach (var propInfo in Type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                builder.Append($@"        {{ name: ""{propInfo.Name}"", type: ""{propInfo.PropertyType.ToAlias()}"", ");
+
+                if (propInfo.IsDefined(typeof(IndexAttribute), false))
+                    builder.Append(" index: true, ");
+
+                var arrayAttr = propInfo.GetCustomAttribute<CardinalityAttribute>();
+                if (arrayAttr != null)
+                    builder.AppendLine($"arraySize = {arrayAttr.SizeConst} }}");
+                else
+                    builder.AppendLine("}");
+                
+            }
+            builder.AppendLine("    ]");
+            builder.AppendLine("}");
+
+            return builder.ToString();
         }
 
         private string ToCS()
@@ -322,9 +377,12 @@ namespace DBClientFiles.NET.Mapper.Mapping
                 builder.AppendLine($"[Layout(LayoutHash = 0x{layoutAttr.LayoutHash:X8})]");
 
             foreach (var buildAttr in Type.GetCustomAttributes<BuildAttribute>())
-                builder.AppendLine($"[Build(Version = {buildAttr.Version}, Major = {buildAttr.Major}, Minor = {buildAttr.Minor}, ClientBuild = {buildAttr.ClientBuild})]");
+                builder.AppendLine($@"[Build(""{buildAttr}"")]");
 
-            builder.AppendLine($"public sealed class {Type.Name}Entry");
+            foreach (var buildAttr in Type.GetCustomAttributes<BuildRangeAttribute>())
+                builder.AppendLine($@"[Build(""{buildAttr}"")]");
+
+            builder.AppendLine($"public sealed class {_fileName}Entry");
             builder.AppendLine("{");
 
             foreach (var propInfo in Type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
@@ -336,7 +394,7 @@ namespace DBClientFiles.NET.Mapper.Mapping
                 if (arrayAttr != null)
                     builder.AppendLine($"    [Cardinality(SizeConst = {arrayAttr.SizeConst}]");
 
-                builder.AppendLine($"    public {propInfo.PropertyType.ToAlias()} {propInfo.Name}");
+                builder.AppendLine($"    public {propInfo.PropertyType.ToAlias()} {propInfo.Name} {{ get; set; }}");
             }
             builder.AppendLine("}");
 

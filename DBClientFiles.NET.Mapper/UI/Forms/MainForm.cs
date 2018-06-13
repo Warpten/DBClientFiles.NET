@@ -72,7 +72,7 @@ namespace DBClientFiles.NET.Mapper.UI.Forms
 
             targetGridView.Rows.Clear();
 
-            var mappingResolver = new MappingResolver(_sourceFileAnalyzer, _targetFileAnalyzer);
+            var mappingResolver = new MappingResolver(sourceFile, _sourceFileAnalyzer, _targetFileAnalyzer);
             foreach (var mapping in mappingResolver)
             {
                 var sourceName = mapping.Value.From.Name;

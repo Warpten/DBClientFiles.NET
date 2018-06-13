@@ -21,7 +21,7 @@ namespace DBClientFiles.NET.Mapper
         {
             var definitions = FindArgument(args, "--defs", "-d") ?? Properties.Settings.Default.DefinitionRoot;
             var outputType = FindArgument(args, "--out", "-o") ?? "cs";
-            var writeToDisk = HasArgument(args, "--write", "-w");
+            var writeToDisk = HasArgument(args, "--write", "-w") != -1;
 
             if (args == null || args.Length == 0)
             {
@@ -40,10 +40,23 @@ namespace DBClientFiles.NET.Mapper
                     var targetFile = targetFiles.First(f => f == fileName);
 
                     var resolver = MapFiles(sourceFile, targetFile, definitions);
-                    if (resolver != null)
-                        DefinitionFactory.Save(fileName, resolver.Type);
-                    else
+                    if (resolver == null)
                         Console.WriteLine($"[*] Unable to map {fileName}");
+                    else
+                    {
+                        switch (outputType)
+                        {
+                            case "cs":
+                                Console.WriteLine(resolver.ToString(FormatType.CS));
+                                break;
+                            case "json":
+                                Console.WriteLine(resolver.ToString(FormatType.JSON));
+                                break;
+                        }
+
+                        if (writeToDisk)
+                            DefinitionFactory.Save(fileName, resolver.Type);
+                    }
                 }
             }
             else
@@ -61,7 +74,13 @@ namespace DBClientFiles.NET.Mapper
                         case "cs":
                             Console.WriteLine(resolver.ToString(FormatType.CS));
                             break;
+                        case "json":
+                            Console.WriteLine(resolver.ToString(FormatType.JSON));
+                            break;
                     }
+
+                    if (writeToDisk)
+                        DefinitionFactory.Save(Path.GetFileName(sourceFile), resolver.Type);
                 }
             }
         }
@@ -69,9 +88,8 @@ namespace DBClientFiles.NET.Mapper
         private static MappingResolver MapFiles(string source, string target, string definitionFolder)
         {
             var definitionName = Path.GetFileNameWithoutExtension(source);
-
-            var definitionFile = Path.Combine(definitionFolder, definitionName + ".dbd");
-            var definitionStore = DefinitionFactory.Open(definitionFile);
+            
+            var definitionStore = DefinitionFactory.Open(definitionName);
 
             using (var sourceStream = File.OpenRead(source))
             using (var targetStream = File.OpenRead(target))
@@ -89,7 +107,7 @@ namespace DBClientFiles.NET.Mapper
                 if (targetType != null)
                     targetAnalyzer = AnalyzerFactory.Create(targetType, targetStream);
 
-                var resolver = new MappingResolver(sourceAnalyzer, targetAnalyzer);
+                var resolver = new MappingResolver(definitionName, sourceAnalyzer, targetAnalyzer);
                 return resolver;
             }
         }

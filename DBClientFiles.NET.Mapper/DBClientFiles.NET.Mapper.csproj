@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{FC857F2A-7C08-4875-ADEE-73DFAB38F041}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
+    <OutputType>Exe</OutputType>
     <RootNamespace>DBClientFiles.NET.Mapper</RootNamespace>
     <AssemblyName>DBClientFiles.NET.Mapper</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
@@ -31,6 +31,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.WindowsAPICodePack, Version=1.1.3.2, Culture=neutral, PublicKeyToken=8985beaab7ea3f04, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft-WindowsAPICodePack-Core.1.1.3.2\lib\net462\Microsoft.WindowsAPICodePack.dll</HintPath>
@@ -52,6 +55,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Definitions\DefinitionFactory.cs" />
+    <Compile Include="FormatType.cs" />
     <Compile Include="Generator\FieldGenerator.cs" />
     <Compile Include="Generator\MemberGenerator.cs" />
     <Compile Include="Generator\PropertyGenerator.cs" />

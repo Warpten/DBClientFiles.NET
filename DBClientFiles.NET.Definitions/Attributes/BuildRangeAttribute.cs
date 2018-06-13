@@ -5,50 +5,21 @@ namespace DBClientFiles.NET.Definitions.Attributes
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
     public sealed class BuildRangeAttribute : Attribute
     {
-        public BuildInfo From { get; set; }
-        public BuildInfo To { get; set; }
-
-        public BuildRangeAttribute(BuildInfo from, BuildInfo to)
-        {
-            From = new BuildInfo()
-            {
-                Version = from.Version,
-                Major = from.Major,
-                Minor = from.Minor,
-                Build = from.Build
-            };
-
-            To = new BuildInfo()
-            {
-                Version = to.Version,
-                Major = to.Major,
-                Minor = to.Minor,
-                Build = to.Build
-            };
-        }
+        public BuildInfo From;
+        public BuildInfo To;
 
         public BuildRangeAttribute(string inputLine)
         {
             var splits = inputLine.Split('-');
             var tokens = splits[0].Trim().Split('.');
 
-            From = new BuildInfo
-            {
-                Version = int.Parse(tokens[0]),
-                Major = int.Parse(tokens[1]),
-                Minor = int.Parse(tokens[2]),
-                Build = int.Parse(tokens[3]),
-            };
+            From = new BuildInfo(tokens[0]);
+            To = new BuildInfo(tokens[1]);
+        }
 
-            tokens = splits[1].Trim().Split('.');
-
-            To = new BuildInfo
-            {
-                Version = int.Parse(tokens[0]),
-                Major = int.Parse(tokens[1]),
-                Minor = int.Parse(tokens[2]),
-                Build = int.Parse(tokens[3]),
-            };
+        public override string ToString()
+        {
+            return $"{From}-{To}";
         }
     }
 }

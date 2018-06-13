@@ -4,7 +4,6 @@
     {
         DBD,
         CS,
-        JSON,
-        XML
+        JSON
     }
 }
