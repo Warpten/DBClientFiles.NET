@@ -78,7 +78,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
         protected override IEnumerable<TValue> ReadRecords(int recordIndex, long recordOffset, int recordSize)
         {
-            this.BaseStream.Seek(recordOffset, SeekOrigin.Begin);
+            BaseStream.Seek(recordOffset, SeekOrigin.Begin);
 
             TValue oldStructure;
             using (var recordReader = new RecordReader(this, StringTable.Exists, recordSize))
