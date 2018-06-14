@@ -13,7 +13,7 @@ namespace DBClientFiles.NET.Data.WDB2
         [Index]
         public int ID { get; set; }
         [Cardinality(SizeConst = 3)]
-        public uint Flags { get; set; }
+        public uint[] Flags { get; set; }
         public float Field02 { get; set; }
         public float Field03 { get; set; }
         public uint BuyCount { get; set; }
@@ -24,9 +24,9 @@ namespace DBClientFiles.NET.Data.WDB2
         public uint MaxCount { get; set; }
         public uint Stackable { get; set; }
         [Cardinality(SizeConst = 10)]
-        public int ItemStatAllocation { get; set; }
+        public int[] ItemStatAllocation { get; set; }
         [Cardinality(SizeConst = 10)]
-        public float ItemStatSocketCostMultiplier { get; set; }
+        public float[] ItemStatSocketCostMultiplier { get; set; }
         public float RangedModRange { get; set; }
         public string Name { get; set; }
         public string Name2 { get; set; }
@@ -43,7 +43,7 @@ namespace DBClientFiles.NET.Data.WDB2
         public ushort RequiredSkillRank { get; set; }
         public ushort RequiredReputationFaction { get; set; }
         [Cardinality(SizeConst = 10)]
-        public ushort ItemStatValue { get; set; }
+        public ushort[] ItemStatValue { get; set; }
         public ushort ScalingStatDistribution { get; set; }
         public ushort Delay { get; set; }
         public ushort PageText { get; set; }
@@ -69,7 +69,7 @@ namespace DBClientFiles.NET.Data.WDB2
         public byte RequiredReputationRank { get; set; }
         public byte ContainerSlots { get; set; }
         [Cardinality(SizeConst = 10)]
-        public byte ItemStatType { get; set; }
+        public byte[] ItemStatType { get; set; }
         public byte DamageType { get; set; }
         public byte Bonding { get; set; }
         public byte LanguageID { get; set; }
@@ -77,7 +77,7 @@ namespace DBClientFiles.NET.Data.WDB2
         public byte Material { get; set; }
         public byte Sheath { get; set; }
         [Cardinality(SizeConst = 3)]
-        public byte SocketColor { get; set; }
+        public byte[] SocketColor { get; set; }
         public byte CurrencySubstitutionID { get; set; }
         public byte CurrencySubstitutionCount { get; set; }
         public byte ArtifactID { get; set; }
