@@ -15,6 +15,8 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             if (!Segment.Exists)
                 return;
 
+            HashSet<long> _knownOffsets = new HashSet<long>();
+
             var i = 0;
             FileReader.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
             while (FileReader.BaseStream.Position < Segment.EndOffset)
@@ -25,7 +27,12 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
                 if (offset == 0 || size == 0)
                     continue;
 
-                _parsedContent.Add(i++, (offset, size));
+                // offset map can contain duplicates which should be excluded
+                if (!_knownOffsets.Contains(offset))
+                {
+                    _parsedContent.Add(i++, (offset, size));
+                    _knownOffsets.Add(offset);
+                }                    
             }
         }
 
