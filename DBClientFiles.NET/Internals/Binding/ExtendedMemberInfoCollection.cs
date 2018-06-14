@@ -80,10 +80,10 @@ namespace DBClientFiles.NET.Internals.Binding
             FileMembers.AddRange(fileMembers);
         }
 
-        internal void AddFileMemberInfo(BinaryReader reader)
+        internal void AddFileMemberInfo(BinaryReader reader, bool hasOffsetMap = false)
         {
             var instance = new FileMemberInfo();
-            instance.Initialize(reader);
+            instance.Initialize(reader, hasOffsetMap);
             instance.Index = FileMembers.Count;
             FileMembers.Add(instance);
         }
@@ -153,9 +153,9 @@ namespace DBClientFiles.NET.Internals.Binding
                 if (currentFileMember.ByteSize > 0)
                     currentFileMember.Cardinality = currentFileMember.BitSize / (8 * currentFileMember.ByteSize);
 
-                // Calculate cardinality from FileMembers offsets 
+                // Calculate cardinality from FileMember offsets
                 if (currentFileMember.Cardinality <= 1 && i < FileMembers.Count - 1)
-                    currentFileMember.Cardinality = Math.Max(1, (FileMembers[i + 1].Offset - currentFileMember.Offset) / currentFileMember.BitSize);
+                    currentFileMember.Cardinality = ((FileMembers[i + 1].Offset - currentFileMember.Offset) / 8) / currentFileMember.ByteSize;
             }
 
             // Throw an exception if we mapped to a field that wasn't declared as an array
