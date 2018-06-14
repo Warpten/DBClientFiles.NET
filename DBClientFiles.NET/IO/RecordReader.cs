@@ -11,40 +11,40 @@ namespace DBClientFiles.NET.IO
     /// </summary>
     public static class _RecordReader
     {
-        private static Type[] arrayArgs            = { typeof(int) };
-        private static Type[] arrayPackedArgs      = { typeof(int), typeof(int), typeof(int) };
-        private static Type[] packedArgs           = { typeof(int), typeof(int) };
+        private static Type[] arrayArgs = { typeof(int) };
+        private static Type[] arrayPackedArgs = { typeof(int), typeof(int), typeof(int) };
+        private static Type[] packedArgs = { typeof(int), typeof(int) };
 
-        public static readonly MethodInfo ReadPackedUInt64  = typeof(RecordReader).GetMethod("ReadUInt64", packedArgs);
-        public static readonly MethodInfo ReadPackedUInt32  = typeof(RecordReader).GetMethod("ReadUInt32", packedArgs);
-        public static readonly MethodInfo ReadPackedUInt16  = typeof(RecordReader).GetMethod("ReadUInt16", packedArgs);
-        public static readonly MethodInfo ReadPackedSByte   = typeof(RecordReader).GetMethod("ReadSByte",  packedArgs);
+        public static readonly MethodInfo ReadPackedUInt64 = typeof(RecordReader).GetMethod("ReadUInt64", packedArgs);
+        public static readonly MethodInfo ReadPackedUInt32 = typeof(RecordReader).GetMethod("ReadUInt32", packedArgs);
+        public static readonly MethodInfo ReadPackedUInt16 = typeof(RecordReader).GetMethod("ReadUInt16", packedArgs);
+        public static readonly MethodInfo ReadPackedSByte = typeof(RecordReader).GetMethod("ReadSByte", packedArgs);
 
-        public static readonly MethodInfo ReadPackedInt64   = typeof(RecordReader).GetMethod("ReadInt64", packedArgs);
-        public static readonly MethodInfo ReadPackedInt32   = typeof(RecordReader).GetMethod("ReadInt32", packedArgs);
-        public static readonly MethodInfo ReadPackedInt16   = typeof(RecordReader).GetMethod("ReadInt16", packedArgs);
-        public static readonly MethodInfo ReadPackedByte    = typeof(RecordReader).GetMethod("ReadByte",  packedArgs);
+        public static readonly MethodInfo ReadPackedInt64 = typeof(RecordReader).GetMethod("ReadInt64", packedArgs);
+        public static readonly MethodInfo ReadPackedInt32 = typeof(RecordReader).GetMethod("ReadInt32", packedArgs);
+        public static readonly MethodInfo ReadPackedInt16 = typeof(RecordReader).GetMethod("ReadInt16", packedArgs);
+        public static readonly MethodInfo ReadPackedByte = typeof(RecordReader).GetMethod("ReadByte", packedArgs);
 
-        public static readonly MethodInfo ReadPackedSingle  = typeof(RecordReader).GetMethod("ReadSingle", new[] { typeof(int) });
+        public static readonly MethodInfo ReadPackedSingle = typeof(RecordReader).GetMethod("ReadSingle", new[] { typeof(int) });
 
-        public static readonly MethodInfo ReadPackedString  = typeof(RecordReader).GetMethod("ReadString", packedArgs);
+        public static readonly MethodInfo ReadPackedString = typeof(RecordReader).GetMethod("ReadString", packedArgs);
         public static readonly MethodInfo ReadPackedStrings = typeof(RecordReader).GetMethod("ReadStrings", arrayPackedArgs);
-        public static readonly MethodInfo ReadPackedArray   = typeof(RecordReader).GetMethod("ReadArray", arrayPackedArgs);
+        public static readonly MethodInfo ReadPackedArray = typeof(RecordReader).GetMethod("ReadArray", arrayPackedArgs);
 
-        public static readonly MethodInfo ReadUInt64        = typeof(RecordReader).GetMethod("ReadUInt64", Type.EmptyTypes);
-        public static readonly MethodInfo ReadUInt32        = typeof(RecordReader).GetMethod("ReadUInt32", Type.EmptyTypes);
-        public static readonly MethodInfo ReadUInt16        = typeof(RecordReader).GetMethod("ReadUInt16", Type.EmptyTypes);
-        public static readonly MethodInfo ReadSByte         = typeof(RecordReader).GetMethod("ReadSByte", Type.EmptyTypes);
+        public static readonly MethodInfo ReadUInt64 = typeof(RecordReader).GetMethod("ReadUInt64", Type.EmptyTypes);
+        public static readonly MethodInfo ReadUInt32 = typeof(RecordReader).GetMethod("ReadUInt32", Type.EmptyTypes);
+        public static readonly MethodInfo ReadUInt16 = typeof(RecordReader).GetMethod("ReadUInt16", Type.EmptyTypes);
+        public static readonly MethodInfo ReadSByte = typeof(RecordReader).GetMethod("ReadSByte", Type.EmptyTypes);
 
-        public static readonly MethodInfo ReadInt64         = typeof(RecordReader).GetMethod("ReadInt64", Type.EmptyTypes);
-        public static readonly MethodInfo ReadInt32         = typeof(RecordReader).GetMethod("ReadInt32", Type.EmptyTypes);
-        public static readonly MethodInfo ReadInt16         = typeof(RecordReader).GetMethod("ReadInt16", Type.EmptyTypes);
-        public static readonly MethodInfo ReadByte          = typeof(RecordReader).GetMethod("ReadByte", Type.EmptyTypes);
+        public static readonly MethodInfo ReadInt64 = typeof(RecordReader).GetMethod("ReadInt64", Type.EmptyTypes);
+        public static readonly MethodInfo ReadInt32 = typeof(RecordReader).GetMethod("ReadInt32", Type.EmptyTypes);
+        public static readonly MethodInfo ReadInt16 = typeof(RecordReader).GetMethod("ReadInt16", Type.EmptyTypes);
+        public static readonly MethodInfo ReadByte = typeof(RecordReader).GetMethod("ReadByte", Type.EmptyTypes);
 
-        public static readonly MethodInfo ReadSingle        = typeof(RecordReader).GetMethod("ReadSingle", Type.EmptyTypes);
-        public static readonly MethodInfo ReadString        = typeof(RecordReader).GetMethod("ReadString", Type.EmptyTypes);
-        public static readonly MethodInfo ReadStrings       = typeof(RecordReader).GetMethod("ReadStrings", arrayArgs);
-        public static readonly MethodInfo ReadArray         = typeof(RecordReader).GetMethod("ReadArray", arrayArgs);
+        public static readonly MethodInfo ReadSingle = typeof(RecordReader).GetMethod("ReadSingle", Type.EmptyTypes);
+        public static readonly MethodInfo ReadString = typeof(RecordReader).GetMethod("ReadString", Type.EmptyTypes);
+        public static readonly MethodInfo ReadStrings = typeof(RecordReader).GetMethod("ReadStrings", arrayArgs);
+        public static readonly MethodInfo ReadArray = typeof(RecordReader).GetMethod("ReadArray", arrayArgs);
 
         public static readonly Dictionary<TypeCode, MethodInfo> PackedReaders = new Dictionary<TypeCode, MethodInfo>()
         {
@@ -87,11 +87,12 @@ namespace DBClientFiles.NET.IO
         //private GCHandle _dataHandle;
         //private IntPtr _dataPointer;
 
-        protected int _bitCursor {
+        protected int _bitCursor
+        {
             get;
-            set; 
+            set;
         } = 0;
-    
+
         public long ReadInt64() => Read<long>(_bitCursor, 64, true);
         public int ReadInt32() => Read<int>(_bitCursor, 32, true);
         public short ReadInt16() => Read<short>(_bitCursor, 16, true);
@@ -248,7 +249,7 @@ namespace DBClientFiles.NET.IO
         {
             if (advanceCursor)
                 _bitCursor += SizeCache<T>.Size * 8;
-            
+
             //! Reading whichever is most from SizeCache<T>.Size and (bitCount + (bitOffset & 7) + 7) / 8.
             //! Consider this: Given a field that uses 17 bits, it deserializes as an int32. However, 17 bits fit on 3 bytes, so we would only read three bytes.
             //! MemoryMarshal.Read<int> expects a Span<byte> of Length = 4.
@@ -268,7 +269,7 @@ namespace DBClientFiles.NET.IO
             if (_usesStringTable)
                 return _fileReader.FindStringByOffset(ReadInt32());
 
-            return _fileReader.ReadString();
+            return ReadInlineString();
         }
 
         /// <summary>
@@ -287,16 +288,26 @@ namespace DBClientFiles.NET.IO
                 return _fileReader.FindStringByOffset(ReadInt32(bitOffset, bitCount));
 
             if ((bitOffset & 7) == 0)
-                return _fileReader.ReadString();
+                return ReadInlineString();
 
             throw new InvalidOperationException("Packed strings must be in the string block!");
         }
-        
+
+        private string ReadInlineString()
+        {
+            var byteList = new List<byte>();
+            byte currChar;
+            while ((currChar = ReadByte()) != '\0')
+                byteList.Add(currChar);
+
+            return System.Text.Encoding.UTF8.GetString(byteList.ToArray());
+        }
+
         public long ReadBits(int bitOffset, int bitCount)
         {
             var byteOffset = bitOffset / 8;
             var byteCount = (bitCount + (bitOffset & 7) + 7) / 8;
-            
+
             var value = 0L;
             for (var i = 0; i < byteCount; ++i)
                 value |= (long)(_recordData[i + byteOffset] << (8 * i));
