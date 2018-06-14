@@ -20,7 +20,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
         protected CodeGenerator<TValue, TKey> _codeGenerator;
         public override CodeGenerator<TValue> Generator => _codeGenerator;
-
+        
         #region Life and death
         public WDB5(IFileHeader header, Stream strm, StorageOptions options) : base(header, strm, options)
         {
@@ -87,10 +87,10 @@ namespace DBClientFiles.NET.Internals.Versions
                     ? _codeGenerator.Deserialize(this, recordReader, IndexTable.GetValue<TKey>(recordIndex))
                     : _codeGenerator.Deserialize(this, recordReader);
             }
-
-            if (_copyTable.Count > 0)
+            
+            var sourceID = _codeGenerator.ExtractKey(oldStructure);
+            if (_copyTable.ContainsKey(sourceID))
             {
-                var sourceID = _codeGenerator.ExtractKey(oldStructure);
                 foreach (var copyEntryID in _copyTable[sourceID])
                 {
                     var clone = _codeGenerator.Clone(oldStructure);

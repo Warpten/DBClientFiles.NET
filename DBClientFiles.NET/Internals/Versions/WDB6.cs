@@ -73,6 +73,7 @@ namespace DBClientFiles.NET.Internals.Versions
             #endregion
 
             _codeGenerator = new CodeGenerator<TValue, TKey>(this);
+
             return true;
         }
 

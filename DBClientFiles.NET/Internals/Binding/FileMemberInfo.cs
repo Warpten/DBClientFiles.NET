@@ -67,6 +67,7 @@ namespace DBClientFiles.NET.Internals.Binding
         internal void Initialize(BinaryReader reader)
         {
             ByteSize = 4 - reader.ReadInt16() / 8;
+            BitSize = ByteSize * 8;
             Offset = reader.ReadInt16() * 8;
         }
 
