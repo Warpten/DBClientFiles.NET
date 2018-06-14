@@ -15,7 +15,7 @@ namespace DBClientFiles.NET.Internals.Binding
         public List<ExtendedMemberInfo> Members { get; } = new List<ExtendedMemberInfo>();
 
         public List<FileMemberInfo> FileMembers { get; } = new List<FileMemberInfo>();
-        
+
         internal ExtendedMemberInfoCollection(Type parentType, StorageOptions options)
         {
             if (parentType == null)
@@ -59,7 +59,7 @@ namespace DBClientFiles.NET.Internals.Binding
             {
                 if (IndexColumn == -1)
                     throw new InvalidOperationException("Index column not bound");
-                
+
                 for (var i = 0; i < Members.Count; ++i)
                 {
                     var memberInfo = Members[i];
@@ -69,7 +69,7 @@ namespace DBClientFiles.NET.Internals.Binding
                     if (memberInfo.MappedTo != null && memberInfo.MappedTo.Index == IndexColumn)
                         return memberInfo;
                 }
-                
+
                 throw new InvalidOperationException("Unable to find index");
             }
         }
@@ -152,6 +152,10 @@ namespace DBClientFiles.NET.Internals.Binding
 
                 if (currentFileMember.ByteSize > 0)
                     currentFileMember.Cardinality = currentFileMember.BitSize / (8 * currentFileMember.ByteSize);
+
+                // Calculate cardinality from FileMembers offsets 
+                if (currentFileMember.Cardinality <= 1 && i < FileMembers.Count - 1)
+                    currentFileMember.Cardinality = Math.Max(1, (FileMembers[i + 1].Offset - currentFileMember.Offset) / currentFileMember.BitSize);
             }
 
             // Throw an exception if we mapped to a field that wasn't declared as an array
