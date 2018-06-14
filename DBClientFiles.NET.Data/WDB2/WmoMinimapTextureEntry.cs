@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace DBClientFiles.NET.Data.WDB2
 {
     [DBFileName(Name = "WMOMinimapTexture.WDB2", Extension = FileExtension.DB2)]
-    public sealed class WMOMinimapTextureEntry_725_24393
+    public sealed class WMOMinimapTextureEntry
     {
         [Index]
         public int Id { get; set; }
