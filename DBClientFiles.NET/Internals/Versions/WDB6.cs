@@ -45,7 +45,7 @@ namespace DBClientFiles.NET.Internals.Versions
             _commonTableStartColumn = Header.FieldCount;
 
             for (var i = 0; i < Header.FieldCount; ++i)
-                MemberStore.AddFileMemberInfo(this, Header.HasOffsetMap);
+                MemberStore.AddFileMemberInfo(this);
 
             #region Initialize segments
             Records.StartOffset = BaseStream.Position;
