@@ -40,7 +40,7 @@ namespace DBClientFiles.NET.Internals.Versions
             Debug.Assert(BaseStream.Position == 48);
 
             for (var i = 0; i < Header.FieldCount; ++i)
-                MemberStore.AddFileMemberInfo(this, Header.HasOffsetMap);
+                MemberStore.AddFileMemberInfo(this);
 
             #region Initialize segments
             Records.StartOffset = BaseStream.Position;

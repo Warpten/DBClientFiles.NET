@@ -80,10 +80,10 @@ namespace DBClientFiles.NET.Internals.Binding
             FileMembers.AddRange(fileMembers);
         }
 
-        internal void AddFileMemberInfo(BinaryReader reader, bool hasOffsetMap = false)
+        internal void AddFileMemberInfo(BinaryReader reader)
         {
             var instance = new FileMemberInfo();
-            instance.Initialize(reader, hasOffsetMap);
+            instance.Initialize(reader);
             instance.Index = FileMembers.Count;
             FileMembers.Add(instance);
         }

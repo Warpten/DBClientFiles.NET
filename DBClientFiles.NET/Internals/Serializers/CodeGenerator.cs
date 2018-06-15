@@ -442,7 +442,7 @@ namespace DBClientFiles.NET.Internals.Serializers
                         elementType.IsSigned() ? "signed" : "unsigned");
             }
 
-            if (memberInfo.MappedTo.BitSize != 0)
+            if (memberInfo.MappedTo.BitSize != 0 && !Reader.Header.HasOffsetMap)
             {
                 if (memberInfo.Type.IsArray)
                 {

@@ -64,13 +64,11 @@ namespace DBClientFiles.NET.Internals.Binding
             return MemoryMarshal.Read<T>(asSpan);
         }
 
-        internal void Initialize(BinaryReader reader, bool hasOffsetMap)
+        internal void Initialize(BinaryReader reader)
         {
             ByteSize = 4 - reader.ReadInt16() / 8;
+            BitSize = ByteSize * 8;
             Offset = reader.ReadInt16() * 8;
-
-            if (!hasOffsetMap)
-                BitSize = ByteSize * 8;
         }
 
         internal void ReadExtra(BinaryReader reader)
