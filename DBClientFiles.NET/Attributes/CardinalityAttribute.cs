@@ -17,7 +17,7 @@ namespace DBClientFiles.NET.Attributes
     /// <remarks>
     /// This attribute is designed as a replacement for <see cref="MarshalAsAttribute"/>, which has the side-effect
     /// of causing the library to deserialize simple types using the marshaller instead of fast pointer copies.
-    /// 
+    ///
     /// <see cref="MarshalAsAttribute"/> being handled is a backwards-compatibility feature.
     /// </remarks>
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]

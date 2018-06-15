@@ -127,7 +127,6 @@ namespace DBClientFiles.NET.Internals.Serializers
         {
             _deserializationMethod = null;
             _memberwiseClone = null;
-            
             _instance = Expression.Variable(typeof(T), "instance");
 
             Reader = reader;
@@ -159,7 +158,6 @@ namespace DBClientFiles.NET.Internals.Serializers
         {
             if (_deserializationMethod == null)
                 _deserializationMethod = GenerateDeserializationMethod();
-            
             _deserializationMethod(fileReader, recordReader, instance);
             return instance;
         }
@@ -201,7 +199,6 @@ namespace DBClientFiles.NET.Internals.Serializers
             var newNode = CreateTypeInitializer();
 
             body.Add(Expression.Assign(outputNode, newNode));
-            
             // ReSharper disable once ForCanBeConvertedToForeach
             for (var i = 0; i < Reader.MemberStore.Members.Count; ++i)
             {
@@ -287,13 +284,11 @@ namespace DBClientFiles.NET.Internals.Serializers
 
                 if (memberInfo.MemberInfo.IsDefined(typeof(IgnoreAttribute), false))
                     continue;
-                
                 if (memberInfo.MappedTo == null)
                 {
                     if (memberInfo.Children.Count == 0)
                         continue;
                 }
-                
                 var memberAccess = memberInfo.MakeMemberAccess(_instance);
                 BindMember(bodyBlock, binaryReader, recordReader, ref memberAccess);
             }
@@ -379,7 +374,6 @@ namespace DBClientFiles.NET.Internals.Serializers
                 (memberAccess.MemberInfo.MappedTo.CompressionType == MemberCompressionType.BitpackedPalletData))
                 throw new InvalidMemberException(memberAccess.MemberInfo.MemberInfo,
                     "Member {0} of type {1} is declared as an array but file metadata tells us it's not!");
-            
             if (memberAccess.MemberInfo.MappedTo.BitSize == 0)
                 throw new InvalidOperationException();
 
@@ -399,7 +393,6 @@ namespace DBClientFiles.NET.Internals.Serializers
             var binaryReader = GenerateBinaryReader(recordReader, memberAccess.MemberInfo);
             bodyBlock.Add(Expression.Assign(memberAccess.Expression, binaryReader));
         }
-        
         private void InsertSimpleMemberAssignment(List<Expression> bodyBlock, Expression recordReader, ref ExtendedMemberExpression memberAccess)
         {
             var binaryReader = GenerateBinaryReader(recordReader, memberAccess.MemberInfo);
@@ -460,7 +453,6 @@ namespace DBClientFiles.NET.Internals.Serializers
                             "Member {0} of type {1} is declared as unaligned (spanning bits {2}-{3}) by file data. Floats have to be aligned. Is your structure correct?",
                             memberInfo.MappedTo.Offset,
                             memberInfo.MappedTo.Offset + memberInfo.MappedTo.BitSize);
-                    
                     if (memberInfo.MappedTo.BitSize != 32)
                         throw new InvalidMemberException(memberInfo.MemberInfo,
                             "Member {0} of type {1} is declared as packed (Occupying {2} bits) by file data. Floats cannot be packed. Is your structure correct?",
@@ -492,7 +484,6 @@ namespace DBClientFiles.NET.Internals.Serializers
         private Expression CreateTypeInitializer(params Expression[] arguments) => CreateTypeInitializer(_instance.Type, arguments);
 
         private static Expression CreateTypeInitializer(Type instanceType) => Expression.New(instanceType);
-        
         private static Expression CreateTypeInitializer(Type instanceType, params Expression[] arguments)
         {
             // If a constructor is found with the provided parameters, use it.

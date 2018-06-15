@@ -37,7 +37,7 @@ namespace DBClientFiles.NET.Internals.Versions
         protected override void ReleaseResources()
         {
             base.ReleaseResources();
-            
+
             _codeGenerator = null;
             _palletTable.Dispose();
             _copyTable.Dispose();
@@ -57,7 +57,7 @@ namespace DBClientFiles.NET.Internals.Versions
             var commonDataSize       = ReadInt32();
             var palletDataSize       = ReadInt32();
             var relationshipDataSize = ReadInt32();
-            
+
             IndexTable.Length = idListSize;
 
             for (var i = 0; i < Header.FieldCount; ++i)
@@ -90,12 +90,12 @@ namespace DBClientFiles.NET.Internals.Versions
             _copyTable.StartOffset = IndexTable.EndOffset;
             _copyTable.Length = Header.CopyTableLength;
             #endregion
-            
+
             BaseStream.Position = _copyTable.EndOffset;
             var fieldStorageInfoCount = fieldStorageInfoSize / (2 + 2 + 4 + 4 + 3 * 4);
             for (var i = 0; i < fieldStorageInfoCount; ++i)
                 MemberStore.FileMembers[i].ReadExtra(this);
-            
+
             #region Initialize the last segments
             _palletTable.StartOffset = BaseStream.Position;
             _palletTable.Length = palletDataSize;
@@ -114,7 +114,7 @@ namespace DBClientFiles.NET.Internals.Versions
         public override void ReadSegments()
         {
             base.ReadSegments();
-            
+
             _relationshipData.Read();
             _copyTable.Read();
 

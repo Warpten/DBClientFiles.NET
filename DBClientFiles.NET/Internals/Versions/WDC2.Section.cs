@@ -99,7 +99,7 @@ namespace DBClientFiles.NET.Internals.Versions
 
                 _relationshipData.StartOffset = _copyTable.EndOffset;
                 _relationshipData.Length = _relationshipDataSize;
-                
+
             }
 
             public override void ReadSegments()

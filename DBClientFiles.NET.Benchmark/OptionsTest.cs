@@ -11,7 +11,7 @@ namespace DBClientFiles.NET.Benchmark
 {
     [NetCoreJob]
     [RPlotExporter, CsvMeasurementsExporter, MarkdownExporter]
-    [MinColumn, MaxColumn, StdDevColumn, MedianColumn, StdErrorColumn] 
+    [MinColumn, MaxColumn, StdDevColumn, MedianColumn, StdErrorColumn]
     public class OptionsTest
     {
         private static string PATH_ROOT = @"C:\Users\Vincent Piquet\source\repos\DBClientFiles.NET\DBClientFiles.NET.Benchmark\bin\Release\net472\Data";

@@ -24,7 +24,7 @@ namespace DBClientFiles.NET.Internals
         where T : class, new()
     {
         IEnumerable<T> ReadRecords();
-        
+
         CodeGenerator<T> Generator { get; }
 
         U ExtractKey<U>(T instance) where U : struct;

@@ -24,7 +24,7 @@ namespace DBClientFiles.NET.Internals.Versions
         private int _currentlyParsedSection;
 
         public override CodeGenerator<TValue> Generator => _sections[_currentlyParsedSection].Generator;
-        
+
         #region Life and Death
         public WDC2(IFileHeader header, Stream strm, StorageOptions options) : base(header, strm, options)
         {
@@ -35,7 +35,7 @@ namespace DBClientFiles.NET.Internals.Versions
         protected override void ReleaseResources()
         {
             base.ReleaseResources();
-        
+
             _palletTable.Dispose();
             _commonTable.Dispose();
 

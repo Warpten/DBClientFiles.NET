@@ -69,7 +69,7 @@ namespace DBClientFiles.NET.ConsoleTests
                 .CreateInstanceOf(type, argument1, argument2, argument3);
         }
 
-        // To allow for overloads with differing numbers of arguments, we flag arguments which should be 
+        // To allow for overloads with differing numbers of arguments, we flag arguments which should be
         // ignored by using this Type:
         private class TypeToIgnore
         {
@@ -99,7 +99,7 @@ namespace DBClientFiles.NET.ConsoleTests
                 var stopwatch = Stopwatch.StartNew();
                 var argumentTypes = new[] { typeof(TArg1), typeof(TArg2), typeof(TArg3) };
 
-                // Get a collection of the constructor argument Types we've been given; ignore any 
+                // Get a collection of the constructor argument Types we've been given; ignore any
                 // arguments which are of the 'ignore this' Type:
                 var constructorArgumentTypes = argumentTypes.Where(t => t != typeof(TypeToIgnore)).ToArray();
 
