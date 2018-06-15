@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using DBClientFiles.NET.Collections;
-using DBClientFiles.NET.Exceptions;
 using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.IO;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
-    internal class WDBC<TKey, TValue> : BaseFileReader<TKey, TValue>
+    internal sealed class WDBC<TKey, TValue> : BaseFileReader<TKey, TValue>
         where TValue : class, new()
         where TKey : struct
     {
@@ -45,25 +44,6 @@ namespace DBClientFiles.NET.Internals.Versions
             using (var segmentStream = new RecordReader(this, StringTable.Exists, recordSize))
                 yield return Generator.Deserialize(this, segmentStream);
         }
-
-        public override T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value)
-        {
-            throw new UnreachableCodeException("WDBC does not need to implement ReadPalletMember.");
-        }
-
-        public override T ReadCommonMember<T>(int memberIndex, TValue value)
-        {
-            throw new UnreachableCodeException("WDBC does not need to implement ReadPalletMember.");
-        }
-
-        public override T ReadForeignKeyMember<T>()
-        {
-            throw new UnreachableCodeException("WDBC does not need to implement ReadForeignKeyMember.");
-        }
-
-        public override T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value)
-        {
-            throw new UnreachableCodeException("WDBC does not need to implement ReadPalletArrayMember.");
-        }
+        
     }
 }

@@ -90,25 +90,5 @@ namespace DBClientFiles.NET.Internals.Versions
 
             yield return oldStructure;
         }
-        
-        public override T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value)
-        {
-            throw new UnreachableCodeException("WDB5 does not need to implement ReadPalletMember.");
-        }
-
-        public override T ReadCommonMember<T>(int memberIndex, TValue value)
-        {
-            throw new UnreachableCodeException("WDB5 does not need to implement ReadPalletMember.");
-        }
-
-        public override T ReadForeignKeyMember<T>()
-        {
-            throw new UnreachableCodeException("WDB5 does not need to implement ReadForeignKeyMember.");
-        }
-
-        public override T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value)
-        {
-            throw new UnreachableCodeException("WDB5 does not need to implement ReadPalletArrayMember.");
-        }
     }
 }

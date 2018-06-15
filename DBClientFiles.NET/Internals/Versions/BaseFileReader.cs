@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using DBClientFiles.NET.Collections.Events;
 using DBClientFiles.NET.Internals.Binding;
+using DBClientFiles.NET.Exceptions;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
@@ -78,12 +79,27 @@ namespace DBClientFiles.NET.Internals.Versions
 
         #region Methods that may be called through deserialization
         // These are called through code generation, don't trust ReSharper.
-        public abstract T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : struct;
-        public abstract T ReadCommonMember<T>(int memberIndex, TValue value) where T : struct;
-        public abstract T ReadForeignKeyMember<T>() where T : struct;
-        public abstract T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : struct;
+        public virtual T ReadPalletMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : struct
+        {
+            throw new UnreachableCodeException($"{GetType().Name} does not need to implement ReadPalletMember.");
+        }
+
+        public virtual T ReadCommonMember<T>(int memberIndex, TValue value) where T : struct
+        {
+            throw new UnreachableCodeException($"{GetType().Name} does not need to implement ReadPalletMember.");
+        }
+
+        public virtual T ReadForeignKeyMember<T>() where T : struct
+        {
+            throw new UnreachableCodeException($"{GetType().Name} does not need to implement ReadForeignKeyMember.");
+        }
+
+        public virtual T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader recordReader, TValue value) where T : struct
+        {
+            throw new UnreachableCodeException($"{GetType().Name} does not need to implement ReadPalletArrayMember.");
+        }
         #endregion
-        
+
         public sealed override StorageOptions Options { get; }
 
         private CodeGenerator<TValue> _codeGenerator;
