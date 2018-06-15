@@ -24,7 +24,7 @@ namespace DBClientFiles.NET.Internals.Binding
         /// Offset, in bits, of this field in the record.
         /// </summary>
         public int Offset   { get; internal set; }
-        
+
         /// <summary>
         /// Index of this field in the file metainfo.
         /// </summary>

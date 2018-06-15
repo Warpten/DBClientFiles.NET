@@ -18,7 +18,7 @@ namespace DBClientFiles.NET.Mapper.Utils
 
             return null;
         }
-        
+
         public static string ToAlias(this Type type)
         {
             var baseType = !type.IsArray ? type : type.GetElementType();

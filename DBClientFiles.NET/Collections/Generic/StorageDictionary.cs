@@ -7,7 +7,7 @@ using System.Linq;
 namespace DBClientFiles.NET.Collections.Generic
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TValue"></typeparam>

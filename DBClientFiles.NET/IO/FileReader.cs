@@ -29,9 +29,9 @@ namespace DBClientFiles.NET.IO
         }
 
         public abstract StorageOptions Options { get; }
-        
+
         public abstract string FindStringByOffset(int tableOffset);
-        
+
         protected abstract void ReleaseResources();
 
         protected override void Dispose(bool disposing)

@@ -8,7 +8,7 @@ using DBClientFiles.NET.IO;
 
 namespace DBClientFiles.NET.Internals.Versions
 {
-    internal class WDB2<TKey, TValue> : BaseFileReader<TKey, TValue>
+    internal sealed class WDB2<TKey, TValue> : BaseFileReader<TKey, TValue>
         where TValue : class, new()
         where TKey : struct
     {
@@ -40,26 +40,6 @@ namespace DBClientFiles.NET.Internals.Versions
         {
             using (var segmentReader = new RecordReader(this, StringTable.Exists, recordSize))
                 yield return Generator.Deserialize(this, segmentReader);
-        }
-
-        public override T ReadPalletMember<T>(int memberIndex, RecordReader segmentReader, TValue value)
-        {
-            throw new UnreachableCodeException("WDB2 does not need to implement ReadPalletMember.");
-        }
-
-        public override T ReadCommonMember<T>(int memberIndex, TValue value)
-        {
-            throw new UnreachableCodeException("WDB2 does not need to implement ReadPalletMember.");
-        }
-
-        public override T ReadForeignKeyMember<T>()
-        {
-            throw new UnreachableCodeException("WDB2 does not need to implement ReadForeignKeyMember.");
-        }
-
-        public override T[] ReadPalletArrayMember<T>(int memberIndex, RecordReader segmentReader, TValue value)
-        {
-            throw new UnreachableCodeException("WDB2 does not need to implement ReadPalletArrayMember.");
         }
     }
 }

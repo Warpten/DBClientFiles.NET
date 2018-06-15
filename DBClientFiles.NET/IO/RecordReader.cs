@@ -11,19 +11,19 @@ namespace DBClientFiles.NET.IO
     /// </summary>
     public static class _RecordReader
     {
-        private static Type[] arrayArgs =            { typeof(int) };
-        private static Type[] arrayPackedArgs =      { typeof(int), typeof(int), typeof(int) };
-        private static Type[] packedArgs =           { typeof(int), typeof(int) };
+        private static Type[] arrayArgs            = { typeof(int) };
+        private static Type[] arrayPackedArgs      = { typeof(int), typeof(int), typeof(int) };
+        private static Type[] packedArgs           = { typeof(int), typeof(int) };
 
         public static readonly MethodInfo ReadPackedUInt64  = typeof(RecordReader).GetMethod("ReadUInt64", packedArgs);
         public static readonly MethodInfo ReadPackedUInt32  = typeof(RecordReader).GetMethod("ReadUInt32", packedArgs);
         public static readonly MethodInfo ReadPackedUInt16  = typeof(RecordReader).GetMethod("ReadUInt16", packedArgs);
-        public static readonly MethodInfo ReadPackedSByte   = typeof(RecordReader).GetMethod("ReadSByte", packedArgs);
+        public static readonly MethodInfo ReadPackedSByte   = typeof(RecordReader).GetMethod("ReadSByte",  packedArgs);
 
         public static readonly MethodInfo ReadPackedInt64   = typeof(RecordReader).GetMethod("ReadInt64", packedArgs);
         public static readonly MethodInfo ReadPackedInt32   = typeof(RecordReader).GetMethod("ReadInt32", packedArgs);
         public static readonly MethodInfo ReadPackedInt16   = typeof(RecordReader).GetMethod("ReadInt16", packedArgs);
-        public static readonly MethodInfo ReadPackedByte    = typeof(RecordReader).GetMethod("ReadByte", packedArgs);
+        public static readonly MethodInfo ReadPackedByte    = typeof(RecordReader).GetMethod("ReadByte",  packedArgs);
 
         public static readonly MethodInfo ReadPackedSingle  = typeof(RecordReader).GetMethod("ReadSingle", new[] { typeof(int) });
 
@@ -87,8 +87,7 @@ namespace DBClientFiles.NET.IO
         //private GCHandle _dataHandle;
         //private IntPtr _dataPointer;
 
-        protected int _bitCursor
-        {
+        protected int _bitCursor {
             get;
             set;
         } = 0;
