@@ -288,7 +288,10 @@ namespace DBClientFiles.NET.IO
                 return _fileReader.FindStringByOffset(ReadInt32(bitOffset, bitCount));
 
             if ((bitOffset & 7) == 0)
+            {
+                _bitCursor = bitOffset;
                 return ReadInlineString();
+            }
 
             throw new InvalidOperationException("Packed strings must be in the string block!");
         }
