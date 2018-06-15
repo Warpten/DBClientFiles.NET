@@ -31,12 +31,8 @@
             this.fastObjectListView1 = new BrightIdeasSoftware.FastObjectListView();
             ((System.ComponentModel.ISupportInitialize)(this.fastObjectListView1)).BeginInit();
             this.SuspendLayout();
-            // 
-            // fastObjectListView1
-            // 
-            this.fastObjectListView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
+            //            // fastObjectListView1
+            //            this.fastObjectListView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)            | System.Windows.Forms.AnchorStyles.Left)            | System.Windows.Forms.AnchorStyles.Right)));
             this.fastObjectListView1.CellEditUseWholeCell = false;
             this.fastObjectListView1.FullRowSelect = true;
             this.fastObjectListView1.GridLines = true;
@@ -49,10 +45,8 @@
             this.fastObjectListView1.UseCompatibleStateImageBehavior = false;
             this.fastObjectListView1.View = System.Windows.Forms.View.Details;
             this.fastObjectListView1.VirtualMode = true;
-            // 
-            // InspectForm
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            //            // InspectForm
+            //            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
             this.Controls.Add(this.fastObjectListView1);

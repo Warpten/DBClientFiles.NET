@@ -25,7 +25,6 @@ namespace DBClientFiles.NET.Definitions
 
         private IReader File { get; set; }
         private IFileHeader Header { get; set; }
-        
         public Signatures Signature => Header.Signature;
         public int IndexColumn => Header.IndexColumn;
         public uint LayoutHash => Header.LayoutHash;

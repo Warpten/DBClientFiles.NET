@@ -48,10 +48,8 @@ namespace DBClientFiles.NET.Definitions.Utils
 
             if (type == typeof(int)) return typeof(uint);
             if (type == typeof(uint)) return typeof(int);
-            
             if (type == typeof(short)) return typeof(ushort);
             if (type == typeof(ushort)) return typeof(short);
-            
             if (type == typeof(sbyte)) return typeof(byte);
             if (type == typeof(byte)) return typeof(sbyte);
 

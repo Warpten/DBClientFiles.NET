@@ -18,7 +18,6 @@
 
         int CopyTableLength { get; }
         int IndexColumn { get; }
-        
         bool HasIndexTable { get; }
         bool HasOffsetMap { get; }
     }

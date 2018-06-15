@@ -85,7 +85,6 @@ namespace DBClientFiles.NET.Definitions.Parsers
             var assemblyName = new AssemblyName { Name = "TemporaryAssembly" };
             _assemblyBuilder = Thread.GetDomain().DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
             _module = _assemblyBuilder.DefineDynamicModule("TemporaryModule");
-            
             string line;
 
             while ((line = _streamReader.ReadLine()) != null)
@@ -98,8 +97,7 @@ namespace DBClientFiles.NET.Definitions.Parsers
                     ReadBuildDefinition(line);
                 else if (line.StartsWith("COMMENT"))
                     ReadCommentDefinition(line);
-                else 
-                    ProduceType(line);
+                else                    ProduceType(line);
             }
 
             _streamReader.Dispose();
@@ -146,7 +144,6 @@ namespace DBClientFiles.NET.Definitions.Parsers
                     columnDefinition.Comments = comments.Value;
 
                 columnDefinition.Verified = !verified.Success;
-                
                 _columnDefinitions.Add(columnDefinition);
             }
         }
@@ -282,8 +279,7 @@ namespace DBClientFiles.NET.Definitions.Parsers
             if (columnInfo.Cardinality.HasValue)
                 arraySize = new CustomAttributeBuilder(
                     typeof(CardinalityAttribute).GetConstructor(Type.EmptyTypes),
-                    new object[] { }, 
-                    new [] { typeof(CardinalityAttribute).GetProperty("SizeConst") },
+                    new object[] { },                    new [] { typeof(CardinalityAttribute).GetProperty("SizeConst") },
                     new object[] { columnInfo.Cardinality.Value });
 
             if (arraySize != null)

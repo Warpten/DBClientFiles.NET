@@ -22,7 +22,6 @@ namespace DBClientFiles.NET.Benchmark
             Span<byte> b_ = b;
             return b_;
         }
-        
         private _union u;
         private byte[] b;
 

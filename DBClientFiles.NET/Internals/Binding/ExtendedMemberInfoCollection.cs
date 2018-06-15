@@ -15,7 +15,6 @@ namespace DBClientFiles.NET.Internals.Binding
         public List<ExtendedMemberInfo> Members { get; } = new List<ExtendedMemberInfo>();
 
         public List<FileMemberInfo> FileMembers { get; } = new List<FileMemberInfo>();
-        
         internal ExtendedMemberInfoCollection(Type parentType, StorageOptions options)
         {
             if (parentType == null)
@@ -59,7 +58,7 @@ namespace DBClientFiles.NET.Internals.Binding
             {
                 if (IndexColumn == -1)
                     throw new InvalidOperationException("Index column not bound");
-                
+
                 for (var i = 0; i < Members.Count; ++i)
                 {
                     var memberInfo = Members[i];
@@ -69,7 +68,7 @@ namespace DBClientFiles.NET.Internals.Binding
                     if (memberInfo.MappedTo != null && memberInfo.MappedTo.Index == IndexColumn)
                         return memberInfo;
                 }
-                
+
                 throw new InvalidOperationException("Unable to find index");
             }
         }

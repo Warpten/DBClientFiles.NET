@@ -26,7 +26,6 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
                 return _parsedContent[oldKey];
             }
         }
-        
         public bool ContainsKey(TKey oldKey) => _parsedContent.ContainsKey(oldKey);
 
         public int Count => _parsedContent.Count;

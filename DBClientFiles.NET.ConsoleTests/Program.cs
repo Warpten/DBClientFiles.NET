@@ -77,7 +77,6 @@ namespace DBClientFiles.NET.ConsoleTests
         private static Dictionary<Type, BenchmarkResult> _dataStores = new Dictionary<Type, BenchmarkResult>();
 
         private static MethodInfo methodInfo = typeof(Program).GetMethod("BenchmarkStructure", BindingFlags.NonPublic | BindingFlags.Static);
-        
         // Forces the corresponding assembly to be referenced.
 #pragma warning disable 169
         private volatile AchievementEntry entry;
@@ -108,7 +107,6 @@ namespace DBClientFiles.NET.ConsoleTests
                 var genericMethodInfo = methodInfo.MakeGenericMethod(typeInfo);
                 var nameAttr = typeInfo.GetCustomAttribute<DBFileNameAttribute>();
                 var fileName = nameAttr.Name + "." + (nameAttr.Extension == FileExtension.DB2 ? "db2" : "dbc");
-                
                 genericMethodInfo.Invoke(null, new object[] {fileName, count});
             }
 
@@ -131,7 +129,6 @@ namespace DBClientFiles.NET.ConsoleTests
             {
                 fs.CopyTo(ms);
                 ms.Position = 0;
-                
                 var benchmarkResult = StructureTester<TValue>.Benchmark<StorageList<TValue>>(out var dataStore, ms, count);
 
                 Console.WriteLine(benchmarkResult.ToString());

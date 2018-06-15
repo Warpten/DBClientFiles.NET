@@ -30,7 +30,6 @@ namespace DBClientFiles.NET.Definitions.Attributes
             get => _build.Build;
             set => _build.Build = value;
         }
-        
         public BuildAttribute(string inputLine)
         {
             _build = new BuildInfo(inputLine);

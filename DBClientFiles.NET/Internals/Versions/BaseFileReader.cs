@@ -124,7 +124,6 @@ namespace DBClientFiles.NET.Internals.Versions
             var hndlr = StringTableChanged;
             hndlr?.Invoke(this, args);
         }
-        
         /// <summary>
         /// Enumerates the file, parsing either the records block or the sparse table, if either one exists.
         /// </summary>
@@ -133,7 +132,6 @@ namespace DBClientFiles.NET.Internals.Versions
         {
             if (!Options.LoadMask.HasFlag(LoadMask.Records))
                 yield break;
-            
             if (OffsetMap.Exists)
             {
                 for (var i = 0; i < OffsetMap.Count; ++i)

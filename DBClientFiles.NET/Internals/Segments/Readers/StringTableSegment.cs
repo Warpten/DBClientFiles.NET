@@ -13,7 +13,6 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
         {
             _cachedStringValues = new Dictionary<int, string>();
         }
-        
         private readonly Dictionary<int, string> _cachedStringValues;
 
         public event EventHandler<StringTableChangedEventArgs> OnStringRead;
@@ -22,11 +21,9 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
         {
             if (Segment.Length == 0)
                 return;
-            
             FileReader.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
 
             var stringSegment = FileReader.ReadBytes(Segment.Length);
-            
             var stringStart = 2;
             for (var i = 3; i < Segment.Length;)
             {

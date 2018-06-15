@@ -17,7 +17,6 @@ namespace DBClientFiles.NET.Mapper.Definitions
         public static void Save(string definitionName, Type newDefinition)
         {
             var completePath = Path.Combine(Properties.Settings.Default.DefinitionRoot, definitionName + ".dbd");
-            
             DBD definition;
             using (var fs = new FileStream(completePath, FileMode.Open))
             {

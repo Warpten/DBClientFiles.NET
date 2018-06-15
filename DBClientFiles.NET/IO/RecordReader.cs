@@ -89,9 +89,7 @@ namespace DBClientFiles.NET.IO
 
         protected int _bitCursor {
             get;
-            set; 
-        } = 0;
-    
+            set;        } = 0;
         public long ReadInt64() => Read<long>(_bitCursor, 64, true);
         public int ReadInt32() => Read<int>(_bitCursor, 32, true);
         public short ReadInt16() => Read<short>(_bitCursor, 16, true);
@@ -248,7 +246,6 @@ namespace DBClientFiles.NET.IO
         {
             if (advanceCursor)
                 _bitCursor += SizeCache<T>.Size * 8;
-            
             //! Reading whichever is most from SizeCache<T>.Size and (bitCount + (bitOffset & 7) + 7) / 8.
             //! Consider this: Given a field that uses 17 bits, it deserializes as an int32. However, 17 bits fit on 3 bytes, so we would only read three bytes.
             //! MemoryMarshal.Read<int> expects a Span<byte> of Length = 4.
@@ -291,12 +288,10 @@ namespace DBClientFiles.NET.IO
 
             throw new InvalidOperationException("Packed strings must be in the string block!");
         }
-        
         public long ReadBits(int bitOffset, int bitCount)
         {
             var byteOffset = bitOffset / 8;
             var byteCount = (bitCount + (bitOffset & 7) + 7) / 8;
-            
             var value = 0L;
             for (var i = 0; i < byteCount; ++i)
                 value |= (long)(_recordData[i + byteOffset] << (8 * i));

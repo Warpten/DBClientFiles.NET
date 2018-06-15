@@ -22,7 +22,6 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             FileReader.BaseStream.Position = Segment.StartOffset;
             _segmentData = FileReader.ReadBytes(Segment.Length);
         }
-        
         public T GetValue<T>(int index)
             where T : struct
         {
