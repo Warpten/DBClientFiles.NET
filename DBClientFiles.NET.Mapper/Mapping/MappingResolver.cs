@@ -16,7 +16,8 @@ namespace DBClientFiles.NET.Mapper.Mapping
 {
     public class MappingResolver : Dictionary<MemberInfo /* to */, MappingResolver.ResolvedMapping>
     {
-        public class ResolvedMapping        {
+        public class ResolvedMapping 
+        {
             public MemberInfo From { get; set; }
             public List<MemberInfo> Candidates { get; } = new List<MemberInfo>();
         }
@@ -33,6 +34,7 @@ namespace DBClientFiles.NET.Mapper.Mapping
             if (source.RecordType == null)
             {
                 var sourceTypeGenerator = CreateTypeFromAnalyzer(source, "SourceType");
+                
                 source.Stream.Position = 0;
                 source = new FileAnalyzer(sourceTypeGenerator.Generate(), source.Stream, source.Options);
                 source.Analyze();
@@ -144,9 +146,11 @@ namespace DBClientFiles.NET.Mapper.Mapping
                 }
             }
             #endregion
+            
             // Create mappings
             foreach (var t in target.Members.Members.OrderBy(m => m.MemberInfo.GetCustomAttribute<OrderAttribute>().Order))
                 this[t.MemberInfo] = new ResolvedMapping();
+            
             // Fill mappings
             foreach (var mapInfo in mappingStore)
             {
@@ -191,6 +195,7 @@ namespace DBClientFiles.NET.Mapper.Mapping
                         kv.Key.IsDefined(typeof(IndexAttribute), false));
                 }
             }
+            
             foreach (var attr in target.RecordType.GetCustomAttributes<LayoutAttribute>())
                 typeGen.AddAttribute(attr.GetType().GetConstructor(new[] { typeof(uint) }), new object[] { attr.LayoutHash });
 
@@ -221,6 +226,7 @@ namespace DBClientFiles.NET.Mapper.Mapping
             var isValidString = new bool[analyzer.Members.Members.Count];
             for (var itr = 0; itr < isValidString.Length; ++itr)
                 isValidString[itr] = false;
+            
             foreach (var node in enumerable)
             {
                 var memberIndex = 0;
@@ -237,6 +243,7 @@ namespace DBClientFiles.NET.Mapper.Mapping
 
                     if (exMemberInfo.Type == typeof(string))
                         isValidString[memberIndex] = exMemberInfo.MappedTo.BitSize > 16 && memberValue != null;
+            
                     ++memberIndex;
                 }
             }
@@ -254,6 +261,7 @@ namespace DBClientFiles.NET.Mapper.Mapping
         private TypeGenerator CreateTypeFromAnalyzer(FileAnalyzer source, string name)
         {
             var typeGen = new TypeGenerator(name);
+            
             foreach (var memberInfo in source.Members.FileMembers)
             {
                 var fieldName = $"UnkMember_{memberInfo.Index}";
@@ -282,6 +290,7 @@ namespace DBClientFiles.NET.Mapper.Mapping
                         fieldType = typeof(int);
                         break;
                 }
+                
                 // We don't really care if we are an int or whatever, because bit sizes automatically make us properly deserialize.
                 if (memberInfo.Cardinality > 1)
                     fieldType = fieldType.MakeArrayType();
@@ -368,6 +377,7 @@ namespace DBClientFiles.NET.Mapper.Mapping
                     builder.AppendLine($"arraySize = {arrayAttr.SizeConst} }}");
                 else
                     builder.AppendLine("}");
+                
             }
             builder.AppendLine("    ]");
             builder.AppendLine("}");

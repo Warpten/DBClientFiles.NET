@@ -7,7 +7,8 @@ using System.Linq;
 namespace DBClientFiles.NET.Collections.Generic
 {
     /// <summary>
-    ///    /// </summary>
+    /// 
+    /// </summary>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TValue"></typeparam>
     public sealed class StorageDictionary<TKey, TValue> : IStorage, IDictionary<TKey, TValue>, IDictionary

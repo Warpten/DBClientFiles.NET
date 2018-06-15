@@ -22,7 +22,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             public DataBlock(FileReader reader, int segmentSize)
             {
                 _dataBlock = reader.ReadBytes(segmentSize);
-
+                
                 _valueOffsets = new Dictionary<TKey, int>(segmentSize / 8);
                 for (var i = 0; i < _dataBlock.Length; i += 8)
                 {

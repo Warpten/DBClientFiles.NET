@@ -75,6 +75,7 @@ namespace DBClientFiles.NET.Internals.Binding
                 var childInfo = Create(childMember, ref childIndex, this);
                 if (childInfo == null)
                     continue;
+                
                 Children.Add(childInfo);
             }
         }

@@ -37,6 +37,7 @@ namespace DBClientFiles.NET.Mapper
 
                 return;
             }
+            
             if (args == null || args.Length == 0)
             {
                 Application.EnableVisualStyles();
@@ -114,6 +115,7 @@ namespace DBClientFiles.NET.Mapper
         private static MappingResolver MapFiles(string source, string target, string definitionFolder)
         {
             var definitionName = Path.GetFileNameWithoutExtension(source);
+            
             var definitionStore = DefinitionFactory.Open(definitionName, definitionFolder);
 
             using (var sourceStream = File.OpenRead(source))

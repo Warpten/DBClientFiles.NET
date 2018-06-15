@@ -44,5 +44,6 @@ namespace DBClientFiles.NET.Internals.Versions
             using (var segmentStream = new RecordReader(this, StringTable.Exists, recordSize))
                 yield return Generator.Deserialize(this, segmentStream);
         }
+        
     }
 }

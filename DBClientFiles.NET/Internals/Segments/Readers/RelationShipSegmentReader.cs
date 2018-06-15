@@ -40,6 +40,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
         {
             if (_entries == null || !_entries.ContainsKey(recordIndex))
                 return default;
+            
             var fk = _entries[recordIndex];
             return MemoryMarshal.Read<U>(fk);
         }

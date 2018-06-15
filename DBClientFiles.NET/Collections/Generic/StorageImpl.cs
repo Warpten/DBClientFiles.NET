@@ -35,6 +35,7 @@ namespace DBClientFiles.NET.Collections.Generic
         public CodeGenerator<T> Generator { get; private set; }
 
         public event Action<long, string> OnStringTableEntry;
+        
         #region Life and death
         public void Dispose()
         {
@@ -136,6 +137,7 @@ namespace DBClientFiles.NET.Collections.Generic
             Generator = File.Generator;
 
             File.ReadSegments();
+            
             // TODO: Move the LoadMask.Records check here instead of having to use it in subclasses.
             // Currently a compiler problem.
 

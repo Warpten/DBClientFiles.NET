@@ -127,7 +127,9 @@ namespace DBClientFiles.NET.ConsoleTests
             stringBuilder.Append((RecordType.Name + " [" + Container.Count + " entries - (" + Signature + ")]").PadRight(65));
 
             stringBuilder.Append(" | ");
-            stringBuilder.Append(string.Format("{0:s\\.ffffff} ({1:s\\.ffffff})",                AverageTime,                TimeSpan.FromTicks(AverageTime.Ticks / Container.Count)).PadRight(20));
+            stringBuilder.Append(string.Format("{0:s\\.ffffff} ({1:s\\.ffffff})", 
+                AverageTime, 
+                TimeSpan.FromTicks(AverageTime.Ticks / Container.Count)).PadRight(20));
             stringBuilder.Append(" | ");
             stringBuilder.Append(string.Format("{0:s\\.ffffff} ({1:s\\.ffffff})",
                 BestTime,
