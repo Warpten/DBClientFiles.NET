@@ -115,6 +115,7 @@ namespace DBClientFiles.NET.Internals.Versions
         {
             base.ReadSegments();
 
+            OffsetMap.Read();
             _relationshipData.Read();
             _copyTable.Read();
 
@@ -159,6 +160,8 @@ namespace DBClientFiles.NET.Internals.Versions
 
         protected override IEnumerable<TValue> ReadRecords(int recordIndex, long recordOffset, int recordSize)
         {
+            BaseStream.Seek(recordOffset, SeekOrigin.Begin);
+
             _currentRecordIndex = recordIndex;
             using (var recordReader = GetRecordReader(recordSize))
             {

@@ -25,6 +25,7 @@ namespace DBClientFiles.NET.Internals.Versions.Headers
                 reader.BaseStream.Position += (4 + 2) * (MaxIndex - MinIndex + 1);
 
             HasIndexTable = false;
+            HasForeignIds = false;
             HasOffsetMap = false;
 
             IndexColumn = 0;
@@ -45,6 +46,7 @@ namespace DBClientFiles.NET.Internals.Versions.Headers
         public int CopyTableLength { get; }
 
         public bool HasIndexTable { get; }
+        public bool HasForeignIds { get; }
         public bool HasOffsetMap { get; }
 
         public int IndexColumn { get; }

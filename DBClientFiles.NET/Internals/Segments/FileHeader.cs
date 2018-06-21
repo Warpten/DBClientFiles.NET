@@ -20,6 +20,7 @@
         int IndexColumn { get; }
 
         bool HasIndexTable { get; }
-        bool HasOffsetMap { get; }
+		bool HasForeignIds { get; }
+		bool HasOffsetMap { get; }
     }
 }

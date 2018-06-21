@@ -22,7 +22,7 @@ namespace DBClientFiles.NET.Internals.Versions
         #region Life and death
         public WDB6(IFileHeader header, Stream strm, StorageOptions options) : base(header, strm, options)
         {
-            _copyTable   = new CopyTableReader<TKey>(this);
+            _copyTable = new CopyTableReader<TKey>(this);
             _commonTable = new LegacyCommonTableReader<TKey>(this);
         }
 
@@ -59,7 +59,9 @@ namespace DBClientFiles.NET.Internals.Versions
             OffsetMap.Length = (Header.MaxIndex - Header.MinIndex + 1) * (4 + 2);
             OffsetMap.Exists = Header.HasOffsetMap;
 
-            IndexTable.StartOffset = OffsetMap.Exists ? OffsetMap.EndOffset : StringTable.EndOffset;
+            long _foreignIdsLength = Header.HasForeignIds ? (Header.MaxIndex - Header.MinIndex + 1) * 4 : 0;
+
+            IndexTable.StartOffset = (OffsetMap.Exists ? OffsetMap.EndOffset : StringTable.EndOffset) + _foreignIdsLength;
             IndexTable.Length = Header.RecordCount * SizeCache<TKey>.Size;
             IndexTable.Exists = Header.HasIndexTable;
 
@@ -75,7 +77,7 @@ namespace DBClientFiles.NET.Internals.Versions
             return true;
         }
 
-        public override T ReadCommonMember<T>(int memberIndex,  TValue value)
+        public override T ReadCommonMember<T>(int memberIndex, TValue value)
         {
             return _commonTable.ExtractValue<T>(memberIndex - _commonTableStartColumn, _codeGenerator.ExtractKey(value));
         }

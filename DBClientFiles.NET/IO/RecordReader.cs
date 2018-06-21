@@ -268,7 +268,7 @@ namespace DBClientFiles.NET.IO
             if (_usesStringTable)
                 return _fileReader.FindStringByOffset(ReadInt32());
 
-            return _fileReader.ReadString();
+            return ReadInlineString();
         }
 
         /// <summary>
@@ -287,9 +287,22 @@ namespace DBClientFiles.NET.IO
                 return _fileReader.FindStringByOffset(ReadInt32(bitOffset, bitCount));
 
             if ((bitOffset & 7) == 0)
-                return _fileReader.ReadString();
+            {
+                _bitCursor = bitOffset;
+                return ReadInlineString();
+            }
 
             throw new InvalidOperationException("Packed strings must be in the string block!");
+        }
+
+        private string ReadInlineString()
+        {
+            var byteList = new List<byte>();
+            byte currChar;
+            while ((currChar = ReadByte()) != '\0')
+                byteList.Add(currChar);
+
+            return System.Text.Encoding.UTF8.GetString(byteList.ToArray());
         }
 
         public long ReadBits(int bitOffset, int bitCount)

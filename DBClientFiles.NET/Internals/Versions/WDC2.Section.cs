@@ -109,6 +109,7 @@ namespace DBClientFiles.NET.Internals.Versions
                 MemberStore.MapMembers();
                 MemberStore.CalculateCardinalities();
 
+                OffsetMap.Read();
                 _copyTable.Read();
                 _relationshipData.Read();
             }
@@ -125,6 +126,8 @@ namespace DBClientFiles.NET.Internals.Versions
 
             protected override IEnumerable<TValue> ReadRecords(int recordIndex, long recordOffset, int recordSize)
             {
+                BaseStream.Seek(recordOffset, SeekOrigin.Begin);
+
                 using (var recordReader = GetRecordReader(recordSize))
                 {
                     var instance = IndexTable.Exists

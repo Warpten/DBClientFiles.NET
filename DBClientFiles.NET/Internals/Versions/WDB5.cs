@@ -54,7 +54,9 @@ namespace DBClientFiles.NET.Internals.Versions
             OffsetMap.Length = (Header.MaxIndex - Header.MinIndex + 1) * (4 + 2);
             OffsetMap.Exists = Header.HasOffsetMap;
 
-            IndexTable.StartOffset = OffsetMap.EndOffset;
+            long _foreignIdsLength = Header.HasForeignIds ? (Header.MaxIndex - Header.MinIndex + 1) * 4 : 0;
+
+            IndexTable.StartOffset = (OffsetMap.Exists ? OffsetMap.EndOffset : StringTable.EndOffset) + _foreignIdsLength;
             IndexTable.Length = Header.RecordCount * 4;
             IndexTable.Exists = Header.HasIndexTable;
 
@@ -66,8 +68,18 @@ namespace DBClientFiles.NET.Internals.Versions
             return true;
         }
 
+        public override void ReadSegments()
+        {
+            base.ReadSegments();
+
+            OffsetMap.Read();
+            _copyTable.Read();
+        }
+
         protected override IEnumerable<TValue> ReadRecords(int recordIndex, long recordOffset, int recordSize)
         {
+            BaseStream.Seek(recordOffset, SeekOrigin.Begin);
+
             TValue oldStructure;
             using (var recordReader = new RecordReader(this, StringTable.Exists, recordSize))
             {

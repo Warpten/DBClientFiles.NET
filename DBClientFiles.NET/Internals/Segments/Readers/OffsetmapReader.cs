@@ -6,7 +6,7 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
 {
     internal sealed class OffsetMapReader : SegmentReader
     {
-        private readonly Dictionary<int, (long, int)> _parsedContent = new Dictionary<int, (long, int)>();
+        private readonly List<(long, int)> _parsedContent = new List<(long, int)>();
 
         public OffsetMapReader(FileReader reader) : base(reader) { }
 
@@ -15,20 +15,21 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
             if (!Segment.Exists)
                 return;
 
-            var i = 0;
+            var _content = new HashSet<(long, int)>();
+
             FileReader.BaseStream.Seek(Segment.StartOffset, SeekOrigin.Begin);
             while (FileReader.BaseStream.Position < Segment.EndOffset)
             {
                 long offset = FileReader.ReadInt32();
                 var size = FileReader.ReadInt16();
 
-                ++i;
-
                 if (offset == 0 || size == 0)
                     continue;
 
-                _parsedContent.Add(i, (offset, size));
+                _content.Add((offset, size));
             }
+
+            _parsedContent.AddRange(_content);
         }
 
         public long GetRecordOffset(int index)
