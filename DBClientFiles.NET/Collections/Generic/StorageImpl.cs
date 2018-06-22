@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using DBClientFiles.NET.Internals.Binding;
 using DBClientFiles.NET.Internals.Segments;
-using DBClientFiles.NET.Internals.Serializers;
+using DBClientFiles.NET.Internals.Generators;
 using DBClientFiles.NET.Internals.Versions.Headers;
 
 namespace DBClientFiles.NET.Collections.Generic
@@ -16,8 +16,6 @@ namespace DBClientFiles.NET.Collections.Generic
         Signatures Signature { get; }
         uint TableHash { get; }
         uint LayoutHash { get; }
-
-        Dictionary<long, string> StringTable { get; }
     }
 
     /// <summary>
@@ -33,8 +31,6 @@ namespace DBClientFiles.NET.Collections.Generic
         public IFileHeader Header { get; private set; }
 
         public CodeGenerator<T> Generator { get; private set; }
-
-        public event Action<long, string> OnStringTableEntry;
 
         #region Life and death
         public void Dispose()
@@ -112,9 +108,6 @@ namespace DBClientFiles.NET.Collections.Generic
                 default:
                     throw new NotSupportedVersionException($"Unknown signature 0x{(int)Header.Signature:X8}!");
             }
-
-            if (Options.LoadMask.HasFlag(LoadMask.StringTable) && OnStringTableEntry != null)
-                File.StringTableChanged += (_, e) => OnStringTableEntry(e.Offset, e.Value);
         }
 
         public void PrepareMemberInfo()
@@ -131,7 +124,7 @@ namespace DBClientFiles.NET.Collections.Generic
             Members.CalculateCardinalities();
         }
 
-        public IEnumerable<T> Enumerate()
+        public IEnumerable<InstanceProxy<T>> Enumerate()
         {
             // Steal the generator
             Generator = File.Generator;

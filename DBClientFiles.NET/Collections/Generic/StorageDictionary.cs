@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using DBClientFiles.NET.Attributes;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
@@ -22,7 +23,6 @@ namespace DBClientFiles.NET.Collections.Generic
         #endregion
 
         private readonly Dictionary<TKey, TValue> _container;
-        public Dictionary<long, string> StringTable { get; }
 
         public StorageDictionary(Stream dataStream) : this(dataStream, StorageOptions.Default)
         {
@@ -41,12 +41,12 @@ namespace DBClientFiles.NET.Collections.Generic
         {
             if (keySelector == null)
             {
-                StringTable = new Dictionary<long, string>();
+                if (typeof(TValue).IsDefined(typeof(NoIndexAttribute), false))
+                    throw new InvalidOperationException("");
+
                 _container = new Dictionary<TKey, TValue>();
                 using (var implementation = new StorageImpl<TValue>(dataStream, options))
                 {
-                    implementation.OnStringTableEntry += StringTable.Add;
-
                     implementation.InitializeHeaderInfo();
 
                     var indexMember = implementation.Members.IndexMember;
@@ -58,8 +58,9 @@ namespace DBClientFiles.NET.Collections.Generic
 
                     implementation.InitializeFileReader<TKey>();
                     implementation.PrepareMemberInfo();
+
                     foreach (var item in implementation.Enumerate())
-                        _container[implementation.ExtractKey<TKey>(item)] = item;
+                        _container[implementation.ExtractKey<TKey>(item.Instance)] = item.Instance;
 
                     Signature = implementation.Header.Signature;
                     TableHash = implementation.Header.TableHash;
@@ -69,8 +70,6 @@ namespace DBClientFiles.NET.Collections.Generic
             else
             {
                 var enumerable = new StorageEnumerable<TValue>(dataStream, options);
-                foreach (var kv in enumerable.StringTable)
-                    StringTable.Add(kv.Key, kv.Value);
 
                 Signature = enumerable.Signature;
                 TableHash = enumerable.TableHash;

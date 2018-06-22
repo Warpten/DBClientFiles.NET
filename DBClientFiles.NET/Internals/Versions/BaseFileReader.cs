@@ -1,13 +1,12 @@
 ﻿using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.Internals.Segments.Readers;
-using DBClientFiles.NET.Internals.Serializers;
+using DBClientFiles.NET.Internals.Generators;
 using DBClientFiles.NET.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using DBClientFiles.NET.Collections.Events;
 using DBClientFiles.NET.Internals.Binding;
 using DBClientFiles.NET.Exceptions;
 
@@ -71,7 +70,7 @@ namespace DBClientFiles.NET.Internals.Versions
         public uint LayoutHash { get; protected set; }
         #endregion
 
-        public ExtendedMemberInfoCollection MemberStore
+        public sealed override ExtendedMemberInfoCollection MemberStore
         {
             get;
             set;
@@ -111,35 +110,30 @@ namespace DBClientFiles.NET.Internals.Versions
         protected Segment Records;
         #endregion
 
-        public event EventHandler<StringTableChangedEventArgs> StringTableChanged;
-
         public virtual bool PrepareMemberInformations()
         {
             _codeGenerator = new CodeGenerator<TValue>(this);
             return true;
         }
 
-        protected void OnStringTableEntry(StringTableChangedEventArgs args)
-        {
-            var hndlr = StringTableChanged;
-            hndlr?.Invoke(this, args);
-        }
-
         /// <summary>
         /// Enumerates the file, parsing either the records block or the sparse table, if either one exists.
         /// </summary>
         /// <returns></returns>
-        public virtual IEnumerable<TValue> ReadRecords()
+        public virtual IEnumerable<InstanceProxy<TValue>> ReadRecords()
         {
             if (!Options.LoadMask.HasFlag(LoadMask.Records))
                 yield break;
+
+            // This is needed because of copy table
+            var instanceUUID = 0;
 
             if (OffsetMap.Exists)
             {
                 for (var i = 0; i < OffsetMap.Count; ++i)
                 {
                     foreach (var node in ReadRecords(i, OffsetMap.GetRecordOffset(i), OffsetMap.GetRecordSize(i)))
-                        yield return node;
+                        yield return new InstanceProxy<TValue> { Instance = node, ID = instanceUUID++ };
                 }
             }
             else
@@ -150,7 +144,7 @@ namespace DBClientFiles.NET.Internals.Versions
                 while (BaseStream.Position < Records.EndOffset)
                 {
                     foreach (var node in ReadRecords(recordIndex, BaseStream.Position, Header.RecordSize))
-                        yield return node;
+                        yield return new InstanceProxy<TValue> { Instance = node, ID = instanceUUID++ };
 
                     ++recordIndex;
                 }
@@ -173,15 +167,7 @@ namespace DBClientFiles.NET.Internals.Versions
         public virtual void ReadSegments()
         {
             if (StringTable.Segment.Exists)
-            {
-                if (Options.LoadMask.HasFlag(LoadMask.StringTable))
-                    StringTable.OnStringRead += StringTableChanged;
-
                 StringTable.Read();
-
-                if (Options.LoadMask.HasFlag(LoadMask.StringTable))
-                    StringTable.OnStringRead -= StringTableChanged;
-            }
         }
 
         public override string FindStringByOffset(int tableOffset)

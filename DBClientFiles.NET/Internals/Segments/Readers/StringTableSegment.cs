@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using DBClientFiles.NET.Collections.Events;
 using DBClientFiles.NET.IO;
 
 namespace DBClientFiles.NET.Internals.Segments.Readers
@@ -15,8 +12,6 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
         }
 
         private readonly Dictionary<int, string> _cachedStringValues;
-
-        public event EventHandler<StringTableChangedEventArgs> OnStringRead;
 
         public override void Read()
         {
@@ -49,8 +44,6 @@ namespace DBClientFiles.NET.Internals.Segments.Readers
                     var correctedOffset = (int) (stringOffset + Segment.StartOffset);
 
                     _cachedStringValues[correctedOffset] = FileReader.Options.InternStrings ? string.Intern(stringValue) : stringValue;
-
-                    OnStringRead?.Invoke(this, new StringTableChangedEventArgs(correctedOffset, stringValue));
 
                     stringStart = ++i;
                 }

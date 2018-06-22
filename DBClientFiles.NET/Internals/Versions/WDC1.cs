@@ -1,5 +1,5 @@
 ﻿using DBClientFiles.NET.Internals.Segments.Readers;
-using DBClientFiles.NET.Internals.Serializers;
+using DBClientFiles.NET.Internals.Generators;
 using DBClientFiles.NET.IO;
 using System.Collections.Generic;
 using System.Diagnostics;

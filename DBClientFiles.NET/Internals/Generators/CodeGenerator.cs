@@ -11,7 +11,7 @@ using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Exceptions;
 using DBClientFiles.NET.Internals.Binding;
 
-namespace DBClientFiles.NET.Internals.Serializers
+namespace DBClientFiles.NET.Internals.Generators
 {
     internal class CodeGenerator<T, TKey> : CodeGenerator<T>
         where T : class, new()
@@ -427,7 +427,7 @@ namespace DBClientFiles.NET.Internals.Serializers
             var elementType = memberInfo.Type.IsArray ? memberInfo.Type.GetElementType() : memberInfo.Type;
             var elementCode = Type.GetTypeCode(elementType);
 
-            if (!Reader.Options.OverrideSignedChecks && memberInfo.MappedTo.IsSigned.HasValue)
+            if (!Reader.Options.IgnoreSignedChecks && memberInfo.MappedTo.IsSigned.HasValue)
             {
                 if (elementType.IsSigned() != memberInfo.MappedTo.IsSigned)
                     throw new InvalidMemberException(memberInfo.MemberInfo,

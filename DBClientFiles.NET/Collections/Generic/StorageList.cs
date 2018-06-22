@@ -11,8 +11,6 @@ namespace DBClientFiles.NET.Collections.Generic
     {
         private readonly List<T> _container;
 
-        public Dictionary<long, string> StringTable { get; } = new Dictionary<long, string>();
-
         public StorageList(Stream dataStream) : this(dataStream, StorageOptions.Default)
         {
         }
@@ -20,8 +18,6 @@ namespace DBClientFiles.NET.Collections.Generic
         public StorageList(Stream dataStream, StorageOptions options)
         {
             var enumerable = new StorageEnumerable<T>(dataStream, options);
-            foreach (var kv in enumerable.StringTable)
-                StringTable.Add(kv.Key, kv.Value);
 
             TableHash = enumerable.TableHash;
             LayoutHash = enumerable.LayoutHash;

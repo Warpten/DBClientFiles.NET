@@ -21,7 +21,7 @@ namespace DBClientFiles.NET.Collections
         /// <summary>
         /// If set, the library will ignore any file metadata information regarding the sign of each member.
         /// </summary>
-        public bool OverrideSignedChecks { get; set; }
+        public bool IgnoreSignedChecks { get; set; }
 
         /// <summary>
         /// If set to to <code>true</code>, the stream used as source will be copied to RAM before being used.
@@ -35,7 +35,7 @@ namespace DBClientFiles.NET.Collections
             LoadMask = LoadMask.Records,
             InternStrings = false,
             CopyToMemory = false,
-            OverrideSignedChecks = false
+            IgnoreSignedChecks = false
         };
     }
 }

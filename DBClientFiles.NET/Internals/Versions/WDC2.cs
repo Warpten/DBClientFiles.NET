@@ -5,7 +5,7 @@ using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Exceptions;
 using DBClientFiles.NET.Internals.Segments;
 using DBClientFiles.NET.Internals.Segments.Readers;
-using DBClientFiles.NET.Internals.Serializers;
+using DBClientFiles.NET.Internals.Generators;
 using DBClientFiles.NET.IO;
 
 namespace DBClientFiles.NET.Internals.Versions
@@ -93,13 +93,10 @@ namespace DBClientFiles.NET.Internals.Versions
                 f.CompressionType == MemberCompressionType.BitpackedPalletData));
 
             for (var i = 0; i < _sections.Length; ++i)
-            {
-                _sections[i].StringTableChanged += (_, e) => OnStringTableEntry(e);
                 _sections[i].ReadSegments();
-            }
         }
 
-        public override IEnumerable<TValue> ReadRecords()
+        public override IEnumerable<InstanceProxy<TValue>> ReadRecords()
         {
             if (!Options.LoadMask.HasFlag(LoadMask.Records))
                 yield break;
@@ -108,7 +105,7 @@ namespace DBClientFiles.NET.Internals.Versions
             {
                 var currentSection = _sections[_currentlyParsedSection];
                 foreach (var record in currentSection.ReadRecords())
-                    yield return record;
+                    yield return record; // FIXME
             }
         }
 

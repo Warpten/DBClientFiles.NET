@@ -24,7 +24,7 @@ namespace DBClientFiles.NET.Internals.Binding
         public List<ExtendedMemberInfo> Children { get; } = new List<ExtendedMemberInfo>();
         public ExtendedMemberInfo Parent { get; internal set; }
 
-        public Type Type { get; }
+        public Type Type { get; } = typeof(object);
 
         private int _cardinality = 1;
         // Cardinality as declared by attributes

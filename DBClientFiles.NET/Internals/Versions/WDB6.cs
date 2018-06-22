@@ -4,7 +4,7 @@ using DBClientFiles.NET.Utils;
 using System.IO;
 using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Internals.Segments;
-using DBClientFiles.NET.Internals.Serializers;
+using DBClientFiles.NET.Internals.Generators;
 
 namespace DBClientFiles.NET.Internals.Versions
 {

@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using DBClientFiles.NET.Collections.Events;
 using DBClientFiles.NET.Internals.Binding;
-using DBClientFiles.NET.Internals.Serializers;
+using DBClientFiles.NET.Internals.Generators;
 
 namespace DBClientFiles.NET.Internals
 {
@@ -16,14 +15,12 @@ namespace DBClientFiles.NET.Internals
             get;
             set;
         }
-
-        event EventHandler<StringTableChangedEventArgs> StringTableChanged;
     }
 
     internal interface IReader<T> : IReader, IDisposable
         where T : class, new()
     {
-        IEnumerable<T> ReadRecords();
+        IEnumerable<InstanceProxy<T>> ReadRecords();
 
         CodeGenerator<T> Generator { get; }
 

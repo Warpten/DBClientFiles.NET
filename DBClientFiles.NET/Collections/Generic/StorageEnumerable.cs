@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using DBClientFiles.NET.Internals.Generators;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
@@ -19,9 +20,7 @@ namespace DBClientFiles.NET.Collections.Generic
         #endregion
 
         private StorageImpl<T> _implementation;
-        private IEnumerable<T> _enumerable;
-
-        public Dictionary<long, string> StringTable { get; } = new Dictionary<long, string>();
+        private IEnumerable<InstanceProxy<T>> _enumerable;
 
         public StorageEnumerable(Stream fileStream) : this(fileStream, StorageOptions.Default)
         {
@@ -35,11 +34,7 @@ namespace DBClientFiles.NET.Collections.Generic
 
         public StorageEnumerable(Stream fileStream, StorageOptions options)
         {
-            if (options.LoadMask.HasFlag(LoadMask.StringTable))
-                StringTable = new Dictionary<long, string>();
-
             _implementation = new StorageImpl<T>(fileStream, options);
-            _implementation.OnStringTableEntry += StringTable.Add;
             _implementation.InitializeHeaderInfo();
 
             //! Slow.
@@ -57,7 +52,7 @@ namespace DBClientFiles.NET.Collections.Generic
             LayoutHash = _implementation.Header.LayoutHash;
         }
 
-        public IEnumerator<T> GetEnumerator()
+        IEnumerator IEnumerable.GetEnumerator()
         {
             if (_enumerable == null)
                 throw new ObjectDisposedException("StorageEnumerable<T>");
@@ -65,12 +60,18 @@ namespace DBClientFiles.NET.Collections.Generic
             return _enumerable.GetEnumerator();
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
+        IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
             if (_enumerable == null)
                 throw new ObjectDisposedException("StorageEnumerable<T>");
 
-            return _enumerable.GetEnumerator();
+            foreach (var data in _enumerable)
+                yield return data.Instance;
+        }
+
+        internal IEnumerable<InstanceProxy<T>> Enumerate()
+        {
+            return _enumerable;
         }
     }
 }

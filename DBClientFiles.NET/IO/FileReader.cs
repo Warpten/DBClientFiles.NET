@@ -2,6 +2,7 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Text;
+using DBClientFiles.NET.Internals.Binding;
 using DBClientFiles.NET.Internals.Segments;
 
 namespace DBClientFiles.NET.IO
@@ -12,6 +13,7 @@ namespace DBClientFiles.NET.IO
     internal abstract class FileReader : BinaryReader
     {
         public IFileHeader Header { get; }
+        public abstract ExtendedMemberInfoCollection MemberStore { get; set; }
 
         protected FileReader(IFileHeader header, Stream strm, bool keepOpen = false) : base(strm, Encoding.UTF8, keepOpen)
         {
