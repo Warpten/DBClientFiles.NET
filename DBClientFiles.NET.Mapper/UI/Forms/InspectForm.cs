@@ -71,7 +71,7 @@ namespace DBClientFiles.NET.Mapper.UI.Forms
                 LoadMask = LoadMask.Records,
                 InternStrings = true,
                 MemberType = MemberTypes.Property,
-                OverrideSignedChecks = true
+                IgnoreSignedChecks = true
             };
 
             Stream.Position = 0;

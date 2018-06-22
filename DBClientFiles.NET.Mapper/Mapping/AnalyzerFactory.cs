@@ -15,7 +15,7 @@ namespace DBClientFiles.NET.Mapper.Mapping
                 CopyToMemory = false,
                 InternStrings = true,
                 MemberType = System.Reflection.MemberTypes.Property,
-                OverrideSignedChecks = true
+                IgnoreSignedChecks = true
             };
 
             fileStream.Position = 0;
