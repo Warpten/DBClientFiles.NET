@@ -3,6 +3,9 @@
   <PropertyGroup>
     <TargetFrameworks>net472;netcoreapp2.1</TargetFrameworks>
     <TrimUnusedDependencies>true</TrimUnusedDependencies>
+
+    <DebugType>pdbonly</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -40,10 +43,13 @@
 
   <ItemGroup>
     <PackageReference Include="System.Memory" Version="4.5.0" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.2" />
     <PackageReference Include="System.ValueTuple" Version="4.4.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Collections\Events\" />
+    <Folder Include="Definitions\" />
+    <Folder Include="Parsing\Binding\WDBC\" />
   </ItemGroup>
 </Project>

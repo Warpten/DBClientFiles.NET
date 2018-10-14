@@ -24,12 +24,12 @@ namespace DBClientFiles.NET.Collections
         public bool IgnoreSignedChecks { get; set; }
 
         /// <summary>
-        /// If set to to <code>true</code>, the stream used as source will be copied to RAM before being used.
-        /// This is set to true by default for anything but MemoryStream.
+        /// If set to to <c>true</c>, the stream used as source will be copied to RAM before being used.
+        /// This is set to <c>true</c> by default for anything but MemoryStream.
         /// </summary>
         public bool CopyToMemory { get; set; }
 
-        public static StorageOptions Default { get; } = new StorageOptions
+        private static StorageOptions _default = new StorageOptions
         {
             MemberType = MemberTypes.Property,
             LoadMask = LoadMask.Records,
@@ -37,5 +37,7 @@ namespace DBClientFiles.NET.Collections
             CopyToMemory = false,
             IgnoreSignedChecks = false
         };
+
+        public static ref readonly StorageOptions Default => ref _default;
     }
 }

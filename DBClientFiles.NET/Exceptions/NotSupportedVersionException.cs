@@ -4,21 +4,17 @@ using System.Runtime.Serialization;
 namespace DBClientFiles.NET.Exceptions
 {
     [Serializable]
-    internal class NotSupportedVersionException : Exception
+    internal class VersionNotSupportedException : Exception
     {
-        public NotSupportedVersionException()
+        public VersionNotSupportedException(Signatures signature) : this($"File version {signature} ({(int)signature:X8} is not handled by this version of DBClientFiles.NET.")
         {
         }
 
-        public NotSupportedVersionException(string message) : base(message)
+        public VersionNotSupportedException(string message) : base(message)
         {
         }
 
-        public NotSupportedVersionException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
-
-        protected NotSupportedVersionException(SerializationInfo info, StreamingContext context) : base(info, context)
+        protected VersionNotSupportedException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }

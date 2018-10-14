@@ -1,13 +1,12 @@
-﻿#if DEBUG
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
+using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Dynamic;
 using System.Globalization;
-using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace DBClientFiles.NET.Utils
@@ -375,15 +374,12 @@ namespace DBClientFiles.NET.Utils
             {
                 Out("ref ");
             }
+
             var name = node.Name;
             if (string.IsNullOrEmpty(name))
-            {
                 Out("Param_" + GetParamId(node));
-            }
             else
-            {
                 Out(name);
-            }
             return node;
         }
 
@@ -607,7 +603,19 @@ namespace DBClientFiles.NET.Utils
                 Visit(ob);
                 Out(".");
             }
+
             Out(node.Method.Name);
+            if (node.Method.GetGenericArguments().Length > 0)
+            {
+                var tokens = new String[node.Method.GetGenericArguments().Length];
+                for (var i = 0; i < node.Method.GetGenericArguments().Length; ++i)
+                    tokens[i] = node.Method.GetGenericArguments()[i].Name;
+
+                Out("<");
+                Out(string.Join(", ", tokens));
+                Out(">");
+            }
+
             Out("(");
             for (int i = start, n = node.Arguments.Count; i < n; i++)
             {
@@ -810,6 +818,7 @@ namespace DBClientFiles.NET.Utils
 
         protected override Expression VisitLoop(LoopExpression node)
         {
+            // It's not easy to dump out loops.
             Out("loop { ... }");
             return node;
         }
@@ -824,8 +833,7 @@ namespace DBClientFiles.NET.Utils
 
         protected override Expression VisitSwitch(SwitchExpression node)
         {
-            Out("switch ");
-            Out("(");
+            Out("switch (");
             Visit(node.SwitchValue);
             Out(") { ... }");
             return node;
@@ -842,7 +850,22 @@ namespace DBClientFiles.NET.Utils
 
         protected override Expression VisitTry(TryExpression node)
         {
-            Out("try { ... }");
+            Out("try {");
+            Visit(node.Body);
+            foreach (var catchBlock in node.Handlers)
+            {
+                Out("} catch (");
+                Visit(catchBlock.Variable);
+                Out(") {");
+                Visit(catchBlock.Body);
+            }
+            Out("}");
+            if (node.Finally != null)
+            {
+                Out(" finally {");
+                Visit(node.Finally);
+                Out("}");
+            }
             return node;
         }
 
@@ -904,4 +927,3 @@ namespace DBClientFiles.NET.Utils
         #endregion
     }
 }
-#endif

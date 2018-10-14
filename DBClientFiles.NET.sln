@@ -20,6 +20,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DBClientFiles.NET.Test", "DBClientFiles.NET.Test\DBClientFiles.NET.Test.csproj", "{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -154,6 +156,26 @@ Global
 		{FC857F2A-7C08-4875-ADEE-73DFAB38F041}.RelWithPerformance|Any CPU.Build.0 = Release|Any CPU
 		{FC857F2A-7C08-4875-ADEE-73DFAB38F041}.RelWithPerformance|x64.ActiveCfg = Release|Any CPU
 		{FC857F2A-7C08-4875-ADEE-73DFAB38F041}.RelWithPerformance|x64.Build.0 = Release|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.Debug|x64.Build.0 = Debug|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.MinSizeRel|Any CPU.ActiveCfg = Debug|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.MinSizeRel|Any CPU.Build.0 = Debug|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.MinSizeRel|x64.ActiveCfg = Debug|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.MinSizeRel|x64.Build.0 = Debug|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.Release|x64.ActiveCfg = Release|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.Release|x64.Build.0 = Release|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.RelWithDebInfo|Any CPU.ActiveCfg = Release|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.RelWithDebInfo|Any CPU.Build.0 = Release|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.RelWithDebInfo|x64.ActiveCfg = Release|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.RelWithDebInfo|x64.Build.0 = Release|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.RelWithPerformance|Any CPU.ActiveCfg = Release|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.RelWithPerformance|Any CPU.Build.0 = Release|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.RelWithPerformance|x64.ActiveCfg = Release|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.RelWithPerformance|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

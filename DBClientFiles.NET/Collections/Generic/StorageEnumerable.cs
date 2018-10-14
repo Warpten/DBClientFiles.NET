@@ -1,77 +1,54 @@
-﻿using System;
+﻿using DBClientFiles.NET.Exceptions;
+using DBClientFiles.NET.Parsing.File;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using DBClientFiles.NET.Internals.Generators;
+using System.Runtime.InteropServices;
+
+using WDBC = DBClientFiles.NET.Parsing.File.WDBC;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
-    /// <summary>
-    /// An enumerable storage representation of dbc and db2 files.
-    /// </summary>
-    /// <typeparam name="T">The element type.</typeparam>
-    public class StorageEnumerable<T> : IStorage, IEnumerable<T>
-        where T : class, new()
+    public class StorageEnumerable<T> : IEnumerable<T> where T : class
     {
-        #region IStorage
-        public Signatures Signature { get; }
-        public uint TableHash { get; }
-        public uint LayoutHash { get; }
-        #endregion
+        public StorageOptions Options { get; }
+        private IReader<T> _implementation;
 
-        private StorageImpl<T> _implementation;
-        private IEnumerable<InstanceProxy<T>> _enumerable;
-
-        public StorageEnumerable(Stream fileStream) : this(fileStream, StorageOptions.Default)
+        public StorageEnumerable(StorageOptions options, Stream dataStream)
         {
+            Options = options;
+            FromStream(dataStream);
         }
 
-        ~StorageEnumerable()
+        private void FromStream(Stream dataStream)
         {
-            _enumerable = null;
-            _implementation.Dispose();
+#if NETCOREAPP
+            Span<byte> identifierBytes = stackalloc byte[4];
+            dataStream.Read(identifierBytes);
+            var identifier = (Signatures)MemoryMarshal.Read<uint>(identifierBytes);
+#else
+            var identifierBytes = new byte[4];
+            dataStream.Read(identifierBytes, 0, 4);
+            var identifier = (Signatures)((identifierBytes[0]) | (identifierBytes[1] << 8) | (identifierBytes[2] << 16) | (identifierBytes[3] << 24));
+#endif
+            switch (identifier)
+            {
+                case Signatures.WDBC:
+                    _implementation = new WDBC.Reader<T>(Options, dataStream);
+                    break;
+                default:
+                    throw new VersionNotSupportedException(identifier);
+            }
         }
 
-        public StorageEnumerable(Stream fileStream, StorageOptions options)
+        public IEnumerator<T> GetEnumerator()
         {
-            _implementation = new StorageImpl<T>(fileStream, options);
-            _implementation.InitializeHeaderInfo();
-
-            //! Slow.
-            var indexMember = _implementation.Members.IndexMember;
-            var initializerMethod = _implementation.GetType().GetMethod("InitializeFileReader", Type.EmptyTypes).MakeGenericMethod(indexMember.Type);
-            initializerMethod.Invoke(_implementation, null);
-
-            // Back to non-generic, we got the proper type now.
-            _implementation.PrepareMemberInfo();
-
-            _enumerable = _implementation.Enumerate();
-
-            Signature = _implementation.Header.Signature;
-            TableHash = _implementation.Header.TableHash;
-            LayoutHash = _implementation.Header.LayoutHash;
+            foreach (var record in _implementation.Records)
+                yield return record.Instance;
         }
 
         IEnumerator IEnumerable.GetEnumerator()
-        {
-            if (_enumerable == null)
-                throw new ObjectDisposedException("StorageEnumerable<T>");
-
-            return _enumerable.GetEnumerator();
-        }
-
-        IEnumerator<T> IEnumerable<T>.GetEnumerator()
-        {
-            if (_enumerable == null)
-                throw new ObjectDisposedException("StorageEnumerable<T>");
-
-            foreach (var data in _enumerable)
-                yield return data.Instance;
-        }
-
-        internal IEnumerable<InstanceProxy<T>> Enumerate()
-        {
-            return _enumerable;
-        }
+            => GetEnumerator();
     }
 }
