@@ -81,8 +81,11 @@ namespace DBClientFiles.NET.Parsing.Serialization
 
     internal abstract class BaseSerializer<T> : ISerializer<T>
     {
-        private Func<T, T> _cloneMethod;
-        private Func<IRecordReader, T> _deserializer;
+        protected delegate void TypeCloner(ref T source, ref T target);
+        protected delegate void TypeDeserializer(IRecordReader reader, ref T instance);
+
+        private TypeCloner _cloneMethod;
+        private TypeDeserializer _deserializer;
 
         public StorageOptions Options { get; }
 
@@ -109,8 +112,8 @@ namespace DBClientFiles.NET.Parsing.Serialization
 
                 var body = new List<Expression>();
 
-                var oldInstanceParam = Expression.Parameter(typeof(T));
-                var newInstanceParam = Expression.Variable(typeof(T));
+                var oldInstanceParam = Expression.Parameter(typeof(T).MakeByRefType());
+                var newInstanceParam = Expression.Parameter(oldInstanceParam.Type);
 
                 body.Add(Expression.Assign(newInstanceParam, New<T>.Expression()));
 
@@ -126,11 +129,13 @@ namespace DBClientFiles.NET.Parsing.Serialization
 
                 body.Add(newInstanceParam);
 
-                var bodyBlock = Expression.Block(new[] { newInstanceParam }, body);
-                _cloneMethod = Expression.Lambda<Func<T, T>>(bodyBlock, oldInstanceParam).Compile();
+                var bodyBlock = Expression.Block(body);
+                _cloneMethod = Expression.Lambda<TypeCloner>(bodyBlock, oldInstanceParam, newInstanceParam).Compile();
             }
 
-            return _cloneMethod(origin);
+            var instance = New<T>.Instance();
+            _cloneMethod.Invoke(ref origin, ref instance);
+            return instance;
         }
 
         private void RecursiveMemberClone(List<Expression> body, ITypeMember memberInfo, ref ExtendedMemberExpression oldMember, ref ExtendedMemberExpression newMember, int arrayIndex = -1)
@@ -170,16 +175,18 @@ namespace DBClientFiles.NET.Parsing.Serialization
             if (_deserializer == null)
                 _deserializer = GenerateDeserializer();
 
-            return _deserializer(reader);
+            var instance = New<T>.Instance();
+            _deserializer.Invoke(reader, ref instance);
+            return instance;
         }
 
-        protected virtual Func<IRecordReader, T> GenerateDeserializer()
+        protected virtual TypeDeserializer GenerateDeserializer()
         {
             var body = new List<Expression>();
 
             var reader = Expression.Parameter(typeof(IRecordReader));
 
-            var typeVariable = Expression.Variable(typeof(T));
+            var typeVariable = Expression.Parameter(typeof(T).MakeByRefType());
             var typeInstance = New<T>.Expression();
             body.Add(Expression.Assign(typeVariable, typeInstance));
 
@@ -194,11 +201,9 @@ namespace DBClientFiles.NET.Parsing.Serialization
                 body.AddRange(memberSerializer.Output);
             }
 
-            body.Add(typeVariable);
+            var bodyBlock = Expression.Block(body);
 
-            var bodyBlock = Expression.Block(new [] { typeVariable }, body);
-
-            var lambda = Expression.Lambda<Func<IRecordReader, T>>(bodyBlock, reader);
+            var lambda = Expression.Lambda<TypeDeserializer>(bodyBlock, reader, typeVariable);
             return lambda.Compile();
         }
 

@@ -10,7 +10,7 @@ using WDBC = DBClientFiles.NET.Parsing.File.WDBC;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
-    public class StorageEnumerable<T> : IEnumerable<T> where T : class
+    public class StorageEnumerable<T> : IEnumerable<T>
     {
         public StorageOptions Options { get; }
         private IReader<T> _implementation;

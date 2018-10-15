@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+
+    <IsPackable>false</IsPackable>
+
+    <AssemblyName>DBClientFiles.NET.Runner</AssemblyName>
+
+    <RootNamespace>DBClientFiles.NET.Runner</RootNamespace>
+
+    <StartupObject>DBClientFiles.NET.Runner.Program</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0" />
+    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DBClientFiles.NET\DBClientFiles.NET.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -29,13 +29,16 @@ namespace DBClientFiles.NET.Collections
         /// </summary>
         public bool CopyToMemory { get; set; }
 
+        public bool ReadOnly { get; set; }
+
         private static StorageOptions _default = new StorageOptions
         {
             MemberType = MemberTypes.Property,
             LoadMask = LoadMask.Records,
             InternStrings = false,
             CopyToMemory = false,
-            IgnoreSignedChecks = false
+            IgnoreSignedChecks = false,
+            ReadOnly = true
         };
 
         public static ref readonly StorageOptions Default => ref _default;
