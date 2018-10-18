@@ -44,20 +44,29 @@ namespace DBClientFiles.NET.Parsing.Types
 
             var typeMember = new TypeMember(memberInfo, parent);
             if (typeMember.Type.IsArray)
-                typeMember.Children.Add(new ArrayElementTypeMember(memberInfo, typeMember));
+            {
+                var arrayMember = new ArrayElementTypeMember(memberInfo, typeMember);
+                PopulateChildren(arrayMember, memberType);
+                typeMember.Children.Add(arrayMember);
+            }
             else
             {
-                foreach (var child in typeMember.Type.GetMembers(BindingFlags.Public | BindingFlags.Instance))
-                {
-                    if (child.MemberType != memberType)
-                        continue;
-
-                    var childTypeMember = Create(child, typeMember);
-                    if (childTypeMember != null)
-                        typeMember.Children.Add(childTypeMember);
-                }
+                PopulateChildren(typeMember, memberType);
             }
             return typeMember;
+        }
+
+        private static void PopulateChildren(ITypeMember typeMember, MemberTypes memberType)
+        {
+            foreach (var child in typeMember.Type.GetMembers(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (child.MemberType != memberType)
+                    continue;
+
+                var childTypeMember = Create(child, typeMember);
+                if (childTypeMember != null)
+                    typeMember.Children.Add(childTypeMember);
+            }
         }
 
         private static ITypeMember CreateMember(MemberInfo memberInfo, ITypeMember parent, MemberTypes memberType)
