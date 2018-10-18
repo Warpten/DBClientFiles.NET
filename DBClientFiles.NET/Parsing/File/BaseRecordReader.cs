@@ -40,7 +40,25 @@ namespace DBClientFiles.NET.Parsing.File
 
         public T Read<T>(int bitCount) where T : unmanaged
         {
-            var byteOffset = _bitCursor / 8;
+#if DEBUG
+            if ((_bitCursor & 7) == 0)
+            {
+                if (bitCount != UnsafeCache<T>.Size * 8)
+                    Console.WriteLine($"Reading {typeof(T).Name} (size {UnsafeCache<T>.Size * 8} bits, but packed to {bitCount} bits) at offset {_bitCursor / 8} / {_recordSize}");
+                else
+                    Console.WriteLine($"Reading {typeof(T).Name} at offset {_bitCursor / 8} / {_recordSize}");
+            }
+            else
+            {
+
+                if (bitCount != UnsafeCache<T>.Size * 8)
+                    Console.WriteLine($"Reading {typeof(T).Name} (size {UnsafeCache<T>.Size * 8} bits, but packed to {bitCount} bits) at offset {_bitCursor / 8} / {_recordSize} (misaligned by { _bitCursor & 7} bits)");
+                else
+                    Console.WriteLine($"Reading {typeof(T).Name} at offset {_bitCursor / 8} / {_recordSize} (misaligned by { _bitCursor & 7} bits)");
+            }
+#endif
+
+var byteOffset = _bitCursor / 8;
             var byteCount = ((bitCount + (_bitCursor & 7) + 7)) / 8;
 
             Debug.Assert(byteOffset + byteCount <= _recordSize);

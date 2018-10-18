@@ -122,7 +122,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
                     var oldMemberAccessExpr = memberInfo.MakeMemberAccess(oldInstanceParam).Expression;
                     var newMemberAccessExpr = memberInfo.MakeMemberAccess(newInstanceParam).Expression;
 
-                    body.AddRange(RecursiveMemberClone(memberInfo, oldMemberAccessExpr, newMemberAccessExpr));
+                    body.Add(RecursiveMemberClone(memberInfo, oldMemberAccessExpr, newMemberAccessExpr));
                 }
 
                 body.Add(newInstanceParam);
@@ -136,19 +136,18 @@ namespace DBClientFiles.NET.Parsing.Serialization
             return instance;
         }
 
-        private IEnumerable<Expression> RecursiveMemberClone(ITypeMember memberInfo, Expression oldMember, Expression newMember)
+        private static Expression RecursiveMemberClone(ITypeMember memberInfo, Expression oldMember, Expression newMember)
         {
             if (memberInfo.Type.IsArray)
             {
                 var newArrayExpr = Expression.NewArrayBounds(memberInfo.Type.GetElementType(), Expression.Constant(memberInfo.Cardinality));
 
-                yield return Expression.Assign(newMember, newArrayExpr);
-
                 var loopItr = Expression.Variable(typeof(int));
                 var loopCondition = Expression.Constant(memberInfo.Cardinality);
                 var breakLabel = Expression.Label();
 
-                yield return Expression.Block(new[] { loopItr },
+                return Expression.Block(new[] { loopItr },
+                    Expression.Assign(newMember, newArrayExpr),
                     Expression.Assign(loopItr, Expression.Constant(0)),
                     Expression.Loop(
                         Expression.IfThenElse(
@@ -168,18 +167,21 @@ namespace DBClientFiles.NET.Parsing.Serialization
             {
                 Debug.Assert(!memberInfo.IsArray);
 
-                yield return Expression.Assign(newMember, New.Expression(memberInfo.Type));
+                var block = new List<Expression>() {
+                    Expression.Assign(newMember, New.Expression(memberInfo.Type))
+                };
                 foreach (var childInfo in memberInfo.Children)
                 {
                     var oldChild = Expression.MakeMemberAccess(oldMember, childInfo.MemberInfo);
                     var newChild = Expression.MakeMemberAccess(newMember, childInfo.MemberInfo);
 
-                    foreach (var expression in RecursiveMemberClone(childInfo, oldChild, newChild))
-                        yield return expression;
+                    block.Add(RecursiveMemberClone(childInfo, oldChild, newChild));
                 }
+
+                return Expression.Block(block);
             }
             else
-                yield return Expression.Assign(newMember, oldMember);
+                return Expression.Assign(newMember, oldMember);
         }
 
         public T Deserialize(IRecordReader reader)
@@ -208,9 +210,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
                 var memberNode = memberInfo.MakeMemberAccess(typeVariable);
 
                 var memberSerializer = GetMemberSerializer(memberInfo);
-                memberSerializer.Visit(reader, ref memberNode);
-
-                body.AddRange(memberSerializer.Output);
+                body.AddRange(memberSerializer.Visit(reader, memberNode));
             }
 
             var bodyBlock = Expression.Block(body);

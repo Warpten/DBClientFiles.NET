@@ -9,8 +9,6 @@ namespace DBClientFiles.NET.Parsing.Serialization
     {
         ITypeMember MemberInfo { get; }
 
-        void Visit(Expression recordReader, ref ExtendedMemberExpression rootExpression);
-
-        IEnumerable<Expression> Output { get; }
+        IEnumerable<Expression> Visit(Expression recordReader, ExtendedMemberExpression rootExpression);
     }
 }

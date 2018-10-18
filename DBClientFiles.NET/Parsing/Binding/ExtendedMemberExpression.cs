@@ -7,7 +7,7 @@ namespace DBClientFiles.NET.Parsing.Binding
     /// <summary>
     /// A simple wrapper around <see cref="MemberExpression"/> and <see cref="ExtendedMemberInfo"/>.
     /// </summary>
-    internal readonly ref struct ExtendedMemberExpression
+    internal class ExtendedMemberExpression
     {
         public MemberExpression Expression { get; }
         public ITypeMember MemberInfo { get; }

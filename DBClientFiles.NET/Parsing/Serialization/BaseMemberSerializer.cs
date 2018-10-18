@@ -1,6 +1,7 @@
 ﻿using DBClientFiles.NET.Parsing.Binding;
 using DBClientFiles.NET.Parsing.File;
 using DBClientFiles.NET.Parsing.Types;
+using DBClientFiles.NET.Utils;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 
@@ -8,18 +9,30 @@ namespace DBClientFiles.NET.Parsing.Serialization
 {
     internal abstract class BaseMemberSerializer : IMemberSerializer
     {
-        private List<Expression> _expressions;
-
         public ITypeMember MemberInfo { get; }
-        public IEnumerable<Expression> Output => _expressions;
 
         public BaseMemberSerializer(ITypeMember memberInfo)
         {
-            _expressions = new List<Expression>();
             MemberInfo = memberInfo;
         }
 
-        public void Visit(Expression recordReader, ref ExtendedMemberExpression rootNode)
+        /// <summary>
+        /// <para>This method is hell.</para>
+        /// <para>
+        /// For a given node, it recursively visits all of its children, and produces expressions for deserialization.
+        /// That's really all you need to know. Deserializing primitives such as integers and string falls on the implementations
+        /// of this class (via <see cref="VisitNode(ExtendedMemberExpression, Expression)"/>.
+        /// </para>
+        /// </summary>
+        /// <param name="recordReader">An expression representing an instance of <see cref="IRecordReader"/>.</param>
+        /// <param name="rootNode">The node from which we starting work down.</param>
+        /// <returns></returns>
+        /// <remarks>
+        /// Custom types with a constructor taking an instance of <see cref="IRecordReader"/> as their unique argument
+        /// cause the entire evaluation to cut off short, and a call to that constructor is emitted instead. This means
+        /// that it is the responsability of said constructor to properly initialize any substructure it may contain.
+        /// </remarks>
+        public IEnumerable<Expression> Visit(Expression recordReader, ExtendedMemberExpression rootNode)
         {
             var memberType = rootNode.MemberInfo.Type;
             var elementType = memberType.IsArray ? memberType.GetElementType() : memberType;
@@ -32,27 +45,30 @@ namespace DBClientFiles.NET.Parsing.Serialization
                 if (constructorInfo != null)
                 {
                     var arrayExpr = Expression.NewArrayBounds(elementType, Expression.Constant(MemberInfo.Cardinality));
-                    Produce(Expression.Assign(memberAccess.Expression, arrayExpr));
+                    yield return Expression.Assign(memberAccess.Expression, arrayExpr);
 
                     var breakLabelTarget = Expression.Label();
 
                     var itr = Expression.Variable(typeof(int));
                     var condition = Expression.LessThan(itr, Expression.Constant(MemberInfo.Cardinality));
 
-                    Produce(Expression.Loop(Expression.Block(new[] { itr }, new Expression[] {
+                    yield return Expression.Loop(Expression.Block(new[] { itr }, new Expression[] {
                         Expression.Assign(itr, Expression.Constant(0)),
                         Expression.IfThenElse(condition,
                             Expression.Assign(
                                 Expression.ArrayIndex(memberAccess.Expression, Expression.PostIncrementAssign(itr)),
                                 Expression.New(constructorInfo, recordReader)),
                             Expression.Break(breakLabelTarget))
-                    }), breakLabelTarget));
+                    }), breakLabelTarget);
                 }
                 else
                 {
-                    VisitArrayNode(ref memberAccess, recordReader);
+                    var nodeInitializer = VisitNode(memberAccess, recordReader);
+                    if (nodeInitializer != null)
+                        yield return nodeInitializer;
 
-                    /*if (memberAccess.MemberInfo.Children.Count != 0)
+                    var arrayMemberInfo = memberAccess.MemberInfo.Children[0];
+                    if (arrayMemberInfo.Children.Count != 0)
                     {
                         var breakLabelTarget = Expression.Label();
 
@@ -60,63 +76,61 @@ namespace DBClientFiles.NET.Parsing.Serialization
                         var arrayBound = Expression.Constant(memberAccess.MemberInfo.Cardinality);
                         var loopTest = Expression.LessThan(itr, arrayBound);
 
-                        Produce(Expression.Loop(Expression.Block(new[] { itr }, new Expression[] {
-                        Expression.Assign(itr, Expression.Constant(0)),
-                        Expression.IfThenElse(loopTest,
-                            Expression.Block(new ParameterExpression[] { }, new Expression[] {
-                                // Here we need to call VisitNode but redirect the output.
-                                Expression.PreIncrementAssign(itr)
-                            }),
-                            Expression.Break(breakLabelTarget))
-                        }), breakLabelTarget));
-                    }*/
+                        var arrayElement = Expression.ArrayAccess(memberAccess.Expression, itr);
+
+                        var loopBody = new List<Expression>();
+                        foreach (var childInfo in arrayMemberInfo.Children)
+                        {
+                            var childAccess = childInfo.MakeMemberAccess(arrayElement);
+                            loopBody.AddRange(Visit(recordReader, childAccess));
+                        }
+
+                        yield return Expression.Block(new[] { itr },
+                            Expression.Assign(itr, Expression.Constant(0)),
+                            Expression.Loop(
+                                Expression.IfThenElse(loopTest,
+                                    Expression.Block(
+                                        Expression.Assign(
+                                            arrayElement,
+                                            New.Expression(arrayMemberInfo.Type)
+                                        ),
+                                        Expression.Block(loopBody),
+                                        Expression.PreIncrementAssign(itr)
+                                    ),
+                                    Expression.Break(breakLabelTarget)
+                                )
+                            , breakLabelTarget));
+                    }
                 }
             }
             else if (constructorInfo != null)
             {
-                Produce(Expression.Assign(memberAccess.Expression, Expression.New(constructorInfo, recordReader)));
+                yield return Expression.Assign(memberAccess.Expression, Expression.New(constructorInfo, recordReader));
             }
             else
             {
                 if (memberAccess.MemberInfo.Type.IsClass)
-                    Produce(Expression.Assign(memberAccess.Expression, Expression.New(memberAccess.MemberInfo.Type)));
+                    yield return Expression.Assign(memberAccess.Expression, Expression.New(memberAccess.MemberInfo.Type));
 
-                VisitNode(ref memberAccess, recordReader);
+                var nodeInitializer = VisitNode(memberAccess, recordReader);
+                if (nodeInitializer != null)
+                    yield return nodeInitializer;
 
                 foreach (var child in memberAccess.MemberInfo.Children)
                 {
                     var childAccess = child.MakeMemberAccess(rootNode.Expression);
-                    Visit(recordReader, ref childAccess);
+                    foreach (var subExpression in Visit(recordReader, childAccess))
+                        yield return subExpression;
                 }
             }
         }
 
         /// <summary>
-        /// Adds the argument to the list of expressions generated by this node.
-        /// </summary>
-        /// <param name="expression"></param>
-        protected void Produce(Expression expression)
-        {
-            _expressions.Add(expression);
-        }
-
-        /// <summary>
-        /// This method is invoked for the current member (and <b>any</b> of it's children).
-        ///
-        /// This is true if the current type does not have a public constructor taking an instance of <see cref="IRecordReader"/>.
+        /// This method is invoked on primitive members such as integers, floats, but also on arrays of these.
         /// </summary>
         /// <param name="memberAccess"></param>
         /// <param name="recordReader"></param>
-        public abstract void VisitNode(ref ExtendedMemberExpression memberAccess, Expression recordReader);
-
-        /// <summary>
-        /// This method is invoked for the current member, if it is an array
-        ///
-        /// This is true if the current type does not have a public constructor taking an instance of <see cref="IRecordReader"/>.
-        /// </summary>
-        /// <param name="memberAccess"></param>
-        /// <param name="recordReader"></param>
-        public abstract void VisitArrayNode(ref ExtendedMemberExpression memberAccess, Expression recordReader);
+        public abstract Expression VisitNode(ExtendedMemberExpression memberAccess, Expression recordReader);
 
     }
 }

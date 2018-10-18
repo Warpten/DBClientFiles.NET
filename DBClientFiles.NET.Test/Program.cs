@@ -3,10 +3,13 @@ using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Collections.Generic;
 using System;
 using System.IO;
+using System.Linq.Expressions;
+using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace DBClientFiles.NET.Runner
 {
-    public struct C2Vector
+    public class C2Vector
     {
         public float X { get; set; }
         public float Y { get; set; }
@@ -40,5 +43,7 @@ namespace DBClientFiles.NET.Runner
                 var collection = new StorageList<AreaTriggerEntry>(StorageOptions.Default, fs);
             }
         }
+
+        delegate void clon(ref AreaTriggerEntry x, ref AreaTriggerEntry y);
     }
 }
