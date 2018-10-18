@@ -209,7 +209,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
             {
                 var memberNode = memberInfo.MakeMemberAccess(typeVariable);
 
-                body.AddRange(Visit(reader, memberNode));
+                Visit(body, reader, memberNode);
             }
 
             var bodyBlock = Expression.Block(body);
@@ -234,7 +234,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
         /// cause the entire evaluation to cut off short, and a call to that constructor is emitted instead. This means
         /// that it is the responsability of said constructor to properly initialize any substructure it may contain.
         /// </remarks>
-        public IEnumerable<Expression> Visit(Expression recordReader, ExtendedMemberExpression rootNode)
+        public void Visit(List<Expression> container, Expression recordReader, ExtendedMemberExpression rootNode)
         {
             var memberType = rootNode.MemberInfo.Type;
             var elementType = memberType.IsArray ? memberType.GetElementType() : memberType;
@@ -247,27 +247,27 @@ namespace DBClientFiles.NET.Parsing.Serialization
                 if (constructorInfo != null)
                 {
                     var arrayExpr = Expression.NewArrayBounds(elementType, Expression.Constant(rootNode.MemberInfo.Cardinality));
-                    yield return Expression.Assign(memberAccess.Expression, arrayExpr);
+                    container.Add(Expression.Assign(memberAccess.Expression, arrayExpr));
 
                     var breakLabelTarget = Expression.Label();
 
                     var itr = Expression.Variable(typeof(int));
                     var condition = Expression.LessThan(itr, Expression.Constant(rootNode.MemberInfo.Cardinality));
 
-                    yield return Expression.Loop(Expression.Block(new[] { itr }, new Expression[] {
+                    container.Add(Expression.Loop(Expression.Block(new[] { itr }, new Expression[] {
                         Expression.Assign(itr, Expression.Constant(0)),
                         Expression.IfThenElse(condition,
                             Expression.Assign(
                                 Expression.ArrayIndex(memberAccess.Expression, Expression.PostIncrementAssign(itr)),
                                 Expression.New(constructorInfo, recordReader)),
                             Expression.Break(breakLabelTarget))
-                    }), breakLabelTarget);
+                    }), breakLabelTarget));
                 }
                 else
                 {
                     var nodeInitializer = VisitNode(memberAccess, recordReader);
                     if (nodeInitializer != null)
-                        yield return nodeInitializer;
+                        container.Add(nodeInitializer);
 
                     var arrayMemberInfo = memberAccess.MemberInfo.Children[0];
                     if (arrayMemberInfo.Children.Count != 0)
@@ -284,10 +284,10 @@ namespace DBClientFiles.NET.Parsing.Serialization
                         foreach (var childInfo in arrayMemberInfo.Children)
                         {
                             var childAccess = childInfo.MakeMemberAccess(arrayElement);
-                            loopBody.AddRange(Visit(recordReader, childAccess));
+                            Visit(loopBody, recordReader, childAccess);
                         }
 
-                        yield return Expression.Block(new[] { itr },
+                        container.Add(Expression.Block(new[] { itr },
                             Expression.Assign(itr, Expression.Constant(0)),
                             Expression.Loop(
                                 Expression.IfThenElse(loopTest,
@@ -301,28 +301,27 @@ namespace DBClientFiles.NET.Parsing.Serialization
                                     ),
                                     Expression.Break(breakLabelTarget)
                                 )
-                            , breakLabelTarget));
+                            , breakLabelTarget)));
                     }
                 }
             }
             else if (constructorInfo != null)
             {
-                yield return Expression.Assign(memberAccess.Expression, Expression.New(constructorInfo, recordReader));
+                container.Add(Expression.Assign(memberAccess.Expression, Expression.New(constructorInfo, recordReader)));
             }
             else
             {
                 if (memberAccess.MemberInfo.Type.IsClass)
-                    yield return Expression.Assign(memberAccess.Expression, Expression.New(memberAccess.MemberInfo.Type));
+                    container.Add(Expression.Assign(memberAccess.Expression, Expression.New(memberAccess.MemberInfo.Type)));
 
                 var nodeInitializer = VisitNode(memberAccess, recordReader);
                 if (nodeInitializer != null)
-                    yield return nodeInitializer;
+                    container.Add(nodeInitializer);
 
                 foreach (var child in memberAccess.MemberInfo.Children)
                 {
                     var childAccess = child.MakeMemberAccess(rootNode.Expression);
-                    foreach (var subExpression in Visit(recordReader, childAccess))
-                        yield return subExpression;
+                    Visit(container, recordReader, childAccess);
                 }
             }
         }
@@ -333,5 +332,18 @@ namespace DBClientFiles.NET.Parsing.Serialization
         /// <param name="memberAccess"></param>
         /// <param name="recordReader"></param>
         public abstract Expression VisitNode(ExtendedMemberExpression memberAccess, Expression recordReader);
+
+        private static IEnumerable<T> Traverse(T root, Func<T, IEnumerable<T>> transform)
+        {
+            var stack = new Stack<T>();
+            stack.Push(root);
+            while (stack.Count != 0)
+            {
+                var current = stack.Pop();
+                yield return current;
+                foreach (var child in transform(current).Reverse())
+                    stack.Push(child);
+            }
+        }
     }
 }
