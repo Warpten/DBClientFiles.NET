@@ -67,7 +67,7 @@ namespace DBClientFiles.NET.Parsing.Types
 
             var typeMember = new TypeMember(memberInfo, parent);
 
-            if (typeMember.Type.IsValueType && !typeMember.Type.IsPrimitive)
+            if (typeMember.Type.IsValueType && !typeMember.Type.IsPrimitive && memberInfo is PropertyInfo)
                 throw new InvalidTypeException($"Member {memberInfo.Name} defined in {parent.MemberInfo.Name} is a value type. Change to a reference type.");
 
             foreach (var child in typeMember.Type.GetMembers(BindingFlags.Public | BindingFlags.Instance))

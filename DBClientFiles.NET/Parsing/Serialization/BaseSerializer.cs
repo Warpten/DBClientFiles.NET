@@ -113,18 +113,16 @@ namespace DBClientFiles.NET.Parsing.Serialization
                 var body = new List<Expression>();
 
                 var oldInstanceParam = Expression.Parameter(typeof(T).MakeByRefType());
-                var newInstanceParam = Expression.Parameter(oldInstanceParam.Type);
+                var newInstanceParam = Expression.Parameter(typeof(T).MakeByRefType());
 
                 body.Add(Expression.Assign(newInstanceParam, New<T>.Expression()));
 
                 foreach (var memberInfo in Type.Enumerate(Options.MemberType))
                 {
-                    var oldMemberAccessExpr = memberInfo.MakeMemberAccess(oldInstanceParam);
-                    var newMemberAccessExpr = memberInfo.MakeMemberAccess(newInstanceParam);
-                    // var oldMemberAccessExpr = Expression.MakeMemberAccess(oldInstanceParam, memberInfo.MemberInfo);
-                    // var newMemberAccessExpr = Expression.MakeMemberAccess(newInstanceParam, memberInfo.MemberInfo);
+                    var oldMemberAccessExpr = memberInfo.MakeMemberAccess(oldInstanceParam).Expression;
+                    var newMemberAccessExpr = memberInfo.MakeMemberAccess(newInstanceParam).Expression;
 
-                    RecursiveMemberClone(body, memberInfo, ref oldMemberAccessExpr, ref newMemberAccessExpr);
+                    body.AddRange(RecursiveMemberClone(memberInfo, oldMemberAccessExpr, newMemberAccessExpr));
                 }
 
                 body.Add(newInstanceParam);
@@ -138,36 +136,50 @@ namespace DBClientFiles.NET.Parsing.Serialization
             return instance;
         }
 
-        private void RecursiveMemberClone(List<Expression> body, ITypeMember memberInfo, ref ExtendedMemberExpression oldMember, ref ExtendedMemberExpression newMember, int arrayIndex = -1)
+        private IEnumerable<Expression> RecursiveMemberClone(ITypeMember memberInfo, Expression oldMember, Expression newMember)
         {
-            /*if (memberInfo.Type.IsArray && arrayIndex >= 0)
+            if (memberInfo.Type.IsArray)
             {
                 var newArrayExpr = Expression.NewArrayBounds(memberInfo.Type.GetElementType(), Expression.Constant(memberInfo.Cardinality));
-                body.Add(Expression.Assign(newMember, newArrayExpr));
 
-                for (var i = 0; i < memberInfo.Cardinality; ++i)
-                {
-                    var oldMemberItem = Expression.ArrayIndex(oldMember, Expression.Constant(i));
-                    var newMemberItem = Expression.ArrayIndex(oldMember, Expression.Constant(i));
+                yield return Expression.Assign(newMember, newArrayExpr);
 
-                    RecursiveMemberClone(body, memberInfo, oldMemberItem, newMemberItem, i);
-                }
+                var loopItr = Expression.Variable(typeof(int));
+                var loopCondition = Expression.Constant(memberInfo.Cardinality);
+                var breakLabel = Expression.Label();
+
+                yield return Expression.Block(new[] { loopItr },
+                    Expression.Assign(loopItr, Expression.Constant(0)),
+                    Expression.Loop(
+                        Expression.IfThenElse(
+                            Expression.LessThan(loopItr, loopCondition),
+                                Expression.Block(
+                                    Expression.Block(RecursiveMemberClone(memberInfo.Children[0],
+                                        Expression.ArrayAccess(oldMember, loopItr),
+                                        Expression.ArrayAccess(oldMember, loopItr)
+                                    )),
+                                    Expression.PreIncrementAssign(loopItr)
+                                ).Reduce(),
+                            Expression.Break(breakLabel)
+                        ),
+                    breakLabel));
             }
             else if (memberInfo.Children.Count != 0)
             {
                 Debug.Assert(!memberInfo.IsArray);
 
-                body.Add(Expression.Assign(newMember, New.Expression(memberInfo.ElementType)));
-                foreach (var child in memberInfo.Children)
+                yield return Expression.Assign(newMember, New.Expression(memberInfo.Type));
+                foreach (var childInfo in memberInfo.Children)
                 {
-                    var oldChild = Expression.MakeMemberAccess(oldMember, child.Member);
-                    var newChild = Expression.MakeMemberAccess(newMember, child.Member);
+                    var oldChild = Expression.MakeMemberAccess(oldMember, childInfo.MemberInfo);
+                    var newChild = Expression.MakeMemberAccess(newMember, childInfo.MemberInfo);
 
-                    RecursiveMemberClone(body, child, oldChild, newChild);
+                    foreach (var expression in RecursiveMemberClone(childInfo, oldChild, newChild))
+                        yield return expression;
                 }
             }
             else
-                body.Add(Expression.Assign(newMember, oldMember));*/
+                yield return Expression.Assign(newMember, oldMember);
         }
 
         public T Deserialize(IRecordReader reader)
