@@ -2,7 +2,6 @@
 using System.IO;
 using System.Text;
 using DBClientFiles.NET.Collections;
-using DBClientFiles.NET.Parsing.Binding;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers;
 using DBClientFiles.NET.Parsing.Serialization;
@@ -11,13 +10,13 @@ using DBClientFiles.NET.Parsing.Types;
 namespace DBClientFiles.NET.Parsing.File
 {
     /// <summary>
-    /// An abstract specialization of <see cref="BaseReader{T}"/> for record types that have a key.
+    /// An abstract specialization of <see cref="BinaryFileReader{T}"/> for record types that have a key.
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="T"></typeparam>
-    internal abstract class BaseReader<TKey, T> : BaseReader<T>
+    internal abstract class BinaryFileReader<TKey, T> : BinaryFileReader<T>
     {
-        public BaseReader(StorageOptions options, Stream input, bool leaveOpen) : base(options, input, leaveOpen)
+        public BinaryFileReader(StorageOptions options, Stream input, bool leaveOpen) : base(options, input, leaveOpen)
         {
             RegisterBlockHandler<CopyTableHandler<TKey>>();
         }
@@ -61,7 +60,7 @@ namespace DBClientFiles.NET.Parsing.File
     /// A basic implementation of the <see cref="IReader{T}"/> interface.
     /// </summary>
     /// <typeparam name="T">The record type.</typeparam>
-    internal abstract class BaseReader<T> : BinaryReader, IReader<T>
+    internal abstract class BinaryFileReader<T> : BinaryReader, IReader<T>
     {
         protected TypeInfo Type { get; }
 
@@ -83,12 +82,12 @@ namespace DBClientFiles.NET.Parsing.File
         private BlockHandlers _handlers { get; } = new BlockHandlers();
 
         /// <summary>
-        /// Create an instance of <see cref="BaseReader{T}"/>.
+        /// Create an instance of <see cref="BinaryFileReader{T}"/>.
         /// </summary>
         /// <param name="options">The options to use for parsing.</param>
         /// <param name="input">The input stream.</param>
         /// <param name="leaveOpen">If <c>true</c>, the stream is left open once this object is disposed.</param>
-        public BaseReader(StorageOptions options, Stream input, bool leaveOpen) : base(input, Encoding.UTF8, leaveOpen)
+        public BinaryFileReader(StorageOptions options, Stream input, bool leaveOpen) : base(input, Encoding.UTF8, leaveOpen)
         {
             Type = TypeInfo.Create<T>();
             Options = options;
@@ -147,7 +146,7 @@ namespace DBClientFiles.NET.Parsing.File
                 Block head = Head;
                 while (head != null)
                 {
-                    _handlers.Handle<BaseReader<T>, T>(this, head);
+                    _handlers.ReadBlock<BinaryFileReader<T>, T>(this, head);
                     head = head.Next;
                 }
 

@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 {
@@ -14,7 +9,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 
         public BlockIdentifier Identifier { get; } = BlockIdentifier.CopyTable;
 
-        public void Parse<T, U>(T reader, long startOffset, long length) where T : BinaryReader, IReader<U>
+        public void ReadBlock<T, U>(T reader, long startOffset, long length) where T : BinaryReader, IReader<U>
         {
             if (startOffset == 0 || length == 0)
                 return;
@@ -24,6 +19,10 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
             {
                 // Read stuff.
             }
+        }
+
+        public void WriteBlock<T, U>(T writer) where T : BinaryWriter, IWriter<U>
+        {
         }
 
         public IEnumerable<TKey> this[TKey index]

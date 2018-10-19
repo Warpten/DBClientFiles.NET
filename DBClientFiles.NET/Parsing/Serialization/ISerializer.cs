@@ -1,7 +1,5 @@
 ﻿using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Parsing.File;
-using DBClientFiles.NET.Types;
-using System.Collections.Generic;
 
 namespace DBClientFiles.NET.Parsing.Serialization
 {

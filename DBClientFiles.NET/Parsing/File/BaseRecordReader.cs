@@ -14,10 +14,10 @@ namespace DBClientFiles.NET.Parsing.File
     {
         private IntPtr _recordData;
         private int _bitCursor;
-        private IReader _fileReader;
+        private IBinaryStorageFile _fileReader;
         private int _recordSize;
 
-        public BaseRecordReader(IReader fileReader, uint recordSize, Stream recordData)
+        public BaseRecordReader(IBinaryStorageFile fileReader, uint recordSize, Stream recordData)
         {
             _fileReader = fileReader;
             _recordSize = (int) recordSize;

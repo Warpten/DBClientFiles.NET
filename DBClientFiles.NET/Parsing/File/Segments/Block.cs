@@ -1,7 +1,4 @@
-﻿using DBClientFiles.NET.Parsing.File.Segments;
-using System.IO;
-
-namespace DBClientFiles.NET.Parsing.File.Segments
+﻿namespace DBClientFiles.NET.Parsing.File.Segments
 {
     /// <summary>
     /// A block represents a section of a file. See <see cref="BlockIdentifier"/> for possible semantic meanings.

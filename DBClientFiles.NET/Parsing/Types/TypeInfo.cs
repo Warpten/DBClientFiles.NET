@@ -1,5 +1,4 @@
-﻿using DBClientFiles.NET.Exceptions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -70,8 +69,12 @@ namespace DBClientFiles.NET.Parsing.Types
             return null;
         }
 
-        private IEnumerable<ITypeMember> Flatten(IEnumerable<ITypeMember> members)
+        private static IEnumerable<ITypeMember> Flatten(IEnumerable<ITypeMember> members)
         {
+            // This is fine as long as the tree isn't too deep for the GC
+            // to start promoting top iterators to gen 1 or 2 - which it
+            // shoudln't.
+
             foreach (var member in members)
             {
                 if (member.Children.Count == 0)

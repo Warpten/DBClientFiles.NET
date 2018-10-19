@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Parsing.Binding;
 using DBClientFiles.NET.Parsing.File;
@@ -332,18 +331,5 @@ namespace DBClientFiles.NET.Parsing.Serialization
         /// <param name="memberAccess"></param>
         /// <param name="recordReader"></param>
         public abstract Expression VisitNode(ExtendedMemberExpression memberAccess, Expression recordReader);
-
-        private static IEnumerable<T> Traverse(T root, Func<T, IEnumerable<T>> transform)
-        {
-            var stack = new Stack<T>();
-            stack.Push(root);
-            while (stack.Count != 0)
-            {
-                var current = stack.Pop();
-                yield return current;
-                foreach (var child in transform(current).Reverse())
-                    stack.Push(child);
-            }
-        }
     }
 }
