@@ -25,7 +25,18 @@ namespace DBClientFiles.NET.Utils
 
     internal static class UnsafeCache
     {
-        private static Dictionary<Type, int> _sizes = new Dictionary<Type, int>();
+        private static Dictionary<Type, int> _sizes = new Dictionary<Type, int>()
+        {
+            { typeof(long),   Unsafe.SizeOf<long>()   },
+            { typeof(ulong),  Unsafe.SizeOf<ulong>()  },
+            { typeof(int),    Unsafe.SizeOf<int>()    },
+            { typeof(uint),   Unsafe.SizeOf<uint>()   },
+            { typeof(short),  Unsafe.SizeOf<short>()  },
+            { typeof(ushort), Unsafe.SizeOf<ushort>() },
+            { typeof(byte),   Unsafe.SizeOf<byte>()   },
+            { typeof(sbyte),  Unsafe.SizeOf<sbyte>()  },
+            { typeof(float),  Unsafe.SizeOf<float>()  },
+        };
 
         private static MethodInfo _SizeOf = typeof(Unsafe).GetMethod("SizeOf", Type.EmptyTypes);
 
