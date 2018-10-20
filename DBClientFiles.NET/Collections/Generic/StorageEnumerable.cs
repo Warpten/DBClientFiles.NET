@@ -5,7 +5,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
-
 using WDBC = DBClientFiles.NET.Parsing.File.WDBC;
 
 namespace DBClientFiles.NET.Collections.Generic
@@ -14,6 +13,8 @@ namespace DBClientFiles.NET.Collections.Generic
     {
         public StorageOptions Options { get; }
         private IReader<T> _implementation;
+
+        internal int Size { get; private set; }
 
         public StorageEnumerable(StorageOptions options, Stream dataStream)
         {
@@ -40,6 +41,9 @@ namespace DBClientFiles.NET.Collections.Generic
                 default:
                     throw new VersionNotSupportedException(identifier);
             }
+
+            _implementation.Initialize();
+            Size = _implementation.Size;
         }
 
         public IEnumerator<T> GetEnumerator()

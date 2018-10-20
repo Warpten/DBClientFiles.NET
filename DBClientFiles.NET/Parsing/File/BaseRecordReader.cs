@@ -17,18 +17,18 @@ namespace DBClientFiles.NET.Parsing.File
         private IBinaryStorageFile _fileReader;
         private int _recordSize;
 
-        public BaseRecordReader(IBinaryStorageFile fileReader, uint recordSize, Stream recordData)
+        public BaseRecordReader(IBinaryStorageFile fileReader, int recordSize, Stream recordData)
         {
             _fileReader = fileReader;
-            _recordSize = (int) recordSize;
+            _recordSize = recordSize;
 
             // Allocating 7 extra bytes to guarantee we don't ever read out of our memory space
             // _recordData = Marshal.AllocHGlobal(recordData.Length + 7);
-            _recordData = Marshal.AllocHGlobal(_recordSize);
+            _recordData = Marshal.AllocHGlobal(recordSize);
 
-            using (var windowedStream = new WindowedStream(recordData, _recordSize))
+            using (var windowedStream = new WindowedStream(recordData, recordSize))
             using (var outputStream = new IO.UnmanagedMemoryStream(_recordData, recordSize))
-                windowedStream.CopyTo(outputStream);
+                windowedStream.CopyTo(outputStream, recordSize);
 
             _bitCursor = 0;
         }
@@ -122,7 +122,6 @@ var byteOffset = _bitCursor / 8;
                 _bitCursor += 8;
                 ++stringLength;
             }
-
 
             var result = new string(recordData, 0, stringLength, Encoding.UTF8);
             _bitCursor += 8;

@@ -11,15 +11,15 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
     /// </summary>
     internal class Header : IFileHeader
     {
-        public int Size => UnsafeCache<Header>.Size + 4;
+        public int Size => UnsafeCache<Header>.Size;
         public Signatures Signature => Signatures.WDBC;
 
         public uint TableHash => throw new NotImplementedException();
         public uint LayoutHash => throw new NotImplementedException();
 
-        public uint RecordSize { get; set; }
-        public uint RecordCount { get; set; }
-        public uint FieldCount { get; set; }
+        public int RecordSize { get; set; }
+        public int RecordCount { get; set; }
+        public int FieldCount { get; set; }
         public int StringTableLength { get; set; }
 
         public int MinIndex => throw new NotImplementedException();
@@ -32,9 +32,9 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
 
         public void Read(BinaryReader reader)
         {
-            RecordCount = reader.ReadUInt32();
-            FieldCount = reader.ReadUInt32();
-            RecordSize = reader.ReadUInt32();
+            RecordCount = reader.ReadInt32();
+            FieldCount = reader.ReadInt32();
+            RecordSize = reader.ReadInt32();
             StringTableLength = reader.ReadInt32();
         }
     }

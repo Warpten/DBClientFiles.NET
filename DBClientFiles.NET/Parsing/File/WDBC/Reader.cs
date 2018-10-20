@@ -14,6 +14,8 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
         public override IFileHeader Header => _fileHeader;
         public override ISerializer<T> Serializer => _generator;
 
+        public override int Size => _fileHeader.RecordCount;
+
         public Reader(StorageOptions options, Stream input) : base(options, input, true)
         {
             _fileHeader = new Header();

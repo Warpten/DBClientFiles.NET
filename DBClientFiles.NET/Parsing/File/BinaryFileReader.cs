@@ -96,6 +96,13 @@ namespace DBClientFiles.NET.Parsing.File
             RegisterBlockHandler(new StringBlockHandler(options.InternStrings));
         }
 
+        public virtual void Initialize()
+        {
+            Head.Identifier = BlockIdentifier.Header;
+            Head.Length = Header.Size + 4;
+            Header.Read(this);
+        }
+
         protected override void Dispose(bool disposing)
         {
             Head = null;
@@ -136,10 +143,6 @@ namespace DBClientFiles.NET.Parsing.File
         {
             get
             {
-                Head.Identifier = BlockIdentifier.Header;
-                Head.Length = Header.Size;
-
-                Header.Read(this);
                 PrepareBlocks();
 
                 // Iterate the dolly chain of blocks and parse each of them given the prerecorded handlers
@@ -171,5 +174,7 @@ namespace DBClientFiles.NET.Parsing.File
                 }
             }
         }
+
+        public abstract int Size { get; }
     }
 }

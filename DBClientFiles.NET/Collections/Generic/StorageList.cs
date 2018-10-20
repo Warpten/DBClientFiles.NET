@@ -14,13 +14,14 @@ namespace DBClientFiles.NET.Collections.Generic
 
         public StorageList(StorageOptions options, Stream dataStream)
         {
-            _impl = new List<T>();
-
             Options = options;
 
             var enumerable = new StorageEnumerable<T>(options, dataStream);
+            _impl = new List<T>(enumerable.Size);
+
+            var index = 0;
             foreach (var record in enumerable)
-                _impl.Add(record);
+                _impl[index++] = record;
         }
 
         public void Dispose()

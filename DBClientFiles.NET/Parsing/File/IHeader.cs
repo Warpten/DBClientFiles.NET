@@ -9,9 +9,9 @@ namespace DBClientFiles.NET.Parsing.File
         uint TableHash { get; }
         uint LayoutHash { get; }
 
-        uint RecordSize { get; }
-        uint RecordCount { get; }
-        uint FieldCount { get; }
+        int RecordSize { get; }
+        int RecordCount { get; }
+        int FieldCount { get; }
 
         int StringTableLength { get; }
 

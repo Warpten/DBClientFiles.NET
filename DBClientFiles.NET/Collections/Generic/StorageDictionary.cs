@@ -15,11 +15,10 @@ namespace DBClientFiles.NET.Collections.Generic
 
         public StorageDictionary(StorageOptions options, Stream dataStream)
         {
-            _impl = new Dictionary<uint, T>();
-
             Options = options;
 
             var enumerable = new StorageEnumerable<T>(options, dataStream);
+            _impl = new Dictionary<uint, T>(enumerable.Size);
             foreach (var record in enumerable)
                 _impl.Add(record.ID, record);
         }

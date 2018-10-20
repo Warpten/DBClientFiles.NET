@@ -1,11 +1,7 @@
-﻿using DBClientFiles.NET.Attributes;
-using DBClientFiles.NET.Collections;
+﻿using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Collections.Generic;
 using System;
 using System.IO;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Runtime.InteropServices;
 
 namespace DBClientFiles.NET.Runner
 {
@@ -41,9 +37,10 @@ namespace DBClientFiles.NET.Runner
             using (var fs = File.OpenRead(@"D:\World of Warcraft 3.3.5\dbc\AreaTrigger.dbc"))
             {
                 var collection = new StorageList<AreaTriggerEntry>(StorageOptions.Default, fs);
+                Console.WriteLine(collection[0].MapID);
             }
-        }
 
-        delegate void clon(ref AreaTriggerEntry x, ref AreaTriggerEntry y);
+            Console.ReadKey();
+        }
     }
 }
