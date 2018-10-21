@@ -1,4 +1,4 @@
-﻿using DBClientFiles.NET.Collections.Generic.Exceptions;
+﻿using DBClientFiles.NET.Exceptions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -17,11 +17,7 @@ namespace DBClientFiles.NET.Collections.Generic
             Options = options;
 
             var enumerable = new StorageEnumerable<T>(options, dataStream);
-            _impl = new List<T>(enumerable.Size);
-
-            var index = 0;
-            foreach (var record in enumerable)
-                _impl[index++] = record;
+            _impl = new List<T>(enumerable);
         }
 
         public void Dispose()

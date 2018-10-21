@@ -153,7 +153,7 @@ namespace DBClientFiles.NET.Parsing.File
                     head = head.Next;
                 }
 
-                Block recordBlock = FindBlock(BlockIdentifier.Records);
+                var recordBlock = FindBlock(BlockIdentifier.Records);
                 if (recordBlock != null && recordBlock.Exists)
                 {
                     var proxyIndex = 0u;

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace DBClientFiles.NET.Collections.Generic.Exceptions
+namespace DBClientFiles.NET.Exceptions
 {
     [Serializable]
     public class ReadOnlyException : Exception
