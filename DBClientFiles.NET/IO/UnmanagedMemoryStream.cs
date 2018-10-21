@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace DBClientFiles.NET.IO
 {
@@ -31,12 +32,9 @@ namespace DBClientFiles.NET.IO
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            var readCount = 0;
-            for (; offset < count && _cursor < Length; ++offset)
-            {
-                buffer[offset] = ((byte*)_data)[_cursor + readCount];
-                ++readCount;
-            }
+            var readCount = (int)Math.Max(count - offset, Length - _cursor);
+            Marshal.Copy(_data + (int)_cursor, buffer, offset, readCount);
+            _cursor += count;
             return readCount;
         }
 
@@ -53,13 +51,7 @@ namespace DBClientFiles.NET.IO
         public override void Write(byte[] buffer, int offset, int count)
         {
             var data = (byte*)_data;
-
-            for (; offset < count && _cursor < Length; ++offset)
-            {
-                data[_cursor] = buffer[offset];
-
-                ++_cursor;
-            }
+            Marshal.Copy(buffer, offset, _data, count);
         }
     }
 }

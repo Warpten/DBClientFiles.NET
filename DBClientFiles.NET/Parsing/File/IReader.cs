@@ -10,10 +10,11 @@ namespace DBClientFiles.NET.Parsing.File
     {
         void Initialize();
 
-        IEnumerable<Proxy<T>> Records { get; }
-
-        ISerializer<T> Serializer { get; }
-
+        /// <summary>
+        /// The total amount of records in the file (including copies)
+        /// </summary>
         int Size { get; }
+        IEnumerable<T> Records { get; }
+        ISerializer<T> Serializer { get; }
     }
 }

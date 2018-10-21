@@ -14,7 +14,7 @@ namespace DBClientFiles.NET.Parsing.File
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="T"></typeparam>
-    internal abstract class BinaryFileWriter<TKey, T> : BinaryFileReader<T>
+    internal abstract class BinaryFileWriter<TKey, T> : BinaryFileWriter<T>
     {
         public BinaryFileWriter(StorageOptions options, Stream input, bool leaveOpen) : base(options, input, leaveOpen)
         {

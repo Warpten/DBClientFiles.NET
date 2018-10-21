@@ -24,33 +24,22 @@ namespace DBClientFiles.NET.Parsing.File
         public abstract ISerializer<TKey, T> KeySerializer { get; }
         public override ISerializer<T> Serializer => KeySerializer;
 
-        public override sealed IEnumerable<Proxy<T>> Records
+        public override sealed IEnumerable<T> Records
         {
             get
             {
                 var copyTableHandler = FindBlockHandler<CopyTableHandler<TKey>>(BlockIdentifier.CopyTable);
 
-                var proxyInstance = 0u;
                 foreach (var record in base.Records)
                 {
-                    foreach (var cloneStore in copyTableHandler[KeySerializer.GetKey(record.Instance)])
+                    foreach (var cloneStore in copyTableHandler[KeySerializer.GetKey(record)])
                     {
-                        var clonedInstance = Serializer.Clone(record.Instance);
+                        var clonedInstance = Serializer.Clone(record);
                         KeySerializer.SetKey(clonedInstance, cloneStore);
-
-                        yield return new Proxy<T>() {
-                            Instance = clonedInstance,
-                            UUID = proxyInstance
-                        };
-
-                        ++proxyInstance;
+                        yield return clonedInstance;
                     }
 
-                    // Force update the proxy ID
-                    record.UUID = proxyInstance;
                     yield return record;
-
-                    ++proxyInstance;
                 }
             }
         }
@@ -87,19 +76,21 @@ namespace DBClientFiles.NET.Parsing.File
         /// <param name="options">The options to use for parsing.</param>
         /// <param name="input">The input stream.</param>
         /// <param name="leaveOpen">If <c>true</c>, the stream is left open once this object is disposed.</param>
-        public BinaryFileReader(StorageOptions options, Stream input, bool leaveOpen) : base(input, Encoding.UTF8, leaveOpen)
+        public BinaryFileReader(StorageOptions options, Stream input, bool leaveOpen) : base(input, Encoding.UTF8,
+            leaveOpen)
         {
             Type = TypeInfo.Create<T>();
             Options = options;
-            Head = new Block();
 
             RegisterBlockHandler(new StringBlockHandler(options.InternStrings));
         }
 
-        public virtual void Initialize()
+        public void Initialize()
         {
-            Head.Identifier = BlockIdentifier.Header;
-            Head.Length = Header.Size + 4;
+            Head = new Block {
+                Identifier = BlockIdentifier.Header,
+                Length = Header.Size + 4
+            };
             Header.Read(this);
         }
 
@@ -132,6 +123,10 @@ namespace DBClientFiles.NET.Parsing.File
         /// </summary>
         protected abstract void PrepareBlocks();
 
+        /// <summary>
+        /// Obtains an instance of <see cref="IRecordReader"/> used for record reading.
+        /// </summary>
+        /// <returns></returns>
         protected virtual IRecordReader GetRecordReader()
         {
             return new BaseRecordReader(this, Header.RecordSize, BaseStream);
@@ -139,13 +134,12 @@ namespace DBClientFiles.NET.Parsing.File
 
         public abstract ISerializer<T> Serializer { get; }
 
-        public virtual IEnumerable<Proxy<T>> Records
+        public virtual IEnumerable<T> Records
         {
             get
             {
                 PrepareBlocks();
 
-                // Iterate the dolly chain of blocks and parse each of them given the prerecorded handlers
                 Block head = Head;
                 while (head != null)
                 {
@@ -154,23 +148,12 @@ namespace DBClientFiles.NET.Parsing.File
                 }
 
                 var recordBlock = FindBlock(BlockIdentifier.Records);
-                if (recordBlock != null && recordBlock.Exists)
+                BaseStream.Position = recordBlock.StartOffset;
+
+                while (BaseStream.Position < recordBlock.EndOffset)
                 {
-                    var proxyIndex = 0u;
-
-                    BaseStream.Position = recordBlock.StartOffset;
-                    while (BaseStream.Position < recordBlock.EndOffset)
-                    {
-                        using (var recordReader = GetRecordReader())
-                        {
-                            yield return new Proxy<T>() {
-                                Instance = Serializer.Deserialize(recordReader),
-                                UUID = proxyIndex
-                            };
-                        }
-
-                        ++proxyIndex;
-                    }
+                    using (var recordReader = GetRecordReader())
+                        yield return Serializer.Deserialize(recordReader);
                 }
             }
         }
