@@ -12,15 +12,13 @@ namespace DBClientFiles.NET.Parsing.Types
         {
             MemberInfo = memberInfo;
             Parent = parent;
-
-            Children = new List<ITypeMember>();
         }
 
         public MemberInfo MemberInfo { get; }
         public ITypeMember Parent { get; }
         public abstract Type Type { get; }
 
-        public List<ITypeMember> Children { get; }
+        public List<ITypeMember> Children { get; protected set; }
 
         public bool IsArray => Type.IsArray;
 

@@ -58,7 +58,7 @@ namespace DBClientFiles.NET.Parsing.File
         /// <param name="leaveOpen">If <c>true</c>, the stream is left open once this object is disposed.</param>
         public BinaryFileWriter(StorageOptions options, Stream input, bool leaveOpen) : base(input, Encoding.UTF8, leaveOpen)
         {
-            Type = TypeInfo.Create<T>();
+            Type = TypeInfo.Create<T>(options.MemberType);
             Options = options;
             Head = new Block();
 

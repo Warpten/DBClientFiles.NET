@@ -6,67 +6,46 @@ namespace DBClientFiles.NET.Parsing.Types
 {
     internal sealed class TypeInfo
     {
-        public static TypeInfo Create<T>()
+        public static TypeInfo Create<T>(MemberTypes memberType)
         {
-            return new TypeInfo(typeof(T));
+            return new TypeInfo(typeof(T), memberType);
         }
 
         public Type Type { get; }
 
-        private List<ITypeMember> _fields = new List<ITypeMember>();
-        private List<ITypeMember> _properties = new List<ITypeMember>();
+        public IList<ITypeMember> Members { get; }
 
-        public IEnumerable<ITypeMember> Fields => _fields;
-        public IEnumerable<ITypeMember> Properties => _properties;
-
-        private TypeInfo(Type rootType)
+        private TypeInfo(Type rootType, MemberTypes memberType)
         {
             Type = rootType;
 
-            var fieldIndex = 0;
-            var propertyIndex = 0;
-
-            foreach (var memberInfo in rootType.GetMembers(BindingFlags.Public | BindingFlags.Instance))
+            if (memberType == MemberTypes.Field)
             {
-                if (memberInfo is FieldInfo fieldInfo)
+                var fieldInfos = rootType.GetFields(BindingFlags.Public | BindingFlags.Instance);
+                Members = new List<ITypeMember>(fieldInfos.Length);
+                for (var i = 0; i < fieldInfos.Length; ++i)
                 {
-                    var typeMemberInfo = TypeMemberFactory.Create(fieldInfo, null);
-                    if (typeMemberInfo == null)
-                        continue;
-
-                    _fields.Add(typeMemberInfo);
-                    fieldIndex += Math.Max(1, typeMemberInfo.Children.Count);
+                    var typeMemberInfo = TypeMemberFactory.Create(fieldInfos[i], null);
+                    if (typeMemberInfo != null)
+                        Members.Add(typeMemberInfo);
                 }
-                else if (memberInfo is PropertyInfo propertyInfo)
+            }
+            else if (memberType == MemberTypes.Property)
+            {
+                var propInfos = rootType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                Members = new List<ITypeMember>(propInfos.Length);
+                for (var i = 0; i < propInfos.Length; ++i)
                 {
-                    var typeMemberInfo = TypeMemberFactory.Create(propertyInfo, null);
-                    if (typeMemberInfo == null)
-                        continue;
-
-                    _properties.Add(typeMemberInfo);
-                    propertyIndex += Math.Max(1, typeMemberInfo.Children.Count);
+                    var typeMemberInfo = TypeMemberFactory.Create(propInfos[i], null);
+                    if (typeMemberInfo != null)
+                        Members.Add(typeMemberInfo);
                 }
             }
         }
 
-        public IEnumerable<ITypeMember> Enumerate(MemberTypes memberType)
+        public IEnumerable<ITypeMember> EnumerateFlat()
         {
-            if (memberType == MemberTypes.Field)
-                return _fields;
-            else if (memberType == MemberTypes.Property)
-                return _properties;
-
-            return null;
-        }
-
-        public IEnumerable<ITypeMember> EnumerateFlat(MemberTypes memberType)
-        {
-            if (memberType == MemberTypes.Field)
-                return Flatten(_fields);
-            else if (memberType == MemberTypes.Property)
-                return Flatten(_properties);
-
-            return null;
+            return Flatten(Members);
         }
 
         private static IEnumerable<ITypeMember> Flatten(IEnumerable<ITypeMember> members)

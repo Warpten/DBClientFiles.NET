@@ -27,7 +27,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
 
         public BaseSerializer(StorageOptions options, TypeInfo typeInfo, int indexColumn) : base(options, typeInfo)
         {
-            _indexColumn = typeInfo.EnumerateFlat(options.MemberType).ElementAtOrDefault(indexColumn);
+            _indexColumn = typeInfo.EnumerateFlat().ElementAtOrDefault(indexColumn);
             if (_indexColumn == null)
                 throw new ArgumentException($"Invalid column index provided to BaseSerializer<{typeof(TKey).Name}, {typeof(TValue).Name}>.");
             else if (typeof(string).IsAssignableFrom(_indexColumn.Type))
@@ -116,7 +116,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
 
                 body.Add(Expression.Assign(newInstanceParam, New<T>.Expression()));
 
-                foreach (var memberInfo in Type.Enumerate(Options.MemberType))
+                foreach (var memberInfo in Type.Members)
                 {
                     var oldMemberAccessExpr = memberInfo.MakeMemberAccess(oldInstanceParam).Expression;
                     var newMemberAccessExpr = memberInfo.MakeMemberAccess(newInstanceParam).Expression;
@@ -204,7 +204,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
             body.Add(Expression.Assign(typeVariable, typeInstance));
 
             // Initialize all the substructures
-            foreach (var memberInfo in Type.Enumerate(Options.MemberType))
+            foreach (var memberInfo in Type.Members)
             {
                 var memberNode = memberInfo.MakeMemberAccess(typeVariable);
 

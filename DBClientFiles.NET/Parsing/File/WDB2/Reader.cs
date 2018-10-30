@@ -2,9 +2,8 @@
 using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.Serialization;
-using DBClientFiles.NET.Parsing.Types;
 
-namespace DBClientFiles.NET.Parsing.File.WDBC
+namespace DBClientFiles.NET.Parsing.File.WDB2
 {
     internal sealed class Reader<T> : BinaryFileReader<T>
     {
@@ -29,13 +28,18 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
 
         protected override void PrepareBlocks()
         {
-            Head.Next = new Block
-            {
+            Head.Next = new Block {
+                // Identifier is not really relevant, since we won't parse it anyways.
+                Identifier = BlockIdentifier.OffsetMap,
+                Length = (Header.MaxIndex - Header.MinIndex + 1) * (4 + 2)
+            };
+
+            Head.Next.Next = new Block {
                 Identifier = BlockIdentifier.Records,
                 Length = _fileHeader.RecordCount * _fileHeader.RecordSize
             };
 
-            Head.Next.Next = new Block {
+            Head.Next.Next.Next = new Block {
                 Identifier = BlockIdentifier.StringBlock,
                 Length = _fileHeader.StringTableLength
             };

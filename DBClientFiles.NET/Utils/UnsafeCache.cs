@@ -50,26 +50,30 @@ namespace DBClientFiles.NET.Utils
                 var methodInfo = _SizeOf.MakeGenericMethod(type);
 
                 var lambda = Expression.Lambda<Func<int>>(Expression.Call(methodInfo)).Compile();
-                size = _sizes[type] = lambda();
-                return size;
+                return _sizes[type] = lambda();
             }
-            else
-            {
-                try {
-                    size = _sizes[type] = Marshal.SizeOf(type);
-                } catch {
-                    size = 0;
 
-                    foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
-                    {
-                        var attr = field.GetCustomAttribute<FixedBufferAttribute>(false);
-                        if (attr != null)
-                            size += SizeOf(attr.ElementType) * attr.Length;
-                        else
-                            size += SizeOf(field.FieldType);
-                    }
-                    _sizes[type] = size;
+            return MarshalSizeOf(type);
+        }
+
+        private static int MarshalSizeOf(Type type)
+        {
+            try {
+                var size = Marshal.SizeOf(type);
+                _sizes[type] = size;
+                return size;
+            } catch {
+                var size = 0;
+                foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+                {
+                    var attr = field.GetCustomAttribute<FixedBufferAttribute>(false);
+                    if (attr != null)
+                        size += SizeOf(attr.ElementType) * attr.Length;
+                    else
+                        size += SizeOf(field.FieldType);
                 }
+
+                _sizes[type] = size;
                 return size;
             }
         }

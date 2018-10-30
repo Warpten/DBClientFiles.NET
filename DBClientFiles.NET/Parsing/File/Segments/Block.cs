@@ -19,33 +19,6 @@
         public long Length { get; set; }
         public long EndOffset => StartOffset + Length;
 
-        public long TotalLength
-        {
-            get
-            {
-                long value = Length;
-
-                var itrNext = Next;
-                var itrPrevious = Previous;
-                while (itrNext != null || itrPrevious != null)
-                {
-                    if (itrNext != null)
-                    {
-                        value += itrNext.Length;
-                        itrNext = itrNext.Next;
-                    }
-
-                    if (itrPrevious != null)
-                    {
-                        value += itrPrevious.Length;
-                        itrPrevious = itrPrevious.Previous;
-                    }
-                }
-
-                return value;
-            }
-        }
-
         public bool Exists
         {
             get => Length != 0;

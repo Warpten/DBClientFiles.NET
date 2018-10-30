@@ -2,9 +2,11 @@
 
 namespace DBClientFiles.NET.Parsing.File
 {
-    public interface IHeader
+    public interface IFileHeader
     {
+        int Size { get; }
         Signatures Signature { get; }
+        void Read(BinaryReader reader);
 
         uint TableHash { get; }
         uint LayoutHash { get; }
@@ -25,12 +27,5 @@ namespace DBClientFiles.NET.Parsing.File
         bool HasIndexTable { get; }
         bool HasForeignIds { get; }
         bool HasOffsetMap { get; }
-    }
-
-    internal interface IFileHeader : IHeader
-    {
-        int Size { get; }
-
-        void Read(BinaryReader reader);
     }
 }

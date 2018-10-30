@@ -1,6 +1,8 @@
 ﻿using DBClientFiles.NET.Parsing.Binding;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -11,11 +13,30 @@ namespace DBClientFiles.NET.Parsing.Types
         public override Type Type { get; }
         public override int Cardinality { get; set; }
 
-        public ArrayElementTypeMember(MemberInfo memberInfo, ITypeMember parent) : base(memberInfo, parent)
+        public ArrayElementTypeMember(FieldInfo memberInfo, ITypeMember parent) : base(memberInfo, parent)
         {
             Type = parent.Type.GetElementType();
 
             Cardinality = parent.Cardinality;
+
+            Children = new List<ITypeMember>(Type.GetFields(BindingFlags.Public | BindingFlags.Instance).Select(
+                fieldInfo =>
+                {
+                    return TypeMemberFactory.Create(fieldInfo, this);
+                }));
+        }
+
+        public ArrayElementTypeMember(PropertyInfo memberInfo, ITypeMember parent) : base(memberInfo, parent)
+        {
+            Type = parent.Type.GetElementType();
+
+            Cardinality = parent.Cardinality;
+
+            Children = new List<ITypeMember>(Type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Select(
+                propInfo =>
+                {
+                    return TypeMemberFactory.Create(propInfo, this);
+                }));
         }
 
         public override ExtendedMemberExpression MakeMemberAccess(Expression parent, params Expression[] arguments)

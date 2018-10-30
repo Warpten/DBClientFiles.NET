@@ -6,17 +6,19 @@ using System.Collections.Generic;
 using System.IO;
 
 using WDBC = DBClientFiles.NET.Parsing.File.WDBC;
+using WDB2 = DBClientFiles.NET.Parsing.File.WDB2;
 
-namespace DBClientFiles.NET.Collections
+namespace DBClientFiles.NET.Collections.Generic
 {
-    internal sealed class StorageEnumerable<T> : IEnumerable<T>
+    public sealed class StorageEnumerable<T> : IEnumerable<T>
     {
         private IReader<T> _implementation;
         public int Size { get; private set; }
 
         public IFileHeader Header => _implementation.Header;
         public StorageOptions Options => _implementation.Options;
-        public ISerializer<T> Serializer => _implementation.Serializer;
+
+        internal ISerializer<T> Serializer => _implementation.Serializer;
 
         public StorageEnumerable(StorageOptions options, Stream dataStream)
         {
@@ -38,6 +40,9 @@ namespace DBClientFiles.NET.Collections
             {
                 case Signatures.WDBC:
                     _implementation = new WDBC.Reader<T>(options, dataStream);
+                    break;
+                case Signatures.WDB2:
+                    _implementation = new WDB2.Reader<T>(options, dataStream);
                     break;
                 default:
                     throw new VersionNotSupportedException(identifier);

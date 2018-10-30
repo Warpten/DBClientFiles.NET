@@ -79,7 +79,7 @@ namespace DBClientFiles.NET.Parsing.File
         public BinaryFileReader(StorageOptions options, Stream input, bool leaveOpen) : base(input, Encoding.UTF8,
             leaveOpen)
         {
-            Type = TypeInfo.Create<T>();
+            Type = TypeInfo.Create<T>(options.MemberType);
             Options = options;
 
             RegisterBlockHandler(new StringBlockHandler(options.InternStrings));
@@ -96,7 +96,7 @@ namespace DBClientFiles.NET.Parsing.File
 
         protected override void Dispose(bool disposing)
         {
-            Head = null;
+            Head = default;
             _handlers.Clear();
 
             base.Dispose(disposing);

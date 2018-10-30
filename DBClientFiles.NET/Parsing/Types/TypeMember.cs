@@ -1,6 +1,8 @@
 ﻿using DBClientFiles.NET.Attributes;
 using DBClientFiles.NET.Parsing.Binding;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -9,21 +11,17 @@ namespace DBClientFiles.NET.Parsing.Types
 {
     internal sealed class TypeMember : BaseTypeMember
     {
-        public TypeMember(MemberInfo memberInfo, ITypeMember parent) : base(memberInfo, parent)
+        public TypeMember(PropertyInfo propInfo, ITypeMember parent) : base(propInfo, parent)
         {
-            if (memberInfo is PropertyInfo propInfo)
-                Type = propInfo.PropertyType;
-            else if (memberInfo is FieldInfo fieldInfo)
-                Type = fieldInfo.FieldType;
-
+            Type = propInfo.PropertyType;
             if (Type.IsArray)
             {
-                var marshalAttribute = memberInfo.GetCustomAttribute<MarshalAsAttribute>();
+                var marshalAttribute = propInfo.GetCustomAttribute<MarshalAsAttribute>();
                 if (marshalAttribute != null)
                     Cardinality = marshalAttribute.SizeConst;
                 else
                 {
-                    var cardinalityAttribute = memberInfo.GetCustomAttribute<CardinalityAttribute>();
+                    var cardinalityAttribute = propInfo.GetCustomAttribute<CardinalityAttribute>();
                     if (cardinalityAttribute == null)
                         Cardinality = -1;
                     else
@@ -32,6 +30,50 @@ namespace DBClientFiles.NET.Parsing.Types
             }
             else
                 Cardinality = 0;
+
+            if (!Type.IsArray)
+                Children = new List<ITypeMember>();
+            else
+            {
+                Children = new List<ITypeMember>(Type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Select(
+                    childPropInfo =>
+                    {
+                        return TypeMemberFactory.Create(childPropInfo, this);
+                    }));
+            }
+        }
+
+        public TypeMember(FieldInfo fieldInfo, ITypeMember parent) : base(fieldInfo, parent)
+        {
+            Type = fieldInfo.FieldType;
+
+            if (Type.IsArray)
+            {
+                var marshalAttribute = fieldInfo.GetCustomAttribute<MarshalAsAttribute>();
+                if (marshalAttribute != null)
+                    Cardinality = marshalAttribute.SizeConst;
+                else
+                {
+                    var cardinalityAttribute = fieldInfo.GetCustomAttribute<CardinalityAttribute>();
+                    if (cardinalityAttribute == null)
+                        Cardinality = -1;
+                    else
+                        Cardinality = cardinalityAttribute.SizeConst;
+                }
+            }
+            else
+                Cardinality = 0;
+
+            if (!Type.IsArray)
+                Children = new List<ITypeMember>();
+            else
+            {
+                Children = new List<ITypeMember>(Type.GetFields(BindingFlags.Public | BindingFlags.Instance).Select(
+                    childFieldInfo =>
+                    {
+                        return TypeMemberFactory.Create(childFieldInfo, this);
+                    }));
+            }
         }
 
         public override Type Type { get; }

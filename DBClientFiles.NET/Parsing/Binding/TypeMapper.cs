@@ -16,14 +16,14 @@ namespace DBClientFiles.NET.Parsing.Binding
 
         public TypeMapper(MemberTypes memberType, IEnumerable<IMemberMetadata> fileMembers)
         {
-            Type = TypeInfo.Create<T>();
+            Type = TypeInfo.Create<T>(memberType);
 
             Map = new Dictionary<IMemberMetadata, ITypeMember>();
 
             if (!(memberType == MemberTypes.Field || memberType == MemberTypes.Property))
                 throw new ArgumentException(nameof(memberType));
 
-            IEnumerable<ITypeMember> typeMembers = Type.EnumerateFlat(memberType);
+            IEnumerable<ITypeMember> typeMembers = Type.EnumerateFlat();
             if (typeMembers == null)
                 return;
 
