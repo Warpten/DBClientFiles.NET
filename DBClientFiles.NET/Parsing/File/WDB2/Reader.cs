@@ -28,6 +28,8 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
 
         protected override void PrepareBlocks()
         {
+            _fileHeader.Read(this);
+
             Head.Next = new Block {
                 // Identifier is not really relevant, since we won't parse it anyways.
                 Identifier = BlockIdentifier.OffsetMap,

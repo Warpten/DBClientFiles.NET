@@ -1,7 +1,7 @@
 ﻿using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Parsing.Binding;
+using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Parsing.Serialization;
-using DBClientFiles.NET.Parsing.Types;
 using System.Linq.Expressions;
 
 namespace DBClientFiles.NET.Parsing.File.WDB2
@@ -13,9 +13,10 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
         }
 
         /// <summary>
-        /// WDBC deserilization is trivial. There is no packing and everything is aligned to 4-byte boundaries.
+        /// WDB2 deserilization is trivial. There is no packing and everything is aligned to 4-byte boundaries.
         /// </summary>
         /// <param name="memberAccess"></param>
+        /// <param name="memberInfo"></param>
         /// <param name="recordReader"></param>
         /// <returns></returns>
         /// <remarks>
@@ -39,51 +40,38 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
         /// <see cref="IRecordReader.Read{T}"/> and <see cref="IRecordReader.ReadString"/>, respectively.
         /// </para>
         /// </remarks>
-        public override Expression VisitNode(ExtendedMemberExpression memberAccess, Expression recordReader)
+        public override Expression VisitNode(Expression memberAccess, Member memberInfo, Expression recordReader)
         {
-            if (memberAccess.MemberInfo.Type.IsArray)
+            if (memberInfo.Type.Type.IsArray)
             {
-                var elementType = memberAccess.MemberInfo.Type.GetElementType();
+                var elementType = memberInfo.Type.Type.GetElementType();
                 if (elementType.IsPrimitive)
                 {
-                    // = ReadArray<T>(...);
-                    return Expression.Assign(
-                        memberAccess.Expression,
-                        Expression.Call(recordReader,
-                            _IRecordReader.ReadArray.MakeGenericMethod(elementType),
-                            Expression.Constant(memberAccess.MemberInfo.Cardinality)));
+                    // ReadArray<T>(...);
+                    return Expression.Call(recordReader,
+                        _IRecordReader.ReadArray.MakeGenericMethod(elementType),
+                        Expression.Constant(memberInfo.Cardinality));
                 }
                 else if (elementType == typeof(string))
                 {
-                    // = ReadStringArray(...)
-                    return Expression.Assign(
-                        memberAccess.Expression,
-                        Expression.Call(recordReader,
-                            _IRecordReader.ReadStringArray,
-                            Expression.Constant(memberAccess.MemberInfo.Cardinality)));
+                    // ReadStringArray(...)
+                    return Expression.Call(recordReader,
+                        _IRecordReader.ReadStringArray,
+                        Expression.Constant(memberInfo.Cardinality));
                 }
-                else
-                {
-                    // new T[...];
-                    return Expression.Assign(
-                        memberAccess.Expression,
-                        Expression.NewArrayBounds(elementType, Expression.Constant(memberAccess.MemberInfo.Cardinality)));
-                }
+
+                return null;
             }
 
-            if (memberAccess.MemberInfo.Type.IsPrimitive)
+            if (memberInfo.Type.Type.IsPrimitive)
             {
-                // = Read<T>();
-                return Expression.Assign(
-                    memberAccess.Expression,
-                    Expression.Call(recordReader, _IRecordReader.Read.MakeGenericMethod(memberAccess.MemberInfo.Type)));
+                // Read<T>();
+                return Expression.Call(recordReader, _IRecordReader.Read.MakeGenericMethod(memberInfo.Type.Type));
             }
-            else if (memberAccess.MemberInfo.Type == typeof(string))
+            else if (memberInfo.Type.Type == typeof(string))
             {
-                // = ReadString();
-                return Expression.Assign(
-                    memberAccess.Expression,
-                    Expression.Call(recordReader, _IRecordReader.ReadString));
+                // ReadString();
+                return Expression.Call(recordReader, _IRecordReader.ReadString);
             }
 
             return null;

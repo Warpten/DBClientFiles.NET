@@ -13,11 +13,10 @@ namespace DBClientFiles.NET.Runner
 
     public class C3Vector
     {
-        public C2Vector Position2D { get; set; }
+        public float X { get; set; }
+        public float Y { get; set; }
         public float Z { get; set; }
 
-        public float X => Position2D.X;
-        public float Y => Position2D.Y;
     }
 
     public struct AreaTriggerEntry
@@ -34,6 +33,8 @@ namespace DBClientFiles.NET.Runner
     {
         static void Main(String[] args)
         {
+
+            bool primitive = typeof(C2Vector).IsPrimitive;
             using (var fs = File.OpenRead(@"D:\World of Warcraft 3.3.5\dbc\AreaTrigger.dbc"))
             {
                 var collection = new StorageList<AreaTriggerEntry>(StorageOptions.Default, fs);

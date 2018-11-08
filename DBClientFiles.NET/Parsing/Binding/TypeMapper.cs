@@ -1,29 +1,29 @@
 ﻿using DBClientFiles.NET.Internals.Binding;
-using DBClientFiles.NET.Parsing.Types;
+using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 
-using TypeInfo = DBClientFiles.NET.Parsing.Types.TypeInfo;
+using TypeInfo = DBClientFiles.NET.Parsing.Reflection.TypeInfo;
 
 namespace DBClientFiles.NET.Parsing.Binding
 {
     internal class TypeMapper<T>
     {
         public TypeInfo Type { get; }
-        public Dictionary<IMemberMetadata, ITypeMember> Map { get; }
+        public Dictionary<IMemberMetadata, Member> Map { get; }
 
         public TypeMapper(MemberTypes memberType, IEnumerable<IMemberMetadata> fileMembers)
         {
-            Type = TypeInfo.Create<T>(memberType);
+            Type = new TypeInfo(typeof(T));
 
-            Map = new Dictionary<IMemberMetadata, ITypeMember>();
+            Map = new Dictionary<IMemberMetadata, Member>();
 
             if (!(memberType == MemberTypes.Field || memberType == MemberTypes.Property))
                 throw new ArgumentException(nameof(memberType));
 
-            IEnumerable<ITypeMember> typeMembers = Type.EnumerateFlat();
+            /*IEnumerable<Member> typeMembers = Type.EnumerateFlat();
             if (typeMembers == null)
                 return;
 
@@ -54,7 +54,7 @@ namespace DBClientFiles.NET.Parsing.Binding
 
                 if (typeMembersEnumerator.MoveNext())
                     return; // TODO: Throw. We have more members declared in code than we need.
-            }
+            }*/
         }
     }
 }

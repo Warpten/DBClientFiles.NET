@@ -4,8 +4,8 @@ using System.Text;
 using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers;
+using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Parsing.Serialization;
-using DBClientFiles.NET.Parsing.Types;
 
 namespace DBClientFiles.NET.Parsing.File
 {
@@ -79,7 +79,7 @@ namespace DBClientFiles.NET.Parsing.File
         public BinaryFileReader(StorageOptions options, Stream input, bool leaveOpen) : base(input, Encoding.UTF8,
             leaveOpen)
         {
-            Type = TypeInfo.Create<T>(options.MemberType);
+            Type = new TypeInfo(typeof(T));
             Options = options;
 
             RegisterBlockHandler(new StringBlockHandler(options.InternStrings));
@@ -91,7 +91,6 @@ namespace DBClientFiles.NET.Parsing.File
                 Identifier = BlockIdentifier.Header,
                 Length = Header.Size + 4
             };
-            Header.Read(this);
         }
 
         protected override void Dispose(bool disposing)

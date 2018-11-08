@@ -4,13 +4,15 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using DBClientFiles.NET.Attributes;
 using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Parsing.Binding;
 using DBClientFiles.NET.Parsing.File;
-using DBClientFiles.NET.Parsing.Types;
+using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Utils;
 
-using TypeInfo = DBClientFiles.NET.Parsing.Types.TypeInfo;
+using TypeInfo = DBClientFiles.NET.Parsing.Reflection.TypeInfo;
 
 namespace DBClientFiles.NET.Parsing.Serialization
 {
@@ -19,7 +21,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
         private Func<TValue, TKey> _keyGetter;
         private Action<TValue, TKey> _keySetter;
 
-        private ITypeMember _indexColumn;
+        private Member _indexColumn;
 
         public BaseSerializer(StorageOptions options, int indexColumn) : this(options, null, indexColumn)
         {
@@ -27,10 +29,10 @@ namespace DBClientFiles.NET.Parsing.Serialization
 
         public BaseSerializer(StorageOptions options, TypeInfo typeInfo, int indexColumn) : base(options, typeInfo)
         {
-            _indexColumn = typeInfo.EnumerateFlat().ElementAtOrDefault(indexColumn);
+            _indexColumn = typeInfo.GetMemberByIndex(indexColumn, options.MemberType);
             if (_indexColumn == null)
                 throw new ArgumentException($"Invalid column index provided to BaseSerializer<{typeof(TKey).Name}, {typeof(TValue).Name}>.");
-            else if (typeof(string).IsAssignableFrom(_indexColumn.Type))
+            else if (typeof(string).IsAssignableFrom(_indexColumn.Type.Type))
                 throw new ArgumentException($"Column index provided to BaseSerializer<{typeof(TKey).Name}, {typeof(TValue).Name}> points to a string ({_indexColumn.MemberInfo.Name}).");
         }
 
@@ -64,7 +66,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
         {
             var param = Expression.Parameter(typeof(TValue));
 
-            return Expression.Lambda<Func<TValue, TKey>>(_indexColumn.MakeMemberAccess(param).Expression, param).Compile();
+            return Expression.Lambda<Func<TValue, TKey>>(_indexColumn.MakeAccess(param), param).Compile();
         }
 
         private Action<TValue, TKey> GenerateKeySetter()
@@ -73,7 +75,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
             var paramValue = Expression.Parameter(typeof(TKey));
 
             return Expression.Lambda<Action<TValue, TKey>>(
-                Expression.Assign(_indexColumn.MakeMemberAccess(paramType).Expression, paramValue
+                Expression.Assign(_indexColumn.MakeAccess(paramType), paramValue
             ), paramType, paramValue).Compile();
         }
     }
@@ -109,19 +111,19 @@ namespace DBClientFiles.NET.Parsing.Serialization
             {
                 Debug.Assert(Options.MemberType == MemberTypes.Field || Options.MemberType == MemberTypes.Property);
 
-                var body = new List<Expression>();
-
                 var oldInstanceParam = Expression.Parameter(typeof(T).MakeByRefType());
                 var newInstanceParam = Expression.Parameter(typeof(T).MakeByRefType());
 
-                body.Add(Expression.Assign(newInstanceParam, New<T>.Expression()));
+                var body = new List<Expression> {
+                    Expression.Assign(newInstanceParam, New<T>.Expression())
+                };
 
                 foreach (var memberInfo in Type.Members)
                 {
-                    var oldMemberAccessExpr = memberInfo.MakeMemberAccess(oldInstanceParam).Expression;
-                    var newMemberAccessExpr = memberInfo.MakeMemberAccess(newInstanceParam).Expression;
+                    var oldMemberAccessExpr = memberInfo.MakeAccess(oldInstanceParam);
+                    var newMemberAccessExpr = memberInfo.MakeAccess(newInstanceParam);
 
-                    body.Add(RecursiveMemberClone(memberInfo, oldMemberAccessExpr, newMemberAccessExpr));
+                    body.Add(CloneMember(memberInfo, oldMemberAccessExpr, newMemberAccessExpr));
                 }
 
                 body.Add(newInstanceParam);
@@ -135,52 +137,60 @@ namespace DBClientFiles.NET.Parsing.Serialization
             return instance;
         }
 
-        private static Expression RecursiveMemberClone(ITypeMember memberInfo, Expression oldMember, Expression newMember)
+        private Expression CloneMember(Member field, Expression oldMember, Expression newMember)
         {
-            if (memberInfo.Type.IsArray)
+            if (oldMember.Type.IsArray)
             {
-                var newArrayExpr = Expression.NewArrayBounds(memberInfo.Type.GetElementType(), Expression.Constant(memberInfo.Cardinality));
+                var sizeExpression = Expression.Variable(typeof(int));
+                var sizeExprValue = Expression.MakeMemberAccess(oldMember, oldMember.Type.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance));
+                var newArrayExpr = Expression.NewArrayBounds(newMember.Type.GetElementType(), sizeExpression);
 
                 var loopItr = Expression.Variable(typeof(int));
-                var loopCondition = Expression.Constant(memberInfo.Cardinality);
-                var breakLabel = Expression.Label();
+                var loopCondition = Expression.LessThan(loopItr, sizeExpression);
+                var loopExitLabel = Expression.Label();
 
-                return Expression.Block(new[] { loopItr },
+                return Expression.Block(new[] { loopItr, sizeExpression },
+                    // sizeExpression = oldStructure.<FIELD>.Length;
+                    Expression.Assign(sizeExpression, sizeExprValue),
+                    // newStructure.<FIELD> = new T[sizeExpression]
                     Expression.Assign(newMember, newArrayExpr),
+                    // itr = 0
                     Expression.Assign(loopItr, Expression.Constant(0)),
+
                     Expression.Loop(
-                        Expression.IfThenElse(
-                            Expression.LessThan(loopItr, loopCondition),
-                                Expression.Block(
-                                    Expression.Block(RecursiveMemberClone(memberInfo.Children[0],
-                                        Expression.ArrayAccess(oldMember, loopItr),
-                                        Expression.ArrayAccess(oldMember, loopItr)
-                                    )),
-                                    Expression.PreIncrementAssign(loopItr)
-                                ).Reduce(),
-                            Expression.Break(breakLabel)
-                        ),
-                    breakLabel));
-            }
-            else if (memberInfo.Children.Count != 0)
-            {
-                Debug.Assert(!memberInfo.IsArray);
-
-                var block = new List<Expression>() {
-                    Expression.Assign(newMember, New.Expression(memberInfo.Type))
-                };
-                foreach (var childInfo in memberInfo.Children)
-                {
-                    var oldChild = Expression.MakeMemberAccess(oldMember, childInfo.MemberInfo);
-                    var newChild = Expression.MakeMemberAccess(newMember, childInfo.MemberInfo);
-
-                    block.Add(RecursiveMemberClone(childInfo, oldChild, newChild));
-                }
-
-                return Expression.Block(block);
+                        Expression.IfThenElse(loopCondition,
+                            Expression.Block(
+                                CloneMember(field, Expression.ArrayAccess(oldMember, loopItr), Expression.ArrayAccess(newMember, loopItr)),
+                                Expression.PreIncrementAssign(loopItr)
+                            ),
+                            Expression.Break(loopExitLabel)
+                        ), loopExitLabel));
             }
             else
-                return Expression.Assign(newMember, oldMember);
+            {
+                var typeInfo = field.DeclaringType.GetChildTypeInfo(oldMember.Type);
+                if (typeInfo.HasChildren)
+                {
+                    var block = new List<Expression>() {
+                        Expression.Assign(newMember, New.Expression(newMember.Type))
+                    };
+
+                    foreach (var childInfo in typeInfo.Members)
+                    {
+                        if (childInfo.MemberType != Options.MemberType)
+                            continue;
+
+                        var oldChild = childInfo.MakeAccess(oldMember);
+                        var newChild = childInfo.MakeAccess(newMember);
+
+                        block.Add(CloneMember(childInfo, oldChild, newChild));
+                    }
+
+                    return Expression.Block(block);
+                }
+                else
+                    return Expression.Assign(newMember, oldMember);
+            }
         }
 
         public T Deserialize(IRecordReader reader)
@@ -190,6 +200,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
 
             var instance = New<T>.Instance();
             _deserializer.Invoke(reader, ref instance);
+
             return instance;
         }
 
@@ -206,9 +217,11 @@ namespace DBClientFiles.NET.Parsing.Serialization
             // Initialize all the substructures
             foreach (var memberInfo in Type.Members)
             {
-                var memberNode = memberInfo.MakeMemberAccess(typeVariable);
+                if (memberInfo.MemberType != Options.MemberType || memberInfo.IsReadOnly)
+                    continue;
 
-                Visit(body, reader, memberNode);
+                var memberNode = memberInfo.MakeAccess(typeVariable);
+                Visit(body, reader, memberInfo, memberNode);
             }
 
             var bodyBlock = Expression.Block(body);
@@ -228,99 +241,68 @@ namespace DBClientFiles.NET.Parsing.Serialization
         /// <param name="recordReader">An expression representing an instance of <see cref="IRecordReader"/>.</param>
         /// <param name="rootNode">The node from which we starting work down.</param>
         /// <returns></returns>
-        /// <remarks>
-        /// Custom types with a constructor taking an instance of <see cref="IRecordReader"/> as their unique argument
-        /// cause the entire evaluation to cut off short, and a call to that constructor is emitted instead. This means
-        /// that it is the responsability of said constructor to properly initialize any substructure it may contain.
-        /// </remarks>
-        public void Visit(List<Expression> container, Expression recordReader, ExtendedMemberExpression rootNode)
+        public void Visit(List<Expression> container, Expression recordReader, Member memberInfo, Expression memberAccess)
         {
-            var memberType = rootNode.MemberInfo.Type;
-            var elementType = memberType.IsArray ? memberType.GetElementType() : memberType;
-
-            var memberAccess = rootNode;
-
-            var constructorInfo = elementType.GetConstructor(new[] { typeof(IRecordReader) });
-            if (memberType.IsArray)
+            if (memberInfo.Type.ElementTypeInfo != null)
             {
-                if (constructorInfo != null)
+                // Try to read it using the visiters if it's a simple POD type.
+                var nodeInitializer = VisitNode(memberAccess, memberInfo, recordReader);
+                if (nodeInitializer != null)
+                    container.Add(Expression.Assign(memberAccess, nodeInitializer));
+                else
                 {
-                    var arrayExpr = Expression.NewArrayBounds(elementType, Expression.Constant(rootNode.MemberInfo.Cardinality));
-                    container.Add(Expression.Assign(memberAccess.Expression, arrayExpr));
-
+                    // Visitors couldn't help (they only handle basic types)
+                    // This is an array of complex objects and needs manual looping.
                     var breakLabelTarget = Expression.Label();
 
                     var itr = Expression.Variable(typeof(int));
-                    var condition = Expression.LessThan(itr, Expression.Constant(rootNode.MemberInfo.Cardinality));
+                    var arrayElement = Expression.ArrayAccess(memberAccess, itr);
 
-                    container.Add(Expression.Loop(Expression.Block(new[] { itr }, new Expression[] {
-                        Expression.Assign(itr, Expression.Constant(0)),
-                        Expression.IfThenElse(condition,
-                            Expression.Assign(
-                                Expression.ArrayIndex(memberAccess.Expression, Expression.PostIncrementAssign(itr)),
-                                Expression.New(constructorInfo, recordReader)),
-                            Expression.Break(breakLabelTarget))
-                    }), breakLabelTarget));
-                }
-                else
-                {
-                    var nodeInitializer = VisitNode(memberAccess, recordReader);
-                    if (nodeInitializer != null)
-                        container.Add(nodeInitializer);
+                    var arrayBound = Expression.Constant(memberInfo.Cardinality);
+                    var loopTest = Expression.LessThan(itr, arrayBound);
 
-                    var arrayMemberInfo = memberAccess.MemberInfo.Children[0];
-                    if (arrayMemberInfo.Children.Count != 0)
+                    // Construct the loop's body
+                    var loopBody = new List<Expression>();
+                    foreach (var childInfo in Type.ElementTypeInfo.Members)
                     {
-                        var breakLabelTarget = Expression.Label();
+                        if (childInfo.MemberType != memberInfo.MemberType || childInfo.IsReadOnly)
+                            continue;
 
-                        var itr = Expression.Variable(typeof(int));
-                        var arrayBound = Expression.Constant(memberAccess.MemberInfo.Cardinality);
-                        var loopTest = Expression.LessThan(itr, arrayBound);
-
-                        var arrayElement = Expression.ArrayAccess(memberAccess.Expression, itr);
-
-                        var loopBody = new List<Expression>();
-                        foreach (var childInfo in arrayMemberInfo.Children)
-                        {
-                            var childAccess = childInfo.MakeMemberAccess(arrayElement);
-                            Visit(loopBody, recordReader, childAccess);
-                        }
-
-                        container.Add(Expression.Block(new[] { itr },
-                            Expression.Assign(itr, Expression.Constant(0)),
-                            Expression.Loop(
-                                Expression.IfThenElse(loopTest,
-                                    Expression.Block(
-                                        Expression.Assign(
-                                            arrayElement,
-                                            New.Expression(arrayMemberInfo.Type)
-                                        ),
-                                        Expression.Block(loopBody),
-                                        Expression.PreIncrementAssign(itr)
-                                    ),
-                                    Expression.Break(breakLabelTarget)
-                                )
-                            , breakLabelTarget)));
+                        var childAccess = childInfo.MakeAccess(arrayElement);
+                        Visit(loopBody, recordReader, childInfo, childAccess);
                     }
+
+                    // And now construct the loop itself
+                    container.Add(Expression.Block(new[] { itr },
+                        Expression.Assign(itr, Expression.Constant(0)),
+                        Expression.Loop(
+                            Expression.IfThenElse(loopTest,
+                                Expression.Block(
+                                    Expression.Assign(arrayElement, New.Expression(arrayElement.Type)),
+                                    Expression.Block(loopBody),
+                                    Expression.PreIncrementAssign(itr)
+                                ),
+                                Expression.Break(breakLabelTarget)
+                            ),
+                        breakLabelTarget)));
                 }
-            }
-            else if (constructorInfo != null)
-            {
-                container.Add(Expression.Assign(memberAccess.Expression, Expression.New(constructorInfo, recordReader)));
             }
             else
             {
-                if (memberAccess.MemberInfo.Type.IsClass)
-                    container.Add(Expression.Assign(memberAccess.Expression, Expression.New(memberAccess.MemberInfo.Type)));
 
-                var nodeInitializer = VisitNode(memberAccess, recordReader);
+                var nodeInitializer = VisitNode(memberAccess, memberInfo, recordReader);
                 if (nodeInitializer != null)
-                    container.Add(nodeInitializer);
+                    container.Add(Expression.Assign(memberAccess, nodeInitializer));
+                else if (memberInfo.Type.IsClass)
+                    container.Add(Expression.Assign(memberAccess, Expression.New(memberInfo.Type.Type)));
 
-                foreach (var child in memberAccess.MemberInfo.Children)
+                foreach (var child in memberInfo.Type.Members)
                 {
-                    var childAccess = child.MakeMemberAccess(rootNode.Expression);
-                    Visit(container, recordReader, childAccess);
+                    if (child.IsReadOnly || child.MemberType != memberInfo.MemberType)
+                        continue;
+
+                    var childAccess = child.MakeAccess(memberAccess);
+                    Visit(container, recordReader, child, childAccess);
                 }
             }
         }
@@ -329,7 +311,8 @@ namespace DBClientFiles.NET.Parsing.Serialization
         /// This method is invoked on primitive members such as integers, floats, but also on arrays of these.
         /// </summary>
         /// <param name="memberAccess"></param>
+        /// <param name="memberInfo"></param>
         /// <param name="recordReader"></param>
-        public abstract Expression VisitNode(ExtendedMemberExpression memberAccess, Expression recordReader);
+        public abstract Expression VisitNode(Expression memberAccess, Member memberInfo, Expression recordReader);
     }
 }

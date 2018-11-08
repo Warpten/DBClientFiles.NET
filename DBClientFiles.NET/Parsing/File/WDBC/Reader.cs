@@ -2,7 +2,6 @@
 using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.Serialization;
-using DBClientFiles.NET.Parsing.Types;
 
 namespace DBClientFiles.NET.Parsing.File.WDBC
 {
@@ -29,6 +28,8 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
 
         protected override void PrepareBlocks()
         {
+            _fileHeader.Read(this);
+
             Head.Next = new Block
             {
                 Identifier = BlockIdentifier.Records,

@@ -1,11 +1,10 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Text;
 using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers;
+using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Parsing.Serialization;
-using DBClientFiles.NET.Parsing.Types;
 
 namespace DBClientFiles.NET.Parsing.File
 {
@@ -58,7 +57,7 @@ namespace DBClientFiles.NET.Parsing.File
         /// <param name="leaveOpen">If <c>true</c>, the stream is left open once this object is disposed.</param>
         public BinaryFileWriter(StorageOptions options, Stream input, bool leaveOpen) : base(input, Encoding.UTF8, leaveOpen)
         {
-            Type = TypeInfo.Create<T>(options.MemberType);
+            Type = new TypeInfo(typeof(T));
             Options = options;
             Head = new Block();
 

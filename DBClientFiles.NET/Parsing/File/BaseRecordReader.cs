@@ -5,6 +5,7 @@ using DBClientFiles.NET.Utils;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -12,7 +13,7 @@ namespace DBClientFiles.NET.Parsing.File
 {
     internal unsafe class BaseRecordReader : IRecordReader
     {
-        private IntPtr _recordData;
+        private readonly IntPtr _recordData;
         private int _bitCursor;
         private IBinaryStorageFile _fileReader;
         private int _recordSize;
@@ -55,6 +56,7 @@ namespace DBClientFiles.NET.Parsing.File
                 Marshal.FreeHGlobal(_recordData);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Read<T>(int bitCount) where T : unmanaged
         {
 #if DEBUG
@@ -88,11 +90,14 @@ var byteOffset = _bitCursor / 8;
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Read<T>() where T : unmanaged => Read<T>(UnsafeCache<T>.Size * 8);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T[] ReadArray<T>(int count) where T : unmanaged
             => ReadArray<T>(count, UnsafeCache<T>.Size << 3);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T[] ReadArray<T>(int count, int elementBitCount) where T : unmanaged
         {
             var value = new T[count];
