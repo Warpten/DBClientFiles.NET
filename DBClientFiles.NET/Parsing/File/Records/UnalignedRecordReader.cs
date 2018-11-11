@@ -9,9 +9,9 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace DBClientFiles.NET.Parsing.File
+namespace DBClientFiles.NET.Parsing.File.Records
 {
-    internal unsafe class BaseRecordReader : IRecordReader
+    internal unsafe class UnalignedRecordReader : IRecordReader
     {
         private readonly IntPtr _recordData;
         private int _bitCursor;
@@ -20,7 +20,7 @@ namespace DBClientFiles.NET.Parsing.File
 
         private bool _managePointer;
 
-        public BaseRecordReader(IBinaryStorageFile fileReader, int recordSize, Stream recordData)
+        public UnalignedRecordReader(IBinaryStorageFile fileReader, int recordSize, Stream recordData)
         {
             _fileReader = fileReader;
             _recordSize = recordSize;
@@ -37,7 +37,7 @@ namespace DBClientFiles.NET.Parsing.File
             _bitCursor = 0;
         }
 
-        public BaseRecordReader(IBinaryStorageFile fileReader, int recordSize, Stream recordData, IntPtr stagingDataPointer)
+        public UnalignedRecordReader(IBinaryStorageFile fileReader, int recordSize, Stream recordData, IntPtr stagingDataPointer)
         {
             _fileReader = fileReader;
             _recordSize = recordSize;
@@ -77,7 +77,7 @@ namespace DBClientFiles.NET.Parsing.File
             }
 #endif
 
-var byteOffset = _bitCursor / 8;
+            var byteOffset = _bitCursor / 8;
             var byteCount = ((bitCount + (_bitCursor & 7) + 7)) / 8;
 
             Debug.Assert(byteOffset + byteCount <= _recordSize);
@@ -91,11 +91,11 @@ var byteOffset = _bitCursor / 8;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T Read<T>() where T : unmanaged => Read<T>(UnsafeCache<T>.Size * 8);
+        public T Read<T>() where T : unmanaged => Read<T>(Unsafe.SizeOf<T>() * 8);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T[] ReadArray<T>(int count) where T : unmanaged
-            => ReadArray<T>(count, UnsafeCache<T>.Size << 3);
+            => ReadArray<T>(count, Unsafe.SizeOf<T>() * 8);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T[] ReadArray<T>(int count, int elementBitCount) where T : unmanaged

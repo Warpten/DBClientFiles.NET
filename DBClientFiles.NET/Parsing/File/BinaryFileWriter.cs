@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Text;
 using DBClientFiles.NET.Collections;
+using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers;
 using DBClientFiles.NET.Parsing.Reflection;

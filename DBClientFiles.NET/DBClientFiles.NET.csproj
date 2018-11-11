@@ -6,28 +6,16 @@
 
     <DebugType>pdbonly</DebugType>
     <DebugSymbols>true</DebugSymbols>
-  </PropertyGroup>
+    <Configurations>Debug;Release;RelWithMemoryProfiling</Configurations>
 
-  <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <LangVersion>7.3</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <LangVersion>7.3</LangVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DefineConstants>DEBUG</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <Version>0.0.1</Version>
     <FileVersion>0.0.1</FileVersion>
     <Authors>Vincent Piquet</Authors>
     <Description>High-performance DBC/DB2 file reader.</Description>
     <Copyright>Copyright (c) 2018 Vincent Piquet</Copyright>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <PackageId>DBClientFiles.NET</PackageId>
     <PackageVersion>0.0.1</PackageVersion>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
@@ -36,19 +24,34 @@
     <PackageProjectUrl>https://github.com/Warpten/DBClientFiles.NET/</PackageProjectUrl>
   </PropertyGroup>
 
-  <!-- Dependencies for .NET Core 2.0 OR 2.1 -->
+  <PropertyGroup Condition="'$(Configuration)'=='RelWithMemoryProfiling'">
+    <DefineConstants>PROFILING_API</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <DefineConstants>DEBUG</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1'">
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)'=='RelWithMemoryProfiling'">
+    <Reference Include="JetBrains.Profiler.Windows.Api.dll">
+      <HintPath>$(LocalAppData)\JetBrains\Installations\dotMemory12\JetBrains.Profiler.Windows.Api.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Memory" Version="4.5.0" />
+    <PackageReference Include="System.Memory" Version="4.5.1" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.2" />
-    <PackageReference Include="System.ValueTuple" Version="4.4.0" />
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+    <PackageReference Include="System.Buffers" Version="4.5.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Collections\Events\" />
     <Folder Include="Definitions\" />
   </ItemGroup>
+
 </Project>

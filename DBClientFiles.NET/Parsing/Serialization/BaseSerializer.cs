@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using DBClientFiles.NET.Attributes;
 using DBClientFiles.NET.Collections;
-using DBClientFiles.NET.Parsing.Binding;
 using DBClientFiles.NET.Parsing.File;
+using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Utils;
 
@@ -32,8 +29,8 @@ namespace DBClientFiles.NET.Parsing.Serialization
             _indexColumn = typeInfo.GetMemberByIndex(indexColumn, options.MemberType);
             if (_indexColumn == null)
                 throw new ArgumentException($"Invalid column index provided to BaseSerializer<{typeof(TKey).Name}, {typeof(TValue).Name}>.");
-            else if (typeof(string).IsAssignableFrom(_indexColumn.Type.Type))
-                throw new ArgumentException($"Column index provided to BaseSerializer<{typeof(TKey).Name}, {typeof(TValue).Name}> points to a string ({_indexColumn.MemberInfo.Name}).");
+            else if (_indexColumn.Type.Type != typeof(int) && _indexColumn.Type.Type != typeof(uint))
+                throw new ArgumentException($"Column index provided to BaseSerializer<{typeof(TKey).Name}, {typeof(TValue).Name}> is not an integer ({_indexColumn.MemberInfo.Name}).");
         }
 
         /// <summary>
@@ -169,27 +166,28 @@ namespace DBClientFiles.NET.Parsing.Serialization
             else
             {
                 var typeInfo = field.DeclaringType.GetChildTypeInfo(oldMember.Type);
-                if (typeInfo.HasChildren)
-                {
-                    var block = new List<Expression>() {
-                        Expression.Assign(newMember, New.Expression(newMember.Type))
-                    };
 
-                    foreach (var childInfo in typeInfo.Members)
-                    {
-                        if (childInfo.MemberType != Options.MemberType)
-                            continue;
-
-                        var oldChild = childInfo.MakeAccess(oldMember);
-                        var newChild = childInfo.MakeAccess(newMember);
-
-                        block.Add(CloneMember(childInfo, oldChild, newChild));
-                    }
-
-                    return Expression.Block(block);
-                }
-                else
+                if (typeInfo.Type == typeof(string) || typeInfo.Type.IsPrimitive)
                     return Expression.Assign(newMember, oldMember);
+
+                var block = new List<Expression>() {
+                    Expression.Assign(newMember, New.Expression(newMember.Type))
+                };
+
+                foreach (var childInfo in typeInfo.Members)
+                {
+                    if (childInfo.MemberType != Options.MemberType)
+                        continue;
+
+                    var oldChild = childInfo.MakeAccess(oldMember);
+                    var newChild = childInfo.MakeAccess(newMember);
+
+                    block.Add(CloneMember(childInfo, oldChild, newChild));
+                }
+
+                return block.Count == 1
+                    ? (Expression)Expression.Assign(newMember, oldMember)
+                    : (Expression)Expression.Block(block);
             }
         }
 
@@ -283,13 +281,11 @@ namespace DBClientFiles.NET.Parsing.Serialization
                                     Expression.PreIncrementAssign(itr)
                                 ),
                                 Expression.Break(breakLabelTarget)
-                            ),
-                        breakLabelTarget)));
+                            ), breakLabelTarget)));
                 }
             }
             else
             {
-
                 var nodeInitializer = VisitNode(memberAccess, memberInfo, recordReader);
                 if (nodeInitializer != null)
                     container.Add(Expression.Assign(memberAccess, nodeInitializer));

@@ -42,7 +42,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
         }
 
         public int CopyTableLength => throw new NotImplementedException();
-        public int IndexColumn => throw new NotImplementedException();
+        public short IndexColumn => throw new NotImplementedException();
         public bool HasIndexTable => throw new NotImplementedException();
         public bool HasForeignIds => throw new NotImplementedException();
         public bool HasOffsetMap => throw new NotImplementedException();

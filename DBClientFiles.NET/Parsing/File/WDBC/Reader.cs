@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using DBClientFiles.NET.Collections;
+using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.Serialization;
 
@@ -15,20 +16,32 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
 
         public override int Size => _fileHeader.RecordCount;
 
+        private AlignedRecordReader _recordReader;
+
         public Reader(StorageOptions options, Stream input) : base(options, input, true)
         {
             _fileHeader = new Header();
             _generator = new Serializer<T>(options, Type);
         }
 
+        protected override void Dispose(bool disposing)
+        {
+            _recordReader.Dispose();
+            _recordReader = null;
+
+            base.Dispose(disposing);
+        }
+
         protected override IRecordReader GetRecordReader()
         {
-            return base.GetRecordReader();
+            _recordReader.LoadStream(BaseStream);
+            return _recordReader;
         }
 
         protected override void PrepareBlocks()
         {
             _fileHeader.Read(this);
+            _recordReader = new AlignedRecordReader(this, Header.RecordSize);
 
             Head.Next = new Block
             {

@@ -19,7 +19,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
         public bool IsProperty => MemberType == MemberTypes.Property;
         public bool IsArray => InternalGetMemberType().IsArray;
 
-        public int Cardinality { get; }
+        public int Cardinality { get; set; }
 
         public TypeInfo Type { get; }
         public TypeInfo DeclaringType { get; }
@@ -32,12 +32,12 @@ namespace DBClientFiles.NET.Parsing.Reflection
             Type = parent.GetChildTypeInfo(InternalGetMemberType());
             if (Type.Type.IsArray)
             {
-                var marshalAttr = Type.Type.GetCustomAttribute<MarshalAsAttribute>();
+                var marshalAttr = memberInfo.GetCustomAttribute<MarshalAsAttribute>();
                 if (marshalAttr != null)
                     Cardinality = marshalAttr.SizeConst;
                 else
                 {
-                    var cardAttr = Type.Type.GetCustomAttribute<CardinalityAttribute>();
+                    var cardAttr = memberInfo.GetCustomAttribute<CardinalityAttribute>();
                     Cardinality = cardAttr?.SizeConst ?? -1;
                 }
             }

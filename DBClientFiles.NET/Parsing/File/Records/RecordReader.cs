@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace DBClientFiles.NET.Parsing.File
+namespace DBClientFiles.NET.Parsing.File.Records
 {
     /// <summary>
     /// This is the basic interface for reading primitives.

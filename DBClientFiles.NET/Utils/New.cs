@@ -2,6 +2,7 @@
 using System.Linq;
 using Expr = System.Linq.Expressions.Expression;
 using System.Runtime.Serialization;
+using System.Runtime.CompilerServices;
 
 namespace DBClientFiles.NET.Utils
 {
@@ -21,13 +22,19 @@ namespace DBClientFiles.NET.Utils
             return () => (T)FormatterServices.GetUninitializedObject(t);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Expr Expression() => New.Expression(typeof(T));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Expr Expression(params Expr[] arguments) => New.Expression(typeof(T), arguments);
     }
 
     public static class New
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Expr Expression(Type instanceType) => Expr.New(instanceType);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Expr Expression(Type instanceType, params Expr[] arguments)
         {
             // If a constructor is found with the provided parameters, use it.

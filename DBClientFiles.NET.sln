@@ -32,6 +32,8 @@ Global
 		Release|x64 = Release|x64
 		RelWithDebInfo|Any CPU = RelWithDebInfo|Any CPU
 		RelWithDebInfo|x64 = RelWithDebInfo|x64
+		RelWithMemoryProfiling|Any CPU = RelWithMemoryProfiling|Any CPU
+		RelWithMemoryProfiling|x64 = RelWithMemoryProfiling|x64
 		RelWithPerformance|Any CPU = RelWithPerformance|Any CPU
 		RelWithPerformance|x64 = RelWithPerformance|x64
 	EndGlobalSection
@@ -52,6 +54,10 @@ Global
 		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithDebInfo|Any CPU.Build.0 = Release|Any CPU
 		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithDebInfo|x64.ActiveCfg = Release|Any CPU
 		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithDebInfo|x64.Build.0 = Release|Any CPU
+		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithMemoryProfiling|Any CPU.ActiveCfg = RelWithMemoryProfiling|Any CPU
+		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithMemoryProfiling|Any CPU.Build.0 = RelWithMemoryProfiling|Any CPU
+		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithMemoryProfiling|x64.ActiveCfg = RelWithMemoryProfiling|Any CPU
+		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithMemoryProfiling|x64.Build.0 = RelWithMemoryProfiling|Any CPU
 		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithPerformance|Any CPU.ActiveCfg = Release|Any CPU
 		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithPerformance|Any CPU.Build.0 = Release|Any CPU
 		{884B23C7-A165-4090-880C-1DAAAF9A1C51}.RelWithPerformance|x64.ActiveCfg = Release|Any CPU
@@ -72,6 +78,8 @@ Global
 		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.RelWithDebInfo|Any CPU.Build.0 = Release|Any CPU
 		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.RelWithDebInfo|x64.ActiveCfg = Release|Any CPU
 		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.RelWithDebInfo|x64.Build.0 = Release|Any CPU
+		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.RelWithMemoryProfiling|Any CPU.ActiveCfg = Release|Any CPU
+		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.RelWithMemoryProfiling|x64.ActiveCfg = Release|Any CPU
 		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.RelWithPerformance|Any CPU.ActiveCfg = Release|Any CPU
 		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.RelWithPerformance|Any CPU.Build.0 = Release|Any CPU
 		{F858DEA6-1DB4-4B3C-90DE-FE7A67379E48}.RelWithPerformance|x64.ActiveCfg = Release|Any CPU
@@ -92,6 +100,8 @@ Global
 		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithDebInfo|Any CPU.Build.0 = Release|Any CPU
 		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithDebInfo|x64.ActiveCfg = Release|Any CPU
 		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithDebInfo|x64.Build.0 = Release|Any CPU
+		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithMemoryProfiling|Any CPU.ActiveCfg = Release|Any CPU
+		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithMemoryProfiling|x64.ActiveCfg = Release|Any CPU
 		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithPerformance|Any CPU.ActiveCfg = Release|Any CPU
 		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithPerformance|Any CPU.Build.0 = Release|Any CPU
 		{8EF65DF8-D079-4826-A2A7-620DE05CF484}.RelWithPerformance|x64.ActiveCfg = Release|Any CPU
@@ -112,6 +122,10 @@ Global
 		{ABE294FB-F1C8-44C4-9489-E86A8133F6C8}.RelWithDebInfo|Any CPU.Build.0 = Release|Any CPU
 		{ABE294FB-F1C8-44C4-9489-E86A8133F6C8}.RelWithDebInfo|x64.ActiveCfg = Release|Any CPU
 		{ABE294FB-F1C8-44C4-9489-E86A8133F6C8}.RelWithDebInfo|x64.Build.0 = Release|Any CPU
+		{ABE294FB-F1C8-44C4-9489-E86A8133F6C8}.RelWithMemoryProfiling|Any CPU.ActiveCfg = RelWithMemoryProfiling|Any CPU
+		{ABE294FB-F1C8-44C4-9489-E86A8133F6C8}.RelWithMemoryProfiling|Any CPU.Build.0 = RelWithMemoryProfiling|Any CPU
+		{ABE294FB-F1C8-44C4-9489-E86A8133F6C8}.RelWithMemoryProfiling|x64.ActiveCfg = RelWithMemoryProfiling|Any CPU
+		{ABE294FB-F1C8-44C4-9489-E86A8133F6C8}.RelWithMemoryProfiling|x64.Build.0 = RelWithMemoryProfiling|Any CPU
 		{ABE294FB-F1C8-44C4-9489-E86A8133F6C8}.RelWithPerformance|Any CPU.ActiveCfg = Release|Any CPU
 		{ABE294FB-F1C8-44C4-9489-E86A8133F6C8}.RelWithPerformance|Any CPU.Build.0 = Release|Any CPU
 		{ABE294FB-F1C8-44C4-9489-E86A8133F6C8}.RelWithPerformance|x64.ActiveCfg = Release|Any CPU
@@ -132,6 +146,8 @@ Global
 		{1BD8FD96-A5A9-4088-A633-98A6FB35EE90}.RelWithDebInfo|Any CPU.Build.0 = Release|Any CPU
 		{1BD8FD96-A5A9-4088-A633-98A6FB35EE90}.RelWithDebInfo|x64.ActiveCfg = Release|Any CPU
 		{1BD8FD96-A5A9-4088-A633-98A6FB35EE90}.RelWithDebInfo|x64.Build.0 = Release|Any CPU
+		{1BD8FD96-A5A9-4088-A633-98A6FB35EE90}.RelWithMemoryProfiling|Any CPU.ActiveCfg = Release|Any CPU
+		{1BD8FD96-A5A9-4088-A633-98A6FB35EE90}.RelWithMemoryProfiling|x64.ActiveCfg = Release|Any CPU
 		{1BD8FD96-A5A9-4088-A633-98A6FB35EE90}.RelWithPerformance|Any CPU.ActiveCfg = Release|Any CPU
 		{1BD8FD96-A5A9-4088-A633-98A6FB35EE90}.RelWithPerformance|Any CPU.Build.0 = Release|Any CPU
 		{1BD8FD96-A5A9-4088-A633-98A6FB35EE90}.RelWithPerformance|x64.ActiveCfg = Release|Any CPU
@@ -152,6 +168,8 @@ Global
 		{FC857F2A-7C08-4875-ADEE-73DFAB38F041}.RelWithDebInfo|Any CPU.Build.0 = Release|Any CPU
 		{FC857F2A-7C08-4875-ADEE-73DFAB38F041}.RelWithDebInfo|x64.ActiveCfg = Release|Any CPU
 		{FC857F2A-7C08-4875-ADEE-73DFAB38F041}.RelWithDebInfo|x64.Build.0 = Release|Any CPU
+		{FC857F2A-7C08-4875-ADEE-73DFAB38F041}.RelWithMemoryProfiling|Any CPU.ActiveCfg = Release|Any CPU
+		{FC857F2A-7C08-4875-ADEE-73DFAB38F041}.RelWithMemoryProfiling|x64.ActiveCfg = Release|Any CPU
 		{FC857F2A-7C08-4875-ADEE-73DFAB38F041}.RelWithPerformance|Any CPU.ActiveCfg = Release|Any CPU
 		{FC857F2A-7C08-4875-ADEE-73DFAB38F041}.RelWithPerformance|Any CPU.Build.0 = Release|Any CPU
 		{FC857F2A-7C08-4875-ADEE-73DFAB38F041}.RelWithPerformance|x64.ActiveCfg = Release|Any CPU
@@ -172,6 +190,10 @@ Global
 		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.RelWithDebInfo|Any CPU.Build.0 = Release|Any CPU
 		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.RelWithDebInfo|x64.ActiveCfg = Release|Any CPU
 		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.RelWithDebInfo|x64.Build.0 = Release|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.RelWithMemoryProfiling|Any CPU.ActiveCfg = RelWithMemoryProfiling|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.RelWithMemoryProfiling|Any CPU.Build.0 = RelWithMemoryProfiling|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.RelWithMemoryProfiling|x64.ActiveCfg = RelWithMemoryProfiling|Any CPU
+		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.RelWithMemoryProfiling|x64.Build.0 = RelWithMemoryProfiling|Any CPU
 		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.RelWithPerformance|Any CPU.ActiveCfg = Release|Any CPU
 		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.RelWithPerformance|Any CPU.Build.0 = Release|Any CPU
 		{66328B6C-D6D2-4EFC-A0D7-AD7B6D0F5AE4}.RelWithPerformance|x64.ActiveCfg = Release|Any CPU

@@ -27,8 +27,6 @@ namespace DBClientFiles.NET.Parsing.Reflection
 
         public bool IsClass => Type.IsClass;
 
-        public bool HasChildren => _fields.Count != 0;
-
         public TypeInfo(Type type) : this(type, null)
         {
 

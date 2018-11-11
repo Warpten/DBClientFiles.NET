@@ -22,7 +22,7 @@ namespace DBClientFiles.NET.Parsing.File
         int MaxIndex { get; }
 
         int CopyTableLength { get; }
-        int IndexColumn { get; }
+        short IndexColumn { get; }
 
         bool HasIndexTable { get; }
         bool HasForeignIds { get; }

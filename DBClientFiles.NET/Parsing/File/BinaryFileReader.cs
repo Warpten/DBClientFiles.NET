@@ -2,10 +2,15 @@
 using System.IO;
 using System.Text;
 using DBClientFiles.NET.Collections;
+using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers;
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Parsing.Serialization;
+
+#if PROFILING_API
+using JetBrains.Profiler.Windows.Api;
+#endif
 
 namespace DBClientFiles.NET.Parsing.File
 {
@@ -32,6 +37,7 @@ namespace DBClientFiles.NET.Parsing.File
 
                 foreach (var record in base.Records)
                 {
+                    // TODO: Watch out not to cause promotion of base.Records's iterator to G2!
                     foreach (var cloneStore in copyTableHandler[KeySerializer.GetKey(record)])
                     {
                         var clonedInstance = Serializer.Clone(record);
@@ -126,10 +132,7 @@ namespace DBClientFiles.NET.Parsing.File
         /// Obtains an instance of <see cref="IRecordReader"/> used for record reading.
         /// </summary>
         /// <returns></returns>
-        protected virtual IRecordReader GetRecordReader()
-        {
-            return new BaseRecordReader(this, Header.RecordSize, BaseStream);
-        }
+        protected abstract IRecordReader GetRecordReader();
 
         public abstract ISerializer<T> Serializer { get; }
 
@@ -137,6 +140,13 @@ namespace DBClientFiles.NET.Parsing.File
         {
             get
             {
+#if PROFILING_API
+                if (MemoryProfiler.IsActive && MemoryProfiler.CanControlAllocations)
+                    MemoryProfiler.EnableAllocations();
+
+                MemoryProfiler.Dump();
+#endif
+
                 PrepareBlocks();
 
                 Block head = Head;
@@ -151,9 +161,13 @@ namespace DBClientFiles.NET.Parsing.File
 
                 while (BaseStream.Position < recordBlock.EndOffset)
                 {
-                    using (var recordReader = GetRecordReader())
-                        yield return Serializer.Deserialize(recordReader);
+                    var instance = Serializer.Deserialize(GetRecordReader());
+                    yield return instance;
                 }
+
+#if PROFILING_API
+                MemoryProfiler.Dump();
+#endif
             }
         }
 
