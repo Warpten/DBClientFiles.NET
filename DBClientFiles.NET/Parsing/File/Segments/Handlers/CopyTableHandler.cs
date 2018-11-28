@@ -3,13 +3,13 @@ using System.IO;
 
 namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 {
-    internal sealed class CopyTableHandler<TKey> : IBlockHandler
+    internal sealed class CopyTableHandler<TKey> : IBlockHandler where TKey : unmanaged
     {
         private Dictionary<TKey, List<TKey>> _store = new Dictionary<TKey, List<TKey>>();
 
         public BlockIdentifier Identifier { get; } = BlockIdentifier.CopyTable;
 
-        public void ReadBlock<T, U>(T reader, long startOffset, long length) where T : BinaryReader, IReader<U>
+        public void ReadBlock<T>(T reader, long startOffset, long length) where T : BinaryReader, IParser
         {
             if (startOffset == 0 || length == 0)
                 return;

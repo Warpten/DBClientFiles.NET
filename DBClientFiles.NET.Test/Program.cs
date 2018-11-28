@@ -1,7 +1,10 @@
-﻿using DBClientFiles.NET.Collections;
+﻿using DBClientFiles.NET.Attributes;
+using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Collections.Generic;
 using System;
 using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace DBClientFiles.NET.Runner
 {
@@ -16,7 +19,13 @@ namespace DBClientFiles.NET.Runner
         public float X { get; set; }
         public float Y { get; set; }
         public float Z { get; set; }
+    }
 
+    public sealed class LocString
+    {
+        [Cardinality(SizeConst = 16)]
+        public string[] Values { get; set; }
+        public uint Mask { get; set; }
     }
 
     public struct AreaTriggerEntry
@@ -29,16 +38,32 @@ namespace DBClientFiles.NET.Runner
         public float BoxOrientation { get; set; }
     }
 
+    public sealed class AchievementEntry
+    {
+        public uint ID { get; set; }
+        public int FactionID { get; set; }
+        public int MapID { get; set; }
+        public int ParentAchievementID { get; set; }
+        public LocString Name { get; set; }
+        public LocString Description { get; set; }
+        public uint CategoryID { get; set; }
+        public uint Points { get; set; }
+        public uint UIOrder { get; set; }
+        public uint Flags { get; set; }
+        public uint IconID { get; set; }
+        public LocString Rewards { get; set; }
+        public uint MinimumCriteriaID { get; set; }
+        public uint SharesCriteria { get; set; }
+    }
+
     class Program
     {
-        static void Main(String[] args)
+        static unsafe void Main(String[] args)
         {
-
-            bool primitive = typeof(C2Vector).IsPrimitive;
-            using (var fs = File.OpenRead(@"D:\World of Warcraft 3.3.5\dbc\AreaTrigger.dbc"))
+            using (var fs = File.OpenRead(@"D:\World of Warcraft 3.3.5\dbc\Achievement.dbc"))
             {
-                var collection = new StorageList<AreaTriggerEntry>(StorageOptions.Default, fs);
-                Console.WriteLine(collection[0].MapID);
+                var collection = new StorageEnumerable<AchievementEntry>(StorageOptions.Default, fs);
+                Console.WriteLine(collection.First().MapID);
             }
 
             Console.ReadKey();

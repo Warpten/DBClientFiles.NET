@@ -7,12 +7,12 @@ namespace DBClientFiles.NET.Parsing.File.Segments
     {
         private Dictionary<BlockIdentifier, IBlockHandler> _handlers = new Dictionary<BlockIdentifier, IBlockHandler>();
 
-        public void ReadBlock<T, U>(T file, Block block) where T : BinaryReader, IReader<U>
+        public void ReadBlock<T>(T file, Block block) where T : BinaryReader, IParser
         {
             if (!_handlers.TryGetValue(block.Identifier, out var handler))
                 return;
 
-            handler.ReadBlock<T, U>(file, block.StartOffset, block.Length);
+            handler.ReadBlock<T>(file, block.StartOffset, block.Length);
         }
 
         public void Register(IBlockHandler handler)

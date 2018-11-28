@@ -3,6 +3,7 @@ using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Environments;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Toolchains.CsProj;
+using BenchmarkDotNet.Toolchains.InProcess;
 
 namespace DBClientFiles.NET.Benchmark.Attributes
 {
@@ -11,7 +12,11 @@ namespace DBClientFiles.NET.Benchmark.Attributes
     {
         public NetCoreJobAttribute()
         {
-            var job = Job.Default.With(Runtime.Core).With(Jit.RyuJit).With(Platform.X64).With(CsProjCoreToolchain.NetCoreApp21);
+            var job = Job.Default
+                .With(Runtime.Core)
+                .With(Jit.RyuJit)
+                .With(Platform.X64)
+                .With(CsProjCoreToolchain.NetCoreApp21);
             Config = ManualConfig.CreateEmpty().With(job);
         }
 

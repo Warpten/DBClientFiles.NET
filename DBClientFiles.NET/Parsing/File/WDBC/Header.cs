@@ -9,17 +9,17 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
     ///
     /// See <a href="http://www.wowdev.wiki/DBC">the wiki</a>.
     /// </summary>
-    internal struct Header : IFileHeader
+    internal readonly struct Header : IFileHeader
     {
         public int Size             => UnsafeCache<Header>.Size;
         public Signatures Signature => Signatures.WDBC;
 
-        public int RecordSize        { get; private set; }
-        public int RecordCount       { get; private set; }
-        public int FieldCount        { get; private set; }
-        public int StringTableLength { get; private set; }
+        public int RecordSize        { get; }
+        public int RecordCount       { get; }
+        public int FieldCount        { get; }
+        public int StringTableLength { get; }
 
-        public void Read(BinaryReader reader)
+        public Header(BinaryReader reader)
         {
             RecordCount = reader.ReadInt32();
             FieldCount = reader.ReadInt32();

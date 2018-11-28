@@ -1,39 +1,30 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <TargetFrameworks>netcoreapp2.1;net472</TargetFrameworks>
+    <StartupObject />
+    <ApplicationIcon />
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net472;netcoreapp2.1</TargetFrameworks>
-    <Platforms>AnyCPU</Platforms>
+    <Optimize>true</Optimize>
+
+    <DebugType>pdbonly</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>7.3</LangVersion>
+
+    <Configurations>Debug;Release;ReleaseUnitTests</Configurations>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Files\Achievement.WDB2.db2" />
-    <None Remove="Files\Achievement.WDB3.db2" />
-    <None Remove="Files\Achievement.WDB5.db2" />
-    <None Remove="Files\Achievement.WDB6.db2" />
-    <None Remove="Files\Achievement.WDBC.dbc" />
-    <None Remove="Files\Achievement.WDC1.db2" />
-    <None Remove="Files\Achievement.WDC2.db2" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.11.3" />
+    <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.11.3" />
+    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+    <PackageReference Include="System.Reflection.Emit.ILGeneration" Version="4.3.0" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Files\Achievement.WDB2.db2" />
-    <EmbeddedResource Include="Files\Achievement.WDB3.db2" />
-    <EmbeddedResource Include="Files\Achievement.WDB5.db2" />
-    <EmbeddedResource Include="Files\Achievement.WDB6.db2" />
-    <EmbeddedResource Include="Files\Achievement.WDBC.dbc" />
-    <EmbeddedResource Include="Files\Achievement.WDC1.db2" />
-    <EmbeddedResource Include="Files\Achievement.WDC2.db2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.10.14" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\DBClientFiles.NET.Data\DBClientFiles.NET.Data.csproj" />
     <ProjectReference Include="..\DBClientFiles.NET\DBClientFiles.NET.csproj" />
   </ItemGroup>
 

@@ -6,7 +6,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments
     {
         BlockIdentifier Identifier { get; }
 
-        void ReadBlock<T, U>(T reader, long startOffset, long length) where T : BinaryReader, IReader<U>;
+        void ReadBlock<T>(T reader, long startOffset, long length) where T : BinaryReader, IParser;
 
         void WriteBlock<T, U>(T reader) where T : BinaryWriter, IWriter<U>;
     }

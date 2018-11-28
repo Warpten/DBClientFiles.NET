@@ -1,60 +1,29 @@
-﻿using DBClientFiles.NET.Exceptions;
-using DBClientFiles.NET.Parsing.File;
-using DBClientFiles.NET.Parsing.Serialization;
+﻿using DBClientFiles.NET.Parsing.File;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
-using WDBC = DBClientFiles.NET.Parsing.File.WDBC;
-using WDB2 = DBClientFiles.NET.Parsing.File.WDB2;
+using DBClientFiles.NET.Collections.Generic.Internal;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
     public sealed class StorageEnumerable<T> : IEnumerable<T>
     {
-        private IReader<T> _implementation;
-        public int Size { get; private set; }
+        private Collection<T> _implementation;
 
-        public IFileHeader Header => _implementation.Header;
-        public StorageOptions Options => _implementation.Options;
+        public int Size => _implementation.Size;
 
-        internal ISerializer<T> Serializer => _implementation.Serializer;
+        public ref readonly IFileHeader Header => ref _implementation.Header;
+        public ref readonly StorageOptions Options => ref _implementation.Options;
 
-        public StorageEnumerable(StorageOptions options, Stream dataStream)
+        public StorageEnumerable(in StorageOptions options, Stream dataStream)
         {
-            FromStream(options, dataStream);
-        }
-
-        private void FromStream(StorageOptions options, Stream dataStream)
-        {
-#if NETCOREAPP
-            System.Span<byte> identifierBytes = stackalloc byte[4];
-            dataStream.Read(identifierBytes);
-            var identifier = (Signatures)System.Runtime.InteropServices.MemoryMarshal.Read<uint>(identifierBytes);
-#else
-            var identifierBytes = new byte[4];
-            dataStream.Read(identifierBytes, 0, 4);
-            var identifier = (Signatures)((identifierBytes[0]) | (identifierBytes[1] << 8) | (identifierBytes[2] << 16) | (identifierBytes[3] << 24));
-#endif
-            switch (identifier)
-            {
-                case Signatures.WDBC:
-                    _implementation = new WDBC.Reader<T>(options, dataStream);
-                    break;
-                case Signatures.WDB2:
-                    _implementation = new WDB2.Reader<T>(options, dataStream);
-                    break;
-                default:
-                    throw new VersionNotSupportedException(identifier);
-            }
-
-            _implementation.Initialize();
-            Size = _implementation.Size;
+            _implementation = new Collection<T>(in options, dataStream);
         }
 
         public IEnumerator<T> GetEnumerator()
         {
-            return _implementation.Records.GetEnumerator();
+            return _implementation.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()

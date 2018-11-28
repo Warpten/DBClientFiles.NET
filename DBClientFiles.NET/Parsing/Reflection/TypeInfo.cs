@@ -1,6 +1,7 @@
 ﻿using DBClientFiles.NET.Attributes;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -25,8 +26,6 @@ namespace DBClientFiles.NET.Parsing.Reflection
         public IEnumerable<Member> Properties
             => Members.Where(m => m.IsProperty);
 
-        public bool IsClass => Type.IsClass;
-
         public TypeInfo(Type type) : this(type, null)
         {
 
@@ -43,6 +42,9 @@ namespace DBClientFiles.NET.Parsing.Reflection
             Type = type;
             if (type.IsArray)
                 ElementTypeInfo = GetChildTypeInfo(type.GetElementType());
+
+            if (type.IsPrimitive || type == typeof(string))
+                return;
 
             var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance);
             for (int i = 0; i < fields.Length; ++i)

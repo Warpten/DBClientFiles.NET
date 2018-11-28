@@ -1,33 +1,21 @@
-﻿using DBClientFiles.NET.Parsing.Enums;
+﻿using DBClientFiles.NET.Parsing.Binding;
+using DBClientFiles.NET.Parsing.Enums;
 
 namespace DBClientFiles.NET.Internals.Binding.Members.WDB5
 {
-    internal sealed class MemberMetadata : IMemberMetadata
+    internal sealed class MemberMetadata : BaseMemberMetadata
     {
-        private uint _bitOffset;
-        private uint _elementBitSize;
+        public override MemberCompressionType CompressionType { get; internal set; } = MemberCompressionType.None;
+        public override uint CompressionIndex                 { get; internal set; } = 0;
+        public override int Cardinality                       { get; internal set; } = -1;
+        public override MemberMetadataProperties Properties   { get; internal set; } = 0;
 
-        public MemberMetadata(uint bitOffset, uint elementBitSize)
+        public override uint Size { get; internal set; }
+        public override uint Offset { get; internal set; }
+
+        public override T GetDefaultValue<T>()
         {
-            _bitOffset = bitOffset;
-            _elementBitSize = elementBitSize;
-        }
-
-        public MemberCompressionType CompressionType { get; } = MemberCompressionType.None;
-        public uint CompressionIndex                 { get; } = 0;
-        public int Cardinality                       { get; } = -1;
-        public MemberMetadataProperties Properties   { get; } = 0;
-
-        public T GetDefaultValue<T>() => default;
-
-        public uint GetElementBitSize()
-        {
-            return _elementBitSize;
-        }
-
-        public uint GetBitOffset()
-        {
-            return _bitOffset;
+            return default;
         }
     }
 }

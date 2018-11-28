@@ -4,12 +4,13 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
 
     <IsPackable>false</IsPackable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <AssemblyName>DBClientFiles.NET.Runner</AssemblyName>
-
     <RootNamespace>DBClientFiles.NET.Runner</RootNamespace>
-
     <StartupObject>DBClientFiles.NET.Runner.Program</StartupObject>
+
+    <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
 
   <ItemGroup>

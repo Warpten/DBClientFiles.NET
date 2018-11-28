@@ -3,7 +3,7 @@
 namespace DBClientFiles.NET.Parsing.Enums
 {
     [Flags]
-    internal enum MemberMetadataProperties
+    public enum MemberMetadataProperties
     {
         /// <summary>
         /// This member is the record's index.

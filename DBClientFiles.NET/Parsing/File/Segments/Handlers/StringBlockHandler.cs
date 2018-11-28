@@ -21,7 +21,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
         #region IFileBlock
         public BlockIdentifier Identifier { get; } = BlockIdentifier.StringBlock;
 
-        public void ReadBlock<T, U>(T reader, long startOffset, long length) where T : BinaryReader, IReader<U>
+        public void ReadBlock<T>(T reader, long startOffset, long length) where T : BinaryReader, IParser
         {
             if (startOffset == 0 || length <= 2)
                 return;

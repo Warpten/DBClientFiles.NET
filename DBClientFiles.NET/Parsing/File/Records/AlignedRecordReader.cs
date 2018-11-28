@@ -11,17 +11,16 @@ namespace DBClientFiles.NET.Parsing.File.Records
     /// An implementation of <see cref="IRecordReader"/> tailored for WDBC and WDB2. The records
     /// within these files always have the same sizes. It is only able of performing aligned reads.
     /// </summary>
-    internal unsafe sealed class AlignedRecordReader : IRecordReader
+    internal sealed unsafe class AlignedRecordReader : IRecordReader
     {
-        private byte[] _stagingBuffer;
+        private readonly byte[] _stagingBuffer;
 
         private int _byteCursor;
-        private StringBlockHandler _stringBlock;
+        private readonly StringBlockHandler _stringBlock;
 
         public AlignedRecordReader(IBinaryStorageFile fileReader, int recordSize)
         {
             _stringBlock = fileReader.FindBlockHandler<StringBlockHandler>(BlockIdentifier.StringBlock);
-
 
             _stagingBuffer = new byte[recordSize + 8];
             _byteCursor = 0;
@@ -45,18 +44,18 @@ namespace DBClientFiles.NET.Parsing.File.Records
             return value;
         }
 
-        // This is a LOT faster than a manual loop like
-        // for (...) arr[i] = Read<T>();
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T[] ReadArray<T>(int count) where T : unmanaged
         {
             //Console.WriteLine("Reading " + count + " elements of size " + sizeof(T) + " bytes each at offset " + _byteCursor);
 
-            var dataPtr = (byte*)Unsafe.AsPointer(ref _stagingBuffer[_byteCursor]);
             var rentedBuffer = new T[count];
 
-            for (var i = 0; i < count; ++i)
-                rentedBuffer[i] = Read<T>();
+            Unsafe.CopyBlockUnaligned(Unsafe.AsPointer(ref rentedBuffer[0]), Unsafe.AsPointer(ref _stagingBuffer[_byteCursor]), (uint)(count * Unsafe.SizeOf<T>()));
+            _byteCursor += count * Unsafe.SizeOf<T>();
+
+            // for (var i = 0; i < count; ++i)
+            //     rentedBuffer[i] = Read<T>();
 
             // _byteCursor += count * Unsafe.SizeOf<T>();
             // Unsafe.CopyBlock(Unsafe.AsPointer(ref rentedBuffer[0]), dataPtr, (uint)(count * Unsafe.SizeOf<T>()));

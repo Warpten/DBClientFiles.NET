@@ -1,4 +1,14 @@
-﻿using BenchmarkDotNet.Running;
+﻿using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Jobs;
+using BenchmarkDotNet.Running;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using BenchmarkDotNet.Environments;
+using BenchmarkDotNet.Toolchains.CsProj;
+using BenchmarkDotNet.Validators;
 
 namespace DBClientFiles.NET.Benchmark
 {
@@ -6,14 +16,11 @@ namespace DBClientFiles.NET.Benchmark
     {
         public static void Main(string[] args)
         {
-            var switcher = new BenchmarkSwitcher(new[]
-            {
-                typeof(OptionsTest),
-                typeof(SpanTest),
-                typeof(AchievementTest)
-            });
+            var summaries = BenchmarkSwitcher.FromTypes(new[] {
+                typeof(DBC.DBC),
 
-            switcher.Run();
+                // typeof(LanguageFeatureBenchmarks)
+            }).Run(args);
         }
     }
 }

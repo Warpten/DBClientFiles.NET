@@ -1,6 +1,7 @@
 ﻿using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Parsing.File;
 using DBClientFiles.NET.Parsing.File.Records;
+using DBClientFiles.NET.Parsing.Reflection;
 
 namespace DBClientFiles.NET.Parsing.Serialization
 {
@@ -14,26 +15,19 @@ namespace DBClientFiles.NET.Parsing.Serialization
         T Deserialize(IRecordReader reader);
 
         /// <summary>
-        /// Deserializes an instance of <see cref="{T}"/> from the provided stream.
-        /// </summary>
-        /// <param name="instance"></param>
-        /// <param name="reader"></param>
-        // void Deserialize(T instance, RecordReader reader);
-
-        /// <summary>
         /// Given an instance of <see cref="{T}"/>, perform a deep copy operation and return a new object.
         /// </summary>
         /// <param name="origin"></param>
         /// <returns></returns>
-        T Clone(T origin);
+        T Clone(in T origin);
 
-        StorageOptions Options { get; }
-    }
+        int GetKey(in T instance);
+        void SetKey(out T instance, int key);
 
-    internal interface ISerializer<TKey, TValue> : ISerializer<TValue>
-    {
-        TKey GetKey(TValue instance);
+        void SetIndexColumn(int indexColumn);
 
-        void SetKey(TValue instance, TKey key);
+        ref readonly StorageOptions Options { get; }
+
+        void Initialize(TypeInfo memberInfo, in StorageOptions options);
     }
 }

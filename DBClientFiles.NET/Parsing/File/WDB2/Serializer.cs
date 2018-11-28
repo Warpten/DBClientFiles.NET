@@ -7,10 +7,11 @@ using System.Linq.Expressions;
 
 namespace DBClientFiles.NET.Parsing.File.WDB2
 {
-    internal sealed class Serializer<T> : BaseSerializer<T>
+    internal sealed class Serializer<T> : StructuredSerializer<T>
     {
-        public Serializer(StorageOptions options, TypeInfo typeInfo) : base(options, typeInfo)
+        public Serializer() : base()
         {
+
         }
 
         /// <summary>

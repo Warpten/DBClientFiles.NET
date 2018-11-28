@@ -10,11 +10,12 @@ namespace DBClientFiles.NET.Collections.Generic
     {
         private IList<T> _impl;
 
-        public StorageOptions Options { get; }
+        private StorageOptions _options;
+        public ref readonly StorageOptions Options => ref _options;
 
-        public StorageList(StorageOptions options, Stream dataStream)
+        public StorageList(in StorageOptions options, Stream dataStream)
         {
-            Options = options;
+            _options = options;
 
             var enumerable = new StorageEnumerable<T>(options, dataStream);
             _impl = new List<T>(enumerable);

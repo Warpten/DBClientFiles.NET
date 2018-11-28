@@ -6,7 +6,6 @@ namespace DBClientFiles.NET.Parsing.File
     {
         int Size { get; }
         Signatures Signature { get; }
-        void Read(BinaryReader reader);
 
         uint TableHash { get; }
         uint LayoutHash { get; }

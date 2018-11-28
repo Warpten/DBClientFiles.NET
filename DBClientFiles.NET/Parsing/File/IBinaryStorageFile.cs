@@ -9,9 +9,9 @@ namespace DBClientFiles.NET.Parsing.File
     /// </summary>
     internal interface IBinaryStorageFile : IDisposable
     {
-        IFileHeader Header { get; }
+        ref readonly IFileHeader Header { get; }
 
-        StorageOptions Options { get; }
+        ref readonly StorageOptions Options { get; }
 
         U FindBlockHandler<U>(BlockIdentifier identifier) where U : IBlockHandler;
     }
