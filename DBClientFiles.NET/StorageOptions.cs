@@ -3,34 +3,46 @@ using System.Reflection;
 
 namespace DBClientFiles.NET
 {
-    public struct StorageOptions
+    public readonly struct StorageOptions
     {
-        public MemberTypes MemberType { get; set; }
+        public readonly MemberTypes MemberType;
 
-        public bool InternStrings { get; set; }
+        public readonly bool InternStrings;
 
         /// <summary>
         /// If set, the library will ignore any file metadata information regarding the sign of each member.
         /// </summary>
-        public bool IgnoreSignedChecks { get; set; }
+        public readonly bool IgnoreSignedChecks;
 
         /// <summary>
         /// If set to to <c>true</c>, the stream used as source will be copied to RAM before being used.
         /// This is set to <c>true</c> by default for anything but MemoryStream.
         /// </summary>
-        public bool CopyToMemory { get; set; }
+        public readonly bool CopyToMemory;
 
-        public bool ReadOnly { get; set; }
+        public readonly bool ReadOnly;
 
-        private static StorageOptions _default = new StorageOptions
-        {
-            MemberType = MemberTypes.Property,
-            InternStrings = false,
-            CopyToMemory = false,
-            IgnoreSignedChecks = false,
-            ReadOnly = true
-        };
+        private static StorageOptions _default = new StorageOptions(
+            memberType: MemberTypes.Property,
+            internStrings: false,
+            copyToMemory: false,
+            ignoreSignedChecks: false,
+            readOnly: true
+        );
 
         public static ref readonly StorageOptions Default => ref _default;
+
+        public StorageOptions(MemberTypes memberType,
+            bool internStrings,
+            bool ignoreSignedChecks,
+            bool copyToMemory,
+            bool readOnly)
+        {
+            MemberType = memberType;
+            InternStrings = internStrings;
+            IgnoreSignedChecks = ignoreSignedChecks;
+            CopyToMemory = copyToMemory;
+            ReadOnly = readOnly;
+        }
     }
 }
