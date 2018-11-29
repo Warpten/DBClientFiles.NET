@@ -15,7 +15,7 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
         private IFileHeader _fileHeader;
         public override ref readonly IFileHeader Header => ref _fileHeader;
 
-        public override int Size => _fileHeader.RecordCount;
+        public override int RecordCount => _fileHeader.RecordCount;
 
         private AlignedRecordReader _recordReader;
 

@@ -14,7 +14,7 @@ namespace DBClientFiles.NET.Parsing.File
         /// <summary>
         /// The total amount of records in the file (including copies)
         /// </summary>
-        int Size { get; }
+        int RecordCount { get; }
 
         BaseMemberMetadata GetFileMemberMetadata(int index);
     }

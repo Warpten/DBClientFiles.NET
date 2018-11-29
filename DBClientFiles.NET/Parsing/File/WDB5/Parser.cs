@@ -13,7 +13,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
         private IFileHeader _fileHeader;
         public override ref readonly IFileHeader Header => ref _fileHeader;
 
-        public override int Size => _fileHeader.RecordCount;
+        public override int RecordCount => _fileHeader.RecordCount + _fileHeader.CopyTableLength / 2;
 
         private BaseMemberMetadata[] FileMembers;
 

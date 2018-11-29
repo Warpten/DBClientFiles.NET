@@ -237,6 +237,6 @@ namespace DBClientFiles.NET.Parsing.File
             return new Enumerator(this);
         }
 
-        public abstract int Size { get; }
+        public abstract int RecordCount { get; }
     }
 }

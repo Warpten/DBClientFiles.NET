@@ -11,7 +11,11 @@ namespace DBClientFiles.NET.Collections.Generic
     {
         private Collection<T> _implementation;
 
-        public int Size => _implementation.Size;
+        /// <summary>
+        /// The total number of elements in the file. This value will always be correct, regardless of wether or
+        /// not code consumes only a few of the records.
+        /// </summary>
+        public int RecordCount => _implementation.RecordCount;
 
         public ref readonly IFileHeader Header => ref _implementation.Header;
         public ref readonly StorageOptions Options => ref _implementation.Options;

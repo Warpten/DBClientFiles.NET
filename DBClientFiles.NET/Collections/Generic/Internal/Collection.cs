@@ -13,14 +13,14 @@ namespace DBClientFiles.NET.Collections.Generic.Internal
     internal sealed class Collection<T> : IEnumerable<T>
     {
         private IParser<T> _implementation;
-        public int Size { get; private set; }
+        public int RecordCount { get; private set; }
 
         public ref readonly IFileHeader Header => ref _implementation.Header;
         public ref readonly StorageOptions Options => ref _implementation.Options;
 
         public Collection(in StorageOptions options, Stream dataStream)
         {
-            Size = 0;
+            RecordCount = 0;
             _implementation = null;
 
             FromStream(in options, dataStream);
@@ -54,7 +54,7 @@ namespace DBClientFiles.NET.Collections.Generic.Internal
             }
 
             _implementation.Initialize();
-            Size = _implementation.Size;
+            RecordCount = _implementation.RecordCount;
         }
 
         public IEnumerator<T> GetEnumerator()
