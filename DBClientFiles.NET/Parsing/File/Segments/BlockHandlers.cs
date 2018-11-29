@@ -3,9 +3,9 @@ using System.IO;
 
 namespace DBClientFiles.NET.Parsing.File.Segments
 {
-    internal class BlockHandlers
+    internal struct BlockHandlers
     {
-        private Dictionary<BlockIdentifier, IBlockHandler> _handlers = new Dictionary<BlockIdentifier, IBlockHandler>();
+        private Dictionary<BlockIdentifier, IBlockHandler> _handlers;
 
         public void ReadBlock<T>(T file, Block block) where T : BinaryReader, IParser
         {
@@ -17,6 +17,9 @@ namespace DBClientFiles.NET.Parsing.File.Segments
 
         public void Register(IBlockHandler handler)
         {
+            if (_handlers == null)
+                _handlers = new Dictionary<BlockIdentifier, IBlockHandler>();
+
             _handlers[handler.Identifier] = handler;
         }
 
@@ -27,6 +30,9 @@ namespace DBClientFiles.NET.Parsing.File.Segments
 
         public T GetHandler<T>(BlockIdentifier identifier) where T : IBlockHandler
         {
+            if (_handlers == null)
+                return default;
+
             if (_handlers.TryGetValue(identifier, out var handler))
                 return (T) handler;
 

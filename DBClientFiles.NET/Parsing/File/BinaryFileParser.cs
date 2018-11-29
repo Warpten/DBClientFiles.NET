@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using DBClientFiles.NET.Parsing.Binding;
 using DBClientFiles.NET.Parsing.File.Records;
@@ -38,7 +41,7 @@ namespace DBClientFiles.NET.Parsing.File
         protected Block Head { get; set; }
 
         private StorageOptions _options;
-        private BlockHandlers _handlers { get; } = new BlockHandlers();
+        private BlockHandlers _handlers;
 
         /// <summary>
         /// Create an instance of <see cref="BinaryFileParser{TValue, TSerializer}"/>.
@@ -100,53 +103,138 @@ namespace DBClientFiles.NET.Parsing.File
         /// <returns></returns>
         protected abstract IRecordReader GetRecordReader();
 
-        public virtual IEnumerable<TValue> Records
+        public struct Enumerator : IEnumerator<TValue>, IEnumerator
         {
-            get
-            {
-                Prepare();
+            internal BinaryFileParser<TValue, TSerializer> _owner;
+            internal Block _recordBlock;
 
-                var head = Head;
+            internal TSerializer Serializer => _owner.Serializer;
+
+            public Enumerator(BinaryFileParser<TValue, TSerializer> owner)
+            {
+                owner.Prepare();
+
+                var head = owner.Head;
                 while (head != null)
                 {
-                    _handlers.ReadBlock(this, head);
+                    owner._handlers.ReadBlock(owner, head);
                     head = head.Next;
                 }
 
-                var copyTableHandler = FindBlockHandler<CopyTableHandler<int>>(BlockIdentifier.CopyTable);
+                _owner = owner;
+                _recordBlock = owner.FindBlock(BlockIdentifier.Records);
 
-                foreach (var instance in EnumerateRecordBlock())
-                {
-                    yield return instance;
+                Current = default;
+                Reset();
+            }
 
-                    if (copyTableHandler != null)
-                    {
-                        var instanceKey = Serializer.GetKey(in instance);
+            public TValue Current { get; private set; }
+            object IEnumerator.Current => Current;
 
-                        foreach (var cloneStore in copyTableHandler[instanceKey])
-                        {
-                            var clonedInstance = Serializer.Clone(instance);
-                            Serializer.SetKey(out clonedInstance, cloneStore);
-                            yield return clonedInstance;
-                        }
-                    }
-                }
+            public void Dispose()
+            {
+                _recordBlock = null;
+                _owner = null;
+            }
+
+            public bool MoveNext()
+            {
+                if (_owner.BaseStream.Position >= _recordBlock.EndOffset)
+                    return false;
+
+                Current = _owner.Serializer.Deserialize(_owner.GetRecordReader());
+                return true;
+            }
+
+            public void Reset()
+            {
+                if (_recordBlock != null && _recordBlock.Length != 0)
+                    _owner.BaseStream.Position = _recordBlock.StartOffset;
+
+                Current = default;
             }
         }
 
-        private IEnumerable<TValue> EnumerateRecordBlock()
+        public struct CopyTableEnumerator : IEnumerator<TValue>, IEnumerator
         {
-            var recordBlock = FindBlock(BlockIdentifier.Records);
-            if (recordBlock == null || recordBlock.Length == 0)
-                yield break;
+            internal Enumerator _baseEnumerator;
+            internal CopyTableHandler<int> _copyTableHandler;
+            internal List<int> _currentSourceKey;
+            internal int _idxTargetKey;
 
-            BaseStream.Position = recordBlock.StartOffset;
+            internal TValue _current;
 
-            while (BaseStream.Position < recordBlock.EndOffset)
+            public CopyTableEnumerator(BinaryFileParser<TValue, TSerializer> owner, CopyTableHandler<int> copyTableHandler)
             {
-                var instance = Serializer.Deserialize(GetRecordReader());
-                yield return instance;
+                _baseEnumerator = new Enumerator(owner);
+
+                _copyTableHandler = copyTableHandler;
+
+                _currentSourceKey = default;
+                _idxTargetKey = 0;
+
+                _current = default;
+                Reset();
             }
+
+            public TValue Current {
+                get => _current;
+            }
+            object IEnumerator.Current => Current;
+
+            public void Dispose()
+            {
+                _baseEnumerator.Dispose();
+                _copyTableHandler = null;
+            }
+
+            public bool MoveNext()
+            {
+                if (_currentSourceKey == null || _idxTargetKey == _currentSourceKey.Count)
+                {
+                    var success = _baseEnumerator.MoveNext();
+                    if (!success)
+                        return false;
+
+                    _current = _baseEnumerator.Current;
+                    _currentSourceKey = _copyTableHandler[_baseEnumerator.Serializer.GetKey(in _current)].ToList();
+                    _idxTargetKey = 0;
+                    return true;
+                }
+
+                var newCurrent = _baseEnumerator.Serializer.Clone(in _current);
+                _baseEnumerator.Serializer.SetKey(out newCurrent, _currentSourceKey[_idxTargetKey]);
+                ++_idxTargetKey;
+
+                _current = newCurrent;
+
+                return true;
+            }
+
+            public void Reset()
+            {
+                _baseEnumerator.Reset();
+
+                _current = default;
+            }
+        }
+
+        public IEnumerator<TValue> GetEnumerator()
+        {
+            var copyTableHandler = _handlers.GetHandler<CopyTableHandler<int>>(BlockIdentifier.CopyTable);
+            if (copyTableHandler != null)
+                return new CopyTableEnumerator(this, copyTableHandler);
+
+            return new Enumerator(this);
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            var copyTableHandler = _handlers.GetHandler<CopyTableHandler<int>>(BlockIdentifier.CopyTable);
+            if (copyTableHandler != null)
+                return new CopyTableEnumerator(this, copyTableHandler);
+
+            return new Enumerator(this);
         }
 
         public abstract int Size { get; }

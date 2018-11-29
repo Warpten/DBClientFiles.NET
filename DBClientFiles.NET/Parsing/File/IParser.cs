@@ -19,8 +19,7 @@ namespace DBClientFiles.NET.Parsing.File
         BaseMemberMetadata GetFileMemberMetadata(int index);
     }
 
-    internal interface IParser<T> : IParser
+    internal interface IParser<T> : IParser, IEnumerable<T>
     {
-        IEnumerable<T> Records { get; }
     }
 }

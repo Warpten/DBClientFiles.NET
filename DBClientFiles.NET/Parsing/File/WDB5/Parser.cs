@@ -10,7 +10,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
 {
     internal sealed class Parser<T> : BinaryFileParser<T, Serializer<T>>
     {
-        private IFileHeader _fileHeader = default(Header);
+        private IFileHeader _fileHeader;
         public override ref readonly IFileHeader Header => ref _fileHeader;
 
         public override int Size => _fileHeader.RecordCount;

@@ -20,6 +20,9 @@ namespace DBClientFiles.NET.Collections.Generic.Internal
 
         public Collection(in StorageOptions options, Stream dataStream)
         {
+            Size = 0;
+            _implementation = null;
+
             FromStream(in options, dataStream);
         }
 
@@ -56,7 +59,7 @@ namespace DBClientFiles.NET.Collections.Generic.Internal
 
         public IEnumerator<T> GetEnumerator()
         {
-            return _implementation.Records.GetEnumerator();
+            return _implementation.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
