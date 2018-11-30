@@ -17,7 +17,8 @@ namespace DBClientFiles.NET.Benchmark
         public static void Main(string[] args)
         {
             var summaries = BenchmarkSwitcher.FromTypes(new[] {
-                typeof(DBC.MemoryAllocationTest),
+                typeof(DBC.DBC),
+                typeof(DBC.PreparationCost),
 
                 // typeof(LanguageFeatureBenchmarks)
             }).Run(args);

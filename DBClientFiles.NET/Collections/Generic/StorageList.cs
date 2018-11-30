@@ -1,4 +1,5 @@
 ﻿using DBClientFiles.NET.Exceptions;
+using DBClientFiles.NET.Parsing.File;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -11,6 +12,9 @@ namespace DBClientFiles.NET.Collections.Generic
         private IList<T> _impl;
 
         private StorageOptions _options;
+        private Header _header;
+
+        public ref readonly Header Header => ref _header;
         public ref readonly StorageOptions Options => ref _options;
 
         public StorageList(in StorageOptions options, Stream dataStream)
@@ -18,6 +22,8 @@ namespace DBClientFiles.NET.Collections.Generic
             _options = options;
 
             var enumerable = new StorageEnumerable<T>(options, dataStream);
+
+            _header = new Header(enumerable.Header);
             _impl = new List<T>(enumerable);
         }
 

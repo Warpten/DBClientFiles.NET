@@ -4,9 +4,9 @@ using System.IO;
 
 namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 {
-    internal sealed class IndexTableHandler<TKey> : IList<TKey>, IBlockHandler
+    internal sealed class IndexTableHandler : IList<int>, IBlockHandler
     {
-        private IList<TKey> _store = new List<TKey>();
+        private IList<int> _store = new List<int>();
 
         public BlockIdentifier Identifier { get; } = BlockIdentifier.IndexTable;
 
@@ -16,17 +16,16 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
                 return;
 
             reader.BaseStream.Seek(startOffset, SeekOrigin.Begin);
+            _store = new List<int>((int)(length / sizeof(int)));
             for (var i = 0; i < reader.Header.RecordCount; ++i)
-            {
-                // Do stuff
-            }
+                _store[i] = reader.ReadInt32();
         }
 
         public void WriteBlock<T, U>(T writer) where T : BinaryWriter, IWriter<U>
         {
         }
 
-        public TKey this[int index] {
+        public int this[int index] {
             get => _store[index];
             set => _store[index] = value;
         }
@@ -34,16 +33,16 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
         public int Count => _store.Count;
         public bool IsReadOnly => _store.IsReadOnly;
 
-        public void Add(TKey item) => _store.Add(item);
+        public void Add(int item) => _store.Add(item);
         public void Clear() => _store.Clear();
-        public bool Contains(TKey item) => _store.Contains(item);
-        public void CopyTo(TKey[] array, int arrayIndex) => _store.CopyTo(array, arrayIndex);
+        public bool Contains(int item) => _store.Contains(item);
+        public void CopyTo(int[] array, int arrayIndex) => _store.CopyTo(array, arrayIndex);
 
-        public IEnumerator<TKey> GetEnumerator() => _store.GetEnumerator();
+        public IEnumerator<int> GetEnumerator() => _store.GetEnumerator();
 
-        public int IndexOf(TKey item) => _store.IndexOf(item);
-        public void Insert(int index, TKey item) => _store.Insert(index, item);
-        public bool Remove(TKey item) => _store.Remove(item);
+        public int IndexOf(int item) => _store.IndexOf(item);
+        public void Insert(int index, int item) => _store.Insert(index, item);
+        public bool Remove(int item) => _store.Remove(item);
         public void RemoveAt(int index) => _store.RemoveAt(index);
         IEnumerator IEnumerable.GetEnumerator() => _store.GetEnumerator();
     }

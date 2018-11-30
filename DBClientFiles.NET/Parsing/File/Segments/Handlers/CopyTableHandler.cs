@@ -3,9 +3,9 @@ using System.IO;
 
 namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 {
-    internal sealed class CopyTableHandler<TKey> : IBlockHandler where TKey : unmanaged
+    internal sealed class CopyTableHandler : IBlockHandler
     {
-        private Dictionary<TKey, List<TKey>> _store = new Dictionary<TKey, List<TKey>>();
+        private Dictionary<int, List<int>> _store = new Dictionary<int, List<int>>();
 
         public BlockIdentifier Identifier { get; } = BlockIdentifier.CopyTable;
 
@@ -17,7 +17,13 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
             reader.BaseStream.Seek(startOffset, SeekOrigin.Begin);
             while (reader.BaseStream.Position <= (startOffset + length))
             {
-                // Read stuff.
+                var key = reader.ReadInt32();
+                var value = reader.ReadInt32();
+
+                if (!_store.TryGetValue(key, out var list))
+                    list = _store[key] = new List<int>();
+
+                list.Add(value);
             }
         }
 
@@ -25,7 +31,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
         {
         }
 
-        public IEnumerable<TKey> this[TKey index]
+        public IReadOnlyList<int> this[int index]
         {
             get
             {

@@ -33,12 +33,12 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
             TableHash = reader.ReadUInt32();
             LayoutHash = reader.ReadUInt32();
 
-            reader.BaseStream.Position += 4; // timestamp last written
+            reader.BaseStream.Seek(4, SeekOrigin.Current); // timestamp last written
 
             MinIndex = reader.ReadInt32();
             MaxIndex = reader.ReadInt32();
 
-            reader.BaseStream.Position += 4 + 4; // locale + copy-table-size (which is always 0)
+            reader.BaseStream.Seek(4 + 4, SeekOrigin.Current); // locale + copy-table-size (which is always 0)
         }
 
         public int CopyTableLength => throw new NotImplementedException();

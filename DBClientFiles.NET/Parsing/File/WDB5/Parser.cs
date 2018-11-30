@@ -22,7 +22,6 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
             _fileHeader = new Header(this);
 
             RegisterBlockHandler(new FieldStructureBlockHandler());
-            RegisterBlockHandler(new IndexTableHandler<int>());
         }
 
         protected override IRecordReader GetRecordReader()
@@ -33,6 +32,8 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
 
         protected override void Prepare()
         {
+            Serializer.SetIndexColumn(!Header.HasIndexTable ? Header.IndexColumn : 0);
+
             FileMembers = new BaseMemberMetadata[Header.FieldCount];
 
             var tail = Head.Next = new Block {
@@ -64,6 +65,8 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
                     Identifier = BlockIdentifier.OffsetMap,
                     Length = (4 + 2) * (Header.MaxIndex - Header.MinIndex + 1)
                 };
+
+                RegisterBlockHandler(new OffsetMapHandler());
             }
 
             if (Header.HasForeignIds)
@@ -75,6 +78,17 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
                 };
             }
 
+            if (Header.HasIndexTable)
+            {
+                tail = tail.Next = new Block
+                {
+                    Identifier = BlockIdentifier.IndexTable,
+                    Length = 4 * Header.RecordCount
+                };
+
+                RegisterBlockHandler(new IndexTableHandler());
+            }
+
             if (Header.CopyTableLength > 0)
             {
                 tail = tail.Next = new Block
@@ -83,7 +97,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
                     Length = Header.CopyTableLength
                 };
 
-                RegisterBlockHandler(new CopyTableHandler<int>());
+                RegisterBlockHandler(new CopyTableHandler());
             }
         }
 

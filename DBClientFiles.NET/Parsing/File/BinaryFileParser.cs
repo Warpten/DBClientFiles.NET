@@ -10,6 +10,7 @@ using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers;
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Parsing.Serialization;
+using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.Parsing.File
 {
@@ -40,8 +41,14 @@ namespace DBClientFiles.NET.Parsing.File
         /// </summary>
         protected Block Head { get; set; }
 
+
         private StorageOptions _options;
         private BlockHandlers _handlers;
+
+        // This is a guard against trying to enumerate multiple times. We parsed
+        // most of the file on the first run and now all our data structures
+        // are in memory
+        private bool _prepared = false; // You are not prepared!
 
         /// <summary>
         /// Create an instance of <see cref="BinaryFileParser{TValue, TSerializer}"/>.
@@ -51,6 +58,9 @@ namespace DBClientFiles.NET.Parsing.File
         /// <param name="leaveOpen">If <c>true</c>, the stream is left open once this object is disposed.</param>
         protected BinaryFileParser(in StorageOptions options, Stream input) : base(input, Encoding.UTF8, true)
         {
+            if (!input.CanSeek)
+                throw new ArgumentException("The stream provided to DBClientFiles.NET's collections has to be seekable!");
+
             Type = new TypeInfo(typeof(TValue));
             _options = options;
 
@@ -95,6 +105,15 @@ namespace DBClientFiles.NET.Parsing.File
         /// </summary>
         protected abstract void Prepare();
 
+        private void DoPrepare()
+        {
+            if (_prepared)
+                return;
+
+            _prepared = true;
+            Prepare();
+        }
+
         public abstract BaseMemberMetadata GetFileMemberMetadata(int index);
 
         /// <summary>
@@ -103,46 +122,76 @@ namespace DBClientFiles.NET.Parsing.File
         /// <returns></returns>
         protected abstract IRecordReader GetRecordReader();
 
-        public struct Enumerator : IEnumerator<TValue>, IEnumerator
+        public class Enumerator : IEnumerator<TValue>, IEnumerator
         {
             internal BinaryFileParser<TValue, TSerializer> _owner;
+
+            internal int _itr;
+            internal IndexTableHandler _indexTableHandler;
+
             internal Block _recordBlock;
 
             internal TSerializer Serializer => _owner.Serializer;
 
             public Enumerator(BinaryFileParser<TValue, TSerializer> owner)
             {
-                owner.Prepare();
+                _owner = owner;
 
-                var head = owner.Head;
-                while (head != null)
+                if (owner._prepared)
                 {
-                    owner._handlers.ReadBlock(owner, head);
-                    head = head.Next;
+                    _recordBlock = owner.FindBlock(BlockIdentifier.Records);
+                }
+                else
+                {
+                    owner.Prepare();
+                    owner.BaseStream.Position = 0;
+
+                    // This is annoying but the compiler *really* wants us to initialize all
+                    // members.
+                    _recordBlock = null;
+
+                    var head = owner.Head;
+                    while (head != null)
+                    {
+                        if (!owner._handlers.ReadBlock(owner, head))
+                            owner.BaseStream.Seek(head.Length, SeekOrigin.Current);
+
+                        if (head.Identifier == BlockIdentifier.Records)
+                            _recordBlock = head;
+
+                        head = head.Next;
+                    }
+
                 }
 
-                _owner = owner;
-                _recordBlock = owner.FindBlock(BlockIdentifier.Records);
+                _indexTableHandler = owner._handlers.GetHandler<IndexTableHandler>(BlockIdentifier.IndexTable);
+                _itr = 0;
 
-                Current = default;
+                _current = default;
                 Reset();
             }
 
-            public TValue Current { get; private set; }
+            internal TValue _current;
+
+            public TValue Current => _current;
+
             object IEnumerator.Current => Current;
 
-            public void Dispose()
+            public virtual void Dispose()
             {
                 _recordBlock = null;
                 _owner = null;
             }
 
-            public bool MoveNext()
+            public virtual bool MoveNext()
             {
                 if (_owner.BaseStream.Position >= _recordBlock.EndOffset)
                     return false;
 
-                Current = _owner.Serializer.Deserialize(_owner.GetRecordReader());
+                _current = _owner.Serializer.Deserialize(_owner.GetRecordReader());
+                if (_owner.Header.HasIndexTable)
+                    _owner.Serializer.SetKey(out _current, _indexTableHandler[_itr++]);
+
                 return true;
             }
 
@@ -151,77 +200,56 @@ namespace DBClientFiles.NET.Parsing.File
                 if (_recordBlock != null && _recordBlock.Length != 0)
                     _owner.BaseStream.Position = _recordBlock.StartOffset;
 
-                Current = default;
+                _current = default;
             }
         }
 
-        public struct CopyTableEnumerator : IEnumerator<TValue>, IEnumerator
+        public class CopyTableEnumerator : Enumerator
         {
-            internal Enumerator _baseEnumerator;
-            internal CopyTableHandler<int> _copyTableHandler;
+            internal CopyTableHandler _copyTableHandler;
             internal List<int> _currentSourceKey;
             internal int _idxTargetKey;
 
-            internal TValue _current;
-
-            public CopyTableEnumerator(BinaryFileParser<TValue, TSerializer> owner, CopyTableHandler<int> copyTableHandler)
+            public CopyTableEnumerator(BinaryFileParser<TValue, TSerializer> owner, CopyTableHandler copyTableHandler) : base(owner)
             {
-                _baseEnumerator = new Enumerator(owner);
-
                 _copyTableHandler = copyTableHandler;
 
                 _currentSourceKey = default;
                 _idxTargetKey = 0;
-
-                _current = default;
-                Reset();
             }
 
-            public TValue Current {
-                get => _current;
-            }
-            object IEnumerator.Current => Current;
-
-            public void Dispose()
+            public override void Dispose()
             {
-                _baseEnumerator.Dispose();
+                base.Dispose();
                 _copyTableHandler = null;
             }
 
-            public bool MoveNext()
+            public override bool MoveNext()
             {
                 if (_currentSourceKey == null || _idxTargetKey == _currentSourceKey.Count)
                 {
-                    var success = _baseEnumerator.MoveNext();
+                    var success = base.MoveNext();
                     if (!success)
                         return false;
 
-                    _current = _baseEnumerator.Current;
-                    _currentSourceKey = _copyTableHandler[_baseEnumerator.Serializer.GetKey(in _current)].ToList();
+                    _currentSourceKey = _copyTableHandler[Serializer.GetKey(in _current)].ToList();
                     _idxTargetKey = 0;
                     return true;
                 }
 
-                var newCurrent = _baseEnumerator.Serializer.Clone(in _current);
-                _baseEnumerator.Serializer.SetKey(out newCurrent, _currentSourceKey[_idxTargetKey]);
+                var newCurrent = Serializer.Clone(in _current);
+                Serializer.SetKey(out newCurrent, _currentSourceKey[_idxTargetKey]);
                 ++_idxTargetKey;
 
                 _current = newCurrent;
 
                 return true;
             }
-
-            public void Reset()
-            {
-                _baseEnumerator.Reset();
-
-                _current = default;
-            }
         }
 
         public IEnumerator<TValue> GetEnumerator()
         {
-            var copyTableHandler = _handlers.GetHandler<CopyTableHandler<int>>(BlockIdentifier.CopyTable);
+            var copyTableHandler = _handlers.GetHandler<CopyTableHandler>(BlockIdentifier.CopyTable);
             if (copyTableHandler != null)
                 return new CopyTableEnumerator(this, copyTableHandler);
 
@@ -230,7 +258,7 @@ namespace DBClientFiles.NET.Parsing.File
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            var copyTableHandler = _handlers.GetHandler<CopyTableHandler<int>>(BlockIdentifier.CopyTable);
+            var copyTableHandler = _handlers.GetHandler<CopyTableHandler>(BlockIdentifier.CopyTable);
             if (copyTableHandler != null)
                 return new CopyTableEnumerator(this, copyTableHandler);
 

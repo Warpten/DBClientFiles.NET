@@ -10,12 +10,14 @@ using WDB5 = DBClientFiles.NET.Parsing.File.WDB5;
 
 namespace DBClientFiles.NET.Collections.Generic.Internal
 {
-    internal sealed class Collection<T> : IEnumerable<T>
+    internal class Collection<T> : IEnumerable<T>
     {
         private IParser<T> _implementation;
+        private Header _header;
+
         public int RecordCount { get; private set; }
 
-        public ref readonly IFileHeader Header => ref _implementation.Header;
+        public ref readonly Header Header => ref _header;
         public ref readonly StorageOptions Options => ref _implementation.Options;
 
         public Collection(in StorageOptions options, Stream dataStream)
@@ -54,7 +56,10 @@ namespace DBClientFiles.NET.Collections.Generic.Internal
             }
 
             _implementation.Initialize();
+
             RecordCount = _implementation.RecordCount;
+
+            _header = new Header(_implementation.Header);
         }
 
         public IEnumerator<T> GetEnumerator()

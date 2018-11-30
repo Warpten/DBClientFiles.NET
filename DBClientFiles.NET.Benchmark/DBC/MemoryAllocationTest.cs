@@ -4,11 +4,12 @@ using DBClientFiles.NET.Collections.Generic;
 using System.Linq;
 using DBClientFiles.NET.Benchmark.Attributes;
 using BenchmarkDotNet.Engines;
+using System.Collections.Generic;
 
 namespace DBClientFiles.NET.Benchmark.DBC
 {
-    [InProcess, MemoryDiagnoser]
-    public class MemoryAllocationTest
+    [MemoryDiagnoser, NetCoreJob, ClrJob, BenchmarkCategory("DBC")]
+    public class DBC
     {
         private Stream _fileStream;
 
@@ -29,16 +30,57 @@ namespace DBClientFiles.NET.Benchmark.DBC
             return container.First().ID;
         }
 
-        [Benchmark(Description = "AreaTrigger (single) allocation")]
-        public void AreaTriggerAllocation()
+        [GlobalSetup]
+        public void GlobalSetup()
         {
-            DeadCodeEliminationHelper.KeepAliveWithoutBoxing(new AreaTriggerEntry());
+            _fileStream = File.OpenRead(@"D:\World of Warcraft 3.3.5\dbc\AreaTrigger.dbc");
+        }
+    }
+
+    public class PreparationCost
+    {
+        private Stream _fileStream;
+        private IEnumerable<AreaTriggerEntry> _enumerable;
+
+        /*[Benchmark(Description = "Unique deserialization time", Baseline = true)]
+        public AreaTriggerEntry UniqueCachedDeserialization()
+        {
+            return _enumerable.First();
+        }*/
+
+        [Benchmark(Description = "Full deserialization time")]
+        public AreaTriggerEntry FullDeserialization()
+        {
+            _fileStream.Position = 0;
+
+            return new StorageList<AreaTriggerEntry>(in StorageOptions.Default, _fileStream).First();
+        }
+
+        [Benchmark(Description = "Initial deserialization time")]
+        public AreaTriggerEntry FirstDeserialization()
+        {
+            _fileStream.Position = 0;
+
+            return new StorageEnumerable<AreaTriggerEntry>(in StorageOptions.Default, _fileStream).First();
         }
 
         [GlobalSetup]
         public void GlobalSetup()
         {
+            using (var fileStream = File.OpenRead(@"D:\World of Warcraft 3.3.5\dbc\AreaTrigger.dbc"))
+                _enumerable = new StorageList<AreaTriggerEntry>(in StorageOptions.Default, fileStream);
+
+            // This causes preparation to happen and thus every subsequent call to First() will
+            // not initialize anything.
+            DeadCodeEliminationHelper.KeepAliveWithoutBoxing(_enumerable.First());
+
             _fileStream = File.OpenRead(@"D:\World of Warcraft 3.3.5\dbc\AreaTrigger.dbc");
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            _fileStream.Dispose();
         }
     }
 }
