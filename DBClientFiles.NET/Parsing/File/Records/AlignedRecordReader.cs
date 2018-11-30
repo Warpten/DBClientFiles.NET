@@ -13,7 +13,7 @@ namespace DBClientFiles.NET.Parsing.File.Records
     /// </summary>
     internal sealed unsafe class AlignedRecordReader : IRecordReader
     {
-        private readonly byte[] _stagingBuffer;
+        private byte[] _stagingBuffer;
 
         private int _byteCursor;
         private readonly StringBlockHandler _stringBlock;
@@ -28,6 +28,16 @@ namespace DBClientFiles.NET.Parsing.File.Records
 
         public void Dispose()
         {
+        }
+
+        public void LoadStream(Stream dataStream, int recordSize)
+        {
+            // This will only ever trigger on offset maps
+            if (recordSize > _stagingBuffer.Length)
+                Array.Resize(ref _stagingBuffer, recordSize);
+
+            dataStream.Read(_stagingBuffer, 0, recordSize);
+            _byteCursor = 0;
         }
 
         public void LoadStream(Stream dataStream)

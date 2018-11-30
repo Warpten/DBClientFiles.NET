@@ -27,7 +27,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
             base.Dispose(disposing);
         }
 
-        protected override IRecordReader GetRecordReader()
+        protected override IRecordReader GetRecordReader(int recordSize)
         {
             _recordReader.LoadStream(BaseStream);
             return _recordReader;

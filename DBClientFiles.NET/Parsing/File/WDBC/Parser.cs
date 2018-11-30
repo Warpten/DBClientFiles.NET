@@ -32,7 +32,7 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
             base.Dispose(disposing);
         }
 
-        protected override IRecordReader GetRecordReader()
+        protected override IRecordReader GetRecordReader(int recordSize)
         {
             _recordReader.LoadStream(BaseStream);
             return _recordReader;

@@ -24,7 +24,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
             RegisterBlockHandler(new FieldStructureBlockHandler());
         }
 
-        protected override IRecordReader GetRecordReader()
+        protected override IRecordReader GetRecordReader(int recordSize)
         {
             return null;
             // return new AlignedRecordReader(this, Header

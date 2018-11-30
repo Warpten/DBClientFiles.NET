@@ -120,7 +120,7 @@ namespace DBClientFiles.NET.Parsing.File
         /// Obtains an instance of <see cref="IRecordReader"/> used for record reading.
         /// </summary>
         /// <returns></returns>
-        protected abstract IRecordReader GetRecordReader();
+        protected abstract IRecordReader GetRecordReader(int recordSize);
 
         public class Enumerator : IEnumerator<TValue>, IEnumerator
         {
@@ -128,6 +128,7 @@ namespace DBClientFiles.NET.Parsing.File
 
             internal int _itr;
             internal IndexTableHandler _indexTableHandler;
+            internal OffsetMapHandler _offsetMapHandler;
 
             internal Block _recordBlock;
 
@@ -164,6 +165,8 @@ namespace DBClientFiles.NET.Parsing.File
 
                 }
 
+                _offsetMapHandler = owner._handlers.GetHandler<OffsetMapHandler>(BlockIdentifier.OffsetMap);
+
                 _indexTableHandler = owner._handlers.GetHandler<IndexTableHandler>(BlockIdentifier.IndexTable);
                 _itr = 0;
 
@@ -185,21 +188,35 @@ namespace DBClientFiles.NET.Parsing.File
 
             public virtual bool MoveNext()
             {
-                if (_owner.BaseStream.Position >= _recordBlock.EndOffset)
-                    return false;
+                IRecordReader recordReader;
+                if (_recordBlock != null)
+                {
+                    if (_owner.BaseStream.Position >= _recordBlock.EndOffset)
+                        return false;
 
-                _current = _owner.Serializer.Deserialize(_owner.GetRecordReader());
+                    recordReader = _owner.GetRecordReader(_owner.Header.RecordSize);
+                }
+                else // if (_offsetMapHandler != null)
+                {
+                    _owner.BaseStream.Seek(_offsetMapHandler.GetRecordOffset(_itr), SeekOrigin.Begin);
+
+                    recordReader = _owner.GetRecordReader(_offsetMapHandler.GetRecordSize(_itr));
+                }
+
+                _current = _owner.Serializer.Deserialize(recordReader);
+
                 if (_owner.Header.HasIndexTable)
                     _owner.Serializer.SetKey(out _current, _indexTableHandler[_itr++]);
 
                 return true;
             }
 
-            public void Reset()
+            public virtual void Reset()
             {
                 if (_recordBlock != null && _recordBlock.Length != 0)
                     _owner.BaseStream.Position = _recordBlock.StartOffset;
 
+                _itr = 0;
                 _current = default;
             }
         }
@@ -244,6 +261,14 @@ namespace DBClientFiles.NET.Parsing.File
                 _current = newCurrent;
 
                 return true;
+            }
+
+            public override void Reset()
+            {
+                base.Reset();
+
+                _idxTargetKey = 0;
+                _currentSourceKey = null;
             }
         }
 
