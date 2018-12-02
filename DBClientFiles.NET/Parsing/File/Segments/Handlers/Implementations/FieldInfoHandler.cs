@@ -22,7 +22,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 
             if (_index > 0)
             {
-                var previousInstance = this[_index];
+                var previousInstance = this[_index - 1];
                 previousInstance.Cardinality = (int) ((instance.Offset - previousInstance.Offset) / previousInstance.Cardinality);
             }
 
