@@ -24,6 +24,8 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
             var recordBlock = parser.FindBlockHandler<FieldInfoHandler<MemberMetadata>>(BlockIdentifier.FieldInfo);
 
             _mapper.Resolve(parser.Options.MemberType, recordBlock);
+
+            base.Initialize(parser);
         }
 
         public int GetElementBitCount(Member memberInfo)
