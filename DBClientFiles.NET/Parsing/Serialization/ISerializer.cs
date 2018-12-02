@@ -24,10 +24,8 @@ namespace DBClientFiles.NET.Parsing.Serialization
         int GetKey(in T instance);
         void SetKey(out T instance, int key);
 
-        void SetIndexColumn(int indexColumn);
-
         ref readonly StorageOptions Options { get; }
 
-        void Initialize(TypeInfo memberInfo, in StorageOptions options);
+        void Initialize(IBinaryStorageFile storage);
     }
 }

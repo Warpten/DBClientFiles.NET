@@ -9,14 +9,13 @@ namespace DBClientFiles.NET.Parsing.Binding
     public interface IFileMemberMetadata
     {
         /// <summary>
-        /// The size of the member, be it in bytes, bits, and/or an expression of an element's size if an array or not.
-        ///
-        /// All the above are controlled by the caller and the caller only.
+        /// The size of the member, in bits. If the corresponding member is an array, this should be the bit size
+        /// of an element of said array.
         /// </summary>
         uint Size { get; }
 
         /// <summary>
-        /// See <see cref="Size"/>.
+        /// The offset, in bits, of this member from the start of the record.
         /// </summary>
         uint Offset { get; }
 

@@ -2,8 +2,8 @@
 using DBClientFiles.NET.Collections;
 using System;
 using System.Collections.Generic;
-using DBClientFiles.NET.Internals.Binding;
 using DBClientFiles.NET.Parsing.Binding;
+using DBClientFiles.NET.Parsing.File.Segments;
 
 namespace DBClientFiles.NET.Parsing.File
 {
@@ -15,8 +15,6 @@ namespace DBClientFiles.NET.Parsing.File
         /// The total amount of records in the file (including copies)
         /// </summary>
         int RecordCount { get; }
-
-        BaseMemberMetadata GetFileMemberMetadata(int index);
     }
 
     internal interface IParser<T> : IParser, IEnumerable<T>

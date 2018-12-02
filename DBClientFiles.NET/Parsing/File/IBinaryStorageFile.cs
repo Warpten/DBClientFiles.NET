@@ -1,5 +1,6 @@
 ﻿using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Parsing.File.Segments;
+using DBClientFiles.NET.Parsing.Reflection;
 using System;
 
 namespace DBClientFiles.NET.Parsing.File
@@ -9,6 +10,8 @@ namespace DBClientFiles.NET.Parsing.File
     /// </summary>
     internal interface IBinaryStorageFile : IDisposable
     {
+        TypeInfo Type { get; }
+
         ref readonly IFileHeader Header { get; }
 
         ref readonly StorageOptions Options { get; }

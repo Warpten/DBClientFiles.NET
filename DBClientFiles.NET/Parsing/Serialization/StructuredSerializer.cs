@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using DBClientFiles.NET.Parsing.File;
 using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Utils;
@@ -34,12 +35,12 @@ namespace DBClientFiles.NET.Parsing.Serialization
         }
         public TypeInfo Type { get; protected set; }
 
-        public void Initialize(TypeInfo memberInfo, in StorageOptions options)
+        public virtual void Initialize(IBinaryStorageFile storage)
         {
-            Debug.Assert(memberInfo != null);
+            _options = storage.Options;
+            Type = storage.Type;
 
-            _options = options;
-            Type = memberInfo;
+            SetIndexColumn(storage.Header.IndexColumn);
         }
 
         private bool EvaluateLeaf(TypeInfo leaf, ref Expression expression, int depth, out Member memberInfo)
@@ -127,7 +128,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
         }
 
         /// <summary>
-        /// Force-set the key value if a record to the provided value.
+        /// Force-set the key of a record to the provided value.
         /// </summary>
         /// <param name="instance">The record instance to modify.</param>
         /// <param name="key">The new key value to set<</param>
@@ -146,7 +147,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
         }
 
         /// <summary>
-        /// Balls-to-the-wall implementation of type-safe, fast, deep cloning.
+        /// Clone the provided instance.
         /// </summary>
         /// <param name="origin"></param>
         /// <returns></returns>

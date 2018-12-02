@@ -1,5 +1,4 @@
-﻿using DBClientFiles.NET.Internals.Binding;
-using DBClientFiles.NET.Parsing.Reflection;
+﻿using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Utils;
 using System;
 using System.Collections.Generic;
@@ -10,16 +9,16 @@ using TypeInfo = DBClientFiles.NET.Parsing.Reflection.TypeInfo;
 
 namespace DBClientFiles.NET.Parsing.Binding
 {
-    internal abstract class TypeMapper
+    internal class TypeMapper
     {
         public TypeInfo Type { get; }
-        public Dictionary<IFileMemberMetadata, Member> Map { get; }
+        public Dictionary<Member, IFileMemberMetadata> Map { get; }
 
         public TypeMapper(TypeInfo type)
         {
             Type = type;
 
-            Map = new Dictionary<IFileMemberMetadata, Member>();
+            Map = new Dictionary<Member, IFileMemberMetadata>();
         }
 
         public void Resolve(MemberTypes memberType, IEnumerable<IFileMemberMetadata> fileMembers)
@@ -43,19 +42,17 @@ namespace DBClientFiles.NET.Parsing.Binding
                         typeMemberType = typeMemberType.GetElementType();
 
                     var structureFieldSize = Math.Max(1, typeMembersEnumerator.Current.Cardinality) * UnsafeCache.SizeOf(typeMemberType);
-                    var metaFieldSize = CalculateBitSize(fileMemberInfo) * Math.Max(1, fileMemberInfo.Cardinality) * 8;
+                    var metaFieldSize = fileMemberInfo.Size * Math.Max(1, fileMemberInfo.Cardinality) / 8;
 
                     if (structureFieldSize < metaFieldSize)
                         return; // TODO Throw: binary size mismatch
 
-                    Map[fileMemberInfo] = typeMembersEnumerator.Current;
+                    Map[typeMembersEnumerator.Current] = fileMemberInfo;
                 }
 
                 if (typeMembersEnumerator.MoveNext())
                     return; // TODO: Throw. We have more members declared in code than we need.
             }
         }
-
-        protected abstract int CalculateBitSize(IFileMemberMetadata fileMemberInfo);
     }
 }

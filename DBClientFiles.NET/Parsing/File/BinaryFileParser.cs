@@ -8,6 +8,7 @@ using DBClientFiles.NET.Parsing.Binding;
 using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers;
+using DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Parsing.Serialization;
 using DBClientFiles.NET.Utils;
@@ -22,7 +23,7 @@ namespace DBClientFiles.NET.Parsing.File
     internal abstract class BinaryFileParser<TValue, TSerializer> : BinaryReader, IParser<TValue>
         where TSerializer : ISerializer<TValue>, new()
     {
-        protected TypeInfo Type { get; }
+        public TypeInfo Type { get; }
 
         /// <summary>
         /// The header.
@@ -65,7 +66,6 @@ namespace DBClientFiles.NET.Parsing.File
             _options = options;
 
             Serializer = new TSerializer();
-            Serializer.Initialize(Type, in Options);
         }
 
         public void Initialize()
@@ -111,10 +111,11 @@ namespace DBClientFiles.NET.Parsing.File
                 return;
 
             _prepared = true;
+
+            Serializer.Initialize(this);
+
             Prepare();
         }
-
-        public abstract BaseMemberMetadata GetFileMemberMetadata(int index);
 
         /// <summary>
         /// Obtains an instance of <see cref="IRecordReader"/> used for record reading.
@@ -249,7 +250,7 @@ namespace DBClientFiles.NET.Parsing.File
                     if (!success)
                         return false;
 
-                    _currentSourceKey = _copyTableHandler[Serializer.GetKey(in _current)].ToList();
+                    _currentSourceKey = _copyTableHandler[Serializer.GetKey(in _current)];
                     _idxTargetKey = 0;
                     return true;
                 }

@@ -53,10 +53,5 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
 
             _recordReader = new AlignedRecordReader(this, Header.RecordSize);
         }
-
-        public override BaseMemberMetadata GetFileMemberMetadata(int index)
-        {
-            throw new System.NotImplementedException();
-        }
     }
 }

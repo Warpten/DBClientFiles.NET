@@ -7,6 +7,7 @@ using System.IO;
 using WDBC = DBClientFiles.NET.Parsing.File.WDBC;
 using WDB2 = DBClientFiles.NET.Parsing.File.WDB2;
 using WDB5 = DBClientFiles.NET.Parsing.File.WDB5;
+using System;
 
 namespace DBClientFiles.NET.Collections.Generic.Internal
 {
@@ -30,15 +31,9 @@ namespace DBClientFiles.NET.Collections.Generic.Internal
 
         private void FromStream(in StorageOptions options, Stream dataStream)
         {
-#if NETCOREAPP
-            System.Span<byte> identifierBytes = stackalloc byte[4];
+            Span<byte> identifierBytes = stackalloc byte[4];
             dataStream.Read(identifierBytes);
             var identifier = (Signatures)System.Runtime.InteropServices.MemoryMarshal.Read<uint>(identifierBytes);
-#else
-            var identifierBytes = new byte[4];
-            dataStream.Read(identifierBytes, 0, 4);
-            var identifier = (Signatures)((identifierBytes[0]) | (identifierBytes[1] << 8) | (identifierBytes[2] << 16) | (identifierBytes[3] << 24));
-#endif
 
             switch (identifier)
             {

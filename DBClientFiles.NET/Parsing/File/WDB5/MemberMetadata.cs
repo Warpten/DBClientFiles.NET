@@ -1,7 +1,7 @@
 ﻿using DBClientFiles.NET.Parsing.Binding;
 using DBClientFiles.NET.Parsing.Enums;
 
-namespace DBClientFiles.NET.Internals.Binding.Members.WDB5
+namespace DBClientFiles.NET.Parsing.File.WDB5
 {
     internal sealed class MemberMetadata : BaseMemberMetadata
     {

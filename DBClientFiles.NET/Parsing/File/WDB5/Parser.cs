@@ -1,10 +1,9 @@
 ﻿using System.IO;
-using DBClientFiles.NET.Collections;
 using DBClientFiles.NET.Parsing.Binding;
 using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers;
-using DBClientFiles.NET.Parsing.Serialization;
+using DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations;
 
 namespace DBClientFiles.NET.Parsing.File.WDB5
 {
@@ -15,27 +14,23 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
 
         public override int RecordCount => _fileHeader.RecordCount + _fileHeader.CopyTableLength / 2;
 
-        private BaseMemberMetadata[] FileMembers;
+        private PackedRecordReader _recordReader;
 
         public Parser(in StorageOptions options, Stream input) : base(options, input)
         {
             _fileHeader = new Header(this);
 
-            RegisterBlockHandler(new FieldStructureBlockHandler());
+            RegisterBlockHandler(new FieldInfoHandler<MemberMetadata>());
         }
 
         protected override IRecordReader GetRecordReader(int recordSize)
         {
-            return null;
-            // return new AlignedRecordReader(this, Header
+            _recordReader.LoadStream(BaseStream, recordSize);
+            return _recordReader;
         }
 
         protected override void Prepare()
         {
-            Serializer.SetIndexColumn(!Header.HasIndexTable ? Header.IndexColumn : 0);
-
-            FileMembers = new BaseMemberMetadata[Header.FieldCount];
-
             var tail = Head.Next = new Block {
                 Identifier = BlockIdentifier.FieldInfo,
                 Length = Header.FieldCount * (2 + 2)
@@ -99,9 +94,9 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
 
                 RegisterBlockHandler(new CopyTableHandler());
             }
+
+            _recordReader = new PackedRecordReader(this, Header.RecordSize);
         }
 
-        public override BaseMemberMetadata GetFileMemberMetadata(int index)
-            => FileMembers[index];
     }
 }
