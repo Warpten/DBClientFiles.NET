@@ -10,6 +10,7 @@
         Short,
         Byte,
         Float,
-        Double
+        Double,
+        String
     }
 }

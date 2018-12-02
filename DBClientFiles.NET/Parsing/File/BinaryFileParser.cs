@@ -145,7 +145,7 @@ namespace DBClientFiles.NET.Parsing.File
                 }
                 else
                 {
-                    owner.Prepare();
+                    owner.DoPrepare();
                     owner.BaseStream.Position = 0;
 
                     // This is annoying but the compiler *really* wants us to initialize all

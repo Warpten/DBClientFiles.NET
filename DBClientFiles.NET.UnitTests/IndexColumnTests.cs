@@ -8,7 +8,7 @@ using System;
 namespace DBClientFiles.NET.UnitTests
 {
     [TestClass]
-    public class SerializerTests
+    public class IndexColumnTests
     {
         public class FlatType
         {

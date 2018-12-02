@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace DBClientFiles.NET.Benchmark.DBC
 {
-    [MemoryDiagnoser, NetCoreJob, ClrJob, BenchmarkCategory("DBC")]
+    [MemoryDiagnoser, NetCoreJob, BenchmarkCategory("DBC")]
     public class DBC
     {
         private Stream _fileStream;

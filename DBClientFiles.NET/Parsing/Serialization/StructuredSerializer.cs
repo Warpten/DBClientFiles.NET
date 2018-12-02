@@ -102,7 +102,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
             if (!EvaluateLeaf(Type, ref root, indexColumn, out var indexMemberInfo))
                 throw new InvalidOperationException("Unable to find the index column");
 
-            if (indexMemberInfo.Type.Type != typeof(int) || indexMemberInfo.Type.Type == typeof(uint))
+            if (indexMemberInfo.Type.Type != typeof(int) && indexMemberInfo.Type.Type != typeof(uint))
             {
                 // TODO: Collect a string representation of the complete path to that member.
                 throw new InvalidOperationException($"Invalid structure: {root} is expected to be the index, but its type doesn't match. Needs to be (u)int.");
