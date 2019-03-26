@@ -14,7 +14,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
 
         public override int RecordCount => _fileHeader.RecordCount + _fileHeader.CopyTableLength / 2;
 
-        private PackedRecordReader _recordReader;
+        private BytePackedRecordReader _recordReader;
 
         public Parser(in StorageOptions options, Stream input) : base(options, input)
         {
@@ -95,7 +95,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
                 RegisterBlockHandler(new CopyTableHandler());
             }
 
-            _recordReader = new PackedRecordReader(this, Header.RecordSize);
+            _recordReader = new BytePackedRecordReader(this, Header.RecordSize);
         }
 
     }

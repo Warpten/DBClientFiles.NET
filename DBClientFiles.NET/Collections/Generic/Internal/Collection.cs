@@ -66,5 +66,15 @@ namespace DBClientFiles.NET.Collections.Generic.Internal
         {
             return GetEnumerator();
         }
+
+        public void SkipTo(int recordID)
+        {
+
+        }
+
+        public void Reset()
+        {
+
+        }
     }
 }

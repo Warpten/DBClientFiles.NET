@@ -33,8 +33,7 @@ namespace DBClientFiles.NET.Utils
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Expr Expression(Type instanceType) => Expr.New(instanceType);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static Expr Expression(Type instanceType, params Expr[] arguments)
         {
             // If a constructor is found with the provided parameters, use it.

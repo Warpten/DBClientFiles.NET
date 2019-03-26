@@ -18,11 +18,11 @@ namespace DBClientFiles.NET.Parsing.File.Records
         private int _byteCursor;
         private readonly StringBlockHandler _stringBlock;
 
-        public AlignedRecordReader(IBinaryStorageFile fileReader, int recordSize)
+        public AlignedRecordReader(IBinaryStorageFile fileReader, int bufferSize)
         {
             _stringBlock = fileReader.FindBlockHandler<StringBlockHandler>(BlockIdentifier.StringBlock);
 
-            _stagingBuffer = new byte[recordSize + 8];
+            _stagingBuffer = new byte[bufferSize];
             _byteCursor = 0;
         }
 
@@ -107,22 +107,22 @@ namespace DBClientFiles.NET.Parsing.File.Records
 
         public T Read<T>(int bitCount) where T : unmanaged
         {
-            throw new InvalidOperationException();
+            throw new NotSupportedException();
         }
 
         public T[] ReadArray<T>(int count, int elementBitCount) where T : unmanaged
         {
-            throw new InvalidOperationException();
+            throw new NotSupportedException();
         }
 
         public string ReadString(int bitCount)
         {
-            throw new InvalidOperationException();
+            throw new NotSupportedException();
         }
 
         public string[] ReadStringArray(int count, int elementBitCount)
         {
-            throw new InvalidOperationException();
+            throw new NotSupportedException();
         }
     }
 }

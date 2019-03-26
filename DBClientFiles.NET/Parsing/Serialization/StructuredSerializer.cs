@@ -298,7 +298,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
         /// <returns></returns>
         public void Visit(List<Expression> container, Expression recordReader, Member memberInfo, Expression memberAccess)
         {
-            if (memberInfo.Type.ElementTypeInfo != null)
+            if (memberInfo.Type.ElementType != null)
             {
                 // Try to read it using the visiters if it's a simple POD type.
                 var nodeInitializer = VisitNode(memberAccess, memberInfo, recordReader);
@@ -318,7 +318,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
 
                     // Construct the loop's body
                     var loopBody = new List<Expression>();
-                    foreach (var childInfo in Type.ElementTypeInfo.Members)
+                    foreach (var childInfo in Type.ElementType.Members)
                     {
                         if (!ShouldProcess(memberInfo))
                             continue;

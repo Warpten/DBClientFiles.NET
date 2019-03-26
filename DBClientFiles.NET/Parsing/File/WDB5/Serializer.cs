@@ -30,11 +30,12 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
 
         public int GetElementBitCount(Member memberInfo)
         {
-            return (int)(_mapper.Map[memberInfo].Size);
+            return (int)_mapper.Map[memberInfo].Size;
         }
 
         /// <summary>
-        /// WDB5 deserilization is trivial. The only packing is done over 24 bits.
+        /// WDB5 deserilization is largely similar to that of WDBC and WDB2 but there is a small catch: values
+        /// can be aligned to the byte boundary. However, the only packing seen in the wild is of 24 bits.
         /// </summary>
         /// <param name="memberAccess"></param>
         /// <param name="memberInfo"></param>
@@ -52,7 +53,8 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
         ///
         ///     <item>For arrays of value or reference types.</item>
         ///     <description>
-        ///     We just create the array itself, and move on (<c>new T[...]</c>).
+        ///     We just create the array itself, and move dive deeper in the structure tree (<c>new T[...]</c>).
+        ///     Loops are never unrolled.
         ///     </description>
         /// </list>
         /// </para>
@@ -88,10 +90,10 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
                 }
                 else if (elementType == typeof(string))
                 {
-                    if (bitCount == 32)
-                        // ReadStringArray(cardinalityCount)
+                    // TODO: Is this worth the trouble?
+                    if (bitCount == 32) // ReadStringArray(cardinalityCount)
                         return Expression.Call(recordReader,
-                            _IRecordReader.ReadStringArrayPacked,
+                            _IRecordReader.ReadStringArray,
                             Expression.Constant(memberInfo.Cardinality));
 
                     // ReadStringArray(cardinalityCount, bitCount)
@@ -108,8 +110,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
             {
                 bool isPacked = bitCount == UnsafeCache.BitSizeOf(memberInfo.Type.Type.GetElementType());
 
-                if (!isPacked)
-                    // Read<T>();
+                if (!isPacked) // Read<T>();
                     return Expression.Call(recordReader,
                         _IRecordReader.ReadPacked.MakeGenericMethod(memberInfo.Type.Type));
 

@@ -3,16 +3,26 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace DBClientFiles.NET.Parsing.Reflection
 {
+    /// <summary>
+    /// A representation of a type.
+    /// </summary>
     internal sealed class TypeInfo
     {
+        /// <summary>
+        /// The underlying CLR <see cref="Type"/> representation of this type.
+        /// </summary>
         public Type Type { get; }
 
-        public TypeInfo ElementTypeInfo { get; }
+        /// <summary>
+        /// If this type is an array, this will be a representation of the element's type.
+        /// </summary>
+        public TypeInfo ElementType { get; }
 
         private Dictionary<Type, TypeInfo> _declaredTypes;
         private List<Member> _fields;
@@ -41,7 +51,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
 
             Type = type;
             if (type.IsArray)
-                ElementTypeInfo = GetChildTypeInfo(type.GetElementType());
+                ElementType = GetChildTypeInfo(type.GetElementType());
 
             if (type.IsPrimitive || type == typeof(string))
                 return;
@@ -103,6 +113,11 @@ namespace DBClientFiles.NET.Parsing.Reflection
 
             _declaredTypes[type] = new TypeInfo(type, _declaredTypes);
             return _declaredTypes[type];
+        }
+
+        public override string ToString()
+        {
+            return Type.ToString();
         }
     }
 }

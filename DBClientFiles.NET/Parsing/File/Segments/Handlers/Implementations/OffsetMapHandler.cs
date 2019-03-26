@@ -49,5 +49,18 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 
         public int GetRecordOffset(int index) => _store.Span[index].Item1;
         public int GetRecordSize(int index) => _store.Span[index].Item2;
+
+        public int GetLargestRecordSize()
+        {
+            var size = 0;
+            for (var i = 0; i < _store.Length / 6; ++i)
+            {
+                int spanSize = _store.Span[i].Item2;
+                if (size < spanSize)
+                    size = spanSize;
+            }
+
+            return size;
+        }
     }
 }

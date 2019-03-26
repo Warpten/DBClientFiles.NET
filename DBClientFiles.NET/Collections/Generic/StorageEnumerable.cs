@@ -3,6 +3,7 @@ using DBClientFiles.NET.Parsing.File;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 using DBClientFiles.NET.Collections.Generic.Internal;
 
@@ -56,7 +57,8 @@ namespace DBClientFiles.NET.Collections.Generic
         IEnumerator IEnumerable.GetEnumerator()
             => GetEnumerator();
 
-        // TODO: Optimize Skip somehow
+        /// TODO: Provide random access in constant time (Technically disk access time)
+        /// TODO: Optimize Skip and Take somehow
     }
 
 }

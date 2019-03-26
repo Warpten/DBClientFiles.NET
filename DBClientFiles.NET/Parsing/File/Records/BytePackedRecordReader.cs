@@ -10,21 +10,21 @@ using System.Text;
 namespace DBClientFiles.NET.Parsing.File.Records
 {
     /// <summary>
-    /// An implementation of <see cref="IRecordReader"/> tailored for WDBC and WDB2. The records
-    /// within these files always have the same sizes. It is only able of performing aligned reads.
+    /// An implementation of <see cref="IRecordReader"/> tailored for WDB5 and WDB6. The values it reads are always
+    /// aligned to byte boundaries.
     /// </summary>
-    internal sealed unsafe class PackedRecordReader : IRecordReader
+    internal sealed unsafe class BytePackedRecordReader : IRecordReader
     {
         private byte[] _stagingBuffer;
 
         private int _byteCursor;
         private readonly StringBlockHandler _stringBlock;
 
-        public PackedRecordReader(IBinaryStorageFile fileReader, int recordSize)
+        public BytePackedRecordReader(IBinaryStorageFile fileReader, int recordSize)
         {
             _stringBlock = fileReader.FindBlockHandler<StringBlockHandler>(BlockIdentifier.StringBlock);
 
-            _stagingBuffer = new byte[recordSize + 8];
+            _stagingBuffer = new byte[recordSize + 8]; // Allocating 8 extra bytes for packed reads to make sure we don't start reading another process's memory out of bad luck
             _byteCursor = 0;
         }
 
@@ -36,7 +36,7 @@ namespace DBClientFiles.NET.Parsing.File.Records
         {
             // This will only ever trigger on offset maps
             if (recordSize > _stagingBuffer.Length)
-                Array.Resize(ref _stagingBuffer, recordSize);
+                Array.Resize(ref _stagingBuffer, recordSize + 8);
 
             dataStream.Read(_stagingBuffer, 0, recordSize);
             _byteCursor = 0;
@@ -112,9 +112,9 @@ namespace DBClientFiles.NET.Parsing.File.Records
         public T Read<T>(int bitCount) where T : unmanaged
         {
             // Values here should always be aligned
-            Debug.Assert((bitCount & 7) != 0, "WDB5 and WDB6 values should always be aligned to 8-byte boundaries!");
+            Debug.Assert((bitCount & 7) == 0, "WDB5 and WDB6 values should always be aligned to 8-byte boundaries!");
 
-            var value = *(long*)Unsafe.AsPointer(ref _stagingBuffer[_byteCursor]);
+            var value = *(long *) Unsafe.AsPointer(ref _stagingBuffer[_byteCursor]);
             value = (value >> (64 - bitCount));
 
             _byteCursor += bitCount / 8;
@@ -125,7 +125,7 @@ namespace DBClientFiles.NET.Parsing.File.Records
         public T[] ReadArray<T>(int count, int elementBitCount) where T : unmanaged
         {
             // Values here should always be aligned
-            Debug.Assert((elementBitCount & 7) != 0, "WDB5 and WDB6 values should always be aligned to 8-byte boundaries!");
+            Debug.Assert((elementBitCount & 7) == 0, "WDB5 and WDB6 values should always be aligned to 8-byte boundaries!");
 
             var values = new T[count];
             for (var i = 0; i < count; ++i)
@@ -137,7 +137,7 @@ namespace DBClientFiles.NET.Parsing.File.Records
         public string ReadString(int bitCount)
         {
             // Values here should always be aligned
-            Debug.Assert((bitCount & 7) != 0, "WDB5 and WDB6 values should always be aligned to 8-byte boundaries!");
+            Debug.Assert((bitCount & 7) == 0, "WDB5 and WDB6 values should always be aligned to 8-byte boundaries!");
 
             if (_stringBlock == null)
             {
