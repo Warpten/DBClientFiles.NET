@@ -69,19 +69,6 @@ If `StorageOptions` is not provided, `StorageOptions.Default` is used instead.
 Forwards to the following constructor, using `StorageOptions.Default`.
 - `public StorageList(Stream dataStream, StorageOptions options)`
 
-### `StorageDictionary<TKey, T>`
-
-- `public StorageDictionary(Stream dataStream)`
-- `public StorageDictionary(Stream dataStream, Func<T, TKey> keySelector = null)`
-- `public StorageDictionary(Stream dataStream, StorageOptions options, Func<T, TKey> keySelector = null)`
-
-The behavior of `StorageDictionary` varies depending on the arguments passed. 
-
-If  `keySelector` is null, the library assumes that `TKey` corresponds to the type of the index field declared by file metadata. In this case, `TKey` can **only** be a *value* type; a **reference** type will throw an `InvalidOperationException`. Similarly, if `TKey` does not match the file's declared index's type, an `InvalidOperationException` is also thrown.
-
-Otherwise, you may use any key type you want. If you happen to use a field which has shared values across multiple records, all entries will be overriden by the last one (There is no built-in uniquity check).
-
-
 ### StorageOptions
 
 - `MemberType`
