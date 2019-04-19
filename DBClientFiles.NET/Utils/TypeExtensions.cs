@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Reflection;
+using DBClientFiles.NET.Parsing.Reflection;
 
 namespace DBClientFiles.NET.Utils
 {
@@ -27,6 +29,19 @@ namespace DBClientFiles.NET.Utils
                 return true;
 
             return false;
+        }
+
+        public static TypeTokenType ToTypeToken(this MemberTypes type)
+        {
+            switch (type)
+            {
+                case MemberTypes.Field:
+                    return TypeTokenType.Field;
+                case MemberTypes.Property:
+                    return TypeTokenType.Property;
+            }
+
+            throw new ArgumentOutOfRangeException(nameof(type));
         }
     }
 }

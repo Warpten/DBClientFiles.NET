@@ -23,17 +23,14 @@ namespace DBClientFiles.NET.Parsing.File
     internal abstract class BinaryFileParser<TValue, TSerializer> : BinaryReader, IParser<TValue>
         where TSerializer : ISerializer<TValue>, new()
     {
-        public TypeInfo Type { get; }
-
-        /// <summary>
-        /// The header.
-        /// </summary>
-        public abstract ref readonly IFileHeader Header { get; }
+        public TypeToken Type { get; }
 
         /// <summary>
         /// The options to use for parsing.
         /// </summary>
         public ref readonly StorageOptions Options => ref _options;
+
+        public abstract ref readonly IFileHeader Header { get; }
 
         public TSerializer Serializer { get; }
 
@@ -42,14 +39,8 @@ namespace DBClientFiles.NET.Parsing.File
         /// </summary>
         protected Block Head { get; set; }
 
-
         private StorageOptions _options;
         private BlockHandlers _handlers;
-
-        // This is a guard against trying to enumerate multiple times. We parsed
-        // most of the file on the first run and now all our data structures
-        // are in memory
-        private bool _prepared = false; // You are not prepared!
 
         /// <summary>
         /// Create an instance of <see cref="BinaryFileParser{TValue, TSerializer}"/>.
@@ -62,18 +53,10 @@ namespace DBClientFiles.NET.Parsing.File
             if (!input.CanSeek)
                 throw new ArgumentException("The stream provided to DBClientFiles.NET's collections has to be seekable!");
 
-            Type = new TypeInfo(typeof(TValue));
+            Type = new TypeToken(typeof(TValue));
             _options = options;
 
             Serializer = new TSerializer();
-        }
-
-        public void Initialize()
-        {
-            Head = new Block {
-                Identifier = BlockIdentifier.Header,
-                Length = Header.Size + 4
-            };
         }
 
         protected override void Dispose(bool disposing)
@@ -100,22 +83,8 @@ namespace DBClientFiles.NET.Parsing.File
         public void RegisterBlockHandler(IBlockHandler handler)
             => _handlers.Register(handler);
 
-        /// <summary>
-        /// Superclasses need implement this method to set up the linked chain of file blocks.
-        /// </summary>
-        protected abstract void Prepare();
-
-        private void DoPrepare()
-        {
-            if (_prepared)
-                return;
-
-            _prepared = true;
-
-            Serializer.Initialize(this);
-
-            Prepare();
-        }
+        protected abstract void Before(ParsingStep step);
+        protected abstract void After(ParsingStep step);
 
         /// <summary>
         /// Obtains an instance of <see cref="IRecordReader"/> used for record reading.
@@ -138,33 +107,29 @@ namespace DBClientFiles.NET.Parsing.File
             public Enumerator(BinaryFileParser<TValue, TSerializer> owner)
             {
                 _owner = owner;
+                owner.BaseStream.Position = 0;
 
-                if (owner._prepared)
+                // This is annoying but the compiler *really* wants us to initialize all
+                // members.
+                _recordBlock = null;
+
+                owner.Before(ParsingStep.Segments);
+
+                var head = owner.Head;
+                while (head != null)
                 {
-                    _recordBlock = owner.FindBlock(BlockIdentifier.Records);
+                    if (!owner._handlers.ReadBlock(owner, head))
+                        owner.BaseStream.Seek(head.Length, SeekOrigin.Current);
+
+                    if (head.Identifier == BlockIdentifier.Records)
+                        _recordBlock = head;
+
+                    head = head.Next;
                 }
-                else
-                {
-                    owner.DoPrepare();
-                    owner.BaseStream.Position = 0;
 
-                    // This is annoying but the compiler *really* wants us to initialize all
-                    // members.
-                    _recordBlock = null;
+                owner.After(ParsingStep.Segments);
 
-                    var head = owner.Head;
-                    while (head != null)
-                    {
-                        if (!owner._handlers.ReadBlock(owner, head))
-                            owner.BaseStream.Seek(head.Length, SeekOrigin.Current);
-
-                        if (head.Identifier == BlockIdentifier.Records)
-                            _recordBlock = head;
-
-                        head = head.Next;
-                    }
-
-                }
+                Serializer.Initialize(owner);
 
                 _offsetMapHandler = owner._handlers.GetHandler<OffsetMapHandler>(BlockIdentifier.OffsetMap);
 

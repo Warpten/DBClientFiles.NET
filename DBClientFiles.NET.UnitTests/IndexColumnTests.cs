@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System;
 using DBClientFiles.NET.Parsing.File;
 using DBClientFiles.NET.Parsing.File.Segments;
+using DBClientFiles.NET.Attributes;
 
 namespace DBClientFiles.NET.UnitTests
 {
@@ -31,7 +32,8 @@ namespace DBClientFiles.NET.UnitTests
         public class SuperNestedType
         {
             public float _1 { get; set; }
-            public FlatType _2 { get; set; }
+            [Cardinality(SizeConst = 2)]
+            public FlatType[] _2 { get; set; }
             public NestedType _3 { get; set; }
             public int _4 { get; set; }
             public string _5 { get; set; }
@@ -46,12 +48,19 @@ namespace DBClientFiles.NET.UnitTests
             var instance = new SuperNestedType
             {
                 _1 = 3.14159265f,
-                _2 = new FlatType
-                {
-                    _1 = 21,
-                    _2 = 2.2f,
-                    _3 = "choo choo",
-                    _4 = 24
+                _2 = new FlatType[] {
+                    new FlatType {
+                        _1 = 210,
+                        _2 = 2.20f,
+                        _3 = "choo choo",
+                        _4 = 240
+                    },
+                    new FlatType {
+                        _1 = 211,
+                        _2 = 2.21f,
+                        _3 = "choo choo choo",
+                        _4 = 241
+                    }
                 },
                 _3 = new NestedType
                 {
@@ -79,17 +88,24 @@ namespace DBClientFiles.NET.UnitTests
         [TestMethod, Description("Test - Index column - Nested")]
         public void TestNestedOnceIndexLookup()
         {
-            var dummyFile = new DummyFile<SuperNestedType>(11);
+            var dummyFile = new DummyFile<SuperNestedType>(8);
 
             var instance = new SuperNestedType
             {
                 _1 = 3.14159265f,
-                _2 = new FlatType
-                {
-                    _1 = 21,
-                    _2 = 2.2f,
-                    _3 = "choo choo",
-                    _4 = 24
+                _2 = new FlatType[] {
+                    new FlatType {
+                        _1 = 210,
+                        _2 = 2.20f,
+                        _3 = "choo choo",
+                        _4 = 240
+                    },
+                    new FlatType {
+                        _1 = 211,
+                        _2 = 2.21f,
+                        _3 = "choo choo choo",
+                        _4 = 241
+                    }
                 },
                 _3 = new NestedType
                 {
@@ -113,7 +129,7 @@ namespace DBClientFiles.NET.UnitTests
             serializer.Initialize(dummyFile);
 
             var extractedKey = serializer.GetKey(instance);
-            Assert.AreEqual(34, extractedKey);
+            Assert.AreEqual(240, extractedKey);
         }
     }
 
@@ -145,9 +161,9 @@ namespace DBClientFiles.NET.UnitTests
             }
         }
 
-        public TypeInfo Type { get; } = new TypeInfo(typeof(T));
+        public TypeToken Type { get; } = new TypeToken(typeof(T));
 
-        private IFileHeader _header;
+        private readonly IFileHeader _header;
         public ref readonly IFileHeader Header => ref _header;
         public ref readonly StorageOptions Options => ref StorageOptions.Default;
 
@@ -169,7 +185,7 @@ namespace DBClientFiles.NET.UnitTests
     internal sealed class SerializerMock<T> : StructuredSerializer<T>
     {
         // We aren't constructing an object anyways, so don't even bother.
-        public override Expression VisitNode(Expression memberAccess, Member memberInfo, Expression recordReader)
+        public override Expression VisitNode(Expression memberAccess, MemberToken memberInfo, Expression recordReader)
         {
             throw new NotImplementedException();
         }

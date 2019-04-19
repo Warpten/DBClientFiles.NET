@@ -33,25 +33,14 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
             return _recordReader;
         }
 
-        protected override void Prepare()
+        protected override void Before(ParsingStep step)
         {
-            Head.Next = new Block {
-                // Identifier is not really relevant, since we won't parse it anyways.
-                Identifier = BlockIdentifier.OffsetMap,
-                Length = (Header.MaxIndex - Header.MinIndex + 1) * (4 + 2)
-            };
+            throw new System.NotImplementedException();
+        }
 
-            Head.Next.Next = new Block {
-                Identifier = BlockIdentifier.Records,
-                Length = _fileHeader.RecordCount * _fileHeader.RecordSize
-            };
-
-            Head.Next.Next.Next = new Block {
-                Identifier = BlockIdentifier.StringBlock,
-                Length = _fileHeader.StringTableLength
-            };
-
-            _recordReader = new AlignedRecordReader(this, Header.RecordSize);
+        protected override void After(ParsingStep step)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

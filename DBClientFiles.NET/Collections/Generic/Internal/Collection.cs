@@ -50,8 +50,6 @@ namespace DBClientFiles.NET.Collections.Generic.Internal
                     throw new VersionNotSupportedException(identifier);
             }
 
-            _implementation.Initialize();
-
             RecordCount = _implementation.RecordCount;
 
             _header = new Header(_implementation.Header);

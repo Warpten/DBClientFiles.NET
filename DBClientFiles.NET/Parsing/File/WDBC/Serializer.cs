@@ -42,11 +42,11 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
         /// <see cref="IRecordReader.Read{T}"/> and <see cref="IRecordReader.ReadString"/>, respectively.
         /// </para>
         /// </remarks>
-        public override Expression VisitNode(Expression memberAccess, Member memberInfo, Expression recordReader)
+        public override Expression VisitNode(Expression memberAccess, MemberToken memberInfo, Expression recordReader)
         {
-            if (memberInfo.Type.Type.IsArray)
+            if (memberInfo.TypeToken.Type.IsArray)
             {
-                var elementType = memberInfo.Type.Type.GetElementType();
+                var elementType = memberInfo.TypeToken.Type.GetElementType();
                 if (elementType.IsPrimitive)
                 {
                     // = ReadArray<T>(...);
@@ -65,12 +65,12 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
                 return null;
             }
 
-            if (memberInfo.Type.Type.IsPrimitive)
+            if (memberInfo.TypeToken.Type.IsPrimitive)
             {
                 // = Read<T>();
-                return Expression.Call(recordReader, _IRecordReader.Read.MakeGenericMethod(memberInfo.Type.Type));
+                return Expression.Call(recordReader, _IRecordReader.Read.MakeGenericMethod(memberInfo.TypeToken.Type));
             }
-            else if (memberInfo.Type.Type == typeof(string))
+            else if (memberInfo.TypeToken.Type == typeof(string))
             {
                 // = ReadString();
                 return Expression.Call(recordReader, _IRecordReader.ReadString);

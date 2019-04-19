@@ -29,74 +29,97 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
             return _recordReader;
         }
 
-        protected override void Prepare()
+        protected override void Before(ParsingStep step)
         {
-            var tail = Head.Next = new Block {
-                Identifier = BlockIdentifier.FieldInfo,
-                Length = Header.FieldCount * (2 + 2)
-            };
-
-            tail = tail.Next = new Block {
-                Identifier = BlockIdentifier.Records,
-                Length = Header.HasOffsetMap
-                    ? Header.StringTableLength - tail.EndOffset
-                    : Header.RecordCount * Header.RecordSize
-            };
-
-            if (!Header.HasOffsetMap)
+            if (step == ParsingStep.Segments)
             {
-                tail = tail.Next = new Block
+                Head = new Block
                 {
-                    Identifier = BlockIdentifier.StringBlock,
-                    Length = Header.StringTableLength
+                    Identifier = BlockIdentifier.Header,
+                    Length = Header.Size + 4
                 };
 
-                RegisterBlockHandler(new StringBlockHandler(Options.InternStrings));
-            }
-            else
-            {
-                tail = tail.Next = new Block
+                var tail = Head.Next = new Block
                 {
-                    Identifier = BlockIdentifier.OffsetMap,
-                    Length = (4 + 2) * (Header.MaxIndex - Header.MinIndex + 1)
+                    Identifier = BlockIdentifier.FieldInfo,
+                    Length = Header.FieldCount * (2 + 2)
                 };
 
-                RegisterBlockHandler(new OffsetMapHandler());
-            }
-
-            if (Header.HasForeignIds)
-            {
                 tail = tail.Next = new Block
                 {
-                    Identifier = BlockIdentifier.RelationShipTable,
-                    Length = 4 * (Header.MaxIndex - Header.MinIndex + 1)
+                    Identifier = BlockIdentifier.Records,
+                    Length = Header.HasOffsetMap
+                        ? Header.StringTableLength - tail.EndOffset
+                        : Header.RecordCount * Header.RecordSize
                 };
-            }
 
-            if (Header.HasIndexTable)
-            {
-                tail = tail.Next = new Block
+                if (!Header.HasOffsetMap)
                 {
-                    Identifier = BlockIdentifier.IndexTable,
-                    Length = 4 * Header.RecordCount
-                };
+                    tail = tail.Next = new Block
+                    {
+                        Identifier = BlockIdentifier.StringBlock,
+                        Length = Header.StringTableLength
+                    };
 
-                RegisterBlockHandler(new IndexTableHandler());
-            }
-
-            if (Header.CopyTableLength > 0)
-            {
-                tail = tail.Next = new Block
+                    RegisterBlockHandler(new StringBlockHandler(Options.InternStrings));
+                }
+                else
                 {
-                    Identifier = BlockIdentifier.CopyTable,
-                    Length = Header.CopyTableLength
-                };
+                    tail = tail.Next = new Block
+                    {
+                        Identifier = BlockIdentifier.OffsetMap,
+                        Length = (4 + 2) * (Header.MaxIndex - Header.MinIndex + 1)
+                    };
 
-                RegisterBlockHandler(new CopyTableHandler());
+                    RegisterBlockHandler(new OffsetMapHandler());
+                }
+
+                if (Header.HasForeignIds)
+                {
+                    tail = tail.Next = new Block
+                    {
+                        Identifier = BlockIdentifier.RelationShipTable,
+                        Length = 4 * (Header.MaxIndex - Header.MinIndex + 1)
+                    };
+                }
+
+                if (Header.HasIndexTable)
+                {
+                    tail = tail.Next = new Block
+                    {
+                        Identifier = BlockIdentifier.IndexTable,
+                        Length = 4 * Header.RecordCount
+                    };
+
+                    RegisterBlockHandler(new IndexTableHandler());
+                }
+
+                if (Header.CopyTableLength > 0)
+                {
+                    tail = tail.Next = new Block
+                    {
+                        Identifier = BlockIdentifier.CopyTable,
+                        Length = Header.CopyTableLength
+                    };
+
+                    RegisterBlockHandler(new CopyTableHandler());
+                }
             }
-
-            _recordReader = new BytePackedRecordReader(this, Header.RecordSize);
         }
 
+        protected override void After(ParsingStep step)
+        {
+            if (step == ParsingStep.Segments)
+            {
+                if (Header.HasOffsetMap)
+                {
+                    _recordReader = new BytePackedRecordReader(this, Header.RecordSize);
+                }
+                else
+                {
+                    _recordReader = new BytePackedRecordReader(this, FindBlockHandler<OffsetMapHandler>(BlockIdentifier.OffsetMap).GetLargestRecordSize());
+                }
+            }
+        }
     }
 }

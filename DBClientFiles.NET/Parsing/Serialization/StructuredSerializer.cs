@@ -10,7 +10,7 @@ using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Utils;
 
-using TypeInfo = DBClientFiles.NET.Parsing.Reflection.TypeInfo;
+using TypeToken = DBClientFiles.NET.Parsing.Reflection.TypeToken;
 
 namespace DBClientFiles.NET.Parsing.Serialization
 {
@@ -33,82 +33,32 @@ namespace DBClientFiles.NET.Parsing.Serialization
         public ref readonly StorageOptions Options {
             get => ref _options;
         }
-        public TypeInfo Type { get; protected set; }
+        public TypeToken Type { get; protected set; }
 
         public virtual void Initialize(IBinaryStorageFile storage)
         {
             _options = storage.Options;
             Type = storage.Type;
 
+            // TODO: Fix this, array members don't work
             SetIndexColumn(storage.Header.IndexColumn);
-        }
-
-        private bool EvaluateLeaf(TypeInfo leaf, ref Expression expression, int depth, out Member memberInfo)
-        {
-            foreach (var child in leaf.Members)
-            {
-                if (!ShouldProcess(child))
-                    continue;
-
-                if (EvaluateLeaf(child, ref expression, ref depth, out memberInfo))
-                    return true;
-            }
-
-            memberInfo = null;
-            return false;
-        }
-
-        private bool EvaluateLeaf(Member leaf, ref Expression expression, ref int depth, out Member memberInfo)
-        {
-            // This needs improvements and a lot of comments
-            // It's basically a tree traversal algorithm, with an object carried around during traversal.
-            // depth really is not depth but rather the index of the terminal leaf we need to find (the nth leaf of the tree that has no children)
-
-            if (leaf.Type.Members.Count == 0)
-            {
-                if (depth == 0)
-                {
-                    expression = leaf.MakeAccess(expression);
-                    memberInfo = leaf;
-                    return true;
-                }
-
-                --depth;
-            }
-            else
-            {
-                foreach (var newLeaf in leaf.Type.Members)
-                {
-                    if (!ShouldProcess(newLeaf))
-                        continue;
-
-                    var leafLookupParent = leaf.MakeAccess(expression);
-                    var leafLookupSuccess = EvaluateLeaf(newLeaf, ref leafLookupParent, ref depth, out memberInfo);
-                    if (leafLookupSuccess)
-                    {
-                        expression = leafLookupParent;
-                        return true;
-                    }
-                }
-            }
-
-            memberInfo = null;
-            return false;
         }
 
         public void SetIndexColumn(int indexColumn)
         {
-            Expression root = _root = Expression.Parameter(typeof(T).MakeByRefType(), "root");
+            // FIXME: This needs fixing...
+
+            /*Expression root = _root = Expression.Parameter(typeof(T).MakeByRefType(), "root");
             if (!EvaluateLeaf(Type, ref root, indexColumn, out var indexMemberInfo))
                 throw new InvalidOperationException("Unable to find the index column");
 
-            if (indexMemberInfo.Type.Type != typeof(int) && indexMemberInfo.Type.Type != typeof(uint))
+            if (indexMemberInfo.TypeToken.Type != typeof(int) && indexMemberInfo.TypeToken.Type != typeof(uint))
             {
                 // TODO: Collect a string representation of the complete path to that member.
                 throw new InvalidOperationException($"Invalid structure: {root} is expected to be the index, but its type doesn't match. Needs to be (u)int.");
             }
 
-            _keyAccessExpression = root;
+            _keyAccessExpression = root;*/
         }
 
         /// <summary>
@@ -166,10 +116,10 @@ namespace DBClientFiles.NET.Parsing.Serialization
 
                 foreach (var memberInfo in Type.Members)
                 {
-                    var oldMemberAccessExpr = memberInfo.MakeAccess(oldInstanceParam);
-                    var newMemberAccessExpr = memberInfo.MakeAccess(newInstanceParam);
+                    var oldMemberAccess = Expression.MakeMemberAccess(oldInstanceParam, memberInfo.MemberInfo);
+                    var newMemberAccess = Expression.MakeMemberAccess(newInstanceParam, memberInfo.MemberInfo);
 
-                    body.Add(CloneMember(oldMemberAccessExpr, newMemberAccessExpr));
+                    body.Add(CloneMember(memberInfo, oldMemberAccess, newMemberAccess));
                 }
 
                 body.Add(newInstanceParam);
@@ -178,66 +128,61 @@ namespace DBClientFiles.NET.Parsing.Serialization
                 _cloneMethod = Expression.Lambda<TypeCloner>(bodyBlock, oldInstanceParam, newInstanceParam).Compile();
             }
 
-            var instance = New<T>.Instance();
-            _cloneMethod.Invoke(in origin, out instance);
+            _cloneMethod.Invoke(in origin, out var instance);
             return instance;
         }
 
-        private Expression CloneMember(Expression oldMember, Expression newMember)
+        private Expression CloneMember(MemberToken memberInfo, Expression oldMember, Expression newMember)
         {
-            if (oldMember.Type.IsArray)
+            if (memberInfo.IsArray)
             {
-                var sizeExpression = Expression.Variable(typeof(int));
-                var sizeExprValue = Expression.MakeMemberAccess(oldMember, oldMember.Type.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance));
-                var newArrayExpr = Expression.NewArrayBounds(newMember.Type.GetElementType(), sizeExpression);
+                var sizeVarExpr = Expression.Variable(typeof(int));
+                var lengthValue = Expression.MakeMemberAccess(oldMember,
+                    oldMember.Type.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance));
+                var newArrayExpr = Expression.NewArrayBounds(memberInfo.TypeToken.GetElementTypeToken().Type, sizeVarExpr);
 
                 var loopItr = Expression.Variable(typeof(int));
-                var loopCondition = Expression.LessThan(loopItr, sizeExpression);
+                var loopCondition = Expression.LessThan(loopItr, sizeVarExpr);
                 var loopExitLabel = Expression.Label();
 
-                return Expression.Block(new[] { loopItr, sizeExpression },
-                    // sizeExpression = oldStructure.<FIELD>.Length;
-                    Expression.Assign(sizeExpression, sizeExprValue),
-                    // newStructure.<FIELD> = new T[sizeExpression]
+                return Expression.Block(new[] { loopItr, sizeVarExpr },
+                    Expression.Assign(sizeVarExpr, lengthValue),
                     Expression.Assign(newMember, newArrayExpr),
-                    // itr = 0
                     Expression.Assign(loopItr, Expression.Constant(0)),
-
                     Expression.Loop(
                         Expression.IfThenElse(loopCondition,
                             Expression.Block(
-                                CloneMember(Expression.ArrayAccess(oldMember, loopItr), Expression.ArrayAccess(newMember, loopItr)),
+                                CloneMember(memberInfo, Expression.ArrayAccess(oldMember, loopItr), Expression.ArrayAccess(newMember, loopItr)),
                                 Expression.PreIncrementAssign(loopItr)
                             ),
                             Expression.Break(loopExitLabel)
                         ), loopExitLabel));
             }
-            else
+
+
+            var typeInfo = Type.GetChildToken(oldMember.Type);
+
+            if (typeInfo.Type == typeof(string) || typeInfo.Type.IsPrimitive)
+                return Expression.Assign(newMember, oldMember);
+
+            var block = new List<Expression>() {
+                Expression.Assign(newMember, New.Expression(newMember.Type))
+            };
+
+            foreach (var childInfo in typeInfo.Members)
             {
-                var typeInfo = Type.GetChildTypeInfo(oldMember.Type);
+                if (!ShouldProcess(childInfo))
+                    continue;
 
-                if (typeInfo.Type == typeof(string) || typeInfo.Type.IsPrimitive)
-                    return Expression.Assign(newMember, oldMember);
+                var oldChild = Expression.MakeMemberAccess(oldMember, childInfo.MemberInfo);
+                var newChild = Expression.MakeMemberAccess(newMember, childInfo.MemberInfo);
 
-                var block = new List<Expression>() {
-                    Expression.Assign(newMember, New.Expression(newMember.Type))
-                };
-
-                foreach (var childInfo in typeInfo.Members)
-                {
-                    if (childInfo.MemberType != Options.MemberType)
-                        continue;
-
-                    var oldChild = childInfo.MakeAccess(oldMember);
-                    var newChild = childInfo.MakeAccess(newMember);
-
-                    block.Add(CloneMember(oldChild, newChild));
-                }
-
-                return block.Count == 1
-                    ? (Expression)Expression.Assign(newMember, oldMember)
-                    : (Expression)Expression.Block(block);
+                block.Add(CloneMember(childInfo, oldChild, newChild));
             }
+
+            return block.Count == 1
+                ? (Expression)Expression.Assign(newMember, oldMember)
+                : (Expression)Expression.Block(block);
         }
 
         public T Deserialize(IRecordReader reader)
@@ -245,9 +190,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
             if (_deserializer == null)
                 _deserializer = GenerateDeserializer();
 
-            var instance = New<T>.Instance();
-            _deserializer.Invoke(reader, out instance);
-
+            _deserializer.Invoke(reader, out var instance);
             return instance;
         }
 
@@ -267,7 +210,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
                 if (!ShouldProcess(memberInfo))
                     continue;
 
-                var memberNode = memberInfo.MakeAccess(typeVariable);
+                var memberNode = Expression.MakeMemberAccess(typeVariable, memberInfo.MemberInfo);
                 Visit(body, reader, memberInfo, memberNode);
             }
 
@@ -277,10 +220,19 @@ namespace DBClientFiles.NET.Parsing.Serialization
             return lambda.Compile();
         }
 
-        protected virtual bool ShouldProcess(Member memberInfo)
+        protected virtual bool ShouldProcess(MemberToken memberInfo)
         {
-            if (memberInfo.MemberType != Options.MemberType)
-                return false;
+            if (Options.MemberType == MemberTypes.Field)
+            {
+                if (memberInfo.MemberType != TypeTokenType.Field)
+                    return false;
+            }
+
+            if (Options.MemberType == MemberTypes.Property)
+            {
+                if (memberInfo.MemberType != TypeTokenType.Property)
+                    return false;
+            }
 
             return !memberInfo.IsReadOnly;
         }
@@ -296,9 +248,9 @@ namespace DBClientFiles.NET.Parsing.Serialization
         /// <param name="recordReader">An expression representing an instance of <see cref="IRecordReader"/>.</param>
         /// <param name="rootNode">The node from which we starting work down.</param>
         /// <returns></returns>
-        public void Visit(List<Expression> container, Expression recordReader, Member memberInfo, Expression memberAccess)
+        public void Visit(List<Expression> container, Expression recordReader, MemberToken memberInfo, Expression memberAccess)
         {
-            if (memberInfo.Type.ElementType != null)
+            if (memberInfo.IsArray)
             {
                 // Try to read it using the visiters if it's a simple POD type.
                 var nodeInitializer = VisitNode(memberAccess, memberInfo, recordReader);
@@ -318,12 +270,12 @@ namespace DBClientFiles.NET.Parsing.Serialization
 
                     // Construct the loop's body
                     var loopBody = new List<Expression>();
-                    foreach (var childInfo in Type.ElementType.Members)
+                    foreach (var childInfo in Type.Members)
                     {
                         if (!ShouldProcess(memberInfo))
                             continue;
 
-                        var childAccess = childInfo.MakeAccess(arrayElement);
+                        var childAccess = Expression.MakeMemberAccess(arrayElement, childInfo.MemberInfo);
                         Visit(loopBody, recordReader, childInfo, childAccess);
                     }
 
@@ -346,15 +298,15 @@ namespace DBClientFiles.NET.Parsing.Serialization
                 var nodeInitializer = VisitNode(memberAccess, memberInfo, recordReader);
                 if (nodeInitializer != null)
                     container.Add(Expression.Assign(memberAccess, nodeInitializer));
-                else if (memberInfo.Type.Type.IsClass)
-                    container.Add(Expression.Assign(memberAccess, Expression.New(memberInfo.Type.Type)));
+                else if (memberInfo.TypeToken.Type.IsClass)
+                    container.Add(Expression.Assign(memberAccess, Expression.New(memberInfo.TypeToken.Type)));
 
-                foreach (var child in memberInfo.Type.Members)
+                foreach (var child in memberInfo.TypeToken.Members)
                 {
                     if (!ShouldProcess(memberInfo))
                         continue;
 
-                    var childAccess = child.MakeAccess(memberAccess);
+                    var childAccess = Expression.MakeMemberAccess(memberAccess, child.MemberInfo);
                     Visit(container, recordReader, child, childAccess);
                 }
             }
@@ -366,6 +318,6 @@ namespace DBClientFiles.NET.Parsing.Serialization
         /// <param name="memberAccess"></param>
         /// <param name="memberInfo"></param>
         /// <param name="recordReader"></param>
-        public abstract Expression VisitNode(Expression memberAccess, Member memberInfo, Expression recordReader);
+        public abstract Expression VisitNode(Expression memberAccess, MemberToken memberInfo, Expression recordReader);
     }
 }

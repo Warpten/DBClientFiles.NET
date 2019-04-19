@@ -5,28 +5,28 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-using TypeInfo = DBClientFiles.NET.Parsing.Reflection.TypeInfo;
+using TypeToken = DBClientFiles.NET.Parsing.Reflection.TypeToken;
 
 namespace DBClientFiles.NET.Parsing.Binding
 {
     internal class TypeMapper
     {
-        public TypeInfo Type { get; }
-        public Dictionary<Member, IFileMemberMetadata> Map { get; }
+        public TypeToken Type { get; }
+        public Dictionary<MemberToken, IFileMemberMetadata> Map { get; }
 
-        public TypeMapper(TypeInfo type)
+        public TypeMapper(TypeToken type)
         {
             Type = type;
 
-            Map = new Dictionary<Member, IFileMemberMetadata>();
+            Map = new Dictionary<MemberToken, IFileMemberMetadata>();
         }
 
-        public void Resolve(MemberTypes memberType, IEnumerable<IFileMemberMetadata> fileMembers)
+        public void Resolve(TypeTokenType memberType, IEnumerable<IFileMemberMetadata> fileMembers)
         {
-            if (!(memberType == MemberTypes.Field || memberType == MemberTypes.Property))
+            if (!(memberType == TypeTokenType.Field || memberType == TypeTokenType.Property))
                 throw new ArgumentException(nameof(memberType));
 
-            IEnumerable<Member> typeMembers = Type.Members.Flatten(m => m.Type.Members).Where(m => m.MemberType == memberType);
+            IEnumerable<MemberToken> typeMembers = Type.Members.Flatten(m => m.TypeToken.Members).Where(m => m.MemberType == memberType);
             if (typeMembers == null)
                 return;
 
@@ -37,11 +37,12 @@ namespace DBClientFiles.NET.Parsing.Binding
                     if (!typeMembersEnumerator.MoveNext())
                         return;
 
-                    var typeMemberType = typeMembersEnumerator.Current.Type.Type;
+                    var typeMemberType = typeMembersEnumerator.Current.TypeToken.Type;
                     if (typeMemberType.IsArray)
                         typeMemberType = typeMemberType.GetElementType();
 
-                    var structureFieldSize = Math.Max(1, typeMembersEnumerator.Current.Cardinality) * UnsafeCache.SizeOf(typeMemberType);
+                    // TODO: FIXME
+                    var structureFieldSize = 1; // Math.Max(1, typeMembersEnumerator.Current.Cardinality) * UnsafeCache.SizeOf(typeMemberType);
                     var metaFieldSize = fileMemberInfo.Size * Math.Max(1, fileMemberInfo.Cardinality) / 8;
 
                     if (structureFieldSize < metaFieldSize)

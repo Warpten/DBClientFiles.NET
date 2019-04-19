@@ -38,22 +38,38 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
             return _recordReader;
         }
 
-        protected override void Prepare()
+        protected override void Before(ParsingStep step)
         {
-            Head.Next = new Block
+            if (step == ParsingStep.Segments)
             {
-                Identifier = BlockIdentifier.Records,
-                Length = _fileHeader.RecordCount * _fileHeader.RecordSize
-            };
+                Head = new Block
+                {
+                    Identifier = BlockIdentifier.Header,
+                    Length = Header.Size + 4
+                };
 
-            Head.Next.Next = new Block {
-                Identifier = BlockIdentifier.StringBlock,
-                Length = _fileHeader.StringTableLength
-            };
+                Head.Next = new Block
+                {
+                    Identifier = BlockIdentifier.Records,
+                    Length = _fileHeader.RecordCount * _fileHeader.RecordSize
+                };
 
-            RegisterBlockHandler(new StringBlockHandler(Options.InternStrings));
+                Head.Next.Next = new Block
+                {
+                    Identifier = BlockIdentifier.StringBlock,
+                    Length = _fileHeader.StringTableLength
+                };
 
-            _recordReader = new AlignedRecordReader(this, Header.RecordSize);
+                RegisterBlockHandler(new StringBlockHandler(Options.InternStrings));
+            }
+        }
+
+        protected override void After(ParsingStep step)
+        {
+            if (step == ParsingStep.Segments)
+            {
+                _recordReader = new AlignedRecordReader(this, Header.RecordSize);
+            }
         }
     }
 }

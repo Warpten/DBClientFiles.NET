@@ -4,6 +4,7 @@ using DBClientFiles.NET.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace DBClientFiles.NET.Runner
@@ -63,10 +64,39 @@ namespace DBClientFiles.NET.Runner
             using (var fs = File.OpenRead(@"D:\World of Warcraft 3.3.5\dbc\Achievement.dbc"))
             {
                 var collection = new StorageEnumerable<AchievementEntry>(StorageOptions.Default, fs);
-                Console.WriteLine(collection.First().MapID);
+                InspectObject(collection.First());
             }
 
             Console.ReadKey();
         }
+
+        private static void InspectObject(object obj)
+        {
+            var props = obj.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            foreach (var prop in props)
+            {
+                var value = prop.GetValue(obj);
+                if (value == null)
+                {
+                    Console.WriteLine($"{prop.Name}] = null");
+
+                    continue;
+                }
+
+                if (value.GetType().IsArray)
+                {
+                    var valArray = (Array) value;
+                    for (var i = 0; i < valArray.Length; ++i)
+                    {
+                        Console.WriteLine($"{prop.Name}[{i}] = {valArray.GetValue(i)}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"{prop.Name} = {value}");
+                }
+            }
+        }
+
     }
 }

@@ -15,7 +15,7 @@ namespace DBClientFiles.NET.UnitTests
         [TestMethod]
         public void TestType()
         {
-            var typeInfo = new TypeInfo(typeof(TypeTraversalTest));
+            var typeInfo = new TypeToken(typeof(TypeTraversalTest));
         }
     }
 }

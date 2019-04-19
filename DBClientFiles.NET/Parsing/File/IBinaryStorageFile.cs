@@ -10,7 +10,7 @@ namespace DBClientFiles.NET.Parsing.File
     /// </summary>
     internal interface IBinaryStorageFile : IDisposable
     {
-        TypeInfo Type { get; }
+        TypeToken Type { get; }
 
         ref readonly IFileHeader Header { get; }
 

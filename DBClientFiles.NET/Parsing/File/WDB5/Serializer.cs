@@ -23,12 +23,12 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
             _mapper = new TypeMapper(parser.Type);
             var recordBlock = parser.FindBlockHandler<FieldInfoHandler<MemberMetadata>>(BlockIdentifier.FieldInfo);
 
-            _mapper.Resolve(parser.Options.MemberType, recordBlock);
+            _mapper.Resolve(parser.Options.MemberType.ToTypeToken(), recordBlock);
 
             base.Initialize(parser);
         }
 
-        public int GetElementBitCount(Member memberInfo)
+        public int GetElementBitCount(MemberToken memberInfo)
         {
             return (int)_mapper.Map[memberInfo].Size;
         }
@@ -63,16 +63,16 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
         /// <see cref="IRecordReader.Read{T}(int)"/> and <see cref="IRecordReader.ReadString(int)"/>, respectively.
         /// </para>
         /// </remarks>
-        public override Expression VisitNode(Expression memberAccess, Member memberInfo, Expression recordReader)
+        public override Expression VisitNode(Expression memberAccess, MemberToken memberInfo, Expression recordReader)
         {
             var bitCount = GetElementBitCount(memberInfo);
 
-            if (memberInfo.Type.Type.IsArray)
+            if (memberInfo.TypeToken.Type.IsArray)
             {
-                var elementType = memberInfo.Type.Type.GetElementType();
+                var elementType = memberInfo.TypeToken.Type.GetElementType();
                 if (elementType.IsPrimitive)
                 {
-                    bool isPacked = bitCount == UnsafeCache.BitSizeOf(memberInfo.Type.Type.GetElementType());
+                    bool isPacked = bitCount == UnsafeCache.BitSizeOf(memberInfo.TypeToken.Type.GetElementType());
 
                     if (isPacked)
                     {
@@ -106,20 +106,20 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
                 return null;
             }
 
-            if (memberInfo.Type.Type.IsPrimitive)
+            if (memberInfo.TypeToken.Type.IsPrimitive)
             {
-                bool isPacked = bitCount == UnsafeCache.BitSizeOf(memberInfo.Type.Type.GetElementType());
+                bool isPacked = bitCount == UnsafeCache.BitSizeOf(memberInfo.TypeToken.Type.GetElementType());
 
                 if (!isPacked) // Read<T>();
                     return Expression.Call(recordReader,
-                        _IRecordReader.ReadPacked.MakeGenericMethod(memberInfo.Type.Type));
+                        _IRecordReader.ReadPacked.MakeGenericMethod(memberInfo.TypeToken.Type));
 
                 // Read<T>(bitCount);
                 return Expression.Call(recordReader,
-                    _IRecordReader.ReadPacked.MakeGenericMethod(memberInfo.Type.Type),
+                    _IRecordReader.ReadPacked.MakeGenericMethod(memberInfo.TypeToken.Type),
                     Expression.Constant(bitCount));
             }
-            else if (memberInfo.Type.Type == typeof(string))
+            else if (memberInfo.TypeToken.Type == typeof(string))
             {
                 if (bitCount == 32)
                     // ReadString()
