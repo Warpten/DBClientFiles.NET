@@ -18,7 +18,7 @@ namespace DBClientFiles.NET.Benchmark
         {
             var summaries = BenchmarkSwitcher.FromTypes(new[] {
                 typeof(DBC.DBC),
-                typeof(DBC.PreparationCost),
+                typeof(SlimMutexTest)
 
                 // typeof(LanguageFeatureBenchmarks)
             }).Run(args);
