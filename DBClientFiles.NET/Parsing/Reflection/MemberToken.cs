@@ -14,6 +14,8 @@ namespace DBClientFiles.NET.Parsing.Reflection
         public abstract bool IsArray { get; }
         public abstract int Cardinality { get; }
 
+        public int Index { get; }
+
         /// <summary>
         /// If <see cref="MemberInfo"/> is an array, this is a <see cref="Reflection.TypeToken"/> for the array elements.
         /// Otherwise, as expected.
@@ -25,10 +27,11 @@ namespace DBClientFiles.NET.Parsing.Reflection
         /// </summary>
         public TypeToken DeclaringTypeToken { get; }
 
-        protected MemberToken(TypeToken parent, MemberInfo memberInfo)
+        protected MemberToken(TypeToken parent, MemberInfo memberInfo, int index)
         {
             DeclaringTypeToken = parent;
             MemberInfo = memberInfo;
+            Index = index;
         }
 
         public abstract bool IsReadOnly { get; }

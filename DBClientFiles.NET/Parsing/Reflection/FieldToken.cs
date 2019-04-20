@@ -13,7 +13,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
 
         public override TypeToken TypeToken { get; }
 
-        public FieldToken(TypeToken parent, FieldInfo fieldInfo) : base(parent, fieldInfo)
+        public FieldToken(TypeToken parent, FieldInfo fieldInfo, int index) : base(parent, fieldInfo, index)
         {
             _memberInfo = fieldInfo;
 

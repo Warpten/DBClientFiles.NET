@@ -46,19 +46,16 @@ namespace DBClientFiles.NET.Parsing.Serialization
 
         public void SetIndexColumn(int indexColumn)
         {
-            // FIXME: This needs fixing...
+            _keyAccessExpression = _root = Expression.Parameter(typeof(T).MakeByRefType(), "model");
 
-            /*Expression root = _root = Expression.Parameter(typeof(T).MakeByRefType(), "root");
-            if (!EvaluateLeaf(Type, ref root, indexColumn, out var indexMemberInfo))
-                throw new InvalidOperationException("Unable to find the index column");
+            var indexColumnMember = Type.GetMemberByIndex(ref indexColumn, ref _keyAccessExpression, _options.MemberType.ToTypeToken());
+            if (indexColumnMember == null)
+                throw new InvalidOperationException($"Invalid structure: Unable to find an index column.");
 
-            if (indexMemberInfo.TypeToken.Type != typeof(int) && indexMemberInfo.TypeToken.Type != typeof(uint))
+            if (indexColumnMember.TypeToken.Type != typeof(int) && indexColumnMember.TypeToken.Type != typeof(uint))
             {
-                // TODO: Collect a string representation of the complete path to that member.
-                throw new InvalidOperationException($"Invalid structure: {root} is expected to be the index, but its type doesn't match. Needs to be (u)int.");
+                throw new InvalidOperationException($"Invalid structure: {_keyAccessExpression} is expected to be the index, but its type doesn't match. Needs to be (u)int.");
             }
-
-            _keyAccessExpression = root;*/
         }
 
         /// <summary>

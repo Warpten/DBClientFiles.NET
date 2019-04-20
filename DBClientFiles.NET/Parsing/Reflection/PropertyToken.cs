@@ -12,7 +12,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
 
         public override TypeToken TypeToken { get; }
 
-        public PropertyToken(TypeToken parent, PropertyInfo propInfo) : base(parent, propInfo)
+        public PropertyToken(TypeToken parent, PropertyInfo propInfo, int index) : base(parent, propInfo, index)
         {
             _propInfo = propInfo;
 

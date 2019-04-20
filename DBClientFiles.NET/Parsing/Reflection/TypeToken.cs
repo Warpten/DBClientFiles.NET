@@ -56,7 +56,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
                     ref readonly var fieldInfo = ref fields[i];
                     var childTypeToken = GetChildToken(fieldInfo.FieldType);
 
-                    var fieldType = new FieldToken(this, fieldInfo);
+                    var fieldType = new FieldToken(this, fieldInfo, i);
                     _members.Add(fieldType);
                 }
 
@@ -66,25 +66,9 @@ namespace DBClientFiles.NET.Parsing.Reflection
                     ref readonly var propInfo = ref properties[i];
                     var childTypeToken = GetChildToken(propInfo.PropertyType);
 
-                    _members.Add(new PropertyToken(this, propInfo));
+                    _members.Add(new PropertyToken(this, propInfo, i));
                 }
             }
-        }
-
-        public MemberToken GetMemberByIndex(int index, TypeTokenType memberType)
-        {
-            foreach (var child in Members)
-            {
-                if (child.MemberType != memberType)
-                    continue;
-
-                if (index == 0)
-                    return child;
-
-                --index;
-            }
-
-            return null;
         }
 
         public MemberToken FindChild(MemberInfo reflectionInfo)
@@ -127,5 +111,60 @@ namespace DBClientFiles.NET.Parsing.Reflection
         {
             return Type.ToString();
         }
+
+        public MemberToken GetMemberByIndex(ref int index, ref Expression accessExpression, TypeTokenType type)
+        {
+            foreach (var memberInfo in _members)
+            {
+                if (memberInfo.MemberType != type)
+                    continue;
+
+                Expression memberAccessExpr = Expression.MakeMemberAccess(accessExpression, memberInfo.MemberInfo);
+
+                if (memberInfo.TypeToken.IsArray)
+                {
+                    // If the member is an array, we need t build an intermediate array access expression somehow
+                    var elementTypeToken = memberInfo.TypeToken.GetElementTypeToken();
+
+                    for (var i = 0; i < memberInfo.Cardinality; ++i)
+                    {
+                        Expression arrayAccessExpr = Expression.ArrayAccess(memberAccessExpr, Expression.Constant(i));
+                        
+                        var token = elementTypeToken.GetMemberByIndex(ref index, ref arrayAccessExpr, type);
+
+                        if (token != null)
+                        {
+                            accessExpression = arrayAccessExpr;
+                            return token;
+                        }
+                    }
+
+                    continue;
+                }
+                else if (memberInfo.TypeToken.Members.Any(m => m.MemberType == type))
+                {
+                    var childToken = memberInfo.TypeToken.GetMemberByIndex(ref index, ref memberAccessExpr, type);
+                    if (childToken != null)
+                    {
+                        accessExpression = memberAccessExpr;
+                        return childToken;
+                    }
+
+                    continue;
+                }
+
+                if (index == 0)
+                {
+                    accessExpression = Expression.MakeMemberAccess(accessExpression, memberInfo.MemberInfo);
+                    return memberInfo;
+                }
+
+                index -= 1;
+            }
+
+            return default;
+        }
+
+        public bool IsArray => Type.IsArray;
     }
 }
