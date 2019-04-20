@@ -27,18 +27,18 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
             base.Dispose(disposing);
         }
 
-        protected override IRecordReader GetRecordReader(int recordSize)
+        public override IRecordReader GetRecordReader(int recordSize)
         {
             _recordReader.LoadStream(BaseStream);
             return _recordReader;
         }
 
-        protected override void Before(ParsingStep step)
+        public override void Before(ParsingStep step)
         {
             throw new System.NotImplementedException();
         }
 
-        protected override void After(ParsingStep step)
+        public override void After(ParsingStep step)
         {
             throw new System.NotImplementedException();
         }

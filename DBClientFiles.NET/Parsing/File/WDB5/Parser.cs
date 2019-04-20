@@ -23,103 +23,98 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
             RegisterBlockHandler(new FieldInfoHandler<MemberMetadata>());
         }
 
-        protected override IRecordReader GetRecordReader(int recordSize)
+        public override IRecordReader GetRecordReader(int recordSize)
         {
             _recordReader.LoadStream(BaseStream, recordSize);
             return _recordReader;
         }
 
-        protected override void Before(ParsingStep step)
+        public override void Before(ParsingStep step)
         {
-            if (step == ParsingStep.Segments)
+            if (step != ParsingStep.Segments)
+                return;
+            
+            Head = new Block
             {
-                Head = new Block
-                {
-                    Identifier = BlockIdentifier.Header,
-                    Length = Header.Size + 4
-                };
+                Identifier = BlockIdentifier.Header,
+                Length = Header.Size + 4
+            };
 
-                var tail = Head.Next = new Block
-                {
-                    Identifier = BlockIdentifier.FieldInfo,
-                    Length = Header.FieldCount * (2 + 2)
-                };
+            var tail = Head.Next = new Block
+            {
+                Identifier = BlockIdentifier.FieldInfo,
+                Length = Header.FieldCount * (2 + 2)
+            };
 
+            tail = tail.Next = new Block
+            {
+                Identifier = BlockIdentifier.Records,
+                Length = Header.HasOffsetMap
+                    ? Header.StringTableLength - tail.EndOffset
+                    : Header.RecordCount * Header.RecordSize
+            };
+
+            if (!Header.HasOffsetMap)
+            {
                 tail = tail.Next = new Block
                 {
-                    Identifier = BlockIdentifier.Records,
-                    Length = Header.HasOffsetMap
-                        ? Header.StringTableLength - tail.EndOffset
-                        : Header.RecordCount * Header.RecordSize
+                    Identifier = BlockIdentifier.StringBlock,
+                    Length = Header.StringTableLength
                 };
 
-                if (!Header.HasOffsetMap)
+                RegisterBlockHandler(new StringBlockHandler(Options.InternStrings));
+            }
+            else
+            {
+                tail = tail.Next = new Block
                 {
-                    tail = tail.Next = new Block
-                    {
-                        Identifier = BlockIdentifier.StringBlock,
-                        Length = Header.StringTableLength
-                    };
+                    Identifier = BlockIdentifier.OffsetMap,
+                    Length = (4 + 2) * (Header.MaxIndex - Header.MinIndex + 1)
+                };
 
-                    RegisterBlockHandler(new StringBlockHandler(Options.InternStrings));
-                }
-                else
+                RegisterBlockHandler(new OffsetMapHandler());
+            }
+
+            if (Header.HasForeignIds)
+            {
+                tail = tail.Next = new Block
                 {
-                    tail = tail.Next = new Block
-                    {
-                        Identifier = BlockIdentifier.OffsetMap,
-                        Length = (4 + 2) * (Header.MaxIndex - Header.MinIndex + 1)
-                    };
+                    Identifier = BlockIdentifier.RelationShipTable,
+                    Length = 4 * (Header.MaxIndex - Header.MinIndex + 1)
+                };
+            }
 
-                    RegisterBlockHandler(new OffsetMapHandler());
-                }
-
-                if (Header.HasForeignIds)
+            if (Header.HasIndexTable)
+            {
+                tail = tail.Next = new Block
                 {
-                    tail = tail.Next = new Block
-                    {
-                        Identifier = BlockIdentifier.RelationShipTable,
-                        Length = 4 * (Header.MaxIndex - Header.MinIndex + 1)
-                    };
-                }
+                    Identifier = BlockIdentifier.IndexTable,
+                    Length = 4 * Header.RecordCount
+                };
 
-                if (Header.HasIndexTable)
+                RegisterBlockHandler(new IndexTableHandler());
+            }
+
+            if (Header.CopyTableLength > 0)
+            {
+                tail = tail.Next = new Block
                 {
-                    tail = tail.Next = new Block
-                    {
-                        Identifier = BlockIdentifier.IndexTable,
-                        Length = 4 * Header.RecordCount
-                    };
+                    Identifier = BlockIdentifier.CopyTable,
+                    Length = Header.CopyTableLength
+                };
 
-                    RegisterBlockHandler(new IndexTableHandler());
-                }
-
-                if (Header.CopyTableLength > 0)
-                {
-                    tail = tail.Next = new Block
-                    {
-                        Identifier = BlockIdentifier.CopyTable,
-                        Length = Header.CopyTableLength
-                    };
-
-                    RegisterBlockHandler(new CopyTableHandler());
-                }
+                RegisterBlockHandler(new CopyTableHandler());
             }
         }
 
-        protected override void After(ParsingStep step)
+        public override void After(ParsingStep step)
         {
-            if (step == ParsingStep.Segments)
-            {
-                if (Header.HasOffsetMap)
-                {
-                    _recordReader = new BytePackedRecordReader(this, Header.RecordSize);
-                }
-                else
-                {
-                    _recordReader = new BytePackedRecordReader(this, FindBlockHandler<OffsetMapHandler>(BlockIdentifier.OffsetMap).GetLargestRecordSize());
-                }
-            }
+            if (step != ParsingStep.Segments)
+                return;
+            
+            _recordReader = Header.HasOffsetMap 
+                ? new BytePackedRecordReader(this, Header.RecordSize)
+                : new BytePackedRecordReader(this, FindBlockHandler<OffsetMapHandler>(BlockIdentifier.OffsetMap).GetLargestRecordSize());
         }
     }
 }

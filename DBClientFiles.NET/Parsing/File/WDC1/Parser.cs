@@ -8,7 +8,7 @@ using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers;
 using DBClientFiles.NET.Parsing.Serialization;
 
-namespace DBClientFiles.NET.Parsing.File.WDBC
+namespace DBClientFiles.NET.Parsing.File.WDC1
 {
     internal sealed class Parser<T> : BinaryFileParser<T, Serializer<T>>
     {

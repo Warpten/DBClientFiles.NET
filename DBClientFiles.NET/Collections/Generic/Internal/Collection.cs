@@ -8,9 +8,14 @@ using WDBC = DBClientFiles.NET.Parsing.File.WDBC;
 using WDB2 = DBClientFiles.NET.Parsing.File.WDB2;
 using WDB5 = DBClientFiles.NET.Parsing.File.WDB5;
 using System;
+using System.Runtime.InteropServices;
 
 namespace DBClientFiles.NET.Collections.Generic.Internal
 {
+    /// <summary>
+    /// This class is the general entry point for all the implementations of the various generic collections provided by the library.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     internal class Collection<T> : IEnumerable<T>
     {
         private IParser<T> _implementation;
@@ -33,7 +38,7 @@ namespace DBClientFiles.NET.Collections.Generic.Internal
         {
             Span<byte> identifierBytes = stackalloc byte[4];
             dataStream.Read(identifierBytes);
-            var identifier = (Signatures)System.Runtime.InteropServices.MemoryMarshal.Read<uint>(identifierBytes);
+            var identifier = (Signatures) MemoryMarshal.Read<uint>(identifierBytes);
 
             switch (identifier)
             {

@@ -10,7 +10,7 @@ namespace DBClientFiles.NET.Parsing.File
     internal interface IParser : IBinaryStorageFile
     {
         /// <summary>
-        /// The total amount of records in the file (including copies)
+        /// The total amount of records in the file.
         /// </summary>
         int RecordCount { get; }
     }
