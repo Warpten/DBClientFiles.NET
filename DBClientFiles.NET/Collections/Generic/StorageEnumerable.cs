@@ -1,9 +1,7 @@
-﻿using System;
-using DBClientFiles.NET.Parsing.File;
+﻿using DBClientFiles.NET.Parsing.File;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 using DBClientFiles.NET.Collections.Generic.Internal;
 

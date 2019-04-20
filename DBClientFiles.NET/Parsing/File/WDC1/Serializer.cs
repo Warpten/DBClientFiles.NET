@@ -1,6 +1,4 @@
-﻿using DBClientFiles.NET.Collections;
-using DBClientFiles.NET.Parsing.Binding;
-using DBClientFiles.NET.Parsing.File.Records;
+﻿using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Parsing.Serialization;
 using System.Linq.Expressions;

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Serialization;
 

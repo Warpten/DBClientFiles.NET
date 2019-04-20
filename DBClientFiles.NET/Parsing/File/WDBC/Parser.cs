@@ -1,12 +1,7 @@
-﻿using System;
-using System.IO;
-using System.Runtime.Serialization;
-using DBClientFiles.NET.Collections;
-using DBClientFiles.NET.Parsing.Binding;
+﻿using System.IO;
 using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers;
-using DBClientFiles.NET.Parsing.Serialization;
 
 namespace DBClientFiles.NET.Parsing.File.WDBC
 {

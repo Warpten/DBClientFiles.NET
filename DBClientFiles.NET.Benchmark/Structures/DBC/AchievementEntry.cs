@@ -1,8 +1,4 @@
-﻿using DBClientFiles.NET.Attributes;
-using DBClientFiles.NET.Benchmark.DataTypes;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using DBClientFiles.NET.Benchmark.DataTypes;
 
 namespace DBClientFiles.NET.Benchmark.Structures.DBC
 {

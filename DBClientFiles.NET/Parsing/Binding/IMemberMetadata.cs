@@ -1,5 +1,4 @@
 ﻿using DBClientFiles.NET.Parsing.Enums;
-using System;
 
 namespace DBClientFiles.NET.Parsing.Binding
 {

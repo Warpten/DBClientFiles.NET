@@ -1,7 +1,4 @@
-﻿using System.IO;
-using System.Runtime.CompilerServices;
-
-namespace DBClientFiles.NET.Parsing.File
+﻿namespace DBClientFiles.NET.Parsing.File
 {
     public readonly struct Header
     {

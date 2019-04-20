@@ -1,8 +1,5 @@
 ﻿using DBClientFiles.NET.Parsing.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace DBClientFiles.NET.UnitTests
 {

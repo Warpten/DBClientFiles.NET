@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using DBClientFiles.NET.Parsing.Binding;
 using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers;

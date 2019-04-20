@@ -1,9 +1,4 @@
-﻿using DBClientFiles.NET.Parsing.Serialization;
-using DBClientFiles.NET.Collections;
-using System;
-using System.Collections.Generic;
-using DBClientFiles.NET.Parsing.Binding;
-using DBClientFiles.NET.Parsing.File.Segments;
+﻿using System.Collections.Generic;
 
 namespace DBClientFiles.NET.Parsing.File
 {

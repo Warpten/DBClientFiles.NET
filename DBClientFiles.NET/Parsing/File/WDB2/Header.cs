@@ -1,5 +1,4 @@
 ﻿using DBClientFiles.NET.Utils;
-using System;
 using System.IO;
 
 namespace DBClientFiles.NET.Parsing.File.WDB2
