@@ -70,28 +70,43 @@ namespace DBClientFiles.NET.Runner
 
         private static void InspectObject(object obj)
         {
-            var props = obj.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            foreach (var prop in props)
+            PrintValue("model", obj);
+        }
+
+        private static void PrintValue(string prefix, object value)
+        {
+            if (value.GetType() == typeof(string) || value.GetType().IsPrimitive)
             {
-                var value = prop.GetValue(obj);
-                if (value == null)
-                {
-                    Console.WriteLine($"{prop.Name}] = null");
-
-                    continue;
-                }
-
-                if (value.GetType().IsArray)
-                {
-                    var valArray = (Array) value;
-                    for (var i = 0; i < valArray.Length; ++i)
-                    {
-                        Console.WriteLine($"{prop.Name}[{i}] = {valArray.GetValue(i)}");
-                    }
-                }
+                if (value.GetType() == typeof(string))
+                    Console.WriteLine($@"{prefix} = ""{value}""");
+                else if (value.GetType() == typeof(int) || value.GetType() == typeof(uint))
+                    Console.WriteLine($"{prefix} = {value} (0x{value:X8})");
                 else
+                    Console.WriteLine($"{prefix} = {value}");
+            }
+            else
+            {
+                var props = value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                foreach (var prop in props)
                 {
-                    Console.WriteLine($"{prop.Name} = {value}");
+                    var propValue = prop.GetValue(value);
+                    if (propValue == null)
+                    {
+                        Console.WriteLine($"{prefix}.{prop.Name}] = null");
+
+                        continue;
+                    }
+
+                    if (propValue.GetType().IsArray)
+                    {
+                        var valArray = (Array)propValue;
+                        for (var i = 0; i < valArray.Length; ++i)
+                            PrintValue($"{prefix}.{prop.Name}[{i}]", valArray.GetValue(i));
+                    }
+                    else
+                    {
+                        PrintValue($"{prefix}.{prop.Name}", propValue);
+                    }
                 }
             }
         }

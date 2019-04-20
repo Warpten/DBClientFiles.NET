@@ -36,11 +36,13 @@ namespace DBClientFiles.NET.Parsing.File.Segments
             set {
                 // Fix the chain
                 if (_nextBlock != null)
+                {
                     _nextBlock._previousBlock = value;
+                    value._nextBlock = _nextBlock;
+                }
 
                 // Update our node.
                 value._previousBlock = this;
-                value._nextBlock = _nextBlock;
                 _nextBlock = value;
             }
         }
@@ -50,10 +52,12 @@ namespace DBClientFiles.NET.Parsing.File.Segments
             get => _previousBlock;
             set {
                 if (_previousBlock != null)
+                {
                     _previousBlock._nextBlock = value;
+                    value._previousBlock = _previousBlock;
+                }
 
                 value._nextBlock = this;
-                value._previousBlock = _previousBlock;
                 _previousBlock = value;
             }
         }
