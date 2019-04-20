@@ -37,9 +37,9 @@ namespace DBClientFiles.NET.Parsing.File
             var head = owner.Head;
             while (head != null)
             {
-                if (!owner.ReadBlock(owner, head))
+                if (!head.ReadBlock(owner))
                     owner.BaseStream.Seek(head.Length, SeekOrigin.Current);
-
+            
                 // While at it, we store the records block, since that one is unique.
                 if (head.Identifier == BlockIdentifier.Records)
                     _recordBlock = head;
@@ -53,8 +53,8 @@ namespace DBClientFiles.NET.Parsing.File
             Serializer.Initialize(owner);
 
             // Try to retrieve commonly found block handlers for use when enumerating.
-            _offsetMapHandler = owner.GetHandler<OffsetMapHandler>(BlockIdentifier.OffsetMap);
-            _indexTableHandler = owner.GetHandler<IndexTableHandler>(BlockIdentifier.IndexTable);
+            _offsetMapHandler = owner.FindBlock(BlockIdentifier.OffsetMap)?.Handler as OffsetMapHandler;
+            _indexTableHandler = owner.FindBlock(BlockIdentifier.IndexTable)?.Handler as IndexTableHandler;
             _itr = 0;
 
             _current = default;

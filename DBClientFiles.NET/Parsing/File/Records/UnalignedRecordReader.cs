@@ -109,7 +109,7 @@ namespace DBClientFiles.NET.Parsing.File.Records
 
         public virtual string ReadString(int bitCount)
         {
-            StringBlockHandler handler = _fileReader.FindBlockHandler<StringBlockHandler>(BlockIdentifier.StringBlock);
+            var handler = _fileReader.FindBlock(BlockIdentifier.StringBlock)?.Handler as StringBlockHandler;
             var stringIdentifier = Read<uint>(bitCount);
             return handler[stringIdentifier];
         }

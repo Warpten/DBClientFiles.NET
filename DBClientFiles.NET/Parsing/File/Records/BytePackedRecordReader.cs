@@ -22,7 +22,7 @@ namespace DBClientFiles.NET.Parsing.File.Records
 
         public BytePackedRecordReader(IBinaryStorageFile fileReader, int recordSize)
         {
-            _stringBlock = fileReader.FindBlockHandler<StringBlockHandler>(BlockIdentifier.StringBlock);
+            _stringBlock = fileReader.FindBlock(BlockIdentifier.StringBlock)?.Handler as StringBlockHandler;
 
             _stagingBuffer = new byte[recordSize + 8]; // Allocating 8 extra bytes for packed reads to make sure we don't start reading another process's memory out of bad luck
             _byteCursor = 0;

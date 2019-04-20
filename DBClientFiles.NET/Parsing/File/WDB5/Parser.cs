@@ -19,8 +19,6 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
         public Parser(in StorageOptions options, Stream input) : base(options, input)
         {
             _fileHeader = new Header(this);
-
-            RegisterBlockHandler(new FieldInfoHandler<MemberMetadata>());
         }
 
         public override IRecordReader GetRecordReader(int recordSize)
@@ -37,7 +35,9 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
             Head = new Block
             {
                 Identifier = BlockIdentifier.Header,
-                Length = Header.Size + 4
+                Length = 11 * 4 + 2 * 2,
+
+                Handler = new FieldInfoHandler<MemberMetadata>()
             };
 
             var tail = Head.Next = new Block
@@ -56,29 +56,26 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
 
             if (!Header.HasOffsetMap)
             {
-                tail = tail.Next = new Block
-                {
+                tail = tail.Next = new Block {
                     Identifier = BlockIdentifier.StringBlock,
-                    Length = Header.StringTableLength
-                };
+                    Length = Header.StringTableLength,
 
-                RegisterBlockHandler(new StringBlockHandler(Options.InternStrings));
+                    Handler = new StringBlockHandler(Options.InternStrings)
+                };
             }
             else
             {
-                tail = tail.Next = new Block
-                {
+                tail = tail.Next = new Block {
                     Identifier = BlockIdentifier.OffsetMap,
-                    Length = (4 + 2) * (Header.MaxIndex - Header.MinIndex + 1)
-                };
+                    Length = (4 + 2) * (Header.MaxIndex - Header.MinIndex + 1),
 
-                RegisterBlockHandler(new OffsetMapHandler());
+                    Handler = new OffsetMapHandler()
+                };
             }
 
             if (Header.HasForeignIds)
             {
-                tail = tail.Next = new Block
-                {
+                tail = tail.Next = new Block {
                     Identifier = BlockIdentifier.RelationShipTable,
                     Length = 4 * (Header.MaxIndex - Header.MinIndex + 1)
                 };
@@ -86,24 +83,22 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
 
             if (Header.HasIndexTable)
             {
-                tail = tail.Next = new Block
-                {
+                tail = tail.Next = new Block {
                     Identifier = BlockIdentifier.IndexTable,
-                    Length = 4 * Header.RecordCount
-                };
+                    Length = 4 * Header.RecordCount,
 
-                RegisterBlockHandler(new IndexTableHandler());
+                    Handler = new IndexTableHandler()
+                };
             }
 
             if (Header.CopyTableLength > 0)
             {
-                tail = tail.Next = new Block
-                {
+                tail = tail.Next = new Block {
                     Identifier = BlockIdentifier.CopyTable,
-                    Length = Header.CopyTableLength
-                };
+                    Length = Header.CopyTableLength,
 
-                RegisterBlockHandler(new CopyTableHandler());
+                    Handler = new CopyTableHandler()
+                };
             }
         }
 
@@ -114,7 +109,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
             
             _recordReader = Header.HasOffsetMap 
                 ? new BytePackedRecordReader(this, Header.RecordSize)
-                : new BytePackedRecordReader(this, FindBlockHandler<OffsetMapHandler>(BlockIdentifier.OffsetMap).GetLargestRecordSize());
+                : new BytePackedRecordReader(this, ((OffsetMapHandler) FindBlock(BlockIdentifier.OffsetMap).Handler).GetLargestRecordSize());
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace DBClientFiles.NET.Parsing.File.Segments
+﻿using System.IO;
+
+namespace DBClientFiles.NET.Parsing.File.Segments
 {
     /// <summary>
     /// A block represents a section of a file. See <see cref="BlockIdentifier"/> for possible semantic meanings.
@@ -60,5 +62,16 @@
 
         private Block _nextBlock = null;
         private Block _previousBlock = null;
+
+        public IBlockHandler Handler { get; set; }
+
+        public bool ReadBlock<T>(T parser) where T : BinaryReader, IParser
+        {
+            if (Handler == null)
+                return false;
+
+            Handler.ReadBlock(parser, StartOffset, Length);
+            return true;
+        }
     }
 }

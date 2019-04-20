@@ -10,6 +10,10 @@ using DBClientFiles.NET.Parsing.Serialization;
 
 namespace DBClientFiles.NET.Parsing.File.WDBC
 {
+    /// <summary>
+    /// Handles WDBC parsing.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     internal sealed class Parser<T> : BinaryFileParser<T, Serializer<T>>
     {
         private IFileHeader _fileHeader;
@@ -42,26 +46,23 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
         {
             if (step != ParsingStep.Segments)
                 return;
-            
-            Head = new Block
-            {
+
+            Head = new Block {
                 Identifier = BlockIdentifier.Header,
-                Length = Header.Size + 4
-            };
+                Length = 5 * 4,
 
-            Head.Next = new Block
-            {
-                Identifier = BlockIdentifier.Records,
-                Length = _fileHeader.RecordCount * _fileHeader.RecordSize
-            };
+                Next = new Block {
+                    Identifier = BlockIdentifier.Records,
+                    Length = _fileHeader.RecordCount * _fileHeader.RecordSize,
 
-            Head.Next.Next = new Block
-            {
-                Identifier = BlockIdentifier.StringBlock,
-                Length = _fileHeader.StringTableLength
-            };
+                    Next = new Block {
+                        Identifier = BlockIdentifier.StringBlock,
+                        Length = _fileHeader.StringTableLength,
 
-            RegisterBlockHandler(new StringBlockHandler(Options.InternStrings));
+                        Handler = new StringBlockHandler(Options.InternStrings)
+                    }
+                }
+            };
         }
 
         public override void After(ParsingStep step)

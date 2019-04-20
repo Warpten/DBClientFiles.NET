@@ -2,6 +2,7 @@
 using DBClientFiles.NET.Parsing.Binding;
 using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.File.Segments;
+using DBClientFiles.NET.Parsing.File.Segments.Handlers;
 
 namespace DBClientFiles.NET.Parsing.File.WDB2
 {
@@ -35,12 +36,40 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
 
         public override void Before(ParsingStep step)
         {
-            throw new System.NotImplementedException();
+            if (step != ParsingStep.Segments)
+                return;
+
+            var tail = Head = new Block
+            {
+                Identifier = BlockIdentifier.Header,
+                Length = 12 * 4,
+            };
+
+            if (_fileHeader.MaxIndex != 0)
+            {
+                tail = Head.Next = new Block {
+                    Identifier = BlockIdentifier.OffsetMap,
+                    Length = (4 + 2) * (_fileHeader.MinIndex - _fileHeader.MaxIndex + 1)
+                };
+            }
+
+            tail.Next = new Block {
+                Identifier = BlockIdentifier.Records,
+                Length = _fileHeader.RecordCount * _fileHeader.RecordSize,
+
+                Next = new Block {
+                    Identifier = BlockIdentifier.StringBlock,
+                    Length = _fileHeader.StringTableLength,
+
+                    Handler = new StringBlockHandler(Options.InternStrings)
+                }
+            };
         }
 
         public override void After(ParsingStep step)
         {
-            throw new System.NotImplementedException();
+            if (step == ParsingStep.Segments)
+                _recordReader = new AlignedRecordReader(this, Header.RecordSize);
         }
     }
 }

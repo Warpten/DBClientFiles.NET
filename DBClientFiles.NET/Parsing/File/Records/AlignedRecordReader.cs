@@ -20,7 +20,7 @@ namespace DBClientFiles.NET.Parsing.File.Records
 
         public AlignedRecordReader(IBinaryStorageFile fileReader, int bufferSize)
         {
-            _stringBlock = fileReader.FindBlockHandler<StringBlockHandler>(BlockIdentifier.StringBlock);
+            _stringBlock = fileReader.FindBlock(BlockIdentifier.StringBlock)?.Handler as StringBlockHandler;
 
             _stagingBuffer = new byte[bufferSize];
             _byteCursor = 0;

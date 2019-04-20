@@ -1,6 +1,6 @@
 ﻿using DBClientFiles.NET.Benchmark.DataTypes;
 
-namespace DBClientFiles.NET.Benchmark.DBC
+namespace DBClientFiles.NET.Benchmark.Structures.DBC
 {
     public sealed class AreaTriggerEntry
     {

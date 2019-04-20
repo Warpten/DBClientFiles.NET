@@ -16,6 +16,6 @@ namespace DBClientFiles.NET.Parsing.File
 
         ref readonly StorageOptions Options { get; }
 
-        U FindBlockHandler<U>(BlockIdentifier identifier) where U : IBlockHandler;
+        Block FindBlock(BlockIdentifier identifier);
     }
 }

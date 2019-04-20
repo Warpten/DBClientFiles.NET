@@ -21,7 +21,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
         public override void Initialize(IBinaryStorageFile parser)
         {
             _mapper = new TypeMapper(parser.Type);
-            var recordBlock = parser.FindBlockHandler<FieldInfoHandler<MemberMetadata>>(BlockIdentifier.FieldInfo);
+            var recordBlock = parser.FindBlock(BlockIdentifier.FieldInfo)?.Handler as FieldInfoHandler<MemberMetadata>;
 
             _mapper.Resolve(parser.Options.MemberType.ToTypeToken(), recordBlock);
 

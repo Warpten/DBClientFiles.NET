@@ -176,9 +176,9 @@ namespace DBClientFiles.NET.UnitTests
         {
         }
 
-        public U FindBlockHandler<U>(BlockIdentifier identifier) where U : IBlockHandler
+        public Block FindBlock(BlockIdentifier identifier)
         {
-            throw new NotSupportedException();
+            throw new NotImplementedException();
         }
 
         public DummyFile(int indexColumn)

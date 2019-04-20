@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace DBClientFiles.NET.Benchmark.DBC
+namespace DBClientFiles.NET.Benchmark.Structures.DBC
 {
     public sealed class SpellEntry
     {

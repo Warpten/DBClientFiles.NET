@@ -33,7 +33,6 @@ namespace DBClientFiles.NET.Parsing.File
 
     public interface IFileHeader
     {
-        int Size { get; }
         Signatures Signature { get; }
 
         uint TableHash { get; }

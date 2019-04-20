@@ -59,11 +59,6 @@ namespace DBClientFiles.NET.Parsing.File
         private StorageOptions _options;
 
         /// <summary>
-        /// Various handlers for each possible block encountered with the file.
-        /// </summary>
-        private BlockHandlers _handlers;
-
-        /// <summary>
         /// Create an instance of <see cref="BinaryFileParser{TValue, TSerializer}"/>.
         /// </summary>
         /// <param name="options">The options to use for parsing.</param>
@@ -83,49 +78,19 @@ namespace DBClientFiles.NET.Parsing.File
         protected override void Dispose(bool disposing)
         {
             Head = default;
-            _handlers.Clear();
 
             base.Dispose(disposing);
         }
 
-        /// <summary>
-        /// Tries to find the first block matching the specified <see cref="BlockIdentifier"/>.
-        /// 
-        /// If none is found, returns null.
-        /// </summary>
-        /// <param name="identifier"></param>
-        /// <returns></returns>
         public Block FindBlock(BlockIdentifier identifier)
         {
-            var itr = Head;
-            while (itr != null && itr.Identifier != identifier)
-                itr = itr.Next;
-            return itr.Identifier == identifier ? itr : default;
+            var blck = Head;
+            while (blck != null && blck.Identifier != identifier)
+                blck = blck.Next;
+
+            return blck;
         }
 
-        /// <summary>
-        /// Tries to find the block handler registered for the specified <see cref="BlockIdentifier"/>.
-        /// 
-        /// If none is found, returns null.
-        /// </summary>
-        /// <typeparam name="U"></typeparam>
-        /// <param name="identifier"></param>
-        /// <returns></returns>
-        public U FindBlockHandler<U>(BlockIdentifier identifier) where U : IBlockHandler
-            => _handlers.GetHandler<U>(identifier);
-
-        public void RegisterBlockHandler<U>() where U : IBlockHandler, new()
-            => RegisterBlockHandler(new U());
-        public void RegisterBlockHandler(IBlockHandler handler)
-            => _handlers.Register(handler);
-
-
-        public T GetHandler<T>(BlockIdentifier identifier) where T : IBlockHandler
-            => _handlers.GetHandler<T>(identifier);
-    
-        public bool ReadBlock<T>(T file, Block block) where T : BinaryReader, IParser
-            => _handlers.ReadBlock(file, block);
-    
         /// <summary>
         /// Called before a parsing step is executed.
         /// </summary>
@@ -146,7 +111,7 @@ namespace DBClientFiles.NET.Parsing.File
 
         public IEnumerator<TValue> GetEnumerator()
         {
-            var copyTableHandler = _handlers.GetHandler<CopyTableHandler>(BlockIdentifier.CopyTable);
+            var copyTableHandler = FindBlock(BlockIdentifier.CopyTable)?.Handler as CopyTableHandler;
             if (copyTableHandler != null)
                 return new CopyTableEnumerator<TValue, TSerializer>(this, copyTableHandler);
 

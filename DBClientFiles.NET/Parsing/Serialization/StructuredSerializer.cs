@@ -17,7 +17,6 @@ namespace DBClientFiles.NET.Parsing.Serialization
     internal abstract class StructuredSerializer<T> : ISerializer<T>
     {
         private Expression _keyAccessExpression;
-        private ParameterExpression _root;
 
         protected delegate void TypeCloner(in T source, out T target);
         protected delegate void TypeDeserializer(IRecordReader reader, out T instance);
@@ -40,13 +39,13 @@ namespace DBClientFiles.NET.Parsing.Serialization
             _options = storage.Options;
             Type = storage.Type;
 
-            // TODO: Fix this, array members don't work
             SetIndexColumn(storage.Header.IndexColumn);
         }
 
         public void SetIndexColumn(int indexColumn)
         {
-            _keyAccessExpression = _root = Expression.Parameter(typeof(T).MakeByRefType(), "model");
+            var rootExpression = Expression.Parameter(typeof(T).MakeByRefType(), "model");
+            _keyAccessExpression = rootExpression;
 
             var indexColumnMember = Type.GetMemberByIndex(ref indexColumn, ref _keyAccessExpression, _options.MemberType.ToTypeToken());
             if (indexColumnMember == null)
@@ -56,6 +55,21 @@ namespace DBClientFiles.NET.Parsing.Serialization
             {
                 throw new InvalidOperationException($"Invalid structure: {_keyAccessExpression} is expected to be the index, but its type doesn't match. Needs to be (u)int.");
             }
+
+            { /* key getter */
+                _keyGetter = Expression.Lambda<TypeKeyGetter>(
+                    // Box to int - unfortunate but necessary (?)
+                    Expression.ConvertChecked(_keyAccessExpression, typeof(int)),
+                    rootExpression).Compile();
+            }
+
+            { /* key setter */
+                var paramValue = Expression.Parameter(typeof(int));
+
+                _keySetter = Expression.Lambda<TypeKeySetter>(
+                    Expression.Assign(_keyAccessExpression, Expression.ConvertChecked(paramValue, _keyAccessExpression.Type)
+                ), rootExpression, paramValue).Compile();
+            }
         }
 
         /// <summary>
@@ -63,36 +77,15 @@ namespace DBClientFiles.NET.Parsing.Serialization
         /// </summary>
         /// <param name="instance"></param>
         /// <returns></returns>
-        public int GetKey(in T instance)
-        {
-            if (_keyGetter == null)
-                _keyGetter = Expression.Lambda<TypeKeyGetter>(
-                    // Box to int
-                    Expression.ConvertChecked(_keyAccessExpression, typeof(int)),
-                    _root).Compile();
-
-            return _keyGetter(in instance);
-        }
-
+        public int GetKey(in T instance) => _keyGetter(in instance);
+    
         /// <summary>
         /// Force-set the key of a record to the provided value.
         /// </summary>
         /// <param name="instance">The record instance to modify.</param>
         /// <param name="key">The new key value to set<</param>
-        public void SetKey(out T instance, int key)
-        {
-            if (_keySetter == null)
-            {
-                var paramValue = Expression.Parameter(typeof(int));
-
-                _keySetter = Expression.Lambda<TypeKeySetter>(
-                    Expression.Assign(_keyAccessExpression, Expression.ConvertChecked(paramValue, _keyAccessExpression.Type)
-                ), _root, paramValue).Compile();
-            }
-
-            _keySetter(out instance, key);
-        }
-
+        public void SetKey(out T instance, int key) => _keySetter(out instance, key);
+    
         /// <summary>
         /// Clone the provided instance.
         /// </summary>
