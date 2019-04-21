@@ -19,16 +19,11 @@ namespace DBClientFiles.NET.Collections.Generic.Internal
     internal class Collection<T> : IEnumerable<T>
     {
         private IParser<T> _implementation;
-        private Header _header;
 
-        public int RecordCount { get; private set; }
-
-        public ref readonly Header Header => ref _header;
         public ref readonly StorageOptions Options => ref _implementation.Options;
 
         public Collection(in StorageOptions options, Stream dataStream)
         {
-            RecordCount = 0;
             _implementation = null;
 
             FromStream(in options, dataStream);
@@ -39,6 +34,7 @@ namespace DBClientFiles.NET.Collections.Generic.Internal
             Span<byte> identifierBytes = stackalloc byte[4];
             dataStream.Read(identifierBytes);
             var identifier = (Signatures) MemoryMarshal.Read<uint>(identifierBytes);
+            dataStream.Seek(-4, SeekOrigin.Current);
 
             switch (identifier)
             {
@@ -54,10 +50,6 @@ namespace DBClientFiles.NET.Collections.Generic.Internal
                 default:
                     throw new VersionNotSupportedException(identifier);
             }
-
-            RecordCount = _implementation.RecordCount;
-
-            _header = new Header(_implementation.Header);
         }
 
         public IEnumerator<T> GetEnumerator()

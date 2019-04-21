@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 {
@@ -21,10 +23,12 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
             _store = store;
         }
 
-        public void ReadBlock<T>(T reader, long startOffset, long length) where T : BinaryReader, IParser
+        public void ReadBlock(BinaryReader reader, long startOffset, long length)
         {
-            if (startOffset == 0 || length == 0)
+            if (length == 0)
                 return;
+
+            Debug.Assert(reader.BaseStream.Position == startOffset, "Out-of-place parsing!");
 
             while (reader.BaseStream.Position < (startOffset + length))
                 _store.Add(ReadElement(reader));

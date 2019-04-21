@@ -30,11 +30,6 @@ namespace DBClientFiles.NET.Parsing.File
         public ref readonly StorageOptions Options => ref _options;
 
         /// <summary>
-        /// The header of the current file.
-        /// </summary>
-        public abstract ref readonly IFileHeader Header { get; }
-
-        /// <summary>
         /// The actual deserializer.
         /// </summary>
         public TSerializer Serializer { get; }
@@ -48,6 +43,8 @@ namespace DBClientFiles.NET.Parsing.File
         /// The first block of the file (typically its header).
         /// </summary>
         public Block Head { get; protected set; }
+
+        public IHeaderHandler Header => (IHeaderHandler) Head.Handler;
 
         /// <summary>
         /// Options used for parsing the file.

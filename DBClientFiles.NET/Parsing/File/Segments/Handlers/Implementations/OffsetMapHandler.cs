@@ -9,7 +9,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 
         public BlockIdentifier Identifier { get; } = BlockIdentifier.CopyTable;
 
-        public void ReadBlock<T>(T reader, long startOffset, long length) where T : BinaryReader, IParser
+        public void ReadBlock(BinaryReader reader, long startOffset, long length)
         {
             if (startOffset == 0 || length == 0)
                 return;

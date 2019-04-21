@@ -1,6 +1,7 @@
 ﻿using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 
@@ -21,7 +22,7 @@ namespace DBClientFiles.NET.Parsing.File.Records
         {
             _stringBlock = fileReader.FindBlock(BlockIdentifier.StringBlock)?.Handler as StringBlockHandler;
 
-            _stagingBuffer = new byte[bufferSize];
+            _stagingBuffer = new byte[bufferSize + 8];
             _byteCursor = 0;
         }
 
@@ -31,17 +32,9 @@ namespace DBClientFiles.NET.Parsing.File.Records
 
         public void LoadStream(Stream dataStream, int recordSize)
         {
-            // This will only ever trigger on offset maps
-            if (recordSize > _stagingBuffer.Length)
-                Array.Resize(ref _stagingBuffer, recordSize);
+            Debug.Assert(recordSize == _stagingBuffer.Length - 8, "AlignedRecordReader expects all the records to have the same size.");
 
             dataStream.Read(_stagingBuffer, 0, recordSize);
-            _byteCursor = 0;
-        }
-
-        public void LoadStream(Stream dataStream)
-        {
-            dataStream.Read(_stagingBuffer, 0, _stagingBuffer.Length);
             _byteCursor = 0;
         }
 

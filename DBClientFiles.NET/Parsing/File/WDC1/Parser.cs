@@ -7,16 +7,12 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
 {
     internal sealed class Parser<T> : BinaryFileParser<T, Serializer<T>>
     {
-        private IFileHeader _fileHeader;
-        public override ref readonly IFileHeader Header => ref _fileHeader;
-
-        public override int RecordCount => _fileHeader.RecordCount;
+        public override int RecordCount => Header.RecordCount;
 
         private AlignedRecordReader _recordReader;
 
         public Parser(in StorageOptions options, Stream input) : base(in options, input)
         {
-            _fileHeader = new Header(this);
         }
 
         protected override void Dispose(bool disposing)
@@ -29,7 +25,7 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
 
         public override IRecordReader GetRecordReader(int recordSize)
         {
-            _recordReader.LoadStream(BaseStream);
+            _recordReader.LoadStream(BaseStream, recordSize);
             return _recordReader;
         }
 

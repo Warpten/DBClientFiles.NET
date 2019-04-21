@@ -8,45 +8,29 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
     ///
     /// See <a href="http://www.wowdev.wiki/DBC">the wiki</a>.
     /// </summary>
-    internal readonly struct Header : IFileHeader
+    internal readonly struct Header
     {
-        public int Size             => UnsafeCache<Header>.Size;
-        public Signatures Signature => Signatures.WDBC;
-
-        public int RecordSize        { get; }
-        public int RecordCount       { get; }
-        public int FieldCount        { get; }
-        public int StringTableLength { get; }
-
-        public Header(BinaryReader reader)
-        {
-            RecordCount = reader.ReadInt32();
-            FieldCount = reader.ReadInt32();
-            RecordSize = reader.ReadInt32();
-            StringTableLength = reader.ReadInt32();
-            TableHash = reader.ReadUInt32();
-            LayoutHash = reader.ReadUInt32();
-
-            MinIndex = reader.ReadInt32();
-            MaxIndex = reader.ReadInt32();
-
-            var locale = reader.ReadUInt32();
-
-            CopyTableLength = reader.ReadInt32();
-
-            var flags = reader.ReadInt16();
-
-            IndexColumn = reader.ReadInt16();
-        }
-
-        public uint TableHash { get; }
-        public uint LayoutHash { get; }
-        public int MinIndex { get; }
-        public int MaxIndex { get; }
-        public int CopyTableLength { get; }
-        public short IndexColumn { get; }
-        public bool HasIndexTable => false;
-        public bool HasForeignIds => false;
-        public bool HasOffsetMap => false;
+        public readonly Signatures Signature;
+        public readonly int RecordSize;
+        public readonly int RecordCount;
+        public readonly int FieldCount;
+        public readonly int StringTableLength;
+        public readonly int TableHash;
+        public readonly int LayoutHash;
+        public readonly int MinIndex;
+        public readonly int MaxIndex;
+        public readonly int Locale;
+        public readonly int CopyTableSize;
+        public readonly short Flags;
+        public readonly short IndexColumn;
+        public readonly int TotalFieldCount;     // from WDC1 onwards, this value seems to always be the same as the 'field_count' value
+        public readonly int BitpackedDataOffset; // relative position in record where bitpacked data begins; not important for parsing the file
+        public readonly int LookupColumnCount;
+        public readonly int OffsetMapOffset;     // Offset to array of struct {uint32_t offset; uint16_t size;}[max_id - min_id + 1];
+        public readonly int IdListSize;          // List of ids present in the DB file
+        public readonly int FieldStorageInfoSize;
+        public readonly int CommonDataSize;
+        public readonly int PalletDataSize;
+        public readonly int RelationshipDataSize;
     }
 }

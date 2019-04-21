@@ -18,12 +18,12 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
             _internStrings = internStrings;
         }
 
-        #region IFileBlock
+        #region IBlockHandler
         public BlockIdentifier Identifier { get; } = BlockIdentifier.StringBlock;
 
-        public void ReadBlock<T>(T reader, long startOffset, long length) where T : BinaryReader, IParser
+        public void ReadBlock(BinaryReader reader, long startOffset, long length)
         {
-            if (startOffset == 0 || length <= 2)
+            if (length <= 2)
                 return;
 
             reader.BaseStream.Seek(startOffset, SeekOrigin.Begin);

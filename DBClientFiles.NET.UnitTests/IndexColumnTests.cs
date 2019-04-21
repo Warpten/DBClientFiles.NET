@@ -7,6 +7,7 @@ using System;
 using DBClientFiles.NET.Parsing.File;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Attributes;
+using DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations;
 
 namespace DBClientFiles.NET.UnitTests
 {
@@ -140,37 +141,11 @@ namespace DBClientFiles.NET.UnitTests
 
     internal sealed class DummyFile<T> : IBinaryStorageFile
     {
-        internal struct DummyHeader : IFileHeader
-        {
-            public int Size => throw new NotImplementedException();
-            public Signatures Signature => throw new NotImplementedException();
-            public uint TableHash => throw new NotImplementedException();
-            public uint LayoutHash => throw new NotImplementedException();
-            public int RecordSize => throw new NotImplementedException();
-            public int RecordCount => throw new NotImplementedException();
-            public int FieldCount => throw new NotImplementedException();
-            public int StringTableLength => throw new NotImplementedException();
-            public int MinIndex => throw new NotImplementedException();
-            public int MaxIndex => throw new NotImplementedException();
-            public int CopyTableLength => throw new NotImplementedException();
-
-            public short IndexColumn { get; set; }
-
-            public bool HasIndexTable => throw new NotImplementedException();
-            public bool HasForeignIds => throw new NotImplementedException();
-            public bool HasOffsetMap => throw new NotImplementedException();
-
-            public DummyHeader(short indexColumn)
-            {
-                IndexColumn = indexColumn;
-            }
-        }
-
         public TypeToken Type { get; } = new TypeToken(typeof(T));
 
-        private readonly IFileHeader _header;
-        public ref readonly IFileHeader Header => ref _header;
         public ref readonly StorageOptions Options => ref StorageOptions.Default;
+
+        public IHeaderHandler Header => throw new NotImplementedException();
 
         public void Dispose()
         {
@@ -183,7 +158,6 @@ namespace DBClientFiles.NET.UnitTests
 
         public DummyFile(int indexColumn)
         {
-            _header = new DummyHeader((short)indexColumn);
         }
     }
 

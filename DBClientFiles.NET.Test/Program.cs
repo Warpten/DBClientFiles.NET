@@ -78,11 +78,11 @@ namespace DBClientFiles.NET.Runner
             if (value.GetType() == typeof(string) || value.GetType().IsPrimitive)
             {
                 if (value.GetType() == typeof(string))
-                    Console.WriteLine($@"{prefix} = ""{value}""");
+                    Console.WriteLine($@"{prefix.PadRight(50, ' ')}""{value}""");
                 else if (value.GetType() == typeof(int) || value.GetType() == typeof(uint))
-                    Console.WriteLine($"{prefix} = {value} (0x{value:X8})");
+                    Console.WriteLine($"{prefix.PadRight(50, ' ')}{value} (0x{value:X8})");
                 else
-                    Console.WriteLine($"{prefix} = {value}");
+                    Console.WriteLine($"{prefix.PadRight(50, ' ')}{value}");
             }
             else
             {

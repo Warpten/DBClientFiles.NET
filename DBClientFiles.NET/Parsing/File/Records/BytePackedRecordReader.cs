@@ -11,14 +11,14 @@ namespace DBClientFiles.NET.Parsing.File.Records
     /// An implementation of <see cref="IRecordReader"/> tailored for WDB5 and WDB6. The values it reads are always
     /// aligned to byte boundaries.
     /// </summary>
-    internal sealed unsafe class BytePackedRecordReader : IRecordReader
+    internal sealed unsafe class ByteAlignedRecordReader : IRecordReader
     {
         private byte[] _stagingBuffer;
 
         private int _byteCursor;
         private readonly StringBlockHandler _stringBlock;
 
-        public BytePackedRecordReader(IBinaryStorageFile fileReader, int recordSize)
+        public ByteAlignedRecordReader(IBinaryStorageFile fileReader, int recordSize)
         {
             _stringBlock = fileReader.FindBlock(BlockIdentifier.StringBlock)?.Handler as StringBlockHandler;
 
@@ -32,17 +32,9 @@ namespace DBClientFiles.NET.Parsing.File.Records
 
         public void LoadStream(Stream dataStream, int recordSize)
         {
-            // This will only ever trigger on offset maps
-            if (recordSize > _stagingBuffer.Length)
-                Array.Resize(ref _stagingBuffer, recordSize + 8);
+            Debug.Assert(recordSize + 8 <= _stagingBuffer.Length, "The buffer of ByteAlignedRecordReader is expected to be able to contain every record");
 
             dataStream.Read(_stagingBuffer, 0, recordSize);
-            _byteCursor = 0;
-        }
-
-        public void LoadStream(Stream dataStream)
-        {
-            dataStream.Read(_stagingBuffer, 0, _stagingBuffer.Length);
             _byteCursor = 0;
         }
 

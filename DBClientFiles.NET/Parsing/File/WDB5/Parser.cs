@@ -8,16 +8,12 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
 {
     internal sealed class Parser<T> : BinaryFileParser<T, Serializer<T>>
     {
-        private IFileHeader _fileHeader;
-        public override ref readonly IFileHeader Header => ref _fileHeader;
+        public override int RecordCount => Header.RecordCount + Header.CopyTableLength / 2;
 
-        public override int RecordCount => _fileHeader.RecordCount + _fileHeader.CopyTableLength / 2;
-
-        private BytePackedRecordReader _recordReader;
+        private ByteAlignedRecordReader _recordReader;
 
         public Parser(in StorageOptions options, Stream input) : base(options, input)
         {
-            _fileHeader = new Header(this);
         }
 
         public override IRecordReader GetRecordReader(int recordSize)
@@ -31,18 +27,16 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
             if (step != ParsingStep.Segments)
                 return;
             
-            Head = new Block
-            {
+            Head = new Block {
                 Identifier = BlockIdentifier.Header,
-                Length = 11 * 4 + 2 * 2,
-
-                Handler = new FieldInfoHandler<MemberMetadata>()
+                Length = 11 * 4 + 2 * 2
             };
 
-            var tail = Head.Next = new Block
-            {
+            var tail = Head.Next = new Block {
                 Identifier = BlockIdentifier.FieldInfo,
-                Length = Header.FieldCount * (2 + 2)
+                Length = Header.FieldCount * (2 + 2),
+
+                Handler = new FieldInfoHandler<MemberMetadata>()
             };
 
             tail = tail.Next = new Block
@@ -75,6 +69,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
             if (Header.HasForeignIds)
             {
                 tail = tail.Next = new Block {
+                    // Legacy foreign table, apparently used by only a few files, @Barncastle
                     Identifier = BlockIdentifier.RelationShipTable,
                     Length = 4 * (Header.MaxIndex - Header.MinIndex + 1)
                 };
@@ -92,7 +87,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
 
             if (Header.CopyTableLength > 0)
             {
-                tail = tail.Next = new Block {
+                tail.Next = new Block {
                     Identifier = BlockIdentifier.CopyTable,
                     Length = Header.CopyTableLength,
 
@@ -106,9 +101,10 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
             if (step != ParsingStep.Segments)
                 return;
             
+            // Pocket sized optimization to allocate a buffer large enough to contain every record without the need for reallocations
             _recordReader = Header.HasOffsetMap 
-                ? new BytePackedRecordReader(this, Header.RecordSize)
-                : new BytePackedRecordReader(this, ((OffsetMapHandler) FindBlock(BlockIdentifier.OffsetMap).Handler).GetLargestRecordSize());
+                ? new ByteAlignedRecordReader(this, Header.RecordSize)
+                : new ByteAlignedRecordReader(this, ((OffsetMapHandler) FindBlock(BlockIdentifier.OffsetMap).Handler).GetLargestRecordSize());
         }
     }
 }

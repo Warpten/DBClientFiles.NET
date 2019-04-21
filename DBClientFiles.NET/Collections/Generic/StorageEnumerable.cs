@@ -12,17 +12,6 @@ namespace DBClientFiles.NET.Collections.Generic
         private Collection<T> _implementation;
 
         /// <summary>
-        /// The total number of elements in the file. This value will always be correct, regardless of wether or
-        /// not code consumes only a few of the records.
-        /// </summary>
-        public int RecordCount => _implementation.RecordCount;
-
-        /// <summary>
-        /// A representation of the data made readily available in the file's header.
-        /// </summary>
-        public ref readonly Header Header => ref _implementation.Header;
-
-        /// <summary>
         /// The options used to create this collection.
         /// </summary>
         public ref readonly StorageOptions Options => ref _implementation.Options;

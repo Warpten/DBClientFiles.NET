@@ -7,16 +7,12 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
 {
     internal sealed class Parser<T> : BinaryFileParser<T, Serializer<T>>
     {
-        private IFileHeader _fileHeader;
-        public override ref readonly IFileHeader Header => ref _fileHeader;
-
-        public override int RecordCount => _fileHeader.RecordCount;
+        public override int RecordCount => Header.RecordCount;
 
         private AlignedRecordReader _recordReader;
 
         public Parser(in StorageOptions options, Stream input) : base(options, input)
         {
-            _fileHeader = new Header(this);
         }
 
         protected override void Dispose(bool disposing)
@@ -29,7 +25,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
 
         public override IRecordReader GetRecordReader(int recordSize)
         {
-            _recordReader.LoadStream(BaseStream);
+            _recordReader.LoadStream(BaseStream, recordSize);
             return _recordReader;
         }
 
@@ -42,23 +38,25 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
             {
                 Identifier = BlockIdentifier.Header,
                 Length = 12 * 4,
+
+                Handler = new HeaderHandler(this)
             };
 
-            if (_fileHeader.MaxIndex != 0)
+            if (Header.MaxIndex != 0)
             {
                 tail = Head.Next = new Block {
                     Identifier = BlockIdentifier.OffsetMap,
-                    Length = (4 + 2) * (_fileHeader.MinIndex - _fileHeader.MaxIndex + 1)
+                    Length = (4 + 2) * (Header.MinIndex - Header.MaxIndex + 1)
                 };
             }
 
             tail.Next = new Block {
                 Identifier = BlockIdentifier.Records,
-                Length = _fileHeader.RecordCount * _fileHeader.RecordSize,
+                Length = Header.RecordCount * Header.RecordSize,
 
                 Next = new Block {
                     Identifier = BlockIdentifier.StringBlock,
-                    Length = _fileHeader.StringTableLength,
+                    Length = Header.StringTableLength,
 
                     Handler = new StringBlockHandler(Options.InternStrings)
                 }
