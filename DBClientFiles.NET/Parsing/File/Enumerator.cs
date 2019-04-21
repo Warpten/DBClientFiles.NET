@@ -90,7 +90,7 @@ namespace DBClientFiles.NET.Parsing.File
                 recordReader = _owner.GetRecordReader(_offsetMapHandler.GetRecordSize(_itr));
             }
 
-            _current = _owner.Serializer.Deserialize(recordReader);
+            _current = _owner.Serializer.Deserialize(recordReader, _owner);
 
             if (_owner.Header.HasIndexTable)
                 _owner.Serializer.SetKey(out _current, _indexTableHandler[_itr++]);

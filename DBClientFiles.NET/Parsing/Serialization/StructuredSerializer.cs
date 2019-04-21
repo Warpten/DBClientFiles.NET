@@ -17,7 +17,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
         private Expression _keyAccessExpression;
 
         protected delegate void TypeCloner(in T source, out T target);
-        protected delegate void TypeDeserializer(IRecordReader reader, out T instance);
+        protected delegate void TypeDeserializer(IRecordReader reader, IParser<T> parser, out T instance);
         protected delegate int TypeKeyGetter(in T source);
         protected delegate void TypeKeySetter(out T source, int key);
 
@@ -173,20 +173,35 @@ namespace DBClientFiles.NET.Parsing.Serialization
                 : (Expression)Expression.Block(block);
         }
 
-        public T Deserialize(IRecordReader reader)
+        public T Deserialize(IRecordReader reader, IParser<T> parser)
         {
             if (_deserializer == null)
                 _deserializer = GenerateDeserializer();
 
-            _deserializer.Invoke(reader, out var instance);
+            _deserializer.Invoke(reader, parser, out var instance);
             return instance;
+        }
+
+        internal struct DeserializerParameters
+        {
+            public ParameterExpression Reader { get; }
+            public ParameterExpression Parser { get; }
+
+            public DeserializerParameters(ParameterExpression r, ParameterExpression p)
+            {
+                Reader = r;
+                Parser = p;
+            }
         }
 
         protected virtual TypeDeserializer GenerateDeserializer()
         {
             var body = new List<Expression>();
 
-            var reader = Expression.Parameter(typeof(IRecordReader));
+            var parameters = new DeserializerParameters(
+                Expression.Parameter(typeof(IRecordReader)),
+                Expression.Parameter(typeof(IParser<T>))
+            );
 
             var typeVariable = Expression.Parameter(typeof(T).MakeByRefType());
             var typeInstance = New<T>.Expression();
@@ -199,12 +214,12 @@ namespace DBClientFiles.NET.Parsing.Serialization
                     continue;
 
                 var memberNode = Expression.MakeMemberAccess(typeVariable, memberInfo.MemberInfo);
-                Visit(body, reader, memberInfo, memberNode);
+                Visit(body, ref parameters, memberInfo, memberNode);
             }
 
             var bodyBlock = Expression.Block(body);
 
-            var lambda = Expression.Lambda<TypeDeserializer>(bodyBlock, reader, typeVariable);
+            var lambda = Expression.Lambda<TypeDeserializer>(bodyBlock, new[] { parameters.Reader, parameters.Parser, typeVariable });
             return lambda.Compile();
         }
 
@@ -236,12 +251,12 @@ namespace DBClientFiles.NET.Parsing.Serialization
         /// <param name="recordReader">An expression representing an instance of <see cref="IRecordReader"/>.</param>
         /// <param name="rootNode">The node from which we starting work down.</param>
         /// <returns></returns>
-        public void Visit(List<Expression> container, Expression recordReader, MemberToken memberInfo, Expression memberAccess)
+        public void Visit(List<Expression> container, ref DeserializerParameters parameters, MemberToken memberInfo, Expression memberAccess)
         {
             if (memberInfo.IsArray)
             {
                 // Try to read it using the visiters if it's a simple POD type.
-                var nodeInitializer = VisitNode(memberAccess, memberInfo, recordReader);
+                var nodeInitializer = VisitNode(memberAccess, memberInfo, ref parameters);
                 if (nodeInitializer != null)
                     container.Add(Expression.Assign(memberAccess, nodeInitializer));
                 else
@@ -264,7 +279,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
                             continue;
 
                         var childAccess = Expression.MakeMemberAccess(arrayElement, childInfo.MemberInfo);
-                        Visit(loopBody, recordReader, childInfo, childAccess);
+                        Visit(loopBody, ref parameters, childInfo, childAccess);
                     }
 
                     // And now construct the loop itself
@@ -283,7 +298,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
             }
             else
             {
-                var nodeInitializer = VisitNode(memberAccess, memberInfo, recordReader);
+                var nodeInitializer = VisitNode(memberAccess, memberInfo, ref parameters);
                 if (nodeInitializer != null)
                     container.Add(Expression.Assign(memberAccess, nodeInitializer));
                 else if (memberInfo.TypeToken.Type.IsClass)
@@ -295,7 +310,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
                         continue;
 
                     var childAccess = Expression.MakeMemberAccess(memberAccess, child.MemberInfo);
-                    Visit(container, recordReader, child, childAccess);
+                    Visit(container, ref parameters, child, childAccess);
                 }
             }
         }
@@ -306,6 +321,6 @@ namespace DBClientFiles.NET.Parsing.Serialization
         /// <param name="memberAccess"></param>
         /// <param name="memberInfo"></param>
         /// <param name="recordReader"></param>
-        public abstract Expression VisitNode(Expression memberAccess, MemberToken memberInfo, Expression recordReader);
+        public abstract Expression VisitNode(Expression memberAccess, MemberToken memberInfo, ref DeserializerParameters parameters);
     }
 }

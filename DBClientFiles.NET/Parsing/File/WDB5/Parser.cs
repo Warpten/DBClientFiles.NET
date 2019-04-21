@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers;
@@ -8,7 +9,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
 {
     internal sealed class Parser<T> : BinaryFileParser<T, Serializer<T>>
     {
-        public override int RecordCount => Header.RecordCount + Header.CopyTableLength / 2;
+        public override int RecordCount => Header.RecordCount + Header.CopyTableLength / (2 * 4);
 
         private ByteAlignedRecordReader _recordReader;
 
@@ -29,7 +30,9 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
             
             Head = new Block {
                 Identifier = BlockIdentifier.Header,
-                Length = 11 * 4 + 2 * 2
+                Length = Unsafe.SizeOf<Header>(),
+
+                Handler = new HeaderHandler(this)
             };
 
             var tail = Head.Next = new Block {

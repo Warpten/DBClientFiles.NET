@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers;
@@ -36,7 +37,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
 
             var tail = Head = new Block {
                 Identifier = BlockIdentifier.Header,
-                Length = 12 * 4,
+                Length = Unsafe.SizeOf<Header>(),
 
                 Handler = new HeaderHandler(this)
             };

@@ -20,7 +20,7 @@ namespace DBClientFiles.NET.Parsing.File.Records
 
         private bool _managePointer;
 
-        public UnalignedRecordReader(IBinaryStorageFile fileReader, int recordSize, Stream recordData)
+        public UnalignedRecordReader(IBinaryStorageFile fileReader, int recordSize)
         {
             _fileReader = fileReader;
             _recordSize = recordSize;
@@ -29,24 +29,13 @@ namespace DBClientFiles.NET.Parsing.File.Records
             // _recordData = Marshal.AllocHGlobal(recordData.Length + 7);
             _recordData = Marshal.AllocHGlobal(recordSize);
             _managePointer = true;
-
-            using (var windowedStream = new WindowedStream(recordData, recordSize))
-            using (var outputStream = new IO.UnmanagedMemoryStream(_recordData, recordSize))
-                windowedStream.CopyTo(outputStream, recordSize);
-
-            _bitCursor = 0;
         }
 
-        public UnalignedRecordReader(IBinaryStorageFile fileReader, int recordSize, Stream recordData, IntPtr stagingDataPointer)
+        public void LoadStream(Stream dataStream, int recordSize)
         {
-            _fileReader = fileReader;
-            _recordSize = recordSize;
-
-            _recordData = stagingDataPointer;
-            _managePointer = false;
-
-            using (var windowedStream = new WindowedStream(recordData, recordSize))
-            using (var outputStream = new IO.UnmanagedMemoryStream(stagingDataPointer, recordSize))
+            _bitCursor = 0;
+            using (var windowedStream = new WindowedStream(dataStream, recordSize))
+            using (var outputStream = new IO.UnmanagedMemoryStream(_recordData, recordSize))
                 windowedStream.CopyTo(outputStream, recordSize);
         }
 

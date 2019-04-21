@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers;
@@ -41,7 +42,7 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
 
             Head = new Block {
                 Identifier = BlockIdentifier.Header,
-                Length = 5 * 4,
+                Length = Unsafe.SizeOf<Header>(),
 
                 Handler = new HeaderHandler(this)
             };

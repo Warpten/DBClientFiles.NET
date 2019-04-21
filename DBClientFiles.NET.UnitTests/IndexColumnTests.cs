@@ -171,7 +171,7 @@ namespace DBClientFiles.NET.UnitTests
     internal sealed class SerializerMock<T> : StructuredSerializer<T>
     {
         // We aren't constructing an object anyways, so don't even bother.
-        public override Expression VisitNode(Expression memberAccess, MemberToken memberInfo, Expression recordReader)
+        public override Expression VisitNode(Expression memberAccess, MemberToken memberInfo, ref DeserializerParameters parameters)
         {
             throw new NotImplementedException();
         }

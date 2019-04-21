@@ -63,7 +63,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
         /// <see cref="IRecordReader.Read{T}(int)"/> and <see cref="IRecordReader.ReadString(int)"/>, respectively.
         /// </para>
         /// </remarks>
-        public override Expression VisitNode(Expression memberAccess, MemberToken memberInfo, Expression recordReader)
+        public override Expression VisitNode(Expression memberAccess, MemberToken memberInfo, ref DeserializerParameters parameters)
         {
             var bitCount = GetElementBitCount(memberInfo);
 
@@ -77,14 +77,14 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
                     if (isPacked)
                     {
                         // ReadArray<T>(cardinalityCount, bitCount);
-                        return Expression.Call(recordReader,
+                        return Expression.Call(parameters.Reader,
                             _IRecordReader.ReadArrayPacked.MakeGenericMethod(elementType),
                             Expression.Constant(memberInfo.Cardinality),
                             Expression.Constant(bitCount));
                     }
 
                     // ReadArray<T>(cardinalityCount);
-                    return Expression.Call(recordReader,
+                    return Expression.Call(parameters.Reader,
                         _IRecordReader.ReadArrayPacked.MakeGenericMethod(elementType),
                         Expression.Constant(memberInfo.Cardinality));
                 }
@@ -92,12 +92,12 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
                 {
                     // TODO: Is this worth the trouble?
                     if (bitCount == 32) // ReadStringArray(cardinalityCount)
-                        return Expression.Call(recordReader,
+                        return Expression.Call(parameters.Reader,
                             _IRecordReader.ReadStringArray,
                             Expression.Constant(memberInfo.Cardinality));
 
                     // ReadStringArray(cardinalityCount, bitCount)
-                    return Expression.Call(recordReader,
+                    return Expression.Call(parameters.Reader,
                         _IRecordReader.ReadStringArrayPacked,
                         Expression.Constant(memberInfo.Cardinality),
                         Expression.Constant(bitCount));
@@ -111,11 +111,11 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
                 bool isPacked = bitCount == UnsafeCache.BitSizeOf(memberInfo.TypeToken.Type.GetElementType());
 
                 if (!isPacked) // Read<T>();
-                    return Expression.Call(recordReader,
+                    return Expression.Call(parameters.Reader,
                         _IRecordReader.ReadPacked.MakeGenericMethod(memberInfo.TypeToken.Type));
 
                 // Read<T>(bitCount);
-                return Expression.Call(recordReader,
+                return Expression.Call(parameters.Reader,
                     _IRecordReader.ReadPacked.MakeGenericMethod(memberInfo.TypeToken.Type),
                     Expression.Constant(bitCount));
             }
@@ -123,12 +123,12 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
             {
                 if (bitCount == 32)
                     // ReadString()
-                    return Expression.Call(recordReader,
+                    return Expression.Call(parameters.Reader,
                         _IRecordReader.ReadStringPacked,
                         Expression.Constant(memberInfo.Cardinality));
 
                 // ReadString(bitCount);
-                return Expression.Call(recordReader,
+                return Expression.Call(parameters.Reader,
                     _IRecordReader.ReadStringPacked,
                     Expression.Constant(bitCount));
             }

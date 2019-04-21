@@ -12,35 +12,7 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
 
         }
 
-        /// <summary>
-        /// WDBC deserilization is trivial. There is no packing and everything is aligned to 4-byte boundaries.
-        /// </summary>
-        /// <param name="memberAccess"></param>
-        /// <param name="memberInfo"></param>
-        /// <param name="recordReader"></param>
-        /// <returns></returns>
-        /// <remarks>
-        /// <para>
-        /// For array types:
-        /// <list type="bullet">
-        ///     <item>For arrays of primitives or strings</item>
-        ///     <description>
-        ///     We chain the call to <see cref="IRecordReader.ReadArray{T}"/> or <see cref="IRecordReader.ReadStringArray(int)"/>
-        ///     if the type is either primitive, or a string.
-        ///     </description>
-        ///
-        ///     <item>For arrays of value or reference types.</item>
-        ///     <description>
-        ///     We just create the array itself, and move on (<c>new T[...]</c>).
-        ///     </description>
-        /// </list>
-        /// </para>
-        /// <para>
-        /// For regular types, this is all of the above, except value or references are a no-op, and methods become
-        /// <see cref="IRecordReader.Read{T}"/> and <see cref="IRecordReader.ReadString"/>, respectively.
-        /// </para>
-        /// </remarks>
-        public override Expression VisitNode(Expression memberAccess, MemberToken memberInfo, Expression recordReader)
+        public override Expression VisitNode(Expression memberAccess, MemberToken memberInfo, ref DeserializerParameters parameters)
         {
             if (memberInfo.TypeToken.Type.IsArray)
             {
@@ -48,14 +20,14 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
                 if (elementType.IsPrimitive)
                 {
                     // = ReadArray<T>(...);
-                    return Expression.Call(recordReader,
+                    return Expression.Call(parameters.Reader,
                         _IRecordReader.ReadArray.MakeGenericMethod(elementType),
                         Expression.Constant(memberInfo.Cardinality));
                 }
                 else if (elementType == typeof(string))
                 {
                     // = ReadStringArray(...)
-                    return Expression.Call(recordReader,
+                    return Expression.Call(parameters.Reader,
                         _IRecordReader.ReadStringArray,
                         Expression.Constant(memberInfo.Cardinality));
                 }
@@ -66,12 +38,12 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
             if (memberInfo.TypeToken.Type.IsPrimitive)
             {
                 // = Read<T>();
-                return Expression.Call(recordReader, _IRecordReader.Read.MakeGenericMethod(memberInfo.TypeToken.Type));
+                return Expression.Call(parameters.Reader, _IRecordReader.Read.MakeGenericMethod(memberInfo.TypeToken.Type));
             }
             else if (memberInfo.TypeToken.Type == typeof(string))
             {
                 // = ReadString();
-                return Expression.Call(recordReader, _IRecordReader.ReadString);
+                return Expression.Call(parameters.Reader, _IRecordReader.ReadString);
             }
 
             return null;

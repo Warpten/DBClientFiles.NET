@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.File.Segments;
 
@@ -9,7 +10,7 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
     {
         public override int RecordCount => Header.RecordCount;
 
-        private AlignedRecordReader _recordReader;
+        private UnalignedRecordReader _recordReader;
 
         public Parser(in StorageOptions options, Stream input) : base(in options, input)
         {
@@ -36,7 +37,9 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
             
             Head = new Block {
                 Identifier = BlockIdentifier.Header,
-                Length = 11 * 4 + 2 * 2 + 9 * 4
+                Length = Unsafe.SizeOf<Header>(),
+
+                Handler = new HeaderHandler(this)
             };
 
             throw new NotImplementedException();
@@ -45,7 +48,7 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
         public override void After(ParsingStep step)
         {
             if (step == ParsingStep.Segments)
-                _recordReader = new AlignedRecordReader(this, Header.RecordSize);
+                _recordReader = new UnalignedRecordReader(this, Header.RecordSize);
         }
     }
 }

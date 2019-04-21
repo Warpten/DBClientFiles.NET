@@ -10,7 +10,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
         /// </summary>
         /// <param name="reader"></param>
         /// <returns></returns>
-        T Deserialize(IRecordReader reader);
+        T Deserialize(IRecordReader reader, IParser<T> parser);
 
         /// <summary>
         /// Given an instance of <see cref="{T}"/>, perform a deep copy operation and return a new object.
