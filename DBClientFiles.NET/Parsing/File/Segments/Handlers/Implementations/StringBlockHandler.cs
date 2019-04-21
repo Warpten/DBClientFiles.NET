@@ -21,7 +21,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
         #region IBlockHandler
         public BlockIdentifier Identifier { get; } = BlockIdentifier.StringBlock;
 
-        public void ReadBlock(BinaryReader reader, long startOffset, long length)
+        public void ReadBlock(IBinaryStorageFile reader, long startOffset, long length)
         {
             if (length <= 2)
                 return;
@@ -30,7 +30,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 
             // Not ideal but this will do
             var byteBuffer = new byte[length];
-            int actualLength = reader.Read(byteBuffer, 0, (int)length);
+            int actualLength = reader.BaseStream.Read(byteBuffer, 0, (int)length);
 
             Debug.Assert(actualLength == length);
 

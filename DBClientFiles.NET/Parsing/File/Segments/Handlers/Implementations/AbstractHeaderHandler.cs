@@ -25,8 +25,6 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations
 
     internal abstract class AbstractHeaderHandler<T> : StructuredBlockHandler<T>, IHeaderHandler where T : struct
     {
-        public sealed override BlockIdentifier Identifier { get; } = BlockIdentifier.Header;
-
         public abstract int RecordCount { get; }
         public abstract int FieldCount { get; }
         public abstract int RecordSize { get; }
@@ -43,12 +41,12 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations
 
         private bool _readAlready = false;
 
-        public AbstractHeaderHandler(BinaryReader source)
+        public AbstractHeaderHandler(IBinaryStorageFile source)
         {
             ReadBlock(source, 0, Unsafe.SizeOf<T>());
         }
 
-        public override void ReadBlock(BinaryReader reader, long startOffset, long length)
+        public override void ReadBlock(IBinaryStorageFile reader, long startOffset, long length)
         {
             if (_readAlready)
                 return;

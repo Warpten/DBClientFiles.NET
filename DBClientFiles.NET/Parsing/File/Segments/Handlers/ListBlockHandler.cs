@@ -4,15 +4,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 {
     internal abstract class ListBlockHandler<TElement> : IBlockHandler, IList<TElement>
     {
         private List<TElement> _store;
-
-        public abstract BlockIdentifier Identifier { get; }
-
+        
         protected ListBlockHandler()
         {
             _store = new List<TElement>();
@@ -23,15 +22,16 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
             _store = store;
         }
 
-        public void ReadBlock(BinaryReader reader, long startOffset, long length)
+        public void ReadBlock(IBinaryStorageFile reader, long startOffset, long length)
         {
             if (length == 0)
                 return;
 
             Debug.Assert(reader.BaseStream.Position == startOffset, "Out-of-place parsing!");
 
-            while (reader.BaseStream.Position < (startOffset + length))
-                _store.Add(ReadElement(reader));
+            using (var streamReader = new BinaryReader(reader.BaseStream, Encoding.UTF8, true))
+                while (reader.BaseStream.Position < (startOffset + length))
+                    _store.Add(ReadElement(streamReader));
         }
 
         public void WriteBlock<T, U>(T reader) where T : BinaryWriter, IWriter<U>

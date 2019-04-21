@@ -75,7 +75,7 @@ namespace DBClientFiles.NET.Parsing.File
 
         public virtual bool MoveNext()
         {
-            IRecordReader recordReader = default;
+            IRecordReader recordReader;
             if (_recordBlock != null)
             {
                 if (_owner.BaseStream.Position >= _recordBlock.EndOffset)

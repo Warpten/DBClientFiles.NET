@@ -7,8 +7,6 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 {
     internal class FieldInfoHandler<T> : ListBlockHandler<T> where T : BaseMemberMetadata, new()
     {
-        public override BlockIdentifier Identifier { get; } = BlockIdentifier.FieldInfo;
-
         private int _index = 0;
 
         protected override T ReadElement(BinaryReader reader)

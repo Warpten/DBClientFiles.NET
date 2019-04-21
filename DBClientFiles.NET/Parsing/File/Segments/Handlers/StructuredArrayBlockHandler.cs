@@ -12,7 +12,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 
         public TStructure[] Structures { get; private set; } = null;
 
-        public unsafe void ReadBlock(BinaryReader reader, long startOffset, long length)
+        public unsafe void ReadBlock(IBinaryStorageFile reader, long startOffset, long length)
         {
             if (length == 0)
                 return;
@@ -25,7 +25,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
             while (reader.BaseStream.Position < startOffset + length)
             {
                 Span<byte> itemBytes = stackalloc byte[Unsafe.SizeOf<TStructure>()];
-                reader.Read(itemBytes);
+                reader.BaseStream.Read(itemBytes);
 
                 Structures[i] = MemoryMarshal.Read<TStructure>(itemBytes);
                 ++i;

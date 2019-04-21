@@ -26,7 +26,7 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
         public override int CopyTableLength => throw new InvalidOperationException();
 
 
-        public HeaderHandler(BinaryReader source) : base(source)
+        public HeaderHandler(IBinaryStorageFile source) : base(source)
         {
         }
     }

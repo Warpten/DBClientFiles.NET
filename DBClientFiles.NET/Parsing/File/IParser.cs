@@ -1,16 +1,10 @@
 ﻿using System.Collections.Generic;
+using DBClientFiles.NET.Parsing.Reflection;
 
 namespace DBClientFiles.NET.Parsing.File
 {
-    internal interface IParser : IBinaryStorageFile
+    internal interface IParser<T> : IBinaryStorageFile, IEnumerable<T>
     {
-        /// <summary>
-        /// The total amount of records in the file.
-        /// </summary>
-        int RecordCount { get; }
-    }
-
-    internal interface IParser<T> : IParser, IEnumerable<T>
-    {
+        
     }
 }

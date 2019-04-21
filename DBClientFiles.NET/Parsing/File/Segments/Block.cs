@@ -69,7 +69,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments
 
         public IBlockHandler Handler { get; set; }
 
-        public bool ReadBlock<T>(T parser) where T : BinaryReader, IParser
+        public bool ReadBlock(IBinaryStorageFile parser)
         {
             if (Handler == null)
                 return false;

@@ -5,8 +5,6 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations
 {
     internal sealed class CopyTableHandler : MultiMapBlockHandler<int, int>
     {
-        public override BlockIdentifier Identifier { get; } = BlockIdentifier.CopyTable;
-
         public override int ReadKey(BinaryReader reader)
         {
             return reader.ReadInt32();

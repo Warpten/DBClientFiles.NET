@@ -16,7 +16,7 @@ namespace DBClientFiles.NET.Parsing.File
     /// </summary>
     /// <typeparam name="TValue">The record type.</typeparam>
     /// <typeparam name="TSerializer"></typeparam>
-    internal abstract class BinaryFileParser<TValue, TSerializer> : BinaryReader, IParser<TValue>
+    internal abstract class BinaryFileParser<TValue, TSerializer> : IParser<TValue>
         where TSerializer : ISerializer<TValue>, new()
     {
         /// <summary>
@@ -51,14 +51,18 @@ namespace DBClientFiles.NET.Parsing.File
         /// </summary>
         private StorageOptions _options;
 
+        public Stream BaseStream { get; }
+
         /// <summary>
         /// Create an instance of <see cref="BinaryFileParser{TValue, TSerializer}"/>.
         /// </summary>
         /// <param name="options">The options to use for parsing.</param>
         /// <param name="input">The input stream.</param>
         /// <param name="leaveOpen">If <c>true</c>, the stream is left open once this object is disposed.</param>
-        public BinaryFileParser(in StorageOptions options, Stream input) : base(input, Encoding.UTF8, true)
+        public BinaryFileParser(in StorageOptions options, Stream input)
         {
+            BaseStream = input;
+
             if (!input.CanSeek)
                 throw new ArgumentException("The stream provided to DBClientFiles.NET's collections has to be seekable!");
 
@@ -68,11 +72,9 @@ namespace DBClientFiles.NET.Parsing.File
             Serializer = new TSerializer();
         }
 
-        protected override void Dispose(bool disposing)
+        public virtual void Dispose()
         {
             Head = default;
-
-            base.Dispose(disposing);
         }
 
         public Block FindBlock(BlockIdentifier identifier)

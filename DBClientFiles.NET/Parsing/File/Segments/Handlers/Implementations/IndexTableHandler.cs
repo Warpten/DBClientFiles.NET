@@ -4,8 +4,6 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations
 {
     internal sealed class IndexTableHandler : ListBlockHandler<int>
     {
-        public override BlockIdentifier Identifier { get; } = BlockIdentifier.IndexTable;
-
         protected override int ReadElement(BinaryReader reader)
         {
             return reader.ReadInt32();

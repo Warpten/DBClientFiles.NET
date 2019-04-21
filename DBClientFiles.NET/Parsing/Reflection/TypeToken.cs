@@ -28,11 +28,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
         public IEnumerable<MemberToken> Properties
             => Members.Where(m => m.MemberType == TypeTokenType.Property);
 
-        public TypeToken(Type type) : this(type, new Dictionary<Type, TypeToken>())
-        {
-        }
-
-        private TypeToken(Type type, Dictionary<Type, TypeToken> knownTypeTokenCache)
+        public TypeToken(Type type)
         {
             _declaredTypes = new Dictionary<Type, TypeToken>();
             
@@ -51,7 +47,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
                 for (int i = 0; i < fields.Length; ++i)
                 {
                     ref readonly var fieldInfo = ref fields[i];
-                    var childTypeToken = GetChildToken(fieldInfo.FieldType);
+                    GetChildToken(fieldInfo.FieldType);
 
                     var fieldType = new FieldToken(this, fieldInfo, i);
                     _members.Add(fieldType);
@@ -61,7 +57,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
                 for (int i = 0; i < properties.Length; i++)
                 {
                     ref readonly var propInfo = ref properties[i];
-                    var childTypeToken = GetChildToken(propInfo.PropertyType);
+                    GetChildToken(propInfo.PropertyType);
 
                     _members.Add(new PropertyToken(this, propInfo, i));
                 }

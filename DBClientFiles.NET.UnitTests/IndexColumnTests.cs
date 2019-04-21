@@ -8,9 +8,12 @@ using DBClientFiles.NET.Parsing.File;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Attributes;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations;
+using System.IO;
 
 namespace DBClientFiles.NET.UnitTests
 {
+#pragma warning disable IDE1006 // Naming Styles
+
     [TestClass]
     public class IndexColumnTests
     {
@@ -147,6 +150,10 @@ namespace DBClientFiles.NET.UnitTests
 
         public IHeaderHandler Header => throw new NotImplementedException();
 
+        public int RecordCount => throw new NotImplementedException();
+
+        public Stream BaseStream => throw new NotImplementedException();
+
         public void Dispose()
         {
         }
@@ -170,3 +177,5 @@ namespace DBClientFiles.NET.UnitTests
         }
     }
 }
+
+#pragma warning restore IDE1006 // Naming Styles

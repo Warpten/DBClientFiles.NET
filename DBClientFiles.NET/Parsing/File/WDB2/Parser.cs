@@ -15,12 +15,12 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
         {
         }
 
-        protected override void Dispose(bool disposing)
+        public override void Dispose()
         {
             _recordReader.Dispose();
             _recordReader = null;
 
-            base.Dispose(disposing);
+            base.Dispose();
         }
 
         public override IRecordReader GetRecordReader(int recordSize)
@@ -34,8 +34,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
             if (step != ParsingStep.Segments)
                 return;
 
-            var tail = Head = new Block
-            {
+            var tail = Head = new Block {
                 Identifier = BlockIdentifier.Header,
                 Length = 12 * 4,
 
@@ -44,6 +43,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
 
             if (Header.MaxIndex != 0)
             {
+                // This is not really an offset map but whatever
                 tail = Head.Next = new Block {
                     Identifier = BlockIdentifier.OffsetMap,
                     Length = (4 + 2) * (Header.MinIndex - Header.MaxIndex + 1)

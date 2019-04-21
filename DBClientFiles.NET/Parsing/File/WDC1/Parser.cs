@@ -15,12 +15,12 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
         {
         }
 
-        protected override void Dispose(bool disposing)
+        public override void Dispose()
         {
             _recordReader.Dispose();
             _recordReader = null;
 
-            base.Dispose(disposing);
+            base.Dispose();
         }
 
         public override IRecordReader GetRecordReader(int recordSize)

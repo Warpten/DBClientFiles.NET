@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 
 namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 {
@@ -9,7 +10,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 
         public BlockIdentifier Identifier { get; } = BlockIdentifier.CopyTable;
 
-        public void ReadBlock(BinaryReader reader, long startOffset, long length)
+        public void ReadBlock(IBinaryStorageFile reader, long startOffset, long length)
         {
             if (startOffset == 0 || length == 0)
                 return;
@@ -20,18 +21,21 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 
             _store = new Memory<(int, short)>(new (int, short)[Count]);
 
-            while (reader.BaseStream.Position <= (startOffset + length))
+            using (var streamReader = new BinaryReader(reader.BaseStream, Encoding.UTF8, true))
             {
-                var key = reader.ReadInt32();
-                var value = reader.ReadInt16();
-
-                if (key == 0 || value == 0)
+                while (reader.BaseStream.Position <= (startOffset + length))
                 {
-                    --Count;
-                    continue;
-                }
+                    var key = streamReader.ReadInt32();
+                    var value = streamReader.ReadInt16();
 
-                _store.Span[i++] = (key, value);
+                    if (key == 0 || value == 0)
+                    {
+                        --Count;
+                        continue;
+                    }
+
+                    _store.Span[i++] = (key, value);
+                }
             }
 
             _store = _store.Slice(0, Count);

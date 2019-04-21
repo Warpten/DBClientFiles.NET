@@ -2,24 +2,24 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 
 namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 {
     internal abstract class MapBlockHandler<TKey, TValue> : IBlockHandler
     {
-        public abstract BlockIdentifier Identifier { get; }
-
         private Dictionary<TKey, TValue> _store = new Dictionary<TKey, TValue>();
 
-        public void ReadBlock(BinaryReader reader, long startOffset, long length)
+        public void ReadBlock(IBinaryStorageFile reader, long startOffset, long length)
         {
             if (length == 0)
                 return;
 
             Debug.Assert(reader.BaseStream.Position == startOffset, "Out-of-place parsing!");
 
-            while (reader.BaseStream.Position <= (startOffset + length))
-                ReadPair(reader);
+            using (var streamReader = new BinaryReader(reader.BaseStream, Encoding.UTF8, true))
+                while (reader.BaseStream.Position <= (startOffset + length))
+                    ReadPair(streamReader);
         }
 
         protected virtual void ReadPair(BinaryReader reader)
