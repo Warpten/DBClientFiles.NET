@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Runtime.CompilerServices;
-using System.Text;
+﻿using System.Runtime.CompilerServices;
 
 namespace DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations
 {
@@ -11,15 +7,22 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations
         int RecordCount { get; }
         int FieldCount { get; }
         int RecordSize { get; }
-        int StringTableLength { get; }
 
-        bool HasIndexTable { get; }
-        bool HasOffsetMap { get; }
+        ref readonly BlockReference OffsetMap { get; }
+        ref readonly BlockReference IndexTable { get; }
+        ref readonly BlockReference Pallet { get; }
+        ref readonly BlockReference Common { get; }
+        ref readonly BlockReference CopyTable { get; }
+        ref readonly BlockReference StringTable { get; }
+
+        ref readonly BlockReference FieldInfo { get; }
+        ref readonly BlockReference ExtendedFieldInfo { get; }
+        ref readonly BlockReference RelationshipTable { get; }
+
         bool HasForeignIds { get; }
 
         int MinIndex { get; }
         int MaxIndex { get; }
-        int CopyTableLength { get; }
         int IndexColumn { get; }
     }
 
@@ -28,18 +31,24 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations
         public abstract int RecordCount { get; }
         public abstract int FieldCount { get; }
         public abstract int RecordSize { get; }
-        public abstract int StringTableLength { get; }
 
-        public abstract bool HasIndexTable { get; }
-        public abstract bool HasOffsetMap { get; }
         public abstract bool HasForeignIds { get; }
 
         public abstract int MinIndex { get; }
         public abstract int MaxIndex { get; }
-        public abstract int CopyTableLength { get; }
         public abstract int IndexColumn { get; }
 
         private bool _readAlready = false;
+
+        public abstract ref readonly BlockReference StringTable { get; }
+        public abstract ref readonly BlockReference OffsetMap { get; }
+        public abstract ref readonly BlockReference IndexTable { get; }
+        public abstract ref readonly BlockReference Pallet { get; }
+        public abstract ref readonly BlockReference Common { get; }
+        public abstract ref readonly BlockReference CopyTable { get; }
+        public abstract ref readonly BlockReference FieldInfo { get; }
+        public abstract ref readonly BlockReference ExtendedFieldInfo { get; }
+        public abstract ref readonly BlockReference RelationshipTable { get; }
 
         public AbstractHeaderHandler(IBinaryStorageFile source)
         {

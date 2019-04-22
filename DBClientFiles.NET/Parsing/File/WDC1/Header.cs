@@ -1,7 +1,4 @@
-﻿using DBClientFiles.NET.Utils;
-using System.IO;
-
-namespace DBClientFiles.NET.Parsing.File.WDC1
+﻿namespace DBClientFiles.NET.Parsing.File.WDC1
 {
     /// <summary>
     /// Representation of a WDBC header.

@@ -1,7 +1,4 @@
-﻿using DBClientFiles.NET.Utils;
-using System;
-using System.IO;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace DBClientFiles.NET.Parsing.File.WDBC
 {

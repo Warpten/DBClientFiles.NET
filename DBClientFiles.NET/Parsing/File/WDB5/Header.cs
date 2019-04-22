@@ -1,7 +1,4 @@
-﻿using DBClientFiles.NET.Utils;
-using System.IO;
-
-namespace DBClientFiles.NET.Parsing.File.WDB5
+﻿namespace DBClientFiles.NET.Parsing.File.WDB5
 {
     internal readonly struct Header
     {

@@ -41,7 +41,7 @@ namespace DBClientFiles.NET.Parsing.Binding
                         typeMemberType = typeMemberType.GetElementType();
 
                     // TODO: FIXME
-                    var structureFieldSize = 1; // Math.Max(1, typeMembersEnumerator.Current.Cardinality) * UnsafeCache.SizeOf(typeMemberType);
+                    var structureFieldSize = Math.Max(1, typeMembersEnumerator.Current.Cardinality) * UnsafeCache.SizeOf(typeMemberType);
                     var metaFieldSize = fileMemberInfo.Size * Math.Max(1, fileMemberInfo.Cardinality) / 8;
 
                     if (structureFieldSize < metaFieldSize)

@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations;
@@ -104,7 +103,8 @@ namespace DBClientFiles.NET.Parsing.File
         /// <returns></returns>
         public abstract IRecordReader GetRecordReader(int recordSize);
 
-        public IEnumerator<TValue> GetEnumerator()
+        //! TODO: Abstract
+        public virtual IEnumerator<TValue> GetEnumerator()
         {
             var copyTableHandler = FindBlock(BlockIdentifier.CopyTable)?.Handler as CopyTableHandler;
             if (copyTableHandler != null)

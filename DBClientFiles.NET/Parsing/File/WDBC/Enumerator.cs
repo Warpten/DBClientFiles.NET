@@ -1,25 +1,19 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.File.Segments;
-using DBClientFiles.NET.Parsing.File.Segments.Handlers;
-using DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Serialization;
 
-namespace DBClientFiles.NET.Parsing.File
+namespace DBClientFiles.NET.Parsing.File.WDBC
 {
-    /// <summary>
-    /// An implementation of the enumerator used to read the records.
-    /// </summary>
     internal class Enumerator<TValue, TSerializer> : IEnumerator<TValue>, IEnumerator
         where TSerializer : ISerializer<TValue>, new()
     {
         internal BinaryFileParser<TValue, TSerializer> _owner;
 
         internal int _itr;
-        internal IndexTableHandler _indexTableHandler;
-        internal OffsetMapHandler _offsetMapHandler;
 
         internal Block _recordBlock;
 
@@ -37,7 +31,7 @@ namespace DBClientFiles.NET.Parsing.File
             {
                 if (!head.ReadBlock(owner))
                     owner.BaseStream.Seek(head.Length, SeekOrigin.Current);
-            
+
                 // While at it, we store the records block, since that one is unique.
                 if (head.Identifier == BlockIdentifier.Records)
                     _recordBlock = head;
@@ -45,14 +39,13 @@ namespace DBClientFiles.NET.Parsing.File
                 head = head.Next;
             }
 
+            Debug.Assert(_recordBlock != null, "A record block is required in WDBC!");
+
             owner.After(ParsingStep.Segments);
 
             // Segments have been processed, it's now time to initialize the deserializer.
             Serializer.Initialize(owner);
 
-            // Try to retrieve commonly found block handlers for use when enumerating.
-            _offsetMapHandler = owner.FindBlock(BlockIdentifier.OffsetMap)?.Handler as OffsetMapHandler;
-            _indexTableHandler = owner.FindBlock(BlockIdentifier.IndexTable)?.Handler as IndexTableHandler;
             _itr = 0;
 
             _current = default;
@@ -75,26 +68,11 @@ namespace DBClientFiles.NET.Parsing.File
 
         public virtual bool MoveNext()
         {
-            IRecordReader recordReader;
-            if (_recordBlock != null)
-            {
-                if (_owner.BaseStream.Position >= _recordBlock.EndOffset)
-                    return false;
+            if (_owner.BaseStream.Position >= _recordBlock.EndOffset)
+                return false;
 
-                recordReader = _owner.GetRecordReader(_owner.Header.RecordSize);
-            }
-            else // if (_offsetMapHandler != null) // Implied
-            {
-                _owner.BaseStream.Seek(_offsetMapHandler.GetRecordOffset(_itr), SeekOrigin.Begin);
-
-                recordReader = _owner.GetRecordReader(_offsetMapHandler.GetRecordSize(_itr));
-            }
-
+            IRecordReader recordReader = _owner.GetRecordReader(_owner.Header.RecordSize);
             _current = _owner.Serializer.Deserialize(recordReader, _owner);
-
-            if (_owner.Header.IndexTable.Exists)
-                _owner.Serializer.SetKey(out _current, _indexTableHandler[_itr++]);
-
             return true;
         }
 

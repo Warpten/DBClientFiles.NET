@@ -1,15 +1,32 @@
-﻿using DBClientFiles.NET.Parsing.File.Records;
+﻿using DBClientFiles.NET.Parsing.Binding;
+using DBClientFiles.NET.Parsing.File.Records;
+using DBClientFiles.NET.Parsing.File.Segments;
+using DBClientFiles.NET.Parsing.File.Segments.Handlers;
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Parsing.Serialization;
+using DBClientFiles.NET.Utils;
 using System.Linq.Expressions;
 
 namespace DBClientFiles.NET.Parsing.File.WDC1
 {
     internal sealed class Serializer<T> : StructuredSerializer<T>
     {
+        private TypeMapper _mapper;
+
         public Serializer() : base()
         {
 
+        }
+
+        public override void Initialize(IBinaryStorageFile parser)
+        {
+            _mapper = new TypeMapper(parser.Type);
+            var infoBlock = parser.FindBlock(BlockIdentifier.FieldInfo)?.Handler as FieldInfoHandler<MemberMetadata>;
+            // var extendedInfoBlock = parser.FindBlock(BlockIdentifier.FieldPackInfo)?.Handler as ExtendedFieldInfoHandler<MemberMetadata>();
+
+            _mapper.Resolve(parser.Options.MemberType.ToTypeToken(), infoBlock);
+
+            base.Initialize(parser);
         }
 
         public override Expression VisitNode(Expression memberAccess, MemberToken memberInfo, ref DeserializerParameters parameters)

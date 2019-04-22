@@ -1,8 +1,5 @@
-﻿using System;
-
-namespace DBClientFiles.NET.Parsing.File.Segments
+﻿namespace DBClientFiles.NET.Parsing.File.Segments
 {
-    [Flags]
     internal enum BlockIdentifier : uint
     {
         Header            = 0x00000001,
@@ -14,7 +11,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments
         FieldPackInfo     = 0x00000040,
         CommonDataTable   = 0x00000080,
         PalletTable       = 0x00000100,
-        RelationShipTable = 0x00000200,
+        RelationshipTable = 0x00000200,
 
 
         Records           = 0xFFFFFFFF,

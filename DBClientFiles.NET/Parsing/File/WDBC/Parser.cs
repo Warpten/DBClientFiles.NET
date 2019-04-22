@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.File.Segments;
@@ -55,7 +56,7 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
 
                 Next = new Block {
                     Identifier = BlockIdentifier.StringBlock,
-                    Length = headerInfo.StringTableLength,
+                    Length = headerInfo.StringTable.Length,
 
                     Handler = new StringBlockHandler(Options.InternStrings)
                 }
@@ -66,6 +67,11 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
         {
             if (step == ParsingStep.Segments)
                 _recordReader = new AlignedRecordReader(this, Header.RecordSize);
+        }
+
+        public override IEnumerator<T> GetEnumerator()
+        {
+            return new Enumerator<T, Serializer<T>>(this);
         }
     }
 }
