@@ -68,6 +68,7 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
 
         public virtual bool MoveNext()
         {
+            _current = default;
             if (_owner.BaseStream.Position >= _recordBlock.EndOffset)
                 return false;
 

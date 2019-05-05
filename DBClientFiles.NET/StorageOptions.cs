@@ -1,10 +1,14 @@
 ﻿using System.Reflection;
+using DBClientFiles.NET.Parsing.Reflection;
+using DBClientFiles.NET.Utils.Extensions;
 
 namespace DBClientFiles.NET
 {
     public readonly struct StorageOptions
     {
         public readonly MemberTypes MemberType;
+
+        internal TypeTokenType TokenType => MemberType.ToTypeToken();
 
         public readonly bool InternStrings;
 

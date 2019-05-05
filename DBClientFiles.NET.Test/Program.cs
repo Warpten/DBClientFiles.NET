@@ -7,61 +7,59 @@ using System.Reflection;
 
 namespace DBClientFiles.NET.Runner
 {
-    public class C2Vector
+    //WDC1
+    public sealed class AchievementEntry
     {
-        public float X { get; set; }
-        public float Y { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public string Reward { get; set; }
+        public int Flags { get; set; }
+        public short InstanceID { get; set; }
+        public short Supercedes { get; set; }
+        public short Category { get; set; }
+        public short UIOrder { get; set; }
+        public short SharesCriteria { get; set; }
+        public byte FactionID { get; set; }
+        public byte Points { get; set; }
+        public byte MinimumCriteria { get; set; }
+        public int ID { get; set; }
+        public int IconFileID { get; set; }
+        public int CriteriaTreeID { get; set; }
     }
 
-    public class C3Vector
+    //WDBC
+    public sealed class CplxAchievement
     {
-        public float X { get; set; }
-        public float Y { get; set; }
-        public float Z { get; set; }
+        public int ID { get; set; }
+        public int FactionID { get; set; }
+        public int MapId { get; set; }
+        public int PreviousID { get; set; }
+        public LocString Title { get; set; }
+        public LocString Description { get; set; }
+        public int Category { get; set; }
+        public int POints { get; set; }
+        public int UIOrder { get; set; }
+        public int Flags { get; set; }
+        public int IconID { get; set; }
+        public LocString Reward { get; set; }
+        public int MinimumCriteria { get; set; }
+        public int LinkedAchievementID { get; set; }
     }
 
     public sealed class LocString
     {
         [Cardinality(SizeConst = 16)]
         public string[] Values { get; set; }
-        public uint Mask { get; set; }
-    }
-
-    public struct AreaTriggerEntry
-    {
-        public uint ID { get; set; }
-        public uint MapID { get; set; }
-        public C3Vector Position { get; set; }
-        public float Radius { get; set; }
-        public C3Vector BoxSize { get; set; }
-        public float BoxOrientation { get; set; }
-    }
-
-    public sealed class AchievementEntry
-    {
-        public uint ID { get; set; }
-        public int FactionID { get; set; }
-        public int MapID { get; set; }
-        public int ParentAchievementID { get; set; }
-        public LocString Name { get; set; }
-        public LocString Description { get; set; }
-        public uint CategoryID { get; set; }
-        public uint Points { get; set; }
-        public uint UIOrder { get; set; }
-        public uint Flags { get; set; }
-        public uint IconID { get; set; }
-        public LocString Rewards { get; set; }
-        public uint MinimumCriteriaID { get; set; }
-        public uint SharesCriteria { get; set; }
+        public int Mask { get; set; }
     }
 
     class Program
     {
-        static unsafe void Main(String[] args)
+        static unsafe void Main(string[] args)
         {
             using (var fs = File.OpenRead(@"D:\World of Warcraft 3.3.5\dbc\Achievement.dbc"))
             {
-                var collection = new StorageEnumerable<AchievementEntry>(StorageOptions.Default, fs);
+                var collection = new StorageEnumerable<CplxAchievement>(StorageOptions.Default, fs);
                 InspectObject(collection.First());
             }
 

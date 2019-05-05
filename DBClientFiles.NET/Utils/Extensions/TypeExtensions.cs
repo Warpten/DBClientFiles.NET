@@ -2,13 +2,10 @@
 using System.Reflection;
 using DBClientFiles.NET.Parsing.Reflection;
 
-namespace DBClientFiles.NET.Utils
+namespace DBClientFiles.NET.Utils.Extensions
 {
     internal static class TypeExtensions
     {
-        /// <remarks>
-        /// Shamelessly stolen from <a href="http://geekswithblogs.net/mrsteve/archive/2012/01/11/csharp-expression-trees-create-instance-from-type-extension-method.aspx">Steve Wilkes</a>.
-        /// </remarks>
         public static bool HasDefaultConstructor(this Type t)
         {
             return t.IsValueType || t.GetConstructor(Type.EmptyTypes) != null;

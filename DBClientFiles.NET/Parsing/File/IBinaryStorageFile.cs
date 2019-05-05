@@ -25,5 +25,9 @@ namespace DBClientFiles.NET.Parsing.File
         IHeaderHandler Header { get; }
 
         Stream BaseStream { get; }
+
+
+        // The following methods may or may not be called
+        // during file deserialization, depending on the version being read.
     }
 }

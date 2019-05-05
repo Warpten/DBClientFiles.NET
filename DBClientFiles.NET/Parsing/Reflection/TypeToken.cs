@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using DBClientFiles.NET.Utils.Extensions;
 
 namespace DBClientFiles.NET.Parsing.Reflection
 {
@@ -159,5 +160,8 @@ namespace DBClientFiles.NET.Parsing.Reflection
         }
 
         public bool IsArray => Type.IsArray;
+        public bool IsClass => Type.IsClass;
+
+        public bool HasDefaultConstructor => Type.HasDefaultConstructor();
     }
 }

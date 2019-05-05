@@ -6,8 +6,8 @@ using System.Reflection;
 using DBClientFiles.NET.Parsing.File;
 using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.Reflection;
+using DBClientFiles.NET.Parsing.Serialization.Generators;
 using DBClientFiles.NET.Utils;
-
 using TypeToken = DBClientFiles.NET.Parsing.Reflection.TypeToken;
 
 namespace DBClientFiles.NET.Parsing.Serialization
@@ -17,7 +17,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
         private Expression _keyAccessExpression;
 
         protected delegate void TypeCloner(in T source, out T target);
-        protected delegate void TypeDeserializer(IRecordReader reader, IParser<T> parser, out T instance);
+        protected delegate void TypeDeserializer(IRecordReader recordReader, IParser<T> fileParser, out T instance);
         protected delegate int TypeKeyGetter(in T source);
         protected delegate void TypeKeySetter(out T source, int key);
 
@@ -32,6 +32,8 @@ namespace DBClientFiles.NET.Parsing.Serialization
         }
         public TypeToken Type { get; protected set; }
 
+        protected abstract TypedSerializerGenerator<T, TypeDeserializer> Generator { get; set; }
+
         public virtual void Initialize(IBinaryStorageFile storage)
         {
             _options = storage.Options;
@@ -45,7 +47,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
             var rootExpression = Expression.Parameter(typeof(T).MakeByRefType(), "model");
             _keyAccessExpression = rootExpression;
 
-            var indexColumnMember = Type.GetMemberByIndex(ref indexColumn, ref _keyAccessExpression, _options.MemberType.ToTypeToken());
+            var indexColumnMember = Type.GetMemberByIndex(ref indexColumn, ref _keyAccessExpression, _options.TokenType);
             if (indexColumnMember == null)
                 throw new InvalidOperationException($"Invalid structure: Unable to find an index column.");
 
@@ -176,151 +178,21 @@ namespace DBClientFiles.NET.Parsing.Serialization
         public T Deserialize(IRecordReader reader, IParser<T> parser)
         {
             if (_deserializer == null)
-                _deserializer = GenerateDeserializer();
+                _deserializer = Generator?.GenerateDeserializer();
+
+            if (_deserializer == null)
+                throw new InvalidOperationException("A generator is needed for file parsing.");
 
             _deserializer.Invoke(reader, parser, out var instance);
             return instance;
         }
 
-        internal struct DeserializerParameters
-        {
-            public ParameterExpression Reader { get; }
-            public ParameterExpression Parser { get; }
-
-            public DeserializerParameters(ParameterExpression r, ParameterExpression p)
-            {
-                Reader = r;
-                Parser = p;
-            }
-        }
-
-        protected virtual TypeDeserializer GenerateDeserializer()
-        {
-            var body = new List<Expression>();
-
-            var parameters = new DeserializerParameters(
-                Expression.Parameter(typeof(IRecordReader)),
-                Expression.Parameter(typeof(IParser<T>))
-            );
-
-            var typeVariable = Expression.Parameter(typeof(T).MakeByRefType());
-            var typeInstance = New<T>.Expression();
-            body.Add(Expression.Assign(typeVariable, typeInstance));
-
-            // Initialize all the substructures
-            foreach (var memberInfo in Type.Members)
-            {
-                if (!ShouldProcess(memberInfo))
-                    continue;
-
-                var memberNode = Expression.MakeMemberAccess(typeVariable, memberInfo.MemberInfo);
-                Visit(body, ref parameters, memberInfo, memberNode);
-            }
-
-            var bodyBlock = Expression.Block(body);
-
-            var lambda = Expression.Lambda<TypeDeserializer>(bodyBlock, new[] { parameters.Reader, parameters.Parser, typeVariable });
-            return lambda.Compile();
-        }
-
         protected virtual bool ShouldProcess(MemberToken memberInfo)
         {
-            if (Options.MemberType == MemberTypes.Field)
-            {
-                if (memberInfo.MemberType != TypeTokenType.Field)
-                    return false;
-            }
-
-            if (Options.MemberType == MemberTypes.Property)
-            {
-                if (memberInfo.MemberType != TypeTokenType.Property)
-                    return false;
-            }
+            if (Options.TokenType != memberInfo.MemberType)
+                return false;
 
             return !memberInfo.IsReadOnly;
         }
-
-        /// <summary>
-        /// <para>This method is hell.</para>
-        /// <para>
-        /// For a given node, it recursively visits all of its children, and produces expressions for deserialization.
-        /// That's really all you need to know. Deserializing primitives such as integers and string falls on the implementations
-        /// of this class (via <see cref="VisitNode(ExtendedMemberExpression, Expression)"/>.
-        /// </para>
-        /// </summary>
-        /// <param name="recordReader">An expression representing an instance of <see cref="IRecordReader"/>.</param>
-        /// <param name="rootNode">The node from which we starting work down.</param>
-        /// <returns></returns>
-        public void Visit(List<Expression> container, ref DeserializerParameters parameters, MemberToken memberInfo, Expression memberAccess)
-        {
-            if (memberInfo.IsArray)
-            {
-                // Try to read it using the visiters if it's a simple POD type.
-                var nodeInitializer = VisitNode(memberAccess, memberInfo, ref parameters);
-                if (nodeInitializer != null)
-                    container.Add(Expression.Assign(memberAccess, nodeInitializer));
-                else
-                {
-                    // Visitors couldn't help (they only handle basic types)
-                    // This is an array of complex objects and needs manual looping.
-                    var breakLabelTarget = Expression.Label();
-
-                    var itr = Expression.Variable(typeof(int));
-                    var arrayElement = Expression.ArrayAccess(memberAccess, itr);
-
-                    var arrayBound = Expression.Constant(memberInfo.Cardinality);
-                    var loopTest = Expression.LessThan(itr, arrayBound);
-
-                    // Construct the loop's body
-                    var loopBody = new List<Expression>();
-                    foreach (var childInfo in Type.Members)
-                    {
-                        if (!ShouldProcess(memberInfo))
-                            continue;
-
-                        var childAccess = Expression.MakeMemberAccess(arrayElement, childInfo.MemberInfo);
-                        Visit(loopBody, ref parameters, childInfo, childAccess);
-                    }
-
-                    // And now construct the loop itself
-                    container.Add(Expression.Block(new[] { itr },
-                        Expression.Assign(itr, Expression.Constant(0)),
-                        Expression.Loop(
-                            Expression.IfThenElse(loopTest,
-                                Expression.Block(
-                                    Expression.Assign(arrayElement, New.Expression(arrayElement.Type)),
-                                    Expression.Block(loopBody),
-                                    Expression.PreIncrementAssign(itr)
-                                ),
-                                Expression.Break(breakLabelTarget)
-                            ), breakLabelTarget)));
-                }
-            }
-            else
-            {
-                var nodeInitializer = VisitNode(memberAccess, memberInfo, ref parameters);
-                if (nodeInitializer != null)
-                    container.Add(Expression.Assign(memberAccess, nodeInitializer));
-                else if (memberInfo.TypeToken.Type.IsClass)
-                    container.Add(Expression.Assign(memberAccess, Expression.New(memberInfo.TypeToken.Type)));
-
-                foreach (var child in memberInfo.TypeToken.Members)
-                {
-                    if (!ShouldProcess(memberInfo))
-                        continue;
-
-                    var childAccess = Expression.MakeMemberAccess(memberAccess, child.MemberInfo);
-                    Visit(container, ref parameters, child, childAccess);
-                }
-            }
-        }
-
-        /// <summary>
-        /// This method is invoked on primitive members such as integers, floats, but also on arrays of these.
-        /// </summary>
-        /// <param name="memberAccess"></param>
-        /// <param name="memberInfo"></param>
-        /// <param name="recordReader"></param>
-        public abstract Expression VisitNode(Expression memberAccess, MemberToken memberInfo, ref DeserializerParameters parameters);
     }
 }

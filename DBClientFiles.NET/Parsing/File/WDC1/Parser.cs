@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.File.Segments;
@@ -44,8 +43,7 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
                 Handler = new HeaderHandler(this)
             };
 
-            var tail = Head.Next = new Block
-            {
+            var tail = Head.Next = new Block {
                 Identifier = BlockIdentifier.FieldInfo,
                 Length = Header.FieldInfo.Length,
 
@@ -57,11 +55,9 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
                 tail = tail.Next = new Block {
                     Identifier = BlockIdentifier.Records,
                     Length = Header.OffsetMap.Offset.Value - tail.EndOffset,
-
                 };
 
-                tail = tail.Next = new Block
-                {
+                tail = tail.Next = new Block {
                     Identifier = BlockIdentifier.OffsetMap,
                     Length = Header.OffsetMap.Length,
 
@@ -70,15 +66,12 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
             }
             else
             {
-                tail = tail.Next = new Block
-                {
+                tail = tail.Next = new Block {
                     Identifier = BlockIdentifier.Records,
-                    Length = Header.RecordSize - Header.RecordCount,
-
+                    Length = Header.RecordSize * Header.RecordCount,
                 };
 
-                tail = tail.Next = new Block
-                {
+                tail = tail.Next = new Block {
                     Identifier = BlockIdentifier.StringBlock,
                     Length = Header.StringTable.Length,
 
@@ -86,30 +79,28 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
                 };
             }
 
-            tail = tail.Next = new Block
-            {
+            tail = tail.Next = new Block {
                 Identifier = BlockIdentifier.IndexTable,
                 Length = Header.IndexTable.Length,
 
                 Handler = new IndexTableHandler()
             };
 
-            tail = tail.Next = new Block
-            {
+            tail = tail.Next = new Block {
                 Identifier = BlockIdentifier.CopyTable,
                 Length = Header.CopyTable.Length,
 
                 Handler = new CopyTableHandler()
             };
 
-            tail = tail.Next = new Block
-            {
-                Identifier = BlockIdentifier.FieldPackInfo,
-                Length = Header.ExtendedFieldInfo.Length
+            tail = tail.Next = new Block {
+                Identifier = BlockIdentifier.ExtendedFieldInfo,
+                Length = Header.ExtendedFieldInfo.Length,
+
+                Handler = new ExtendedFieldInfoHandler<MemberMetadata>((FieldInfoHandler<MemberMetadata>) Head.Next.Handler)
             };
 
-            tail = tail.Next = new Block
-            {
+            tail = tail.Next = new Block {
                 Identifier = BlockIdentifier.PalletTable,
                 Length = Header.Pallet.Length
             };
@@ -127,8 +118,6 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
                 Identifier = BlockIdentifier.RelationshipTable,
                 Length = Header.RelationshipTable.Length
             };
-
-            throw new NotImplementedException();
         }
 
         public override void After(ParsingStep step)

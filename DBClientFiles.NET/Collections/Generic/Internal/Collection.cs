@@ -7,6 +7,8 @@ using System.IO;
 using WDBC = DBClientFiles.NET.Parsing.File.WDBC;
 using WDB2 = DBClientFiles.NET.Parsing.File.WDB2;
 using WDB5 = DBClientFiles.NET.Parsing.File.WDB5;
+using WDC1 = DBClientFiles.NET.Parsing.File.WDC1;
+
 using System;
 using System.Runtime.InteropServices;
 
@@ -46,6 +48,10 @@ namespace DBClientFiles.NET.Collections.Generic.Internal
                     break;
                 case Signatures.WDB5:
                     _implementation = new WDB5.Parser<T>(in options, dataStream);
+                    break;
+                case Signatures.WDC1:
+                case Signatures.CLS1:
+                    _implementation = new WDC1.Parser<T>(in options, dataStream);
                     break;
                 default:
                     throw new VersionNotSupportedException(identifier);

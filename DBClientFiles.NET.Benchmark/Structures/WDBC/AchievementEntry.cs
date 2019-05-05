@@ -1,8 +1,8 @@
 ﻿using DBClientFiles.NET.Benchmark.DataTypes;
 
-namespace DBClientFiles.NET.Benchmark.Structures.DBC
+namespace DBClientFiles.NET.Benchmark.Structures.WDBC
 {
-    public sealed class AchievementEntry
+    public sealed class AchievementEntryWDBC
     {
         public uint ID { get; set; }
         public int FactionID { get; set; }

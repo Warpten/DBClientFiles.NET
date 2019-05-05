@@ -9,19 +9,24 @@ using System.Globalization;
 using System.Reflection;
 using System.Text;
 
-namespace DBClientFiles.NET.Utils
+namespace DBClientFiles.NET.Utils.Expressions
 {
     internal sealed class ExpressionStringBuilder : ExpressionVisitor
     {
+        private int _depth;
         private StringBuilder _out;
 
         // Associate every unique label or anonymous parameter in the tree with an integer.
         // The label is displayed as Label_#.
         private Dictionary<object, int> _ids;
 
-        public ExpressionStringBuilder()
+        public ExpressionStringBuilder(Expression expression)
         {
-            _out = new StringBuilder();
+            this._out = new StringBuilder();
+
+            _depth = 0;
+
+            Visit(expression);
         }
 
         public override string ToString()
@@ -33,17 +38,14 @@ namespace DBClientFiles.NET.Utils
         {
             if (_ids == null)
             {
-                _ids = new Dictionary<object, int>
-                {
+                _ids = new Dictionary<object, int> {
                     { label, 0 }
                 };
             }
             else
             {
                 if (!_ids.ContainsKey(label))
-                {
                     _ids.Add(label, _ids.Count);
-                }
             }
         }
 
@@ -112,55 +114,6 @@ namespace DBClientFiles.NET.Utils
         #endregion
 
         #region Output an expresstion tree to a string
-
-        /// <summary>
-        /// Output a given expression tree to a string.
-        /// </summary>
-        internal static string ExpressionToString(Expression node)
-        {
-            Debug.Assert(node != null);
-            var esb = new ExpressionStringBuilder();
-            esb.Visit(node);
-            return esb.ToString();
-        }
-
-        internal static string CatchBlockToString(CatchBlock node)
-        {
-            Debug.Assert(node != null);
-            var esb = new ExpressionStringBuilder();
-            esb.VisitCatchBlock(node);
-            return esb.ToString();
-        }
-
-        internal static string SwitchCaseToString(SwitchCase node)
-        {
-            Debug.Assert(node != null);
-            var esb = new ExpressionStringBuilder();
-            esb.VisitSwitchCase(node);
-            return esb.ToString();
-        }
-
-        /// <summary>
-        /// Output a given member binding to a string.
-        /// </summary>
-        internal static string MemberBindingToString(MemberBinding node)
-        {
-            Debug.Assert(node != null);
-            var esb = new ExpressionStringBuilder();
-            esb.VisitMemberBinding(node);
-            return esb.ToString();
-        }
-
-        /// <summary>
-        /// Output a given ElementInit to a string.
-        /// </summary>
-        internal static string ElementInitBindingToString(ElementInit node)
-        {
-            Debug.Assert(node != null);
-            var esb = new ExpressionStringBuilder();
-            esb.VisitElementInit(node);
-            return esb.ToString();
-        }
 
         // More proper would be to make this a virtual method on Action
         private static string FormatBinder(CallSiteBinder binder)
@@ -761,11 +714,15 @@ namespace DBClientFiles.NET.Utils
 
         protected override Expression VisitBlock(BlockExpression node)
         {
+            _depth += 1;
+
             Out("{");
             Out(Environment.NewLine);
             foreach (var v in node.Variables)
             {
-                Out($"    {v.Type.Name} ");
+                for (var i = 0; i < _depth; ++i)
+                    Out("    ");
+                Out($" {v.Type.Name} ");
                 Visit(v);
                 Out(";");
                 Out(Environment.NewLine);
@@ -773,17 +730,24 @@ namespace DBClientFiles.NET.Utils
 
             foreach (var v in node.Expressions)
             {
-                Out(Environment.NewLine);
                 if (v.NodeType == ExpressionType.Default)
                     continue;
 
-                Out("    ");
+                for (var i = 0; i < _depth; ++i)
+                    Out("    ");
                 Visit(v);
                 Out(";");
+                Out(Environment.NewLine);
             }
 
-            Out(Environment.NewLine);
+            _depth -= 1;
+
+            for (var i = 0; i < _depth; ++i)
+                Out("    ");
             Out("}");
+
+
+
             return node;
         }
 
@@ -820,6 +784,7 @@ namespace DBClientFiles.NET.Utils
         {
             // It's not easy to dump out loops.
             Out("loop { ... }");
+
             return node;
         }
 

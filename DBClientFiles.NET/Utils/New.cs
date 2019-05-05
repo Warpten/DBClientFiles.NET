@@ -3,6 +3,7 @@ using System.Linq;
 using Expr = System.Linq.Expressions.Expression;
 using System.Runtime.Serialization;
 using System.Runtime.CompilerServices;
+using DBClientFiles.NET.Utils.Extensions;
 
 namespace DBClientFiles.NET.Utils
 {

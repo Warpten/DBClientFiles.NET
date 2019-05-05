@@ -11,12 +11,16 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 
         protected override T ReadElement(BinaryReader reader)
         {
+            var collapsedBitCount = reader.ReadInt16();
+            var bytePosition = reader.ReadUInt16();
+
             var instance = new T {
-                CompressionType = MemberCompressionType.None,
-                CompressionIndex = (uint) _index,
-                Size = (uint) (32 - reader.ReadInt16()),
-                Offset = reader.ReadUInt32()
+                Size = (uint) (32 - collapsedBitCount),
+                Offset = bytePosition * 8u,
+                Cardinality = 1
             };
+
+            instance.CompressionData.Type = MemberCompressionType.None;
 
             if (_index > 0)
             {

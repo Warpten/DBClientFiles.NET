@@ -2,10 +2,17 @@
 
 namespace DBClientFiles.NET.Parsing.Binding
 {
+    public struct CompressionData
+    {
+        public MemberCompressionType Type { get; internal set; }
+        public int Offset { get; internal set; }
+        public int Size { get; internal set; }
+    }
+
     /// <summary>
     /// This is the basic interface used when reading member metadata from game files.
     /// </summary>
-    public interface IFileMemberMetadata
+    public interface IMemberMetadata
     {
         /// <summary>
         /// The size of the member, in bits. If the corresponding member is an array, this should be the bit size
@@ -18,16 +25,7 @@ namespace DBClientFiles.NET.Parsing.Binding
         /// </summary>
         uint Offset { get; }
 
-        /// <summary>
-        /// The type of compression used for this member. Default value should always be <see cref="MemberCompressionType.None"/>.
-        /// </summary>
-        MemberCompressionType CompressionType { get; }
-
-        /// <summary>
-        /// This is the index of this member in respect to other members with the same compression type.
-        /// It is usually ignored for <see cref="MemberCompressionType.None"/>.
-        /// </summary>
-        uint CompressionIndex { get; }
+        ref CompressionData CompressionData { get; }
 
         /// <summary>
         /// If this member is an array, this is the size of said array.
@@ -49,22 +47,5 @@ namespace DBClientFiles.NET.Parsing.Binding
         /// <returns>An instance of <see cref="{T}"/>.</returns>
         /// <remarks>A default implementation returns <c>default(T)</c>.</remarks>
         T GetDefaultValue<T>() where T : unmanaged;
-    }
-
-    /// <summary>
-    /// A copy of the above that exposes the same properties, but writable. This is the only way to have internally accessible setters.
-    /// </summary>
-    internal interface IWritableMemberMetadata
-    {
-        uint Size { set; }
-        uint Offset { set; }
-        MemberCompressionType CompressionType { set; }
-        uint CompressionIndex { set; }
-        int Cardinality { set; }
-        MemberMetadataProperties Properties { set; }
-    }
-
-    internal interface IMemberMetadata : IFileMemberMetadata, IWritableMemberMetadata
-    {
     }
 }

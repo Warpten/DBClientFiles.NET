@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.Serialization;
@@ -70,6 +68,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
 
         public virtual bool MoveNext()
         {
+            _current = default;
             if (_owner.BaseStream.Position >= _recordBlock.EndOffset)
                 return false;
 

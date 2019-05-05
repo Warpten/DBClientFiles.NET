@@ -8,9 +8,9 @@
     internal readonly struct Header
     {
         public readonly Signatures Signature;
-        public readonly int RecordSize;
         public readonly int RecordCount;
         public readonly int FieldCount;
+        public readonly int RecordSize;
         public readonly int StringTableLength;
         public readonly int TableHash;
         public readonly int LayoutHash;

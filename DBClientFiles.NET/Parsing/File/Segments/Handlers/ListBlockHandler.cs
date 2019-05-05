@@ -30,7 +30,11 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 
             using (var streamReader = new BinaryReader(reader.BaseStream, Encoding.UTF8, true))
                 while (reader.BaseStream.Position < (startOffset + length))
-                    _store.Add(ReadElement(streamReader));
+                {
+                    var elementStore = ReadElement(streamReader);
+                    if (elementStore != default)
+                        _store.Add(elementStore);
+                }
         }
 
         public void WriteBlock<T, U>(T reader) where T : BinaryWriter, IWriter<U>

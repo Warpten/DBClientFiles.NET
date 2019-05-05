@@ -9,6 +9,7 @@ using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Attributes;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations;
 using System.IO;
+using DBClientFiles.NET.Parsing.Serialization.Generators;
 
 namespace DBClientFiles.NET.UnitTests
 {
@@ -170,11 +171,7 @@ namespace DBClientFiles.NET.UnitTests
 
     internal sealed class SerializerMock<T> : StructuredSerializer<T>
     {
-        // We aren't constructing an object anyways, so don't even bother.
-        public override Expression VisitNode(Expression memberAccess, MemberToken memberInfo, ref DeserializerParameters parameters)
-        {
-            throw new NotImplementedException();
-        }
+        protected override TypedSerializerGenerator<T, TypeDeserializer> Generator { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     }
 }
 

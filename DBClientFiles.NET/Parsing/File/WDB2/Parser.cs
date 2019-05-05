@@ -36,29 +36,31 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
             if (step != ParsingStep.Segments)
                 return;
 
+            var headerHandler = new HeaderHandler(this);
+
             var tail = Head = new Block {
                 Identifier = BlockIdentifier.Header,
                 Length = Unsafe.SizeOf<Header>(),
 
-                Handler = new HeaderHandler(this)
+                Handler = headerHandler,
             };
 
-            if (Header.MaxIndex != 0)
+            if (headerHandler.MaxIndex != 0)
             {
-                // This is not really an offset map but whatever
+                // This is not really an offset map but whatever, no handler is attached.
                 tail = Head.Next = new Block {
                     Identifier = BlockIdentifier.OffsetMap,
-                    Length = (4 + 2) * (Header.MinIndex - Header.MaxIndex + 1)
+                    Length = (4 + 2) * (Header.MaxIndex - Header.MinIndex + 1)
                 };
             }
 
             tail.Next = new Block {
                 Identifier = BlockIdentifier.Records,
-                Length = Header.RecordCount * Header.RecordSize,
+                Length = headerHandler.RecordCount * headerHandler.RecordSize,
 
                 Next = new Block {
                     Identifier = BlockIdentifier.StringBlock,
-                    Length = Header.StringTable.Length,
+                    Length = headerHandler.StringTable.Length,
 
                     Handler = new StringBlockHandler(Options.InternStrings)
                 }
