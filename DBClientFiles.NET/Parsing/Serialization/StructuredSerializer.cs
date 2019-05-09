@@ -85,7 +85,19 @@ namespace DBClientFiles.NET.Parsing.Serialization
         /// <param name="instance">The record instance to modify.</param>
         /// <param name="key">The new key value to set<</param>
         public void SetKey(out T instance, int key) => _keySetter(out instance, key);
-    
+
+        public T Deserialize(IRecordReader reader, IParser<T> parser)
+        {
+            if (_deserializer == null)
+                _deserializer = Generator?.GenerateDeserializer();
+
+            if (_deserializer == null)
+                throw new InvalidOperationException("A generator is needed for file parsing.");
+
+            _deserializer.Invoke(reader, parser, out var instance);
+            return instance;
+        }
+
         /// <summary>
         /// Clone the provided instance.
         /// </summary>
@@ -161,7 +173,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
 
             foreach (var childInfo in typeInfo.Members)
             {
-                if (!ShouldProcess(childInfo))
+                if (Options.TokenType != childInfo.MemberType || childInfo.IsReadOnly)
                     continue;
 
                 var oldChild = Expression.MakeMemberAccess(oldMember, childInfo.MemberInfo);
@@ -173,26 +185,6 @@ namespace DBClientFiles.NET.Parsing.Serialization
             return block.Count == 1
                 ? (Expression)Expression.Assign(newMember, oldMember)
                 : (Expression)Expression.Block(block);
-        }
-
-        public T Deserialize(IRecordReader reader, IParser<T> parser)
-        {
-            if (_deserializer == null)
-                _deserializer = Generator?.GenerateDeserializer();
-
-            if (_deserializer == null)
-                throw new InvalidOperationException("A generator is needed for file parsing.");
-
-            _deserializer.Invoke(reader, parser, out var instance);
-            return instance;
-        }
-
-        protected virtual bool ShouldProcess(MemberToken memberInfo)
-        {
-            if (Options.TokenType != memberInfo.MemberType)
-                return false;
-
-            return !memberInfo.IsReadOnly;
         }
     }
 }

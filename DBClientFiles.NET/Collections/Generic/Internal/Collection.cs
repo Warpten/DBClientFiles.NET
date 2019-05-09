@@ -35,6 +35,7 @@ namespace DBClientFiles.NET.Collections.Generic.Internal
         {
             Span<byte> identifierBytes = stackalloc byte[4];
             dataStream.Read(identifierBytes);
+
             var identifier = (Signatures) MemoryMarshal.Read<uint>(identifierBytes);
             dataStream.Seek(-4, SeekOrigin.Current);
 
