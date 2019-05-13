@@ -75,9 +75,9 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
                     blockBody.Add(Expression.Assign(AccessExpression, ReadExpression[0]));
                 else if (TypeToken.IsArray)
                     blockBody.Add(Expression.Assign(AccessExpression,
-                        Expression.NewArrayBounds(TypeToken.GetElementTypeToken().Type, Expression.Constant(MemberToken.Cardinality))));
+                        TypeToken.GetElementTypeToken().NewArrayBounds(Expression.Constant(MemberToken.Cardinality))));
                 else if (TypeToken.HasDefaultConstructor)
-                    blockBody.Add(Expression.Assign(AccessExpression, Expression.New(TypeToken.Type)));
+                    blockBody.Add(Expression.Assign(AccessExpression, TypeToken.NewExpression()));
             }
 
             // Produce children if there are any
@@ -188,7 +188,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
             };
 
             // Array initializer added now and only now
-            bodyExpression.ReadExpression.Add(Expression.NewArrayBounds(bodyExpression.TypeToken.Type, Expression.Constant(IterationCount - InitialValue)));
+            bodyExpression.ReadExpression.Add(bodyExpression.TypeToken.NewArrayBounds(Expression.Constant(IterationCount - InitialValue)));
 
             // Create N blocks of body
             for (var i = InitialValue; i < IterationCount; ++i)
@@ -201,8 +201,8 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
                 };
 
                 // Insert ctor if class
-                if (invocationNode.TypeToken.Type.IsClass)
-                    invocationNode.ReadExpression.Add(Expression.New(invocationNode.TypeToken.Type));
+                if (invocationNode.TypeToken.IsClass)
+                    invocationNode.ReadExpression.Add(invocationNode.TypeToken.NewExpression());
 
                 // Insert all children
                 foreach (var childNode in Children)

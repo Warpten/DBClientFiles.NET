@@ -14,16 +14,14 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
 
         public override Expression GenerateExpressionReader(TypeToken typeToken, MemberToken memberToken)
         {
-            if (typeToken.Type.IsPrimitive)
+            if (typeToken.IsPrimitive)
             {
-                var methodCall = _IRecordReader.Read.MakeGenericMethod(typeToken.Type);
+                var methodCall = typeToken.MakeGenericMethod(_IRecordReader.Read);
                 return Expression.Call(RecordReader, methodCall);
             }
-            else if (typeToken.Type == typeof(string))
-            {
+            else if (typeToken == typeof(string))    
                 return Expression.Call(RecordReader, _IRecordReader.ReadString);
-            }
-
+        
             return null;
         }
     }

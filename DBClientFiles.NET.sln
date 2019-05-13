@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DBClientFiles.NET.Test", "D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DBClientFiles.NET.UnitTests", "DBClientFiles.NET.UnitTests\DBClientFiles.NET.UnitTests.csproj", "{4D820474-757A-4135-ADF0-FD24667276AE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBClientFiles.NET.CodeGen", "DBClientFiles.NET.CodeGen\DBClientFiles.NET.CodeGen.csproj", "{5AE59555-A160-4916-97CF-54435E6C3654}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -91,6 +93,22 @@ Global
 		{4D820474-757A-4135-ADF0-FD24667276AE}.ReleaseUnitTests|Any CPU.Build.0 = ReleaseUnitTests|Any CPU
 		{4D820474-757A-4135-ADF0-FD24667276AE}.ReleaseUnitTests|x64.ActiveCfg = ReleaseUnitTests|Any CPU
 		{4D820474-757A-4135-ADF0-FD24667276AE}.ReleaseUnitTests|x64.Build.0 = ReleaseUnitTests|Any CPU
+		{5AE59555-A160-4916-97CF-54435E6C3654}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5AE59555-A160-4916-97CF-54435E6C3654}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5AE59555-A160-4916-97CF-54435E6C3654}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5AE59555-A160-4916-97CF-54435E6C3654}.Debug|x64.Build.0 = Debug|Any CPU
+		{5AE59555-A160-4916-97CF-54435E6C3654}.DebugUnitTests|Any CPU.ActiveCfg = Debug|Any CPU
+		{5AE59555-A160-4916-97CF-54435E6C3654}.DebugUnitTests|Any CPU.Build.0 = Debug|Any CPU
+		{5AE59555-A160-4916-97CF-54435E6C3654}.DebugUnitTests|x64.ActiveCfg = Debug|Any CPU
+		{5AE59555-A160-4916-97CF-54435E6C3654}.DebugUnitTests|x64.Build.0 = Debug|Any CPU
+		{5AE59555-A160-4916-97CF-54435E6C3654}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5AE59555-A160-4916-97CF-54435E6C3654}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5AE59555-A160-4916-97CF-54435E6C3654}.Release|x64.ActiveCfg = Release|Any CPU
+		{5AE59555-A160-4916-97CF-54435E6C3654}.Release|x64.Build.0 = Release|Any CPU
+		{5AE59555-A160-4916-97CF-54435E6C3654}.ReleaseUnitTests|Any CPU.ActiveCfg = Release|Any CPU
+		{5AE59555-A160-4916-97CF-54435E6C3654}.ReleaseUnitTests|Any CPU.Build.0 = Release|Any CPU
+		{5AE59555-A160-4916-97CF-54435E6C3654}.ReleaseUnitTests|x64.ActiveCfg = Release|Any CPU
+		{5AE59555-A160-4916-97CF-54435E6C3654}.ReleaseUnitTests|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

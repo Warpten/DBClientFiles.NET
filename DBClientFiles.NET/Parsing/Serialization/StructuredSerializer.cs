@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using DBClientFiles.NET.Parsing.File;
@@ -47,13 +48,14 @@ namespace DBClientFiles.NET.Parsing.Serialization
             var rootExpression = Expression.Parameter(typeof(T).MakeByRefType(), "model");
             _keyAccessExpression = rootExpression;
 
-            var indexColumnMember = Type.GetMemberByIndex(ref indexColumn, ref _keyAccessExpression, _options.TokenType);
-            if (indexColumnMember == null)
+            var tuple = Type.MakeMemberAccess(ref indexColumn, _keyAccessExpression, _options.TokenType);
+            if (tuple.memberToken == null)
                 throw new InvalidOperationException($"Invalid structure: Unable to find an index column.");
 
-            if (indexColumnMember.TypeToken.Type != typeof(int) && indexColumnMember.TypeToken.Type != typeof(uint))
+            ref var indexColumnMemberToken = ref tuple.memberToken;
+            if (indexColumnMemberToken.TypeToken != typeof(int) && indexColumnMemberToken.TypeToken != typeof(uint))
             {
-                throw new InvalidOperationException($"Invalid structure: {_keyAccessExpression} is expected to be the index, but its type doesn't match. Needs to be (u)int.");
+                throw new InvalidOperationException($"Invalid structure: {tuple.memberAccess} is expected to be the index, but its type doesn't match. Needs to be (u)int.");
             }
 
             { /* key getter */
@@ -141,7 +143,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
                 var sizeVarExpr = Expression.Variable(typeof(int));
                 var lengthValue = Expression.MakeMemberAccess(oldMember,
                     oldMember.Type.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance));
-                var newArrayExpr = Expression.NewArrayBounds(memberInfo.TypeToken.GetElementTypeToken().Type, sizeVarExpr);
+                var newArrayExpr = memberInfo.TypeToken.GetElementTypeToken().NewArrayBounds(sizeVarExpr);
 
                 var loopItr = Expression.Variable(typeof(int));
                 var loopCondition = Expression.LessThan(loopItr, sizeVarExpr);
@@ -164,7 +166,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
 
             var typeInfo = Type.GetChildToken(oldMember.Type);
 
-            if (typeInfo.Type == typeof(string) || typeInfo.Type.IsPrimitive)
+            if (typeInfo == typeof(string) || typeInfo.IsPrimitive)
                 return Expression.Assign(newMember, oldMember);
 
             var block = new List<Expression>() {

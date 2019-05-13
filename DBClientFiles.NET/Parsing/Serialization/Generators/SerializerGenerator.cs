@@ -13,7 +13,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
     {
         public TypedSerializerGenerator(TypeToken root, TypeTokenType memberType) : base(root, memberType)
         {
-            Debug.Assert(typeof(T) == root.Type);
+            Debug.Assert(root == typeof(T));
         }
 
         protected override void PrepareMethodParameters()
@@ -31,7 +31,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         {
             var body = GenerateDeserializationMethodBody();
             
-#if DEBUG
+#if DEBUG && NETCOREAPP
             // Meh
             var header = string.Join(", ", Parameters.Select(p => string.Join(' ', p.Type.Name.Replace("`1", $"<{Instance.Type.Name}>"), p.Name)));
             Console.WriteLine($"({header}) => ");

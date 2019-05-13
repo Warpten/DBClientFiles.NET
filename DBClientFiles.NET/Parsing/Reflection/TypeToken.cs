@@ -10,12 +10,12 @@ namespace DBClientFiles.NET.Parsing.Reflection
     /// <summary>
     /// A representation of a type.
     /// </summary>
-    internal class TypeToken
+    internal class TypeToken : IEquatable<Type>
     {
         /// <summary>
         /// The underlying CLR <see cref="Type"/> representation of this type.
         /// </summary>
-        public Type Type { get; }
+        private Type Type { get; }
 
         private Dictionary<Type, TypeToken> _declaredTypes;
         private List<MemberToken> _members;
@@ -106,7 +106,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
             return Type.ToString();
         }
 
-        public MemberToken GetMemberByIndex(ref int index, ref Expression accessExpression, TypeTokenType type)
+        public (MemberToken memberToken, Expression memberAccess) MakeMemberAccess(ref int index, Expression accessExpression, TypeTokenType type)
         {
             foreach (var memberInfo in _members)
             {
@@ -124,33 +124,27 @@ namespace DBClientFiles.NET.Parsing.Reflection
                     {
                         Expression arrayAccessExpr = Expression.ArrayAccess(memberAccessExpr, Expression.Constant(i));
                         
-                        var token = elementTypeToken.GetMemberByIndex(ref index, ref arrayAccessExpr, type);
+                        var token = elementTypeToken.MakeMemberAccess(ref index, arrayAccessExpr, type);
 
-                        if (token != null)
-                        {
-                            accessExpression = arrayAccessExpr;
+                        if (token.memberAccess != null)
                             return token;
-                        }
                     }
 
                     continue;
                 }
                 else if (memberInfo.TypeToken.Members.Any(m => m.MemberType == type))
                 {
-                    var childToken = memberInfo.TypeToken.GetMemberByIndex(ref index, ref memberAccessExpr, type);
-                    if (childToken != null)
-                    {
-                        accessExpression = memberAccessExpr;
+                    var childToken = memberInfo.TypeToken.MakeMemberAccess(ref index, memberAccessExpr, type);
+                    if (childToken.memberAccess != null)
                         return childToken;
-                    }
-
+                
                     continue;
                 }
 
                 if (index == 0)
                 {
                     accessExpression = Expression.MakeMemberAccess(accessExpression, memberInfo.MemberInfo);
-                    return memberInfo;
+                    return (memberInfo, accessExpression);
                 }
 
                 index -= 1;
@@ -162,6 +156,54 @@ namespace DBClientFiles.NET.Parsing.Reflection
         public bool IsArray => Type.IsArray;
         public bool IsClass => Type.IsClass;
 
+        public bool IsPrimitive => Type.IsPrimitive;
+
         public bool HasDefaultConstructor => Type.HasDefaultConstructor();
+
+        #region IEquatable<Type>
+        public bool Equals(Type other) => Type == other;
+        #endregion
+
+        public static bool operator ==(TypeToken typeToken, Type type) => typeToken.Type == type;
+        public static bool operator !=(TypeToken typeToken, Type type) => typeToken.Type != type;
+
+        // Sigh.
+        public static bool operator ==(Type type, TypeToken typeToken) => typeToken.Type == type;
+        public static bool operator !=(Type type, TypeToken typeToken) => typeToken.Type != type;
+
+        public override bool Equals(object obj)
+        {
+            if (obj is TypeToken typeToken)
+                return typeToken.Type == Type;
+
+            if (obj is Type type)
+                return Type == type;
+
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return Type.GetHashCode();
+        }
+
+        #region Expression helpers
+        /// <summary>
+        /// Returns an expression representing instanciation of an array where the element type is the current object, of given bounds.
+        /// </summary>
+        /// <param name="bounds"></param>
+        /// <returns></returns>
+        public Expression NewArrayBounds(params Expression[] bounds) => Expression.NewArrayBounds(Type, bounds);
+
+        // Helper for above
+        public Expression NewArrayBounds(int bound) => Expression.NewArrayBounds(Type, Expression.Constant(bound));
+
+        public Expression NewExpression() => Expression.New(Type);
+
+        #endregion
+
+        #region MethodInfo helpers
+        public MethodInfo MakeGenericMethod(MethodInfo methodInfo) => methodInfo.MakeGenericMethod(Type);
+        #endregion
     }
 }

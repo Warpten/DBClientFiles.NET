@@ -8,8 +8,6 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
 {
     internal sealed class Serializer<T> : StructuredSerializer<T>
     {
-        private TypeMapper _mapper;
-
         public Serializer() : base()
         {
 
@@ -22,11 +20,8 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
 
         public override void Initialize(IBinaryStorageFile parser)
         {
-            _mapper = new TypeMapper(parser.Type);
             var infoBlock = parser.FindBlock(BlockIdentifier.FieldInfo)?.Handler as FieldInfoHandler<MemberMetadata>;
-
-            // _mapper.Resolve(parser.Options.MemberType.ToTypeToken(), infoBlock);
-
+            
             base.Initialize(parser);
         }
     }

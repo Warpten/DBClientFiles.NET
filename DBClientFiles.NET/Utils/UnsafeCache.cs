@@ -39,7 +39,7 @@ namespace DBClientFiles.NET.Utils
         };
 
         private static MethodInfo _SizeOf = typeof(Unsafe).GetMethod("SizeOf", Type.EmptyTypes);
-
+        
         public static int SizeOf(Type type)
         {
             if (_sizes.TryGetValue(type, out var size))
