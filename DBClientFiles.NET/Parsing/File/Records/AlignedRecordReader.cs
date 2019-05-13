@@ -45,25 +45,7 @@ namespace DBClientFiles.NET.Parsing.File.Records
             _byteCursor += Unsafe.SizeOf<T>();
             return value;
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T[] ReadArray<T>(int count) where T : unmanaged
-        {
-            //Console.WriteLine("Reading " + count + " elements of size " + sizeof(T) + " bytes each at offset " + _byteCursor);
-
-            var rentedBuffer = new T[count];
-
-            Unsafe.CopyBlockUnaligned(Unsafe.AsPointer(ref rentedBuffer[0]), Unsafe.AsPointer(ref _stagingBuffer[_byteCursor]), (uint)(count * Unsafe.SizeOf<T>()));
-            _byteCursor += count * Unsafe.SizeOf<T>();
-
-            // for (var i = 0; i < count; ++i)
-            //     rentedBuffer[i] = Read<T>();
-
-            // _byteCursor += count * Unsafe.SizeOf<T>();
-            // Unsafe.CopyBlock(Unsafe.AsPointer(ref rentedBuffer[0]), dataPtr, (uint)(count * Unsafe.SizeOf<T>()));
-            return rentedBuffer;
-        }
-
+        
         public string ReadString()
         {
             if (_stringBlock == null)
@@ -79,40 +61,13 @@ namespace DBClientFiles.NET.Parsing.File.Records
             return _stringBlock[Read<uint>()];
         }
 
-        public string[] ReadStringArray(int count)
-        {
-            var value = new string[count];
-            if (_stringBlock == null)
-            {
-                for (var i = 0; i < count; ++i)
-                    value[i] = ReadString();
-            }
-            else
-            {
-                var stringOffsets = ReadArray<uint>(count);
-                for (var i = 0; i < count; ++i)
-                    value[i] = _stringBlock[stringOffsets[i]];
-            }
 
-            return value;
-        }
-
-        public T Read<T>(int bitCount) where T : unmanaged
+        public T ReadImmediate<T>(int bitoffset, int bitCount) where T : unmanaged
         {
             throw new NotSupportedException();
         }
-
-        public T[] ReadArray<T>(int count, int elementBitCount) where T : unmanaged
-        {
-            throw new NotSupportedException();
-        }
-
-        public string ReadString(int bitCount)
-        {
-            throw new NotSupportedException();
-        }
-
-        public string[] ReadStringArray(int count, int elementBitCount)
+        
+        public string ReadString(int bitOffset, int bitCount)
         {
             throw new NotSupportedException();
         }

@@ -44,30 +44,12 @@ namespace DBClientFiles.NET.Parsing.File.Records
             if (_managePointer)
                 Marshal.FreeHGlobal(_recordData);
         }
-
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T Read<T>(int bitCount) where T : unmanaged
+        public T ReadImmediate<T>(int bitOffset, int bitCount) where T : unmanaged
         {
-#if DEBUG
-            if ((_bitCursor & 7) == 0)
-            {
-                if (bitCount != UnsafeCache<T>.Size * 8)
-                    Console.WriteLine($"Reading {typeof(T).Name} (size {UnsafeCache<T>.Size * 8} bits, but packed to {bitCount} bits) at offset {_bitCursor / 8} / {_recordSize}");
-                else
-                    Console.WriteLine($"Reading {typeof(T).Name} at offset {_bitCursor / 8} / {_recordSize}");
-            }
-            else
-            {
-
-                if (bitCount != UnsafeCache<T>.Size * 8)
-                    Console.WriteLine($"Reading {typeof(T).Name} (size {UnsafeCache<T>.Size * 8} bits, but packed to {bitCount} bits) at offset {_bitCursor / 8} / {_recordSize} (misaligned by { _bitCursor & 7} bits)");
-                else
-                    Console.WriteLine($"Reading {typeof(T).Name} at offset {_bitCursor / 8} / {_recordSize} (misaligned by { _bitCursor & 7} bits)");
-            }
-#endif
-
-            var byteOffset = _bitCursor / 8;
-            var byteCount = ((bitCount + (_bitCursor & 7) + 7)) / 8;
+            var byteOffset = bitOffset / 8;
+            var byteCount = ((bitCount + (bitOffset & 7) + 7)) / 8;
 
             Debug.Assert(byteOffset + byteCount <= _recordSize);
 
@@ -80,46 +62,25 @@ namespace DBClientFiles.NET.Parsing.File.Records
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T Read<T>() where T : unmanaged => Read<T>(Unsafe.SizeOf<T>() * 8);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T[] ReadArray<T>(int count) where T : unmanaged
-            => ReadArray<T>(count, Unsafe.SizeOf<T>() * 8);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T[] ReadArray<T>(int count, int elementBitCount) where T : unmanaged
+        public T Read<T>() where T : unmanaged
         {
-            var value = new T[count];
-            for (var i = 0; i < count; ++i)
-                value[i] = Read<T>(elementBitCount);
-
+            var value = ReadImmediate<T>(_bitCursor, Unsafe.SizeOf<T>() * 8);
+            _bitCursor += Unsafe.SizeOf<T>() * 8;
             return value;
         }
 
-        public virtual string ReadString(int bitCount)
+        public virtual string ReadString(int bitCursor, int bitCount)
         {
             var handler = _fileReader.FindBlock(BlockIdentifier.StringBlock)?.Handler as StringBlockHandler;
-            var stringIdentifier = Read<uint>(bitCount);
+            var stringIdentifier = ReadImmediate<uint>(bitCursor, bitCount);
             return handler[stringIdentifier];
         }
 
         public string ReadString()
-            => ReadString(32);
-
-        public string[] ReadStringArray(int count, int elementBitCount)
         {
-            var value = new string[count];
-            for (var i = 0; i < count; ++i)
-                value[i] = ReadString(elementBitCount);
-            return value;
-        }
-
-        public string[] ReadStringArray(int count)
-        {
-            var value = new string[count];
-            for (var i = 0; i < count; ++i)
-                value[i] = ReadString();
-            return value;
+            var handler = _fileReader.FindBlock(BlockIdentifier.StringBlock)?.Handler as StringBlockHandler;
+            var stringIdentifier = Read<uint>();
+            return handler[stringIdentifier];
         }
 
         public string ReadInlineString()

@@ -45,24 +45,6 @@ namespace DBClientFiles.NET.Parsing.File.Records
             return value;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T[] ReadArray<T>(int count) where T : unmanaged
-        {
-            // Console.WriteLine("Reading " + count + " elements of size " + sizeof(T) + " bytes each at offset " + _byteCursor);
-
-            var rentedBuffer = new T[count];
-
-            Unsafe.CopyBlockUnaligned(Unsafe.AsPointer(ref rentedBuffer[0]),
-                Unsafe.AsPointer(ref _stagingBuffer[_byteCursor]), (uint)(count * Unsafe.SizeOf<T>()));
-            _byteCursor += count * Unsafe.SizeOf<T>();
-
-            // for (var i = 0; i < count; ++i)
-            //     rentedBuffer[i] = Read<T>();
-
-            // _byteCursor += count * Unsafe.SizeOf<T>();
-            return rentedBuffer;
-        }
-
         public string ReadString()
         {
             if (_stringBlock == null)
@@ -79,26 +61,8 @@ namespace DBClientFiles.NET.Parsing.File.Records
 
             return _stringBlock[Read<uint>()];
         }
-
-        public string[] ReadStringArray(int count)
-        {
-            var value = new string[count];
-            if (_stringBlock == null)
-            {
-                for (var i = 0; i < count; ++i)
-                    value[i] = ReadString();
-            }
-            else
-            {
-                var stringOffsets = ReadArray<uint>(count);
-                for (var i = 0; i < count; ++i)
-                    value[i] = _stringBlock[stringOffsets[i]];
-            }
-
-            return value;
-        }
-
-        public T Read<T>(int bitCount) where T : unmanaged
+        
+        public T ReadImmediate<T>(int bitOffset, int bitCount) where T : unmanaged
         {
             // Values here should always be aligned
             Debug.Assert((bitCount & 7) == 0, "WDB5 and WDB6 values should always be aligned to 8-byte boundaries!");
@@ -111,20 +75,10 @@ namespace DBClientFiles.NET.Parsing.File.Records
             return *(T*)Unsafe.AsPointer(ref value);
         }
 
-        public T[] ReadArray<T>(int count, int elementBitCount) where T : unmanaged
+        public string ReadString(int bitOffset, int bitCount)
         {
-            // Values here should always be aligned
-            Debug.Assert((elementBitCount & 7) == 0, "WDB5 and WDB6 values should always be aligned to 8-byte boundaries!");
+            // TODO: FIXME
 
-            var values = new T[count];
-            for (var i = 0; i < count; ++i)
-                values[i] = Read<T>(elementBitCount);
-
-            return values;
-        }
-
-        public string ReadString(int bitCount)
-        {
             // Values here should always be aligned
             Debug.Assert((bitCount & 7) == 0, "WDB5 and WDB6 values should always be aligned to 8-byte boundaries!");
 
@@ -140,28 +94,7 @@ namespace DBClientFiles.NET.Parsing.File.Records
                 return new string(startCursor, 0, (int)(endCursor - startCursor));
             }
 
-            return _stringBlock[Read<uint>(bitCount)];
-        }
-
-        public string[] ReadStringArray(int count, int elementBitCount)
-        {
-            // Values here should always be aligned
-            Debug.Assert((elementBitCount & 7) != 0, "WDB5 and WDB6 values should always be aligned to 8-byte boundaries!");
-
-            var value = new string[count];
-            if (_stringBlock == null)
-            {
-                for (var i = 0; i < count; ++i)
-                    value[i] = ReadString(elementBitCount);
-            }
-            else
-            {
-                var stringOffsets = ReadArray<uint>(count, elementBitCount);
-                for (var i = 0; i < count; ++i)
-                    value[i] = _stringBlock[stringOffsets[i]];
-            }
-
-            return value;
+            return _stringBlock[ReadImmediate<uint>(bitOffset, bitCount)];
         }
     }
 }

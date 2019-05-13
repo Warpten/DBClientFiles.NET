@@ -17,6 +17,8 @@ namespace DBClientFiles.NET.Parsing.Reflection
         /// <summary>
         /// If <see cref="MemberInfo"/> is an array, this is a <see cref="Reflection.TypeToken"/> for the array elements.
         /// Otherwise, as expected.
+        ///
+        /// I'm not even sure that's true anymore.
         /// </summary>
         public abstract TypeToken TypeToken { get; }
 

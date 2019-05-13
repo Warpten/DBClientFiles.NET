@@ -15,8 +15,6 @@ namespace DBClientFiles.NET.Parsing.Serialization
 {
     internal abstract class StructuredSerializer<T> : ISerializer<T>
     {
-        private Expression _keyAccessExpression;
-
         protected delegate void TypeCloner(in T source, out T target);
         protected delegate void TypeDeserializer(IRecordReader recordReader, IParser<T> fileParser, out T instance);
         protected delegate int TypeKeyGetter(in T source);
@@ -46,9 +44,8 @@ namespace DBClientFiles.NET.Parsing.Serialization
         public void SetIndexColumn(int indexColumn)
         {
             var rootExpression = Expression.Parameter(typeof(T).MakeByRefType(), "model");
-            _keyAccessExpression = rootExpression;
-
-            var tuple = Type.MakeMemberAccess(ref indexColumn, _keyAccessExpression, _options.TokenType);
+            
+            var tuple = Type.MakeMemberAccess(ref indexColumn, rootExpression, _options.TokenType);
             if (tuple.memberToken == null)
                 throw new InvalidOperationException($"Invalid structure: Unable to find an index column.");
 
@@ -57,11 +54,11 @@ namespace DBClientFiles.NET.Parsing.Serialization
             {
                 throw new InvalidOperationException($"Invalid structure: {tuple.memberAccess} is expected to be the index, but its type doesn't match. Needs to be (u)int.");
             }
-
+            
             { /* key getter */
                 _keyGetter = Expression.Lambda<TypeKeyGetter>(
                     // Box to int - unfortunate but necessary (?)
-                    Expression.ConvertChecked(_keyAccessExpression, typeof(int)),
+                    Expression.ConvertChecked(tuple.memberAccess, typeof(int)),
                     rootExpression).Compile();
             }
 
@@ -69,7 +66,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
                 var paramValue = Expression.Parameter(typeof(int));
 
                 _keySetter = Expression.Lambda<TypeKeySetter>(
-                    Expression.Assign(_keyAccessExpression, Expression.ConvertChecked(paramValue, _keyAccessExpression.Type)
+                    Expression.Assign(tuple.memberAccess, Expression.ConvertChecked(paramValue, tuple.memberAccess.Type)
                 ), rootExpression, paramValue).Compile();
             }
         }

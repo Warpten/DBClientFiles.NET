@@ -20,7 +20,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
                 Cardinality = 1
             };
 
-            instance.CompressionData.Type = MemberCompressionType.None;
+            instance.CompressionData.Type = MemberCompressionType.Immediate;
 
             if (_index > 0)
             {
