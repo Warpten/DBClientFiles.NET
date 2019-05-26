@@ -13,8 +13,6 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
 
         public override int IndexColumn { get; } = 0;
 
-        public override bool HasForeignIds { get; } = false;
-
         private BlockReference _stringTableRef;
 
         public override ref readonly BlockReference StringTable => ref _stringTableRef;

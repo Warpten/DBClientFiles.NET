@@ -15,10 +15,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
 
         public override int IndexColumn { get; } = 0;
 
-        public override bool HasForeignIds => throw new InvalidOperationException();
-
         private BlockReference _stringTableRef;
-
         public override ref readonly BlockReference StringTable => ref _stringTableRef;
 
         // Blocks that don't exist

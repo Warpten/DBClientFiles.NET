@@ -1,5 +1,31 @@
-﻿namespace DBClientFiles.NET.Parsing.File.Segments
+﻿using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+namespace DBClientFiles.NET.Parsing.File.Segments
 {
+    // Experiment 12-B
+    internal sealed class HeaderBlock<T> : StructuredBlock<T> where T : struct
+    {
+        public unsafe override void Read(IBinaryStorageFile storageFile)
+        {
+            var byteSpan = MemoryMarshal.AsBytes(Span);
+            storageFile.BaseStream.Read(byteSpan);
+        }
+    }
+
+    // Experiment
+    internal abstract class StructuredBlock<T> : Block
+    {
+        private T _value;
+
+        public ref readonly T Value => ref _value;
+
+        public abstract void Read(IBinaryStorageFile storageFile);
+
+        protected Span<T> Span => MemoryMarshal.CreateSpan(ref _value, 1);
+    }
+
     /// <summary>
     /// A block represents a section of a file. See <see cref="BlockIdentifier"/> for possible semantic meanings.
     /// </summary>

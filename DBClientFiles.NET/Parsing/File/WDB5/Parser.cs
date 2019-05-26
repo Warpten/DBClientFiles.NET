@@ -69,10 +69,10 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
                 };
             }
 
-            if (Header.HasForeignIds)
+            if (Header.RelationshipTable.Exists)
             {
                 tail = tail.Next = new Block {
-                    // Legacy foreign table, apparently used by only a few files, @Barncastle
+                    // Legacy foreign table, apparently used by only WMOMinimapTexture (WDC3/4/5) @Barncastle
                     Identifier = BlockIdentifier.RelationshipTable,
                     Length = 4 * (Header.MaxIndex - Header.MinIndex + 1)
                 };

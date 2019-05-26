@@ -19,8 +19,6 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations
         ref readonly BlockReference ExtendedFieldInfo { get; }
         ref readonly BlockReference RelationshipTable { get; }
 
-        bool HasForeignIds { get; }
-
         int MinIndex { get; }
         int MaxIndex { get; }
         int IndexColumn { get; }
@@ -31,8 +29,6 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations
         public abstract int RecordCount { get; }
         public abstract int FieldCount { get; }
         public abstract int RecordSize { get; }
-
-        public abstract bool HasForeignIds { get; }
 
         public abstract int MinIndex { get; }
         public abstract int MaxIndex { get; }

@@ -15,31 +15,33 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
         private BlockReference _indexTable;
         private BlockReference _offsetMap;
         private BlockReference _fieldInfoRef;
+        private BlockReference _relationshipTableRef;
 
         public override ref readonly BlockReference StringTable => ref _stringTableRef;
         public override ref readonly BlockReference IndexTable => ref _indexTable;
         public override ref readonly BlockReference OffsetMap => ref _offsetMap;
         public override ref readonly BlockReference FieldInfo => ref _fieldInfoRef;
+        public override ref readonly BlockReference RelationshipTable => ref _relationshipTableRef;
 
+        // Blocks this file does not have
         public override ref readonly BlockReference Common => throw new NotImplementedException();
         public override ref readonly BlockReference Pallet => throw new NotImplementedException();
         public override ref readonly BlockReference CopyTable => throw new NotImplementedException();
         public override ref readonly BlockReference ExtendedFieldInfo => throw new NotImplementedException();
-        public override ref readonly BlockReference RelationshipTable => throw new NotImplementedException();
-
-        public override bool HasForeignIds { get; } = false;
 
         public override int MaxIndex => Structure.MaxIndex;
         public override int MinIndex => Structure.MinIndex;
 
         public HeaderHandler(IBinaryStorageFile source) : base(source)
         {
-            _offsetMap = new BlockReference(false, 0);
-            _indexTable = new BlockReference(false, 0);
+            _fieldInfoRef = new BlockReference(true, Structure.FieldCount * (2 + 2));
 
+            _offsetMap = new BlockReference((Structure.Flags & 0x01) != 0, (Structure.MaxIndex - Structure.MinIndex + 1) * (4 + 2));
+            _relationshipTableRef = new BlockReference((Structure.Flags & 0x02) != 0, (Structure.MaxIndex - Structure.MinIndex + 1) * 4);
             _stringTableRef = new BlockReference((Structure.Flags & 0x01) == 0, Structure.StringTableLength);
 
-            _fieldInfoRef = new BlockReference(true, Structure.FieldCount * (2 + 2));
+            _indexTable = new BlockReference(false, 0);
+
         }
     }
 }

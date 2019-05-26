@@ -9,7 +9,7 @@ namespace DBClientFiles.NET.Parsing.File.Records
 {
     /// <summary>
     /// An implementation of <see cref="IRecordReader"/> tailored for WDBC and WDB2. The records
-    /// within these files always have the same sizes. It is only able of performing aligned reads.
+    /// within these files always have the same sizes. It is only able of performing aligned sequential reads.
     /// </summary>
     internal sealed unsafe class AlignedRecordReader : IRecordReader
     {
@@ -50,7 +50,7 @@ namespace DBClientFiles.NET.Parsing.File.Records
         {
             if (_stringBlock == null)
             {
-                var startCursor = (sbyte*)Unsafe.AsPointer(ref _stagingBuffer[_byteCursor]);
+                var startCursor = (sbyte*) Unsafe.AsPointer(ref _stagingBuffer[_byteCursor]);
                 var endCursor = startCursor;
                 while (*endCursor != 0)
                     ++endCursor;
@@ -60,8 +60,7 @@ namespace DBClientFiles.NET.Parsing.File.Records
 
             return _stringBlock[Read<uint>()];
         }
-
-
+        
         public T ReadImmediate<T>(int bitoffset, int bitCount) where T : unmanaged
         {
             throw new NotSupportedException();

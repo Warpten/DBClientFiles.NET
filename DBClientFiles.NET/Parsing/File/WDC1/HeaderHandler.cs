@@ -10,8 +10,6 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
 
         public override int IndexColumn => Structure.IndexColumn;
 
-        public override bool HasForeignIds { get; } = false;
-
         private BlockReference _copyTableRef;
         private BlockReference _commonDataRef;
         private BlockReference _palletDataRef;

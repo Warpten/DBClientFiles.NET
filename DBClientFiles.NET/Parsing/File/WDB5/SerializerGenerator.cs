@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Text;
 using DBClientFiles.NET.Parsing.Enums;
 using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.Reflection;
@@ -9,7 +8,7 @@ using DBClientFiles.NET.Parsing.Serialization.Generators;
 
 namespace DBClientFiles.NET.Parsing.File.WDB5
 {
-    class SerializerGenerator<T, TMethod> : TypedSerializerGenerator<T, TMethod> where TMethod : Delegate
+    internal sealed class SerializerGenerator<T, TMethod> : TypedSerializerGenerator<T, TMethod> where TMethod : Delegate
     {
         private IList<MemberMetadata> _memberMetadata;
         private int _memberIndex;
@@ -24,16 +23,8 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
             var memberMetadata = _memberMetadata[_memberIndex++];
             switch (memberMetadata.CompressionData.Type)
             {
+                // We have to use immediate readers because all the other ones assume sequential reads
                 case MemberCompressionType.None:
-                    if (typeToken.IsPrimitive)
-                    {
-                        return Expression.Call(RecordReader, 
-                            typeToken.MakeGenericMethod(_IRecordReader.Read));
-                    }
-                    else if (typeToken == typeof(string))
-                        return Expression.Call(RecordReader, _IRecordReader.ReadString);
-
-                    break;
                 case MemberCompressionType.Immediate:
                     if (typeToken.IsPrimitive)
                     {
@@ -49,11 +40,9 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
                             Expression.Constant(memberMetadata.CompressionData.Size));
 
                     break;
-                default:
-                    throw new InvalidOperationException("Unsupported compression type");
             }
             
-            return null;
+            throw new InvalidOperationException("Unsupported compression type");
         }
     }
 }
