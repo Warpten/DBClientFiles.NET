@@ -158,6 +158,8 @@ namespace DBClientFiles.NET.Parsing.Reflection
 
         public bool IsPrimitive => Type.IsPrimitive;
 
+        public string Name => Type.Name;
+
         public bool HasDefaultConstructor => Type.HasDefaultConstructor();
 
         #region IEquatable<Type>

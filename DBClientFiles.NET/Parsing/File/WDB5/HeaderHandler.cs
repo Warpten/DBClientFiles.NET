@@ -16,17 +16,18 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
         private BlockReference _offsetMap;
         private BlockReference _fieldInfoRef;
         private BlockReference _relationshipTableRef;
+        private BlockReference _copyTableRef;
 
         public override ref readonly BlockReference StringTable => ref _stringTableRef;
         public override ref readonly BlockReference IndexTable => ref _indexTable;
         public override ref readonly BlockReference OffsetMap => ref _offsetMap;
         public override ref readonly BlockReference FieldInfo => ref _fieldInfoRef;
         public override ref readonly BlockReference RelationshipTable => ref _relationshipTableRef;
+        public override ref readonly BlockReference CopyTable => ref _copyTableRef;
 
         // Blocks this file does not have
         public override ref readonly BlockReference Common => throw new NotImplementedException();
         public override ref readonly BlockReference Pallet => throw new NotImplementedException();
-        public override ref readonly BlockReference CopyTable => throw new NotImplementedException();
         public override ref readonly BlockReference ExtendedFieldInfo => throw new NotImplementedException();
 
         public override int MaxIndex => Structure.MaxIndex;
@@ -36,12 +37,14 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
         {
             _fieldInfoRef = new BlockReference(true, Structure.FieldCount * (2 + 2));
 
-            _offsetMap = new BlockReference((Structure.Flags & 0x01) != 0, (Structure.MaxIndex - Structure.MinIndex + 1) * (4 + 2));
-            _relationshipTableRef = new BlockReference((Structure.Flags & 0x02) != 0, (Structure.MaxIndex - Structure.MinIndex + 1) * 4);
+            // String table and offset map are mutually exclusive.
             _stringTableRef = new BlockReference((Structure.Flags & 0x01) == 0, Structure.StringTableLength);
 
-            _indexTable = new BlockReference(false, 0);
+            _offsetMap = new BlockReference((Structure.Flags & 0x01) != 0, (Structure.MaxIndex - Structure.MinIndex + 1) * (4 + 2), Structure.StringTableLength);
+            _relationshipTableRef = new BlockReference((Structure.Flags & 0x02) != 0, (Structure.MaxIndex - Structure.MinIndex + 1) * 4);
+            _indexTable = new BlockReference((Structure.Flags & 0x04) != 0, Structure.RecordCount * 4);
 
+            _copyTableRef = new BlockReference(Structure.CopyTableLength != 0, Structure.CopyTableLength / (4 + 4));
         }
     }
 }

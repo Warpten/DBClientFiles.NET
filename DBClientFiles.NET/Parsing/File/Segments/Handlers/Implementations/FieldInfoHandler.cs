@@ -15,17 +15,17 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
             var bytePosition = reader.ReadUInt16();
 
             var instance = new T {
-                Size = (uint) (32 - collapsedBitCount),
-                Offset = bytePosition * 8u,
                 Cardinality = 1
             };
 
             instance.CompressionData.Type = MemberCompressionType.Immediate;
+            instance.CompressionData.Offset = bytePosition * 8;
+            instance.CompressionData.Size = 32 - collapsedBitCount;
 
             if (_index > 0)
             {
                 var previousInstance = this[_index - 1];
-                previousInstance.Cardinality = (int) ((instance.Offset - previousInstance.Offset) / previousInstance.Cardinality);
+                previousInstance.Cardinality = (int) ((instance.CompressionData.Offset - previousInstance.CompressionData.Offset) / previousInstance.CompressionData.Size);
             }
 
             ++_index;

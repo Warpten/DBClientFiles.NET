@@ -11,8 +11,6 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
 {
     internal sealed class Serializer<T> : StructuredSerializer<T>
     {
-        private IList<MemberMetadata> _fieldMembers;
-
         public Serializer() : base()
         {
 
@@ -22,17 +20,15 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
 
         public override void Initialize(IBinaryStorageFile storage)
         {
-            var fieldMembers = storage.FindBlock(BlockIdentifier.FieldInfo)?.Handler as FieldInfoHandler<MemberMetadata>;
-
-            Generator = new SerializerGenerator<T, TypeDeserializer>(storage.Type, storage.Options.TokenType, fieldMembers);
-            
             base.Initialize(storage);
-        }
 
-        public int GetElementBitCount(MemberToken memberInfo)
-        {
-            throw new NotImplementedException();
-        }
+            var fieldMembers = storage.FindBlock(BlockIdentifier.FieldInfo)?.Handler as FieldInfoHandler<MemberMetadata>;
+            var generator = new SerializerGenerator<T, TypeDeserializer>(storage.Type, storage.Options.TokenType, fieldMembers);
 
+            if (storage.Header.IndexTable.Exists)
+                generator.SetIndexColumn(storage.Header.IndexColumn);
+
+            Generator = generator;
+        }
     }
 }

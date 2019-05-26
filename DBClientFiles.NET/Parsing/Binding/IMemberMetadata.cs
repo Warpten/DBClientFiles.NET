@@ -5,8 +5,21 @@ namespace DBClientFiles.NET.Parsing.Binding
     public struct CompressionData
     {
         public MemberCompressionType Type { get; internal set; }
+        
+        /// <summary>
+        /// Offset of the field in the record.
+        /// </summary>
         public int Offset { get; internal set; }
+
+        /// <summary>
+        /// Size of the field in the record.
+        /// </summary>
         public int Size { get; internal set; }
+
+        /// <summary>
+        /// Size of the field's compressed data in the corresponding block.
+        /// </summary>
+        public int CompressedDataSize { get; internal set; }
     }
 
     /// <summary>
@@ -14,17 +27,6 @@ namespace DBClientFiles.NET.Parsing.Binding
     /// </summary>
     public interface IMemberMetadata
     {
-        /// <summary>
-        /// The size of the member, in bits. If the corresponding member is an array, this should be the bit size
-        /// of an element of said array.
-        /// </summary>
-        uint Size { get; }
-
-        /// <summary>
-        /// The offset, in bits, of this member from the start of the record.
-        /// </summary>
-        uint Offset { get; }
-
         ref CompressionData CompressionData { get; }
 
         /// <summary>

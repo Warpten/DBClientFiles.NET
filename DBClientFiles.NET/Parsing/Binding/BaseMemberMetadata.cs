@@ -7,9 +7,6 @@ namespace DBClientFiles.NET.Parsing.Binding
         public abstract int Cardinality { get; internal set; }
         public abstract MemberMetadataProperties Properties { get; internal set; }
 
-        public abstract uint Size { get; internal set; }
-        public abstract uint Offset { get; internal set; }
-
         public abstract T GetDefaultValue<T>() where T : unmanaged;
         // Default value stored as a byte blob
         public byte[] RawDefaultValue { get; internal set; }

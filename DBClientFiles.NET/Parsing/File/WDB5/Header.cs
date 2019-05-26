@@ -11,6 +11,7 @@
         public readonly uint LayoutHash;
         public readonly int MinIndex;
         public readonly int MaxIndex;
+        public readonly int Locale;
         public readonly int CopyTableLength;
         public readonly ushort Flags;
         public readonly short IndexColumn;

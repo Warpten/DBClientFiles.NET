@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 
@@ -15,7 +16,8 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
             if (startOffset == 0 || length == 0)
                 return;
 
-            reader.BaseStream.Seek(startOffset, SeekOrigin.Begin);
+            Debug.Assert(reader.BaseStream.Position == startOffset, "Out-of-place parsing");
+
             int i = 0;
             Count = (int)(length / (sizeof(int) + sizeof(short)));
 
@@ -23,7 +25,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 
             using (var streamReader = new BinaryReader(reader.BaseStream, Encoding.UTF8, true))
             {
-                while (reader.BaseStream.Position <= (startOffset + length))
+                while (reader.BaseStream.Position < (startOffset + length))
                 {
                     var key = streamReader.ReadInt32();
                     var value = streamReader.ReadInt16();

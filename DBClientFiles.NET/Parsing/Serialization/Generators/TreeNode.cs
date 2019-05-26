@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq.Expressions;
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Utils.Expressions;
@@ -76,18 +77,30 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
                 else if (TypeToken.IsArray)
                     blockBody.Add(Expression.Assign(AccessExpression,
                         TypeToken.GetElementTypeToken().NewArrayBounds(Expression.Constant(MemberToken.Cardinality))));
-                else if (TypeToken.HasDefaultConstructor)
+                else if (TypeToken.IsClass)
+                {
+                    if (!TypeToken.HasDefaultConstructor)
+                        throw new InvalidOperationException("Missing default constructor for " + TypeToken.Name);
+
                     blockBody.Add(Expression.Assign(AccessExpression, TypeToken.NewExpression()));
+                }
             }
 
-            // Produce children if there are any
-            foreach (var child in Children)
-                blockBody.Add(child.ToExpression());
+            if (Children.Count > 0)
+            {
+                // Produce children if there are any
+                foreach (var child in Children)
+                    blockBody.Add(child.ToExpression());
 
-            // Assert that there is at least one node in the block emitted.
+                // Assert that there is at least one node in the block emitted.
+                if (blockBody.Count == 0)
+                    throw new InvalidOperationException("Empty block");
+            }
+
+            // We allow empty blocks if there are no children for primitive types
             if (blockBody.Count == 0)
-                throw new InvalidOperationException("Block can't be empty");
-            
+                return Expression.Empty();
+
             // If there's only one expression, just return it.
             if (blockBody.Count == 1)
                 return blockBody[0];

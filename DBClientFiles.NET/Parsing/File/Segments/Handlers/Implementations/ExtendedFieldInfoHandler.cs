@@ -28,16 +28,13 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations
             var fieldSizeBits = reader.ReadUInt16();
 
             var additionalDataSize = reader.ReadInt32();
-
-            currentField.CompressionData.Size = additionalDataSize; 
+            currentField.CompressionData.CompressedDataSize = additionalDataSize;
 
             // Retrieve the size from field info (byte-boundary) if it was defined
             // If *can* be zero for fields outside of the record (index table or relationship table)
-            var fieldInfoSize = currentField.Size;
-
-            currentField.Offset = fieldOffsetBits;
-
-            currentField.Size = fieldSizeBits;
+            var fieldInfoSize = currentField.CompressionData.Size;
+            currentField.CompressionData.Offset = fieldOffsetBits;
+            currentField.CompressionData.Size = fieldSizeBits;
 
             currentField.CompressionData.Type = (MemberCompressionType)reader.ReadInt32();
 
@@ -87,7 +84,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations
                         if (currentField.CompressionData.Type == MemberCompressionType.BitpackedPalletArrayData)
                         {
                             currentField.Cardinality = arrayCount;
-                            currentField.Size /= (uint) arrayCount;
+                            currentField.CompressionData.Size /= arrayCount;
                         }
                         break;
                     }
@@ -99,7 +96,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations
             // fieldInfoSize == 0 means the field is outside the record (it's either a relationship column, or our index)
             // We don't bother forcing the calculation if arity was already specified in the field info.
             if (currentField.CompressionData.Type != MemberCompressionType.BitpackedPalletArrayData && fieldInfoSize != 0)
-                currentField.Cardinality = (int) (currentField.Size / fieldInfoSize);
+                currentField.Cardinality = (int) (currentField.CompressionData.Size / fieldInfoSize);
 
             return null;
         }
