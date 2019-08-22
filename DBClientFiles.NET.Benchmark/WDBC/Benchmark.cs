@@ -17,7 +17,7 @@ namespace DBClientFiles.NET.Benchmark.WDBC
         [Benchmark(Description = "Achievement.dbc (WDBC)")]
         public StorageList<Achievement> AchievementWDBC()
         {
-            using (var fs = File.OpenRead(@"D:\World of Warcraft 3.3.5\dbc\Achievement.dbc"))
+            using (var fs = File.OpenRead(@"D:\Games\World of Warcraft 3.3.5\dbc\Achievement.dbc"))
                 return new StorageList<Achievement>(StorageOptions.Default, fs);
         }
     }

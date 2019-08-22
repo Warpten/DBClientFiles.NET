@@ -25,10 +25,13 @@ namespace DBClientFiles.NET.Parsing.Serialization
         private TypeKeyGetter _keyGetter;
         private TypeKeySetter _keySetter;
 
+        public bool Initialized { get; private set; }
+
         private StorageOptions _options;
         public ref readonly StorageOptions Options {
             get => ref _options;
         }
+
         public TypeToken Type { get; protected set; }
 
         protected abstract TypedSerializerGenerator<T, TypeDeserializer> Generator { get; set; }
@@ -76,14 +79,14 @@ namespace DBClientFiles.NET.Parsing.Serialization
         /// </summary>
         /// <param name="instance"></param>
         /// <returns></returns>
-        public int GetKey(in T instance) => _keyGetter(in instance);
+        public int GetRecordIndex(in T instance) => _keyGetter(in instance);
     
         /// <summary>
         /// Force-set the key of a record to the provided value.
         /// </summary>
         /// <param name="instance">The record instance to modify.</param>
         /// <param name="key">The new key value to set<</param>
-        public void SetKey(out T instance, int key) => _keySetter(out instance, key);
+        public void SetRecordIndex(out T instance, int key) => _keySetter(out instance, key);
 
         public T Deserialize(IRecordReader reader, IParser<T> parser)
         {

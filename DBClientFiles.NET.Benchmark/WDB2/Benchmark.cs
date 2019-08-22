@@ -15,7 +15,7 @@ namespace DBClientFiles.NET.Benchmark.WDB2
         [Benchmark(Description = "Item-sparse.db2")]
         public StorageList<ItemSparse> ItemSparse()
         {
-            using (var fs = File.OpenRead(@"C:\Games\World of Warcraft 4.3.4 - Akama\dbc\Item-sparse.db2"))
+            using (var fs = File.OpenRead(@"D:\Games\World of Warcraft 4.3.4 - Akama\dbc\Item-sparse.db2"))
                 return new StorageList<ItemSparse>(StorageOptions.Default, fs);
         }
     }

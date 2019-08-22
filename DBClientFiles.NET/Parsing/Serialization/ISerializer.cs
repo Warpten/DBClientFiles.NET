@@ -19,8 +19,10 @@ namespace DBClientFiles.NET.Parsing.Serialization
         /// <returns></returns>
         T Clone(in T origin);
 
-        int GetKey(in T instance);
-        void SetKey(out T instance, int key);
+        int GetRecordIndex(in T instance);
+        void SetRecordIndex(out T instance, int index);
+
+        void SetIndexColumn(int indexColumn);
 
         ref readonly StorageOptions Options { get; }
 

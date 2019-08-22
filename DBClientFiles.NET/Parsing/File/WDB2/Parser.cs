@@ -72,10 +72,5 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
             if (step == ParsingStep.Segments)
                 _recordReader = new AlignedRecordReader(this, Header.RecordSize);
         }
-
-        public override IEnumerator<T> GetEnumerator()
-        {
-            return new Enumerator<T, Serializer<T>>(this);
-        }
     }
 }

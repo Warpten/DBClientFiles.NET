@@ -72,7 +72,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
             if (Header.RelationshipTable.Exists)
             {
                 tail = tail.Next = new Block {
-                    // Legacy foreign table, apparently used by only WMOMinimapTexture (WDC3/4/5) @Barncastle
+                    // Legacy foreign table, apparently used by only WMOMinimapTexture (WDB3/4/5) @Barncastle
                     Identifier = BlockIdentifier.RelationshipTable,
                     Length = 4 * (Header.MaxIndex - Header.MinIndex + 1)
                 };
@@ -105,9 +105,8 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
                 return;
             
             // Pocket sized optimization to allocate a buffer large enough to contain every record without the need for reallocations
-            _recordReader = Header.OffsetMap.Exists 
-                ? new ByteAlignedRecordReader(this, Header.RecordSize)
-                : new ByteAlignedRecordReader(this, ((OffsetMapHandler) FindBlock(BlockIdentifier.OffsetMap).Handler).GetLargestRecordSize());
+            _recordReader = new ByteAlignedRecordReader(this,
+                FindBlockHandler<OffsetMapHandler>(BlockIdentifier.OffsetMap)?.GetLargestRecordSize() ?? Header.RecordSize);
         }
     }
 }

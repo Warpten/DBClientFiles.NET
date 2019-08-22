@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using DBClientFiles.NET.Parsing.File.Enumerators;
 using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Parsing.Serialization;
+using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.Parsing.File
 {
@@ -31,7 +34,7 @@ namespace DBClientFiles.NET.Parsing.File
         /// <summary>
         /// The actual deserializer.
         /// </summary>
-        public TSerializer Serializer { get; }
+        public TSerializer Serializer { get; private set; }
 
         /// <summary>
         /// This is the total number of elements in the file.
@@ -68,7 +71,7 @@ namespace DBClientFiles.NET.Parsing.File
             Type = new TypeToken(typeof(TValue));
             _options = options;
 
-            Serializer = new TSerializer();
+            // Serializer = new TSerializer();
         }
 
         public virtual void Dispose()
@@ -83,6 +86,16 @@ namespace DBClientFiles.NET.Parsing.File
                 blck = blck.Next;
 
             return blck;
+        }
+
+        public T FindBlockHandler<T>(BlockIdentifier identifier)
+        {
+            var block = FindBlock(identifier);
+            if (block == default(Block))
+                return default;
+
+            Debug.Assert(typeof(T).IsAssignableFrom(block.Handler.GetType()), "Wrong type for block handler lookup");
+            return (T) block.Handler;
         }
 
         /// <summary>
@@ -103,14 +116,34 @@ namespace DBClientFiles.NET.Parsing.File
         /// <returns></returns>
         public abstract IRecordReader GetRecordReader(int recordSize);
 
-        //! TODO: Abstract
-        public virtual IEnumerator<TValue> GetEnumerator()
+        public IEnumerator<TValue> GetEnumerator()
         {
-            var copyTableHandler = FindBlock(BlockIdentifier.CopyTable)?.Handler as CopyTableHandler;
-            if (copyTableHandler != null)
-                return new CopyTableEnumerator<TValue, TSerializer>(this, copyTableHandler);
+            BaseStream.Position = 0;
+            Before(ParsingStep.Segments);
 
-            return new Enumerator<TValue, TSerializer>(this);
+            var head = Head;
+            while (head != null)
+            {
+                if (!head.ReadBlock(this))
+                    BaseStream.Seek(head.Length, SeekOrigin.Current);
+
+                head = head.Next;
+            }
+
+            After(ParsingStep.Segments);
+
+            // Segments have been processed, it's now time to initialize the deserializer.
+            // We don't have where TSerializer : new(BinaryFileParser<TValue, TSerializer>) yet so this is forced on us by the language.
+            // Serializer = New<TSerializer, BinaryFileParser<TValue, TSerializer>>.Instance(this);
+            Serializer = new TSerializer();
+            Serializer.Initialize(this);
+
+            var enumerator = Header.OffsetMap.Exists
+                ? (Enumerator<TValue, TSerializer>) new OffsetMapEnumerator<TValue, TSerializer>(this)
+                : (Enumerator<TValue, TSerializer>) new RecordsEnumerator<TValue, TSerializer>(this);
+
+            return enumerator.WithIndexTable()
+                .WithCopyTable();
         }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

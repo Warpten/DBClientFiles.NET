@@ -36,15 +36,15 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations
 
         private bool _readAlready = false;
 
-        public abstract ref readonly BlockReference StringTable { get; }
-        public abstract ref readonly BlockReference OffsetMap { get; }
-        public abstract ref readonly BlockReference IndexTable { get; }
-        public abstract ref readonly BlockReference Pallet { get; }
-        public abstract ref readonly BlockReference Common { get; }
-        public abstract ref readonly BlockReference CopyTable { get; }
-        public abstract ref readonly BlockReference FieldInfo { get; }
-        public abstract ref readonly BlockReference ExtendedFieldInfo { get; }
-        public abstract ref readonly BlockReference RelationshipTable { get; }
+        public virtual ref readonly BlockReference StringTable => ref BlockReference.Missing;
+        public virtual ref readonly BlockReference OffsetMap => ref BlockReference.Missing;
+        public virtual ref readonly BlockReference IndexTable => ref BlockReference.Missing;
+        public virtual ref readonly BlockReference Pallet => ref BlockReference.Missing;
+        public virtual ref readonly BlockReference Common => ref BlockReference.Missing;
+        public virtual ref readonly BlockReference CopyTable => ref BlockReference.Missing;
+        public virtual ref readonly BlockReference FieldInfo => ref BlockReference.Missing;
+        public virtual ref readonly BlockReference ExtendedFieldInfo => ref BlockReference.Missing;
+        public virtual ref readonly BlockReference RelationshipTable => ref BlockReference.Missing;
 
         public AbstractHeaderHandler(IBinaryStorageFile source)
         {

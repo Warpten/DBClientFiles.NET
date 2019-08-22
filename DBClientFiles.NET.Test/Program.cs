@@ -12,7 +12,7 @@ namespace DBClientFiles.NET.Runner
     {
         static unsafe void Main(string[] args)
         {
-            using (var fs = File.OpenRead(@"D:\World of Warcraft 3.3.5\dbc\Achievement.dbc"))
+            using (var fs = File.OpenRead(@"D:\Games\World of Warcraft 3.3.5\dbc\Achievement.dbc"))
             {
                 var collection = new StorageList<Achievement>(StorageOptions.Default, fs);
                 for (var i = 0; i < 10; ++i)

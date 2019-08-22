@@ -7,7 +7,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 {
     internal sealed class OffsetMapHandler : IBlockHandler
     {
-        private Memory<(int, short)> _store;
+        private Memory<(int Offset, short Size)> _store;
 
         public BlockIdentifier Identifier { get; } = BlockIdentifier.CopyTable;
 
@@ -49,15 +49,14 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 
         public int Count { get; private set; }
 
-        public int GetRecordOffset(int index) => _store.Span[index].Item1;
-        public int GetRecordSize(int index) => _store.Span[index].Item2;
+        public (int Offset, int Length) this[int index] => _store.Span[index];
 
         public int GetLargestRecordSize()
         {
             var size = 0;
             for (var i = 0; i < _store.Length / 6; ++i)
             {
-                int spanSize = _store.Span[i].Item2;
+                int spanSize = _store.Span[i].Size;
                 if (size < spanSize)
                     size = spanSize;
             }

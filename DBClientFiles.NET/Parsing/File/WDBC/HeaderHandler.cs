@@ -17,16 +17,6 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
 
         public override ref readonly BlockReference StringTable => ref _stringTableRef;
 
-        // Blocks that don't exist
-        public override ref readonly BlockReference OffsetMap         => throw new UnknownBlockException(BlockIdentifier.OffsetMap, Signatures.WDBC);
-        public override ref readonly BlockReference IndexTable        => throw new UnknownBlockException(BlockIdentifier.IndexTable, Signatures.WDBC);
-        public override ref readonly BlockReference Pallet            => throw new UnknownBlockException(BlockIdentifier.PalletTable, Signatures.WDBC);
-        public override ref readonly BlockReference CopyTable         => throw new UnknownBlockException(BlockIdentifier.CopyTable, Signatures.WDBC);
-        public override ref readonly BlockReference Common            => throw new UnknownBlockException(BlockIdentifier.CommonDataTable, Signatures.WDBC);
-        public override ref readonly BlockReference FieldInfo         => throw new UnknownBlockException(BlockIdentifier.FieldInfo, Signatures.WDBC);
-        public override ref readonly BlockReference ExtendedFieldInfo => throw new UnknownBlockException(BlockIdentifier.ExtendedFieldInfo, Signatures.WDBC);
-        public override ref readonly BlockReference RelationshipTable => throw new UnknownBlockException(BlockIdentifier.RelationshipTable, Signatures.WDBC);
-
         // Properties that don't exist
         public override int MaxIndex => throw new InvalidOperationException();
         public override int MinIndex => throw new InvalidOperationException();

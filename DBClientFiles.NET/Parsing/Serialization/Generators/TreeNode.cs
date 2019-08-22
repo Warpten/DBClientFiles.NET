@@ -180,7 +180,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
 
                 foreach (var node in Children)
                 {
-                    // We must not propagate the unroll to the children
+                    // We must not propagate the unroll op to the children
                     if (!(node is LoopTreeNode loopNode))
                     {
                         for (var i = 1; i < node.ReadExpression.Count && isRolling; ++i)

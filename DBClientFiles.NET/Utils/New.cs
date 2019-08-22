@@ -4,6 +4,7 @@ using Expr = System.Linq.Expressions.Expression;
 using System.Runtime.Serialization;
 using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Utils.Extensions;
+using System.Reflection;
 
 namespace DBClientFiles.NET.Utils
 {
@@ -28,6 +29,31 @@ namespace DBClientFiles.NET.Utils
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Expr Expression(params Expr[] arguments) => New.Expression(typeof(T), arguments);
+    }
+
+    // Genericity hell, here we go
+    public static class New<T, P1>
+    {
+        public static readonly Func<P1, T> Instance = Creator();
+
+        private static Func<P1, T> Creator()
+        {
+            var t = typeof(T);
+            foreach (var ctor in t.GetConstructors(BindingFlags.Public | BindingFlags.Instance))
+            {
+                var parameters = ctor.GetParameters();
+                if (parameters.Length == 1)
+                {
+                    if (parameters[0].ParameterType.IsAssignableFrom(typeof(P1)))
+                    {
+                        var parameter = Expr.Parameter(typeof(P1));
+                        return Expr.Lambda<Func<P1, T>>(Expr.New(ctor, parameter), parameter).Compile();
+                    }
+                }
+            }
+
+            throw new InvalidOperationException("no ctor matching types");
+        }
     }
 
     public static class New

@@ -18,16 +18,6 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
         private BlockReference _stringTableRef;
         public override ref readonly BlockReference StringTable => ref _stringTableRef;
 
-        // Blocks that don't exist
-        public override ref readonly BlockReference OffsetMap         => throw new UnknownBlockException(BlockIdentifier.OffsetMap, Signatures.WDB2);
-        public override ref readonly BlockReference IndexTable        => throw new UnknownBlockException(BlockIdentifier.IndexTable, Signatures.WDB2);
-        public override ref readonly BlockReference Pallet            => throw new UnknownBlockException(BlockIdentifier.PalletTable, Signatures.WDB2);
-        public override ref readonly BlockReference Common            => throw new UnknownBlockException(BlockIdentifier.CommonDataTable, Signatures.WDB2);
-        public override ref readonly BlockReference CopyTable         => throw new UnknownBlockException(BlockIdentifier.CopyTable, Signatures.WDB2);
-        public override ref readonly BlockReference FieldInfo         => throw new UnknownBlockException(BlockIdentifier.FieldInfo, Signatures.WDB2);
-        public override ref readonly BlockReference ExtendedFieldInfo => throw new UnknownBlockException(BlockIdentifier.ExtendedFieldInfo, Signatures.WDB2);
-        public override ref readonly BlockReference RelationshipTable => throw new UnknownBlockException(BlockIdentifier.RelationshipTable, Signatures.WDB2);
-
         public HeaderHandler(IBinaryStorageFile source) : base(source)
         {
             _stringTableRef = new BlockReference(Structure.StringTableLength != 0, Structure.StringTableLength);
