@@ -1,6 +1,9 @@
-﻿using DBClientFiles.NET.Attributes;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using DBClientFiles.NET.Attributes;
 
-namespace DBClientFiles.NET.Benchmark.DataTypes
+namespace DBClientFiles.NET.Types.Shared
 {
     public sealed class LocString
     {

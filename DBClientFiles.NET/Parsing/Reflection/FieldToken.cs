@@ -57,5 +57,9 @@ namespace DBClientFiles.NET.Parsing.Reflection
         public override bool IsArray => _memberInfo.FieldType.IsArray;
         public override int Cardinality { get; }
 
+        public override Expression MakeAccess(Expression parent)
+        {
+            return Expression.MakeMemberAccess(parent, _memberInfo);
+        }
     }
 }

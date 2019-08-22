@@ -15,7 +15,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
         /// <summary>
         /// The underlying CLR <see cref="Type"/> representation of this type.
         /// </summary>
-        private Type Type { get; }
+        internal Type Type { get; }
 
         private Dictionary<Type, TypeToken> _declaredTypes;
         private List<MemberToken> _members;
@@ -113,7 +113,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
                 if (memberInfo.MemberType != type)
                     continue;
 
-                Expression memberAccessExpr = Expression.MakeMemberAccess(accessExpression, memberInfo.MemberInfo);
+                Expression memberAccessExpr = memberInfo.MakeAccess(accessExpression);
 
                 if (memberInfo.TypeToken.IsArray)
                 {
@@ -143,7 +143,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
 
                 if (index == 0)
                 {
-                    accessExpression = Expression.MakeMemberAccess(accessExpression, memberInfo.MemberInfo);
+                    accessExpression = memberInfo.MakeAccess(accessExpression);
                     return (memberInfo, accessExpression);
                 }
 

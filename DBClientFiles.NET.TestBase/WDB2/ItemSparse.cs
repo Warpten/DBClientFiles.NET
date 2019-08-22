@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using DBClientFiles.NET.Attributes;
 
-namespace DBClientFiles.NET.Benchmark.Structures.WDB2
+namespace DBClientFiles.NET.Types.WDB2
 {
-    public class ItemSparseWDB2
+    public sealed class ItemSparse
     {
         public uint Id { get; set; }
         public uint Quality { get; set; }
@@ -32,16 +32,16 @@ namespace DBClientFiles.NET.Benchmark.Structures.WDB2
         public uint Stackable { get; set; }
         public uint ContainerSlots { get; set; }
 
-        [Cardinality(SizeConst= 10)]
+        [Cardinality(SizeConst = 10)]
         public int[] ItemStatType { get; set; }
 
-        [Cardinality(SizeConst= 10)]
+        [Cardinality(SizeConst = 10)]
         public uint[] ItemStatValue { get; set; }
 
-        [Cardinality(SizeConst= 10)]
+        [Cardinality(SizeConst = 10)]
         public int[] ItemStatUnk1 { get; set; }
 
-        [Cardinality(SizeConst= 10)]
+        [Cardinality(SizeConst = 10)]
         public int[] ItemStatUnk2 { get; set; }
 
         public uint ScalingStatDistribution { get; set; }
@@ -49,22 +49,22 @@ namespace DBClientFiles.NET.Benchmark.Structures.WDB2
         public uint Delay { get; set; }
         public float RangedModRange { get; set; }
 
-        [Cardinality(SizeConst= 5)]
+        [Cardinality(SizeConst = 5)]
         public int[] SpellId { get; set; }
 
-        [Cardinality(SizeConst= 5)]
+        [Cardinality(SizeConst = 5)]
         public int[] SpellTrigger { get; set; }
 
-        [Cardinality(SizeConst= 5)]
+        [Cardinality(SizeConst = 5)]
         public int[] SpellCharges { get; set; }
 
-        [Cardinality(SizeConst= 5)]
+        [Cardinality(SizeConst = 5)]
         public int[] SpellCooldown { get; set; }
 
-        [Cardinality(SizeConst= 5)]
+        [Cardinality(SizeConst = 5)]
         public int[] SpellCategory { get; set; }
 
-        [Cardinality(SizeConst= 5)]
+        [Cardinality(SizeConst = 5)]
         public int[] SpellCategoryCooldown { get; set; }
 
         public uint Bonding { get; set; }
@@ -91,7 +91,7 @@ namespace DBClientFiles.NET.Benchmark.Structures.WDB2
         [Cardinality(SizeConst = 3)]
         public uint[] Color { get; set; }
 
-        [Cardinality(SizeConst= 3)]
+        [Cardinality(SizeConst = 3)]
         public uint[] Content { get; set; }
 
         public int SocketBonus { get; set; }

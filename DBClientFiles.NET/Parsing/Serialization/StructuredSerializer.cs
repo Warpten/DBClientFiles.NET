@@ -117,8 +117,8 @@ namespace DBClientFiles.NET.Parsing.Serialization
 
                 foreach (var memberInfo in Type.Members)
                 {
-                    var oldMemberAccess = Expression.MakeMemberAccess(oldInstanceParam, memberInfo.MemberInfo);
-                    var newMemberAccess = Expression.MakeMemberAccess(newInstanceParam, memberInfo.MemberInfo);
+                    var oldMemberAccess = memberInfo.MakeAccess(oldInstanceParam);
+                    var newMemberAccess = memberInfo.MakeAccess(newInstanceParam);
 
                     body.Add(CloneMember(memberInfo, oldMemberAccess, newMemberAccess));
                 }
@@ -175,8 +175,8 @@ namespace DBClientFiles.NET.Parsing.Serialization
                 if (Options.TokenType != childInfo.MemberType || childInfo.IsReadOnly)
                     continue;
 
-                var oldChild = Expression.MakeMemberAccess(oldMember, childInfo.MemberInfo);
-                var newChild = Expression.MakeMemberAccess(newMember, childInfo.MemberInfo);
+                var oldChild = childInfo.MakeAccess(oldMember);
+                var newChild = childInfo.MakeAccess(newMember);
 
                 block.Add(CloneMember(childInfo, oldChild, newChild));
             }

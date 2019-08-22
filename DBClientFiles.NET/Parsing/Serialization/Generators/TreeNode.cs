@@ -17,11 +17,6 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         public virtual Expression AccessExpression { get; set; }
 
         /// <summary>
-        /// The parent node, if any.
-        /// </summary>
-        public TreeNode Parent { get; set; }
-
-        /// <summary>
         /// A <see cref="MemberToken"/>. This is always in sync with actual elements of the structure <b>except</b>
         /// when looking at nodes describing elements of an array, because we technically don't have a MemberToken for that.
         /// So for those, we refer to the array itself.
@@ -43,9 +38,28 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         /// </summary>
         public List<TreeNode> Children { get; } = new List<TreeNode>();
 
+        public TreeNode()
+        {
+        }
+
         public virtual TreeNode TryUnroll()
         {
+            for (var i = 0; i < Children.Count; ++i)
+                Children[i] = Children[i].TryUnroll();
+
             return this;
+        }
+
+        public T AddChild<T>(T child) where T : TreeNode
+        {
+            Children.Add(child);
+            return child;
+        }
+
+        public T RemoveChild<T>(T child) where T : TreeNode
+        {
+            Children.Remove(child);
+            return child;
         }
 
         public virtual void GenerateReadCalls(SerializerGenerator generator)
@@ -117,7 +131,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         /// <summary>
         /// The node corresponding to the array on which this loop operates.
         /// </summary>
-        public TreeNode Array { get; set; }
+        public TreeNode Array { get; }
 
         /// </inheritDoc>
         /// <remarks>
@@ -133,15 +147,26 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         /// <summary>
         /// Max number of iterations.
         /// </summary>
-        public int IterationCount { get; set; }
+        public int IterationCount { get; }
 
         /// <summary>
         /// Initial value for the loop counter.
         /// </summary>
-        public int InitialValue { get; set; }
+        public int InitialValue { get; }
 
-        public Expression LoopCondition => Expression.LessThan(Iterator, Expression.Constant(IterationCount));
-        public Expression IteratorInitializer => Expression.Assign(Iterator, Expression.Constant(InitialValue));
+        private Expression LoopCondition => Expression.LessThan(Iterator, Expression.Constant(IterationCount));
+        private Expression IteratorInitializer => Expression.Assign(Iterator, Expression.Constant(InitialValue));
+
+        public LoopTreeNode(TreeNode parent) : base()
+        {
+            Array = parent;
+            
+            InitialValue = 0;
+            IterationCount = parent.MemberToken.Cardinality;
+
+            MemberToken = parent.MemberToken;
+            TypeToken = parent.TypeToken.GetElementTypeToken();
+        }
 
         /// <summary>
         /// Evaluates to true if the loop must be unrolled. A loop has to be unrolled if all the non-loop nodes within it have multiple
@@ -155,9 +180,10 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
 
                 foreach (var node in Children)
                 {
+                    // We must not propagate the unroll to the children
                     if (!(node is LoopTreeNode loopNode))
                     {
-                        for (var i = 1; i < node.ReadExpression.Count; ++i)
+                        for (var i = 1; i < node.ReadExpression.Count && isRolling; ++i)
                             isRolling &= ExpressionEqualityComparer.Instance.Equals(node.ReadExpression[0], node.ReadExpression[i]);
                     }
                 }
@@ -204,7 +230,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
             bodyExpression.ReadExpression.Add(bodyExpression.TypeToken.NewArrayBounds(Expression.Constant(IterationCount - InitialValue)));
 
             // Create N blocks of body
-            for (var i = InitialValue; i < IterationCount; ++i)
+            for (var i = 0; i < IterationCount - InitialValue; ++i)
             {
                 var invocationNode = new TreeNode() {
                     // Can't reuse this.AccessExpression because it's bound on the iterator.
@@ -223,27 +249,21 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
                     var newChildNode = new TreeNode() {
                         AccessExpression = Expression.MakeMemberAccess(invocationNode.AccessExpression, childNode.MemberToken.MemberInfo),
                         MemberToken = childNode.MemberToken,
-                        TypeToken = childNode.TypeToken,
-                        Parent = invocationNode
+                        TypeToken = childNode.TypeToken
                     };
 
-                    // Reduce each of the children's nodes (takes care of loops within loops)
+                    // Now that we created a new block we must try to unroll it if it needs to
                     foreach (var subChildNode in childNode.Children)
-                    {
-                        var newSubChild = subChildNode.TryUnroll();
-                        newSubChild.Parent = newChildNode;
-
-                        newChildNode.Children.Add(newSubChild);
-                    }
+                        newChildNode.AddChild(subChildNode.TryUnroll());
 
                     // If deserialization calls were found select the one corresponding to the currently unrolling iteration.
                     if (childNode.ReadExpression.Count > 0)
-                        newChildNode.ReadExpression.Add(childNode.ReadExpression[i - InitialValue]);
+                        newChildNode.ReadExpression.Add(childNode.ReadExpression[i]);
 
-                    invocationNode.Children.Add(newChildNode);
+                    invocationNode.AddChild(newChildNode);
                 }
 
-                bodyExpression.Children.Add(invocationNode);
+                bodyExpression.AddChild(invocationNode);
             }
 
             return bodyExpression;

@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DBClientFiles.NET.TestBase\DBClientFiles.NET.Types.csproj" />
     <ProjectReference Include="..\DBClientFiles.NET\DBClientFiles.NET.csproj" />
   </ItemGroup>
 

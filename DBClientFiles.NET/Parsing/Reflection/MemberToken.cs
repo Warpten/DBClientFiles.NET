@@ -39,5 +39,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
         public abstract Expression MakeChildAccess(IMemberToken token);
 
         public abstract T GetAttribute<T>() where T : Attribute;
+
+        public abstract Expression MakeAccess(Expression parent);
     }
 }

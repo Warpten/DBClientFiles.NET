@@ -1,71 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Reflection;
 using DBClientFiles.NET.Parsing.Reflection;
-using DBClientFiles.NET.Utils.Expressions.Extensions;
 
 namespace DBClientFiles.NET.Parsing.Serialization.Generators
 {
-    internal abstract class TypedSerializerGenerator<T, TMethod> : SerializerGenerator where TMethod : Delegate
-    {
-        public TypedSerializerGenerator(TypeToken root, TypeTokenType memberType) : base(root, memberType)
-        {
-            Debug.Assert(root == typeof(T));
-        }
-
-        protected override void PrepareMethodParameters()
-        {
-            var methodType = typeof(TMethod).GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance);
-            if (methodType != null)
-            {
-                var methodParams = methodType.GetParameters();
-                foreach (var methodParam in methodParams)
-                    Parameters.Add(Expression.Parameter(methodParam.ParameterType, methodParam.Name));
-            }
-        }
-
-        public TMethod GenerateDeserializer()
-        {
-            var body = GenerateDeserializationMethodBody();
-            
-#if DEBUG && NETCOREAPP
-            // Meh
-            var header = string.Join(", ", Parameters.Select(p => string.Join(' ', p.Type.Name.Replace("`1", $"<{Instance.Type.Name}>"), p.Name)));
-            Console.WriteLine($"({header}) => ");
-            Console.Write(body.AsString());
-#endif
-
-            return Expression.Lambda<TMethod>(body, Parameters).Compile();
-        }
-
-        protected override TreeNode MakeRootNode()
-        {
-            return new TreeNode() {
-                AccessExpression = Instance,
-                MemberToken = null,
-                Parent = null,
-                TypeToken = Root
-            };
-        }
-
-        protected override sealed Expression MakeRootMemberAccess(MemberToken token)
-        {
-            return Expression.MakeMemberAccess(Instance, token.MemberInfo);
-        }
-
-        protected override sealed Expression MakeReturnExpression()
-        {
-            return Instance;
-        }
-
-        protected Expression RecordReader => Parameters[0];
-        protected Expression FileParser => Parameters[1];
-
-        private Expression Instance => Parameters[2];
-    }
 
     /// <summary>
     /// Generates serialization methods.
@@ -115,9 +53,8 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
 
             // Emit candidate read calls.
             bodyParts.GenerateReadCalls(this);
-            //GenerateReadCalls(bodyParts.Children); // Reference implementation of above
 
-            TryUnrollLoops(bodyParts);
+            bodyParts = bodyParts.TryUnroll();
 
             var expr = bodyParts.ToExpression();
             var returnType = MakeReturnExpression();
@@ -130,51 +67,6 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         }
 
         /// <summary>
-        /// Performs loop unrolling as needed in the tree.
-        /// </summary>
-        /// <param name="nodes"></param>
-        private void TryUnrollLoops(TreeNode node)
-        {
-            for (var i = 0; i < node.Children.Count; ++i)
-            {
-                // Try to unroll the loop if it is necessary
-                node.Children[i] = node.Children[i].TryUnroll();
-
-                // Update parent ref
-                node.Children[i].Parent = node;
-                // And finally try to unroll the child's children.
-                TryUnrollLoops(node.Children[i]);
-            }
-        }
-
-        /// <summary>
-        /// Generates read calls for each of the properties declared in the tree.
-        /// </summary>
-        /// <param name="nodes"></param>
-        private void GenerateReadCalls(List<TreeNode> nodes)
-        {
-            foreach (var node in nodes)
-            {
-                if (node.TypeToken != null)
-                {
-                    var reader = GenerateExpressionReader(node.TypeToken, node.MemberToken);
-                    if (reader != null)
-                        node.ReadExpression.Add(reader);
-                }
-
-                if (node.Children.Count > 0)
-                {
-                    var invocationCount = 1;
-                    if (node is LoopTreeNode loopNode)
-                        invocationCount = loopNode.IterationCount - loopNode.InitialValue;
-
-                    for (var i = 0; i < invocationCount; ++i)
-                        GenerateReadCalls(node.Children);
-                }
-            }
-        }
-
-        /// <summary>
         /// Generates a node in the tree representation of the structure.
         /// </summary>
         /// <param name="parent"></param>
@@ -182,14 +74,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         {
             if (parent.TypeToken.IsArray)
             {
-                var loopNode = new LoopTreeNode() {
-                    Array = parent,
-                    InitialValue = 0,
-                    IterationCount = parent.MemberToken.Cardinality,
-                    Parent = parent,
-                    MemberToken = parent.MemberToken,
-                    TypeToken = parent.TypeToken.GetElementTypeToken()
-                };
+                var loopNode = new LoopTreeNode(parent);
 
                 var elementTypeToken = parent.TypeToken.GetElementTypeToken();
                 foreach (var member in elementTypeToken.Members)
@@ -198,18 +83,17 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
                         continue;
 
                     var node = new TreeNode() {
-                        AccessExpression = Expression.MakeMemberAccess(loopNode.AccessExpression, member.MemberInfo),
+                        AccessExpression = member.MakeAccess(loopNode.AccessExpression),
                         MemberToken = member,
-                        TypeToken = member.TypeToken,
-                        Parent = loopNode
+                        TypeToken = member.TypeToken
                     };
 
                     GenerateTreeNode(node);
 
-                    loopNode.Children.Add(node);
+                    loopNode.AddChild(node);
                 }
 
-                parent.Children.Add(loopNode);
+                parent.AddChild(loopNode);
             }
             else
             {
@@ -219,14 +103,13 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
                         continue;
 
                     var node = new TreeNode() {
-                        AccessExpression = Expression.MakeMemberAccess(parent.AccessExpression, member.MemberInfo),
+                        AccessExpression = member.MakeAccess(parent.AccessExpression),
                         MemberToken = member,
-                        TypeToken = member.TypeToken,
-                        Parent = parent
+                        TypeToken = member.TypeToken
                     };
 
                     GenerateTreeNode(node);
-                    parent.Children.Add(node);
+                    parent.AddChild(node);
                 }
             }
         }

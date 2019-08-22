@@ -1,6 +1,6 @@
-﻿namespace DBClientFiles.NET.Benchmark.DataTypes
+﻿namespace DBClientFiles.NET.Types.Shared
 {
-    public class C3Vector
+    public sealed class C3Vector
     {
         public float X { get; set; }
         public float Y { get; set; }
