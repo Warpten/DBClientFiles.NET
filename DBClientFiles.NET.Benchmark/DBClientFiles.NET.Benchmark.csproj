@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
@@ -13,7 +13,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>7.2</LangVersion>
 
-    <Configurations>Debug;Release;ReleaseUnitTests</Configurations>
+    <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,6 +26,11 @@
   <ItemGroup>
     <ProjectReference Include="..\DBClientFiles.NET.TestBase\DBClientFiles.NET.Types.csproj" />
     <ProjectReference Include="..\DBClientFiles.NET\DBClientFiles.NET.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Attributes\" />
+    <Folder Include="WDB2\" />
   </ItemGroup>
 
 </Project>

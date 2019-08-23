@@ -14,24 +14,24 @@ namespace DBClientFiles.NET.Parsing.File.Enumerators
 
         public RecordsEnumerator(BinaryFileParser<TValue, TSerializer> impl) : base(impl)
         {
-            _block = FileParser.FindBlock(BlockIdentifier.Records);
+            _block = Parser.FindBlock(BlockIdentifier.Records);
             Debug.Assert(_block != null, "Records block missing in enumerator");
 
-            FileParser.BaseStream.Position = _block.StartOffset;
+            Parser.BaseStream.Position = _block.StartOffset;
         }
 
         internal override TValue ObtainCurrent()
         {
-            if (FileParser.BaseStream.Position >= _block.EndOffset)
+            if (Parser.BaseStream.Position >= _block.EndOffset)
                 return default;
 
-            var recordReader = FileParser.GetRecordReader(FileParser.Header.RecordSize);
-            return Serializer.Deserialize(recordReader, FileParser);
+            var recordReader = Parser.GetRecordReader(Parser.Header.RecordSize);
+            return Serializer.Deserialize(recordReader, Parser);
         }
 
         internal override void ResetIterator()
         {
-            FileParser.BaseStream.Position = _block.StartOffset;
+            Parser.BaseStream.Position = _block.StartOffset;
         }
     }
 }

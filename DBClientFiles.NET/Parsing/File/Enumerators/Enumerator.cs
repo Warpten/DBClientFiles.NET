@@ -17,31 +17,13 @@ namespace DBClientFiles.NET.Parsing.File.Enumerators
     internal abstract partial class Enumerator<TValue, TSerializer> : IEnumerator<TValue>, IEnumerator
         where TSerializer : ISerializer<TValue>, new()
     {
-        internal BinaryFileParser<TValue, TSerializer> FileParser { get; private set; }
+        internal BinaryFileParser<TValue, TSerializer> Parser { get; }
 
-        protected TSerializer Serializer => FileParser.Serializer;
+        protected TSerializer Serializer => Parser.Serializer;
 
         public Enumerator(BinaryFileParser<TValue, TSerializer> owner)
         {
-            FileParser = owner;
-            owner.BaseStream.Position = 0;
-
-            owner.Before(ParsingStep.Segments);
-
-            var head = owner.Head;
-            while (head != null)
-            {
-                if (!head.ReadBlock(owner))
-                    owner.BaseStream.Seek(head.Length, SeekOrigin.Current);
-
-                head = head.Next;
-            }
-
-            owner.After(ParsingStep.Segments);
-
-            // Segments have been processed, it's now time to initialize the deserializer.
-            Serializer.Initialize(owner);
-
+            Parser = owner;
             Current = default;
         }
 
@@ -54,7 +36,7 @@ namespace DBClientFiles.NET.Parsing.File.Enumerators
         public bool MoveNext()
         {
             Current = ObtainCurrent();
-            return true;
+            return Current != default;
         }
 
         public void Reset()
@@ -67,7 +49,6 @@ namespace DBClientFiles.NET.Parsing.File.Enumerators
         #region IDisposable
         public void Dispose()
         {
-            FileParser = null;
         }
         #endregion
 
@@ -77,14 +58,14 @@ namespace DBClientFiles.NET.Parsing.File.Enumerators
 
         public virtual Enumerator<TValue, TSerializer> WithCopyTable()
         {
-            return FileParser.Header.CopyTable.Exists
+            return Parser.Header.CopyTable.Exists
                 ? new CopyTableEnumerator<TValue, TSerializer>(this)
                 : this;
         }
 
         public virtual Enumerator<TValue, TSerializer> WithIndexTable()
         {
-            return FileParser.Header.IndexTable.Exists
+            return Parser.Header.IndexTable.Exists
                 ? new IndexTableEnumerator<TValue, TSerializer>(this)
                 : this;
         }

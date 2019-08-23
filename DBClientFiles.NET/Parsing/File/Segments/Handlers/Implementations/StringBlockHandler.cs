@@ -11,7 +11,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 {
     internal sealed class StringBlockHandler : IBlockHandler, IDictionary<long, String>
     {
-        private Dictionary<long, String> _blockData = new Dictionary<long, string>();
+        private Dictionary<long, string> _blockData = new Dictionary<long, string>();
 
         private bool _internStrings;
 
@@ -34,8 +34,6 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
             var byteBuffer = new byte[length];
             int actualLength = reader.BaseStream.Read(byteBuffer, 0, (int)length);
 
-#if __DEBUG
-
             Debug.Assert(actualLength == length);
 
             int cursor = 0;
@@ -57,48 +55,6 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 
                 cursor += 1;
             }
-#else
-            var intBuffer = (int*)Unsafe.AsPointer(ref byteBuffer[0]);
-            int cursor = 0;
-            int bufferSize = actualLength / 4;
-
-            var builder = new StringBuilder();
-            var startOffsetStr = 0;
-            while (cursor != bufferSize)
-            {
-                int mask = intBuffer[cursor];
-                while (mask != 0)
-                {
-                    var maskAsBytes = (byte*) Unsafe.AsPointer(ref mask);
-                    for (var i = 0; i < 4; ++i)
-                    {
-                        if (maskAsBytes[i] == 0)
-                        {
-                            var value = builder.ToString();
-                            if (_internStrings)
-                                value = string.Intern(value);
-
-                            _blockData[startOffsetStr] = value;
-                            startOffsetStr = cursor + i + 1;
-                            builder.Clear();
-                        }
-                        else
-                            builder.Append((char) maskAsBytes[i]);
-                    }
-
-                    ++cursor;
-                    if (cursor == bufferSize)
-                        break;
-                    
-                    mask = intBuffer[cursor];
-                }
-            }
-
-            for (var i = cursor * 4; i < actualLength - 1; ++i)
-                builder.Append((char) byteBuffer[i]);
-
-            _blockData[startOffsetStr] = builder.ToString();
-#endif
         }
 
         public void WriteBlock<T, U>(T writer) where T : BinaryWriter, IWriter<U>

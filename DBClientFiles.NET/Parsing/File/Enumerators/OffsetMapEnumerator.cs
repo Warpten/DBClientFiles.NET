@@ -16,7 +16,7 @@ namespace DBClientFiles.NET.Parsing.File.Enumerators
 
         public OffsetMapEnumerator(BinaryFileParser<TValue, TSerializer> impl) : base(impl)
         {
-            _blockHandler = FileParser.FindBlockHandler<OffsetMapHandler>(BlockIdentifier.OffsetMap);
+            _blockHandler = Parser.FindBlockHandler<OffsetMapHandler>(BlockIdentifier.OffsetMap);
             _cursor = 0;
             Debug.Assert(_blockHandler != null, "Block handler missing for offset map");
 
@@ -28,10 +28,10 @@ namespace DBClientFiles.NET.Parsing.File.Enumerators
                 return default;
 
             var (offset, length) = _blockHandler[_cursor++];
-            FileParser.BaseStream.Position = offset;
+            Parser.BaseStream.Position = offset;
 
-            var recordReader = FileParser.GetRecordReader(length);
-            return Serializer.Deserialize(recordReader, FileParser);
+            var recordReader = Parser.GetRecordReader(length);
+            return Serializer.Deserialize(recordReader, Parser);
         }
 
         internal override void ResetIterator()

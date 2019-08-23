@@ -16,7 +16,7 @@ namespace DBClientFiles.NET.Parsing.File.Enumerators
 
         public IndexTableEnumerator(Enumerator<TValue, TSerializer> impl) : base(impl)
         {
-            _blockHandler = FileParser.FindBlockHandler<IndexTableHandler>(BlockIdentifier.IndexTable);
+            _blockHandler = Parser.FindBlockHandler<IndexTableHandler>(BlockIdentifier.IndexTable);
             Debug.Assert(_blockHandler != null, "Block handler missing for index table");
             _cursor = 0;
         }

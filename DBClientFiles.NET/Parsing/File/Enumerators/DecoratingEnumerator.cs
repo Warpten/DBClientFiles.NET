@@ -11,7 +11,7 @@ namespace DBClientFiles.NET.Parsing.File.Enumerators
         internal Enumerator<TValue, TSerializer> Implementation { get; }
 
 
-        public DecoratingEnumerator(Enumerator<TValue, TSerializer> impl) : base(impl.FileParser)
+        public DecoratingEnumerator(Enumerator<TValue, TSerializer> impl) : base(impl.Parser)
         {
             Implementation = impl;
         }

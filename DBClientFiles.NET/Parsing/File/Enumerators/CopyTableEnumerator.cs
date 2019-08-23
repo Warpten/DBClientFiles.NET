@@ -19,9 +19,9 @@ namespace DBClientFiles.NET.Parsing.File.Enumerators
 
         public CopyTableEnumerator(Enumerator<TValue, TSerializer> impl) : base(impl)
         {
-            if (FileParser.Header.CopyTable.Exists)
+            if (Parser.Header.CopyTable.Exists)
             {
-                _blockHandler = FileParser.FindBlockHandler<CopyTableHandler>(BlockIdentifier.CopyTable);
+                _blockHandler = Parser.FindBlockHandler<CopyTableHandler>(BlockIdentifier.CopyTable);
                 Debug.Assert(_blockHandler != null, "Block handler missing for copy table");
 
                 _instanceFactory = () =>
