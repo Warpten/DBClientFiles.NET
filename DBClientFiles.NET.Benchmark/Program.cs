@@ -1,5 +1,7 @@
 ﻿using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
+using System.Linq;
+using System.Reflection;
 
 namespace DBClientFiles.NET.Benchmark
 {
@@ -7,7 +9,13 @@ namespace DBClientFiles.NET.Benchmark
     {
         public static void Main(string[] args)
         {
-            var summaries = BenchmarkRunner.Run(typeof(Benchmark), new DebugInProcessConfig());
+            var summaries = BenchmarkSwitcher.FromTypes(
+                Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(AbstractBenchmark).IsAssignableFrom(t) && t != typeof(AbstractBenchmark)).ToArray()
+#if DEBUG
+            ).Run(args, new DebugInProcessConfig());
+#else
+            ).Run(args);
+#endif
         }
     }
 }

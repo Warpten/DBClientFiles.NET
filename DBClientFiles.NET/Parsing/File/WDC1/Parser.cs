@@ -43,20 +43,16 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
                 Handler = new HeaderHandler(this)
             };
 
+            var fieldInfoHandler = new FieldInfoHandler<MemberMetadata>();
             var tail = Head.Next = new Block {
                 Identifier = BlockIdentifier.FieldInfo,
                 Length = Header.FieldInfo.Length,
 
-                Handler = new FieldInfoHandler<MemberMetadata>()
+                Handler = fieldInfoHandler
             };
 
             if (Header.OffsetMap.Exists)
             {
-                tail = tail.Next = new Block {
-                    Identifier = BlockIdentifier.Records,
-                    Length = Header.OffsetMap.Offset.Value - tail.EndOffset,
-                };
-
                 tail = tail.Next = new Block {
                     Identifier = BlockIdentifier.OffsetMap,
                     Length = Header.OffsetMap.Length,
@@ -97,7 +93,7 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
                 Identifier = BlockIdentifier.ExtendedFieldInfo,
                 Length = Header.ExtendedFieldInfo.Length,
 
-                Handler = new ExtendedFieldInfoHandler<MemberMetadata>((FieldInfoHandler<MemberMetadata>) Head.Next.Handler)
+                Handler = new ExtendedFieldInfoHandler<MemberMetadata>(fieldInfoHandler)
             };
 
             tail = tail.Next = new Block {
