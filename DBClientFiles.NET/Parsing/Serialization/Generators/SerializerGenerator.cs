@@ -17,14 +17,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         {
             Root = root;
             MemberType = memberType;
-
-            PrepareMethodParameters();
         }
-
-        /// <summary>
-        /// Prepares the set of <see cref="ParameterExpression"/> for the method's prototype.
-        /// </summary>
-        protected abstract void PrepareMethodParameters();
 
         /// <summary>
         /// Generates the method's body

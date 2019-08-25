@@ -13,15 +13,17 @@ using TypeToken = DBClientFiles.NET.Parsing.Reflection.TypeToken;
 
 namespace DBClientFiles.NET.Parsing.Serialization
 {
+    /// <summary>
+    /// An abstract implementation of the ISerializer interface.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     internal abstract class StructuredSerializer<T> : ISerializer<T>
     {
         protected delegate void TypeCloner(in T source, out T target);
-        protected delegate void TypeDeserializer(IRecordReader recordReader, IParser<T> fileParser, out T instance);
         protected delegate int TypeKeyGetter(in T source);
         protected delegate void TypeKeySetter(out T source, int key);
 
         private TypeCloner _cloneMethod;
-        private TypeDeserializer _deserializer;
         private TypeKeyGetter _keyGetter;
         private TypeKeySetter _keySetter;
 
@@ -33,8 +35,6 @@ namespace DBClientFiles.NET.Parsing.Serialization
         }
 
         public TypeToken Type { get; protected set; }
-
-        protected abstract TypedSerializerGenerator<T, TypeDeserializer> Generator { get; set; }
 
         public virtual void Initialize(IBinaryStorageFile storage)
         {
@@ -88,17 +88,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
         /// <param name="key">The new key value to set<</param>
         public void SetRecordIndex(out T instance, int key) => _keySetter(out instance, key);
 
-        public T Deserialize(IRecordReader reader, IParser<T> parser)
-        {
-            if (_deserializer == null)
-                _deserializer = Generator?.GenerateDeserializer();
-
-            if (_deserializer == null)
-                throw new InvalidOperationException("A generator is needed for file parsing.");
-
-            _deserializer.Invoke(reader, parser, out var instance);
-            return instance;
-        }
+        public abstract T Deserialize(IRecordReader reader, IParser<T> parser);
 
         /// <summary>
         /// Clone the provided instance.

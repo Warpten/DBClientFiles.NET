@@ -8,25 +8,14 @@ using DBClientFiles.NET.Utils.Expressions.Extensions;
 
 namespace DBClientFiles.NET.Parsing.Serialization.Generators
 {
-    internal abstract class TypedSerializerGenerator<T, TMethod> : SerializerGenerator where TMethod : Delegate
+    internal abstract class TypedSerializerGenerator<T> : SerializerGenerator
     {
         public TypedSerializerGenerator(TypeToken root, TypeTokenType memberType) : base(root, memberType)
         {
             Debug.Assert(root == typeof(T));
         }
 
-        protected override void PrepareMethodParameters()
-        {
-            var methodType = typeof(TMethod).GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance);
-            if (methodType != null)
-            {
-                var methodParams = methodType.GetParameters();
-                foreach (var methodParam in methodParams)
-                    Parameters.Add(Expression.Parameter(methodParam.ParameterType, methodParam.Name));
-            }
-        }
-
-        public TMethod GenerateDeserializer()
+        public TMethod GenerateDeserializer<TMethod>() where TMethod : Delegate
         {
             var body = GenerateDeserializationMethodBody();
             
@@ -59,9 +48,9 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
             return Instance;
         }
 
-        protected Expression RecordReader => Parameters[0];
-        protected Expression FileParser => Parameters[1];
+        protected abstract Expression RecordReader { get; }
+        protected abstract Expression FileParser { get; }
 
-        private Expression Instance => Parameters[2];
+        protected abstract Expression Instance { get; }
     }
 }

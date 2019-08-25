@@ -24,7 +24,10 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 
             if (_index > 0)
             {
-                var previousInstance = this[_index - 1];
+                var previousIndex = _index - 1;
+                T previousInstance = null;
+                while ((previousInstance == null || previousInstance.CompressionData.Size == 0) && previousIndex >= 0)
+                    previousInstance = this[previousIndex--];
                 previousInstance.Cardinality = (int) ((instance.CompressionData.Offset - previousInstance.CompressionData.Offset) / previousInstance.CompressionData.Size);
             }
 

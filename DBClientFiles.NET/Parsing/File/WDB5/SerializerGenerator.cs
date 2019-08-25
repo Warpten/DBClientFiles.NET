@@ -8,7 +8,7 @@ using DBClientFiles.NET.Parsing.Serialization.Generators;
 
 namespace DBClientFiles.NET.Parsing.File.WDB5
 {
-    internal sealed class SerializerGenerator<T, TMethod> : TypedSerializerGenerator<T, TMethod> where TMethod : Delegate
+    internal sealed class SerializerGenerator<T> : TypedSerializerGenerator<T>
     {
         private IList<MemberMetadata> _memberMetadata;
         private int _callIndex;
@@ -18,6 +18,9 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
         public SerializerGenerator(TypeToken root, TypeTokenType memberType, IList<MemberMetadata> memberMetadata) : base(root, memberType)
         {
             _memberMetadata = memberMetadata;
+
+            Parameters.Add(Expression.Parameter(typeof(IRecordReader)));
+            Parameters.Add(Expression.Parameter(typeof(T).MakeByRefType()));
         }
 
         public void SetIndexColumn(int indexColumn)
@@ -62,17 +65,13 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
 
         public override Expression GenerateExpressionReader(TypeToken typeToken, MemberToken memberToken)
         {
+            // NOTE: This only works because the generator tries to unroll any loop instead of rolling them
             var memberMetadata = GetMemberInfo(_callIndex++);
             if (memberMetadata == null)
                 return null;
 
             switch (memberMetadata.CompressionData.Type)
             {
-                case MemberCompressionType.RelationshipData:
-                    {
-                        // Uhhhh.... Big yikes?
-                        return null;
-                    }
                 // We have to use immediate readers because all the other ones assume sequential reads
                 case MemberCompressionType.None:
                 case MemberCompressionType.Immediate:
@@ -94,5 +93,10 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
             
             throw new InvalidOperationException("Unsupported compression type");
         }
+
+        protected override Expression RecordReader => Parameters[0];
+
+        protected override Expression FileParser => null;
+        protected override Expression Instance => Parameters[1];
     }
 }

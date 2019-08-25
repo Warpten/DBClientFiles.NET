@@ -1,6 +1,6 @@
 ﻿using DBClientFiles.NET.Attributes;
 using DBClientFiles.NET.Collections.Generic;
-using DBClientFiles.NET.Types.WDBC;
+using DBClientFiles.NET.Types.WDC1;
 using System;
 using System.IO;
 using System.Linq;
@@ -12,7 +12,7 @@ namespace DBClientFiles.NET.Runner
     {
         static unsafe void Main(string[] args)
         {
-            using (var fs = File.OpenRead(@"D:\Games\World of Warcraft 3.3.5\dbc\Achievement.dbc"))
+            using (var fs = File.OpenRead(@"D:\Games\Achievement.25928.db2"))
             {
                 var collection = new StorageList<Achievement>(StorageOptions.Default, fs);
                 for (var i = 0; i < 10; ++i)
