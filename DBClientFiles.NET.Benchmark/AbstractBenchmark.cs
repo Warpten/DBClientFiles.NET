@@ -7,6 +7,7 @@ using System.Text;
 
 namespace DBClientFiles.NET.Benchmark
 {
+    [MemoryDiagnoser]
     public abstract class AbstractBenchmark
     {
         protected MemoryStream File { get; private set; }

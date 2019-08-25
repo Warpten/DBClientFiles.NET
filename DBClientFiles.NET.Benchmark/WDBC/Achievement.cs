@@ -7,7 +7,6 @@ using DBClientFiles.NET.Collections.Generic;
 
 namespace DBClientFiles.NET.Benchmark
 {
-    [CategoriesColumn, AnyCategoriesFilter("WDBC")]
     public class WDBC_Achievement : AbstractBenchmark
     {
         public WDBC_Achievement() : base(@"D:\Games\World of Warcraft 3.3.5\dbc\Achievement.dbc")
@@ -16,7 +15,6 @@ namespace DBClientFiles.NET.Benchmark
         }
 
         [Benchmark(Description = "Achievement (take 1)")]
-        [BenchmarkCategory("WDBC")]
         public void Achievement_Enumerator_Take1()
         {
             new StorageEnumerable<Types.WDBC.Achievement>(StorageOptions.Default, File).Take(1).Consume(Consumer);

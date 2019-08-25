@@ -13,5 +13,10 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
         public override ref CompressionData CompressionData => ref _compressionData;
 
         public override T GetDefaultValue<T>() => MemoryMarshal.Read<T>(RawDefaultValue);
+
+        public override string ToString()
+        {
+            return $"Cardinality: {Cardinality} Properties: {Properties} Compression: {{ {_compressionData} }}";
+        }
     }
 }

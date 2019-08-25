@@ -27,7 +27,11 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
 
             InfoBlock = storage.FindBlock(BlockIdentifier.FieldInfo)?.Handler as FieldInfoHandler<MemberMetadata>;
 
-            Generator = new SerializerGenerator<T>(storage, InfoBlock);
+            var generator = new SerializerGenerator<T>(storage, InfoBlock);
+            if (storage.Header.IndexTable.Exists)
+                generator.IndexColumn = storage.Header.IndexColumn;
+
+            Generator = generator;
         }
 
         public override T Deserialize(IRecordReader reader, IParser<T> parser)

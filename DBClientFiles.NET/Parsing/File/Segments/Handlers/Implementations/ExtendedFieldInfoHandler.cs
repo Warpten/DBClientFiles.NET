@@ -51,8 +51,8 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations
                     }
                 }
 
-                currentField.CompressionData.Offset = previousField != null
-                    ? previousField.CompressionData.Offset + previousField.CompressionData.Size
+                currentField.CompressionData.CompressionDataOffset = previousField != null
+                    ? previousField.CompressionData.CompressionDataOffset + previousField.CompressionData.Size
                     : 0;
             }
 
@@ -98,7 +98,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers.Implementations
             if (currentField.CompressionData.Type != MemberCompressionType.BitpackedPalletArrayData && fieldInfoSize != 0)
                 currentField.Cardinality = (int) (currentField.CompressionData.Size / fieldInfoSize);
 
-            return null;
+            return currentField;
         }
 
         protected override void WriteElement(BinaryWriter writer, in T element)

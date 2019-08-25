@@ -57,9 +57,9 @@ namespace DBClientFiles.NET.Parsing.Reflection
             
             // TODO: This is bad, the backing field name is implementation dependant
             // Should probably get il from getter method body and parse it with cecil to find referenced fields.
-            MemberInfo fieldInfo = DeclaringTypeToken.Type.GetField($"<{_propInfo.Name}>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
+            MemberInfo fieldInfo = /*DeclaringTypeToken.Type.GetField($"<{_propInfo.Name}>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
             if (fieldInfo == null) // Default to property itself if we can't get to the backing field
-                fieldInfo = _propInfo;
+                fieldInfo =*/ _propInfo;
 
             return Expression.MakeMemberAccess(parent, fieldInfo);
         }

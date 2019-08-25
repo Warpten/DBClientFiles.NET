@@ -20,6 +20,13 @@ namespace DBClientFiles.NET.Parsing.Binding
         /// Size of the field's compressed data in the corresponding block.
         /// </summary>
         public int CompressedDataSize { get; internal set; }
+
+        public int CompressionDataOffset { get; internal set; }
+
+        public override string ToString()
+        {
+            return $"Type: {Type} Offset: {Offset} Size: {Size}";
+        }
     }
 
     /// <summary>

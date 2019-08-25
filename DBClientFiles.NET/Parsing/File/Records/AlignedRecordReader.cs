@@ -1,6 +1,7 @@
 ﻿using DBClientFiles.NET.Parsing.File.Segments;
 using DBClientFiles.NET.Parsing.File.Segments.Handlers;
 using System;
+using System.Buffers;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -22,12 +23,13 @@ namespace DBClientFiles.NET.Parsing.File.Records
         {
             _stringBlock = fileReader.FindBlock(BlockIdentifier.StringBlock)?.Handler as StringBlockHandler;
 
-            _stagingBuffer = new byte[bufferSize + 8];
+            _stagingBuffer = ArrayPool<byte>.Shared.Rent(bufferSize + 8);
             _byteCursor = 0;
         }
 
         public void Dispose()
         {
+            ArrayPool<byte>.Shared.Return(_stagingBuffer);
         }
 
         public void LoadStream(Stream dataStream, int recordSize)

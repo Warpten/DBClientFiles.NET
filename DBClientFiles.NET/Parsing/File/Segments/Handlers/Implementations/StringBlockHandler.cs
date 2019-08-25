@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -31,7 +32,7 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
             reader.BaseStream.Seek(startOffset, SeekOrigin.Begin);
 
             // Not ideal but this will do
-            var byteBuffer = new byte[length];
+            var byteBuffer = ArrayPool<byte>.Shared.Rent((int) length);
             int actualLength = reader.BaseStream.Read(byteBuffer, 0, (int)length);
 
             Debug.Assert(actualLength == length);
@@ -55,6 +56,8 @@ namespace DBClientFiles.NET.Parsing.File.Segments.Handlers
 
                 cursor += 1;
             }
+
+            ArrayPool<byte>.Shared.Return(byteBuffer);
         }
 
         public void WriteBlock<T, U>(T writer) where T : BinaryWriter, IWriter<U>

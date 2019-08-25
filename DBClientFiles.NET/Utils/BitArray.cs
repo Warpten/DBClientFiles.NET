@@ -15,8 +15,6 @@ namespace DBClientFiles.NET.Utils
 
         private Memory<byte> _storage;
 
-        public int Offset { get; set; }
-
         public static BitArray Create(Stream stream, int size)
         {
             var buffer = new byte[size + 8];
@@ -30,29 +28,23 @@ namespace DBClientFiles.NET.Utils
         private BitArray(Memory<byte> buffer)
         {
             _storage = buffer;
-
-            Offset = 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T Read<T>() where T : unmanaged => ReadAt<T>(Offset);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T Read<T>(int bitCount) where T : unmanaged => ReadAt<T>(Offset, bitCount);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe T ReadAt<T>(int bitOffset) where T : unmanaged => ReadAt<T>(bitOffset, Unsafe.SizeOf<T>() * 8);
+        public unsafe T ReadAt<T>(int bitOffset) where T : unmanaged
+        {
+            var ptr = (ulong*) Unsafe.AsPointer(ref _storage.Span[bitOffset / 8]);
+            var value = (*ptr << (64 - sizeof(T) - (bitOffset & 7))) >> (64 - sizeof(T));
+            return *(T*)&value;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe T ReadAt<T>(int bitOffset, int bitCount) where T : unmanaged
         {
-            var byteOffset = bitOffset / 8;
-
-            var shiftBase = 64 - bitCount;
-            
-            // TODO: Ensure the bounds check is eliminated here
-            var longValue = (*(ulong*)_storage.Span[byteOffset] << (shiftBase - (bitOffset & 7))) >> shiftBase;
-            return *(T*) longValue;
+            var value = ReadAt<T>(bitOffset);
+            var valuePtr = (ulong*) Unsafe.AsPointer(ref value);
+            var shiftedValue = *valuePtr >> (sizeof(T) - bitCount);
+            return *(T*)&shiftedValue;
         }
     }
 }
