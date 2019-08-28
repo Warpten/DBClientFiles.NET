@@ -1,16 +1,16 @@
 ﻿using DBClientFiles.NET.Exceptions;
-using DBClientFiles.NET.Parsing.File;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
-using WDBC = DBClientFiles.NET.Parsing.File.WDBC;
-using WDB2 = DBClientFiles.NET.Parsing.File.WDB2;
-using WDB5 = DBClientFiles.NET.Parsing.File.WDB5;
-using WDC1 = DBClientFiles.NET.Parsing.File.WDC1;
+using WDBC = DBClientFiles.NET.Parsing.Versions.WDBC;
+using WDB2 = DBClientFiles.NET.Parsing.Versions.WDB2;
+using WDB5 = DBClientFiles.NET.Parsing.Versions.WDB5;
+using WDC1 = DBClientFiles.NET.Parsing.Versions.WDC1;
 
 using System;
 using System.Runtime.InteropServices;
+using DBClientFiles.NET.Parsing.Versions;
 
 namespace DBClientFiles.NET.Collections.Generic.Internal
 {

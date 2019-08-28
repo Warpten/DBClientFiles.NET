@@ -63,8 +63,6 @@
   <ItemGroup>
     <Folder Include="Collections\Internal\" />
     <Folder Include="Definitions\" />
-    <Folder Include="Parsing\File\WDC3\" />
-    <Folder Include="Parsing\File\WDB6\" />
   </ItemGroup>
 
 </Project>

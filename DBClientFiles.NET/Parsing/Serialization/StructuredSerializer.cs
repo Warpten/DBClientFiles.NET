@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using DBClientFiles.NET.Parsing.File;
-using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.Reflection;
-using DBClientFiles.NET.Parsing.Serialization.Generators;
+using DBClientFiles.NET.Parsing.Shared.Records;
+using DBClientFiles.NET.Parsing.Versions;
 using DBClientFiles.NET.Utils;
 using TypeToken = DBClientFiles.NET.Parsing.Reflection.TypeToken;
 
@@ -84,7 +82,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
         /// <param name="key">The new key value to set<</param>
         public void SetRecordIndex(out T instance, int key) => _keySetter(out instance, key);
 
-        public abstract T Deserialize(IRecordReader reader, IParser<T> parser);
+        public abstract T Deserialize(IRecordReader recordReader, IParser<T> fileParser);
 
         /// <summary>
         /// Clone the provided instance.
