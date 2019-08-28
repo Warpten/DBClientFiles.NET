@@ -1,7 +1,9 @@
-﻿using DBClientFiles.NET.Parsing.Shared.Records;
+﻿using DBClientFiles.NET.Parsing.Enumerators;
+using DBClientFiles.NET.Parsing.Shared.Records;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions.WDB2.Segments.Handlers;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 
@@ -71,6 +73,13 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB2
         {
             if (step == ParsingStep.Segments)
                 _recordReader = new AlignedRecordReader(this, Header.RecordSize);
+        }
+
+        protected override IEnumerator<T> CreateEnumerator()
+        {
+            return !Header.OffsetMap.Exists
+                ? (IEnumerator<T>) new RecordsEnumerator<Parser<T>, T, Serializer<T>>(this)
+                : (IEnumerator<T>) new OffsetMapEnumerator<Parser<T>, T, Serializer<T>>(this);
         }
     }
 }

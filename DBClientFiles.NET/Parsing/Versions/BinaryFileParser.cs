@@ -137,14 +137,11 @@ namespace DBClientFiles.NET.Parsing.Versions
             Serializer = new TSerializer();
             Serializer.Initialize(this);
 
-            var enumerator = Header.OffsetMap.Exists
-                ? (Enumerator<TValue, TSerializer>) new OffsetMapEnumerator<TValue, TSerializer>(this)
-                : (Enumerator<TValue, TSerializer>) new RecordsEnumerator<TValue, TSerializer>(this);
-
-            return enumerator.WithIndexTable()
-                .WithCopyTable();
+            return CreateEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        protected abstract IEnumerator<TValue> CreateEnumerator();
     }
 }

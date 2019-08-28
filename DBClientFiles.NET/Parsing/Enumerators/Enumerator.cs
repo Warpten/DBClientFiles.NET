@@ -10,14 +10,15 @@ namespace DBClientFiles.NET.Parsing.Enumerators
     /// 
     /// This enumerator has no notion of special blocks it would need to handle.
     /// </summary>
-    internal abstract partial class Enumerator<TValue, TSerializer> : IEnumerator<TValue>, IEnumerator
+    internal abstract partial class Enumerator<TParser, TValue, TSerializer> : IEnumerator<TValue>, IEnumerator
         where TSerializer : ISerializer<TValue>, new()
+        where TParser : BinaryFileParser<TValue, TSerializer>
     {
-        internal BinaryFileParser<TValue, TSerializer> Parser { get; }
+        internal TParser Parser { get; }
 
         protected TSerializer Serializer => Parser.Serializer;
 
-        public Enumerator(BinaryFileParser<TValue, TSerializer> owner)
+        public Enumerator(TParser owner)
         {
             Parser = owner;
             Current = default;
@@ -43,7 +44,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
         #endregion
 
         #region IDisposable
-        public void Dispose()
+        public virtual void Dispose()
         {
         }
         #endregion
@@ -52,17 +53,17 @@ namespace DBClientFiles.NET.Parsing.Enumerators
 
         internal abstract TValue ObtainCurrent();
 
-        public virtual Enumerator<TValue, TSerializer> WithCopyTable()
+        public virtual Enumerator<TParser, TValue, TSerializer> WithCopyTable()
         {
             return Parser.Header.CopyTable.Exists
-                ? new CopyTableEnumerator<TValue, TSerializer>(this)
+                ? new CopyTableEnumerator<TParser, TValue, TSerializer>(this)
                 : this;
         }
 
-        public virtual Enumerator<TValue, TSerializer> WithIndexTable()
+        public virtual Enumerator<TParser, TValue, TSerializer> WithIndexTable()
         {
             return Parser.Header.IndexTable.Exists
-                ? new IndexTableEnumerator<TValue, TSerializer>(this)
+                ? new IndexTableEnumerator<TParser, TValue, TSerializer>(this)
                 : this;
         }
     }

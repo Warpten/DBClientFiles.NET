@@ -1,14 +1,16 @@
 ﻿using DBClientFiles.NET.Parsing.Serialization;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
+using DBClientFiles.NET.Parsing.Versions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace DBClientFiles.NET.Parsing.Enumerators
 {
-    internal class CopyTableEnumerator<TValue, TSerializer> : DecoratingEnumerator<TValue, TSerializer>
+    internal class CopyTableEnumerator<TParser, TValue, TSerializer> : DecoratingEnumerator<TParser, TValue, TSerializer>
         where TSerializer : ISerializer<TValue>, new()
+        where TParser : BinaryFileParser<TValue, TSerializer>
     {
         private readonly CopyTableHandler _blockHandler;
 
@@ -17,7 +19,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
         private TValue _currentCopySource;
         private Func<TValue> _instanceFactory { get; }
 
-        public CopyTableEnumerator(Enumerator<TValue, TSerializer> impl) : base(impl)
+        public CopyTableEnumerator(Enumerator<TParser, TValue, TSerializer> impl) : base(impl)
         {
             if (Parser.Header.CopyTable.Exists)
             {
@@ -68,7 +70,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
             throw new NotImplementedException();
         }
 
-        public override Enumerator<TValue, TSerializer> WithCopyTable()
+        public override Enumerator<TParser, TValue, TSerializer> WithCopyTable()
         {
             return this;
         }

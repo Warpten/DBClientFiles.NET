@@ -1,6 +1,8 @@
-﻿using DBClientFiles.NET.Parsing.Shared.Records;
+﻿using DBClientFiles.NET.Parsing.Enumerators;
+using DBClientFiles.NET.Parsing.Shared.Records;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 
@@ -64,7 +66,14 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
         public override void After(ParsingStep step)
         {
             if (step == ParsingStep.Segments)
+            {
                 _recordReader = new AlignedRecordReader(this, Header.RecordSize);
+            }
+        }
+
+        protected override IEnumerator<T> CreateEnumerator()
+        {
+            return new RecordsEnumerator<Parser<T>, T, Serializer<T>>(this);
         }
     }
 }

@@ -1,8 +1,10 @@
-﻿using DBClientFiles.NET.Parsing.Shared.Records;
+﻿using DBClientFiles.NET.Parsing.Enumerators;
+using DBClientFiles.NET.Parsing.Shared.Records;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions.WDB5.Binding;
 using DBClientFiles.NET.Parsing.Versions.WDB5.Segments.Handlers;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 
@@ -107,6 +109,15 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
             // Pocket sized optimization to allocate a buffer large enough to contain every record without the need for reallocations
             _recordReader = new ByteAlignedRecordReader(this,
                 FindSegmentHandler<OffsetMapHandler>(SegmentIdentifier.OffsetMap)?.GetLargestRecordSize() ?? Header.RecordSize);
+        }
+
+        protected override IEnumerator<T> CreateEnumerator()
+        {
+            var enumerator = !Header.OffsetMap.Exists
+                ? (Enumerator<Parser<T>, T, Serializer<T>>) new RecordsEnumerator<Parser<T>, T, Serializer<T>>(this)
+                : (Enumerator<Parser<T>, T, Serializer<T>>) new OffsetMapEnumerator<Parser<T>, T, Serializer<T>>(this);
+
+            return enumerator.WithIndexTable().WithCopyTable();
         }
     }
 }

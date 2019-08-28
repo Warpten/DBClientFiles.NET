@@ -5,6 +5,8 @@ using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions.WDC1.Segments.Handlers;
 using DBClientFiles.NET.Parsing.Versions.WDC1.Binding;
+using System.Collections.Generic;
+using DBClientFiles.NET.Parsing.Enumerators;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDC1
 {
@@ -120,6 +122,15 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
         {
             if (step == ParsingStep.Segments)
                 _recordReader = new UnalignedRecordReader(this, Header.RecordSize);
+        }
+
+        protected override IEnumerator<T> CreateEnumerator()
+        {
+            var enumerator = !Header.OffsetMap.Exists
+                ? (Enumerator<Parser<T>, T, Serializer<T>>) new RecordsEnumerator<Parser<T>, T, Serializer<T>>(this)
+                : (Enumerator<Parser<T>, T, Serializer<T>>) new OffsetMapEnumerator<Parser<T>, T, Serializer<T>>(this);
+
+            return enumerator.WithIndexTable().WithCopyTable();
         }
     }
 }

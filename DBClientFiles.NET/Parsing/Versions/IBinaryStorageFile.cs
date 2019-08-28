@@ -18,6 +18,9 @@ namespace DBClientFiles.NET.Parsing.Versions
 
         TypeToken Type { get; }
 
+        /// <summary>
+        /// The options to be used when processing the file.
+        /// </summary>
         ref readonly StorageOptions Options { get; }
 
         Segment FindSegment(SegmentIdentifier identifier);
