@@ -1,31 +1,52 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Parsing.Enums;
 using DBClientFiles.NET.Parsing.File.Records;
+using DBClientFiles.NET.Parsing.File.Segments;
+using DBClientFiles.NET.Parsing.File.Segments.Handlers;
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Parsing.Serialization.Generators;
 
 namespace DBClientFiles.NET.Parsing.File.WDB5
 {
-    internal sealed class SerializerGenerator<T> : TypedSerializerGenerator<T>
+    internal sealed class SerializerGenerator<T> : TypedSerializerGenerator<T, int>
     {
-        private IList<MemberMetadata> _memberMetadata;
-        private int _callIndex;
+        public delegate void MethodType(IRecordReader recordReader, Parser<T> fileParser, out T instance);
+        private MethodType _methodImpl;
 
-        private int? _indexColumn;
-
-        public SerializerGenerator(TypeToken root, TypeTokenType memberType, IList<MemberMetadata> memberMetadata) : base(root, memberType)
+        public MethodType Method
         {
-            _memberMetadata = memberMetadata;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                if (_methodImpl == null)
+                    _methodImpl = GenerateDeserializer<MethodType>();
 
-            Parameters.Add(Expression.Parameter(typeof(IRecordReader)));
-            Parameters.Add(Expression.Parameter(typeof(T).MakeByRefType()));
+                Debug.Assert(_methodImpl != null, "failed to generate deserializer method");
+                return _methodImpl;
+            }
         }
 
-        public void SetIndexColumn(int indexColumn)
+        private IList<MemberMetadata> _memberMetadata;
+
+        /// <summary>
+        /// Stores the index column's position in the record. This field is set <b>iff</b> the index table exists.
+        /// </summary>
+        private int? _indexColumn;
+
+        public SerializerGenerator(IBinaryStorageFile storage) : base(storage.Type, storage.Options.TokenType, 0)
         {
-            _indexColumn = indexColumn;
+            Parameters.Add(Expression.Parameter(typeof(IRecordReader), "recordReader"));
+            Parameters.Add(Expression.Parameter(typeof(Parser<T>), "fileParser"));
+            Parameters.Add(Expression.Parameter(typeof(T).MakeByRefType(), "instance"));
+
+            _memberMetadata = storage.FindBlock(BlockIdentifier.FieldInfo)?.Handler as FieldInfoHandler<MemberMetadata>;
+
+            if (storage.Header.IndexTable.Exists)
+                _indexColumn = storage.Header.IndexColumn;
         }
 
         public MemberMetadata GetMemberInfo(int callIndex)
@@ -66,13 +87,21 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
         public override Expression GenerateExpressionReader(TypeToken typeToken, MemberToken memberToken)
         {
             // NOTE: This only works because the generator tries to unroll any loop instead of rolling them
-            var memberMetadata = GetMemberInfo(_callIndex++);
+            var memberMetadata = GetMemberInfo(State++);
             if (memberMetadata == null)
                 return null;
 
             switch (memberMetadata.CompressionData.Type)
             {
                 // We have to use immediate readers because all the other ones assume sequential reads
+                case MemberCompressionType.RelationshipData:
+                    {
+                        // This is used to parse values found in WMOMinimapTexture (@barncastle)
+                        // Well ok fair it isn't yet but that's the plan
+
+                        // TODO: use Parameters[1] for this (because it lets us access blocks!)
+                        break;
+                    }
                 case MemberCompressionType.None:
                 case MemberCompressionType.Immediate:
                     if (typeToken.IsPrimitive)
@@ -94,9 +123,8 @@ namespace DBClientFiles.NET.Parsing.File.WDB5
             throw new InvalidOperationException("Unsupported compression type");
         }
 
-        protected override Expression RecordReader => Parameters[0];
+        private Expression RecordReader => Parameters[0];
 
-        protected override Expression FileParser => null;
         protected override Expression Instance => Parameters[1];
     }
 }

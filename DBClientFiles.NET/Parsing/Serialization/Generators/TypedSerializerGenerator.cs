@@ -8,6 +8,10 @@ using DBClientFiles.NET.Utils.Expressions.Extensions;
 
 namespace DBClientFiles.NET.Parsing.Serialization.Generators
 {
+    /// <summary>
+    /// The base class in charge of generating deserialization methods for a given <see cref="{T}"/>.
+    /// </summary>
+    /// <typeparam name="T">The record type for which a deserializer must be generated.</typeparam>
     internal abstract class TypedSerializerGenerator<T> : SerializerGenerator
     {
         public TypedSerializerGenerator(TypeToken root, TypeTokenType memberType) : base(root, memberType)
@@ -15,7 +19,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
             Debug.Assert(root == typeof(T));
         }
 
-        public TMethod GenerateDeserializer<TMethod>() where TMethod : Delegate
+        protected TMethod GenerateDeserializer<TMethod>() where TMethod : Delegate
         {
             var body = GenerateDeserializationMethodBody();
             
@@ -48,9 +52,23 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
             return Instance;
         }
 
-        protected abstract Expression RecordReader { get; }
-        protected abstract Expression FileParser { get; }
-
         protected abstract Expression Instance { get; }
+    }
+
+    /// <summary>
+    /// The base class in charge of generating deserialization methods for a given <see cref="{T}"/>.
+    /// </summary>
+    /// <typeparam name="T">The record type for which a deserializer must be generated.</typeparam>
+    /// <typeparam name="TGenerationState">A state object that is used when generating reader calls.</typeparam>
+    internal abstract class TypedSerializerGenerator<T, TGenerationState> : TypedSerializerGenerator<T>
+    {
+        protected TGenerationState State { get; set; }
+
+        public TypedSerializerGenerator(TypeToken root, TypeTokenType memberType, TGenerationState state) : base(root, memberType)
+        {
+            Debug.Assert(root == typeof(T));
+
+            State = state;
+        }
     }
 }

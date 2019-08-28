@@ -7,7 +7,6 @@ using System.Text;
 
 namespace DBClientFiles.NET.Benchmark
 {
-    [MemoryDiagnoser]
     public abstract class AbstractBenchmark
     {
         protected MemoryStream File { get; private set; }
@@ -21,18 +20,14 @@ namespace DBClientFiles.NET.Benchmark
             Path = filePath;
         }
 
-        [IterationSetup]
-        public void IterationSetup()
-        {
-            File.Position = 0;
-        }
-
         [GlobalSetup]
         public void GlobalSetup()
         {
             File = new MemoryStream();
             using (var fs = System.IO.File.OpenRead(Path))
                 fs.CopyTo(File);
+
+            File.Position = 0;
         }
 
         [GlobalCleanup]

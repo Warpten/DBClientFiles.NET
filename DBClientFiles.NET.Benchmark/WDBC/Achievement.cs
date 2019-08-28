@@ -5,7 +5,7 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
 using DBClientFiles.NET.Collections.Generic;
 
-namespace DBClientFiles.NET.Benchmark
+namespace DBClientFiles.NET.Benchmark.WDBC
 {
     public class WDBC_Achievement : AbstractBenchmark
     {
@@ -14,16 +14,17 @@ namespace DBClientFiles.NET.Benchmark
 
         }
 
-        [Benchmark(Description = "Achievement (take 1)")]
-        public void Achievement_Enumerator_Take1()
+        [Benchmark]
+        public void Achievement_Enumerator_Take1_WDBC()
         {
+            File.Position = 0;
             new StorageEnumerable<Types.WDBC.Achievement>(StorageOptions.Default, File).Take(1).Consume(Consumer);
         }
 
-        [Benchmark(Description = "Achievement (take all)")]
-        [BenchmarkCategory("WDBC")]
-        public StorageList<Types.WDBC.Achievement> Achievement_List()
+        [Benchmark]
+        public StorageList<Types.WDBC.Achievement> Achievement_List_WDBC()
         {
+            File.Position = 0;
             return new StorageList<Types.WDBC.Achievement>(StorageOptions.Default, File);
         }
     }

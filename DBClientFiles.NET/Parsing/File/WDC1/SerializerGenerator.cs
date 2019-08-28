@@ -4,28 +4,47 @@ using DBClientFiles.NET.Parsing.File.Segments.Handlers;
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Parsing.Serialization.Generators;
 using System;
+using System.Diagnostics;
 using System.Linq.Expressions;
 
 namespace DBClientFiles.NET.Parsing.File.WDC1
 {
-    internal sealed class SerializerGenerator<T> : TypedSerializerGenerator<T>
+    internal sealed class SerializerGenerator<T> : TypedSerializerGenerator<T, int>
     {
-        private int _callIndex;
+        public delegate void MethodType(IRecordReader recordReader, out T instance);
+        private MethodType _methodImpl;
+
+        public MethodType Method
+        {
+            get
+            {
+                if (_methodImpl == null)
+                    _methodImpl = GenerateDeserializer<MethodType>();
+
+                Debug.Assert(_methodImpl != null, "deserializer needed for WDC1");
+                return _methodImpl;
+            }
+        }
 
         private FieldInfoHandler<MemberMetadata> FieldInfoBlock { get; }
-        public int? IndexColumn { get; set; }
 
-        public SerializerGenerator(IBinaryStorageFile storage, FieldInfoHandler<MemberMetadata> fieldInfoBlock) : base(storage.Type, storage.Options.TokenType)
+        /// <summary>
+        /// Stores the index column's position in the record. This property is set <b>iff</b> the index table exists.
+        /// </summary>
+        public int? IndexColumn { get; }
+
+        public SerializerGenerator(IBinaryStorageFile storage, FieldInfoHandler<MemberMetadata> fieldInfoBlock) : base(storage.Type, storage.Options.TokenType, 0)
         {
             FieldInfoBlock = fieldInfoBlock;
 
             Parameters.Add(Expression.Parameter(typeof(IRecordReader), "recordReader"));
             Parameters.Add(Expression.Parameter(typeof(T).MakeByRefType(), "instance"));
 
-            _callIndex = 0;
+            if (storage.Header.IndexTable.Exists)
+                IndexColumn = storage.Header.IndexColumn;
         }
 
-        public MemberMetadata GetMemberInfo(int callIndex)
+        private MemberMetadata GetMemberInfo(int callIndex)
         {
             if (IndexColumn.HasValue)
             {
@@ -54,8 +73,7 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
         public override Expression GenerateExpressionReader(TypeToken typeToken, MemberToken memberToken)
         {
             // NOTE: This only works because the generator tries to unroll any loop instead of rolling them
-            var memberMetadata = GetMemberInfo(_callIndex);
-            ++_callIndex;
+            var memberMetadata = GetMemberInfo(State++);
             if (memberMetadata == null)
                 return null;
 
@@ -83,8 +101,8 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
             return null;
         }
 
-        protected override Expression FileParser => throw new NotImplementedException();
-        protected override Expression RecordReader => Parameters[0];
+        private Expression RecordReader => Parameters[0];
+
         protected override Expression Instance => Parameters[1];
     }
 }

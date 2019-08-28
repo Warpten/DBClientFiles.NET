@@ -6,7 +6,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
 {
 
     /// <summary>
-    /// Generates serialization methods.
+    /// Generates serialization methods for various objects.
     /// </summary>
     internal abstract class SerializerGenerator
     {
@@ -55,7 +55,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
                 expr = Expression.Block(expr, returnType);
 
             // TODO: See if trying to optimize iterator usages in the generated code outweights the cost of optimizing
-            // (It probably doesn't)
+            // (It probably doesn't) (except for large files question mark?)
             return expr;
         }
 

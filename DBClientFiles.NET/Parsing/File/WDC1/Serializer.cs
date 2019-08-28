@@ -13,8 +13,8 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
         private delegate void TypeDeserializer(IRecordReader recordReader, out T instance);
 
         private FieldInfoHandler<MemberMetadata> InfoBlock { get; set; }
-        private TypedSerializerGenerator<T> Generator { get; set; }
-        private TypeDeserializer TypeSerializer { get; set; }
+
+        private SerializerGenerator<T> Generator { get; set; }
 
         public Serializer() : base()
         {
@@ -27,21 +27,12 @@ namespace DBClientFiles.NET.Parsing.File.WDC1
 
             InfoBlock = storage.FindBlock(BlockIdentifier.FieldInfo)?.Handler as FieldInfoHandler<MemberMetadata>;
 
-            var generator = new SerializerGenerator<T>(storage, InfoBlock);
-            if (storage.Header.IndexTable.Exists)
-                generator.IndexColumn = storage.Header.IndexColumn;
-
-            Generator = generator;
+            Generator = new SerializerGenerator<T>(storage, InfoBlock);
         }
 
         public override T Deserialize(IRecordReader reader, IParser<T> parser)
         {
-            if (TypeSerializer == null)
-                TypeSerializer = Generator.GenerateDeserializer<TypeDeserializer>();
-
-            Debug.Assert(TypeSerializer != null, "deserializer needed");
-
-            TypeSerializer.Invoke(reader, out var instance);
+            Generator.Method.Invoke(reader, out var instance);
             return instance;
         }
     }

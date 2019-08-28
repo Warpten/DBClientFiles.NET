@@ -7,10 +7,8 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
 {
     internal sealed class Serializer<T> : StructuredSerializer<T>
     {
-        private delegate void TypeDeserializer(IRecordReader recordReader, out T instance);
 
-        private TypedSerializerGenerator<T> Generator { get; set; }
-        private TypeDeserializer TypeSerializer { get; set; }
+        private WDBC.SerializerGenerator<T> Generator { get; set; }
 
         public Serializer() : base()
         {
@@ -27,12 +25,7 @@ namespace DBClientFiles.NET.Parsing.File.WDB2
 
         public override T Deserialize(IRecordReader reader, IParser<T> parser)
         {
-            if (TypeSerializer == null)
-                TypeSerializer = Generator.GenerateDeserializer<TypeDeserializer>();
-
-            Debug.Assert(TypeSerializer != null, "deserializer needed");
-
-            TypeSerializer.Invoke(reader, out var instance);
+            Generator.Method.Invoke(reader, out var instance);
             return instance;
         }
     }

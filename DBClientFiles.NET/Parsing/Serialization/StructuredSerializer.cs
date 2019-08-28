@@ -27,12 +27,8 @@ namespace DBClientFiles.NET.Parsing.Serialization
         private TypeKeyGetter _keyGetter;
         private TypeKeySetter _keySetter;
 
-        public bool Initialized { get; private set; }
-
         private StorageOptions _options;
-        public ref readonly StorageOptions Options {
-            get => ref _options;
-        }
+        public ref readonly StorageOptions Options => ref _options;
 
         public TypeToken Type { get; protected set; }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Parsing.Serialization.Generators;
@@ -8,27 +9,37 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
 {
     internal sealed class SerializerGenerator<T> : TypedSerializerGenerator<T>
     {
-        public SerializerGenerator(TypeToken root, TypeTokenType memberType) : base(root, memberType)
-        {
-            Parameters.Add(Expression.Parameter(typeof(IRecordReader)));
-            Parameters.Add(Expression.Parameter(typeof(T).MakeByRefType()));
+        public delegate void MethodType(IRecordReader recordReader, out T instance);
+        private MethodType _methodImpl;
+
+        public MethodType Method {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get  {
+                if (_methodImpl == null)
+                    _methodImpl = GenerateDeserializer<MethodType>();
+
+                return _methodImpl;
+            }
         }
 
+        public SerializerGenerator(TypeToken root, TypeTokenType memberType) : base(root, memberType)
+        {
+            Parameters.Add(Expression.Parameter(typeof(IRecordReader), "recordReader"));
+            Parameters.Add(Expression.Parameter(typeof(T).MakeByRefType(), "instance"));
+        }
+    
         public override Expression GenerateExpressionReader(TypeToken typeToken, MemberToken memberToken)
         {
             if (typeToken.IsPrimitive)
-            {
-                var methodCall = typeToken.MakeGenericMethod(_IRecordReader.Read);
-                return Expression.Call(RecordReader, methodCall);
-            }
+                return Expression.Call(RecordReader, typeToken.MakeGenericMethod(_IRecordReader.Read));
             else if (typeToken == typeof(string))    
                 return Expression.Call(RecordReader, _IRecordReader.ReadString);
         
             return null;
         }
 
-        protected override Expression RecordReader => Parameters[0];
-        protected override Expression FileParser => throw new NotImplementedException();
+        private Expression RecordReader => Parameters[0];
+
         protected override Expression Instance => Parameters[1];
     }
 }

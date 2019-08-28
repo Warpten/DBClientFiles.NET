@@ -7,7 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace DBClientFiles.NET.Benchmark
+namespace DBClientFiles.NET.Benchmark.WDB2
 {
     public class WDB2_ItemSparse : AbstractBenchmark
     {
@@ -16,15 +16,17 @@ namespace DBClientFiles.NET.Benchmark
 
         }
 
-        [Benchmark(Description = "Item-sparse (take all)")]
+        [Benchmark]
         public StorageList<Types.WDB2.ItemSparse> ItemSparse_List()
         {
+            File.Position = 0;
             return new StorageList<Types.WDB2.ItemSparse>(StorageOptions.Default, File);
         }
 
-        [Benchmark(Description = "Item-sparse (take 1)")]
+        [Benchmark]
         public void ItemSparse_Take1()
         {
+            File.Position = 0;
             new StorageEnumerable<Types.WDB2.ItemSparse>(StorageOptions.Default, File).Take(1).Consume(Consumer);
         }
     }

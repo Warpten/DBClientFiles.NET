@@ -15,17 +15,17 @@ namespace DBClientFiles.NET.Benchmark.WDC1
 
         }
 
-        [Benchmark(Description = "Achievement (take 1)")]
-        [BenchmarkCategory("WDC1")]
-        public void Achievement_Enumerator_Take1()
+        [Benchmark]
+        public void Achievement_Enumerator_Take1_WDC1()
         {
+            File.Position = 0;
             new StorageEnumerable<Types.WDC1.Achievement>(StorageOptions.Default, File).Take(1).Consume(Consumer);
         }
 
-        [Benchmark(Description = "Achievement (take all)")]
-        [BenchmarkCategory("WDC1")]
-        public StorageList<Types.WDC1.Achievement> Achievement_List()
+        [Benchmark]
+        public StorageList<Types.WDC1.Achievement> Achievement_List_WDC1()
         {
+            File.Position = 0;
             return new StorageList<Types.WDC1.Achievement>(StorageOptions.Default, File);
         }
     }

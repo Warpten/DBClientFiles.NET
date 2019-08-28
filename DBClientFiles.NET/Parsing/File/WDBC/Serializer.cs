@@ -1,20 +1,11 @@
 ﻿using DBClientFiles.NET.Parsing.File.Records;
 using DBClientFiles.NET.Parsing.Serialization;
-using DBClientFiles.NET.Parsing.Serialization.Generators;
-using System.Diagnostics;
 
 namespace DBClientFiles.NET.Parsing.File.WDBC
 {
     internal sealed class Serializer<T> : StructuredSerializer<T>
     {
-        private delegate void TypeDeserializer(IRecordReader recordReader, out T instance);
-
-        private TypedSerializerGenerator<T> Generator { get; set; }
-        private TypeDeserializer TypeSerializer { get; set; }
-
-        public Serializer() : base()
-        {
-        }
+        private SerializerGenerator<T> Generator { get; set; }
 
         public override void Initialize(IBinaryStorageFile storage)
         {
@@ -25,12 +16,7 @@ namespace DBClientFiles.NET.Parsing.File.WDBC
 
         public override T Deserialize(IRecordReader reader, IParser<T> parser)
         {
-            if (TypeSerializer == null)
-                TypeSerializer = Generator.GenerateDeserializer<TypeDeserializer>();
-
-            Debug.Assert(TypeSerializer != null, "deserializer needed");
-
-            TypeSerializer.Invoke(reader, out var instance);
+            Generator.Method.Invoke(reader, out var instance);
             return instance;
         }
     }
