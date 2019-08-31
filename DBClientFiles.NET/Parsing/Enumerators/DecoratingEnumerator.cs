@@ -28,7 +28,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
         {
             base.Reset();
 
-            Implementation.ResetIterator();
+            Implementation.Reset();
         }
     }
 }

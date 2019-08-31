@@ -30,33 +30,35 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
         {
             if (step != ParsingStep.Segments)
                 return;
-            
+
+            var headerHandler = new HeaderHandler(this);
+
             Head = new Segment {
                 Identifier = SegmentIdentifier.Header,
                 Length = Unsafe.SizeOf<Header>(),
 
-                Handler = new HeaderHandler(this)
+                Handler = headerHandler
             };
 
             var tail = Head.Next = new Segment {
                 Identifier = SegmentIdentifier.FieldInfo,
-                Length = Header.FieldCount * (2 + 2),
+                Length = headerHandler.FieldCount * (2 + 2),
 
                 Handler = new FieldInfoHandler<MemberMetadata>()
             };
 
             tail = tail.Next = new Segment {
                 Identifier = SegmentIdentifier.Records,
-                Length = Header.OffsetMap.Exists
-                    ? Header.StringTable.Length - tail.EndOffset
-                    : Header.RecordCount * Header.RecordSize
+                Length = headerHandler.OffsetMap.Exists
+                    ? headerHandler.StringTable.Length - tail.EndOffset
+                    : headerHandler.RecordCount * headerHandler.RecordSize
             };
 
-            if (!Header.OffsetMap.Exists)
+            if (!headerHandler.OffsetMap.Exists)
             {
                 tail = tail.Next = new Segment {
                     Identifier = SegmentIdentifier.StringBlock,
-                    Length = Header.StringTable.Length,
+                    Length = headerHandler.StringTable.Length,
 
                     Handler = new StringBlockHandler(Options.InternStrings)
                 };
@@ -65,36 +67,36 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
             {
                 tail = tail.Next = new Segment {
                     Identifier = SegmentIdentifier.OffsetMap,
-                    Length = (4 + 2) * (Header.MaxIndex - Header.MinIndex + 1),
+                    Length = (4 + 2) * (headerHandler.MaxIndex - headerHandler.MinIndex + 1),
 
                     Handler = new OffsetMapHandler()
                 };
             }
 
-            if (Header.RelationshipTable.Exists)
+            if (headerHandler.RelationshipTable.Exists)
             {
                 tail = tail.Next = new Segment {
                     // Legacy foreign table, apparently used by only WMOMinimapTexture (WDB3/4/5) @Barncastle
                     Identifier = SegmentIdentifier.RelationshipTable,
-                    Length = 4 * (Header.MaxIndex - Header.MinIndex + 1)
+                    Length = 4 * (headerHandler.MaxIndex - headerHandler.MinIndex + 1)
                 };
             }
 
-            if (Header.IndexTable.Exists)
+            if (headerHandler.IndexTable.Exists)
             {
                 tail = tail.Next = new Segment {
                     Identifier = SegmentIdentifier.IndexTable,
-                    Length = 4 * Header.RecordCount,
+                    Length = 4 * headerHandler.RecordCount,
 
                     Handler = new IndexTableHandler()
                 };
             }
 
-            if (Header.CopyTable.Exists)
+            if (headerHandler.CopyTable.Exists)
             {
                 tail.Next = new Segment {
                     Identifier = SegmentIdentifier.CopyTable,
-                    Length = Header.CopyTable.Length,
+                    Length = headerHandler.CopyTable.Length,
 
                     Handler = new CopyTableHandler()
                 };

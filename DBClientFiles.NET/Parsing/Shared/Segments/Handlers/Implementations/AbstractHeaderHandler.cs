@@ -52,7 +52,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
             ReadSegment(source, 0, Unsafe.SizeOf<T>());
         }
 
-        public override void ReadSegment(IBinaryStorageFile reader, long startOffset, long length)
+        public override sealed void ReadSegment(IBinaryStorageFile reader, long startOffset, long length)
         {
             if (_readAlready)
                 return;
