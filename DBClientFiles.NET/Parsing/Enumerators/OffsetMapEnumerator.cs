@@ -33,8 +33,10 @@ namespace DBClientFiles.NET.Parsing.Enumerators
             return Serializer.Deserialize(recordReader, Parser);
         }
 
-        internal override void ResetIterator()
+        public override void Reset()
         {
+            base.Reset();
+
             _cursor = 0;
         }
     }

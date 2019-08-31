@@ -16,8 +16,8 @@ namespace DBClientFiles.NET.Parsing.Enumerators
 
         private IEnumerator<int> _currentCopyIndex;
 
-        private TValue _currentCopySource;
-        private Func<TValue> _instanceFactory { get; }
+        private TValue _currentInstance;
+        private Func<bool, TValue> _instanceFactory { get; }
 
         public CopyTableEnumerator(Enumerator<TParser, TValue, TSerializer> impl) : base(impl)
         {
@@ -26,48 +26,65 @@ namespace DBClientFiles.NET.Parsing.Enumerators
                 _blockHandler = Parser.FindSegmentHandler<CopyTableHandler>(SegmentIdentifier.CopyTable);
                 Debug.Assert(_blockHandler != null, "Block handler missing for copy table");
 
-                _instanceFactory = () =>
+                _instanceFactory = (bool forceReloadBase) =>
                 {
-                    // If no copy left, return self
-                    if (_currentCopyIndex == null || !_currentCopyIndex.MoveNext())
+                    // Read an instance if one exists or if we're forced to
+                    if (forceReloadBase || EqualityComparer<TValue>.Default.Equals(_currentInstance, default))
                     {
-                        // Store a reference to the original uncopied object
-                        var originalObject = _currentCopySource;
+                        _currentInstance = base.ObtainCurrent();
 
-                        // Prefetch new instance
-                        _currentCopySource = base.ObtainCurrent();
-                        if (_currentCopySource != default)
-                        {
-                            // Try to get copy table
-                            if (_blockHandler.TryGetValue(Serializer.GetRecordIndex(in _currentCopySource), out var copyKeys))
-                                _currentCopyIndex = copyKeys.GetEnumerator();
-                            else
-                                _currentCopyIndex = null;
-                        }
-
-                        return originalObject;
+                        // If we got default(TValue) from the underlying implementation we really are done
+                        if (EqualityComparer<TValue>.Default.Equals(_currentInstance, default))
+                            return default;
                     }
 
-                    var copiedSource = Serializer.Clone(in _currentCopySource);
-                    Serializer.SetRecordIndex(out copiedSource, _currentCopyIndex.Current);
-                    return copiedSource;
+                    // If no copy table is found, prefetch it, and return the instance that will be cloned
+                    if (_currentCopyIndex == null)
+                    {
+                        // Prepare copy table
+                        if (_blockHandler.TryGetValue(Serializer.GetRecordIndex(in _currentInstance), out var copyKeys))
+                            _currentCopyIndex = copyKeys.GetEnumerator();
+
+                        return _currentInstance;
+                    }
+                    else if (_currentCopyIndex.MoveNext())
+                    {
+                        // If the copy table is not done, clone and change index
+                        var copiedInstance = Serializer.Clone(in _currentInstance);
+                        Serializer.SetRecordIndex(out copiedInstance, _currentCopyIndex.Current);
+
+                        return copiedInstance;
+                    }
+                    else
+                    {
+                        // We were unable to move next in the copy table, which means we are done with the current record
+                        // and its copies. Resetup the copy table check.
+                        _currentCopyIndex = null;
+                        
+                        // Call ourselves again to initialize everything for the next record.
+                        _currentInstance = _instanceFactory(true);
+                        return _currentInstance;
+                    }
                 };
             }
             else
             {
-                _instanceFactory = base.ObtainCurrent;
+                _instanceFactory = _ => base.ObtainCurrent();
             } 
 
         }
 
         internal override TValue ObtainCurrent()
         {
-            return _instanceFactory();
+            return _instanceFactory(false);
         }
 
-        internal override void ResetIterator()
+        public override void Reset()
         {
-            throw new NotImplementedException();
+            _currentInstance = default;
+            _currentCopyIndex = null;
+
+            base.Reset();
         }
 
         public override Enumerator<TParser, TValue, TSerializer> WithCopyTable()

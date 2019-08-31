@@ -27,7 +27,6 @@ namespace DBClientFiles.NET.Parsing.Enumerators
         #region IEnumerator
         public TValue Current { get; private set; }
 
-        // Explicit implementation of the non-generic IEnumerator interface.
         object IEnumerator.Current => Current;
 
         public bool MoveNext()
@@ -36,10 +35,9 @@ namespace DBClientFiles.NET.Parsing.Enumerators
             return Current != default;
         }
 
-        public void Reset()
+        public virtual void Reset()
         {
             Current = default;
-            ResetIterator();
         }
         #endregion
 
@@ -48,8 +46,6 @@ namespace DBClientFiles.NET.Parsing.Enumerators
         {
         }
         #endregion
-
-        internal abstract void ResetIterator();
 
         internal abstract TValue ObtainCurrent();
 

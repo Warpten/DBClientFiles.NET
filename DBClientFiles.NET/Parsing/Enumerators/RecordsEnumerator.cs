@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace DBClientFiles.NET.Parsing.Enumerators
 {
-    class RecordsEnumerator<TParser, TValue, TSerializer> : Enumerator<TParser, TValue, TSerializer>
+    internal class RecordsEnumerator<TParser, TValue, TSerializer> : Enumerator<TParser, TValue, TSerializer>
         where TSerializer : ISerializer<TValue>, new()
         where TParser : BinaryFileParser<TValue, TSerializer>
     {
@@ -14,7 +14,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
         public RecordsEnumerator(TParser impl) : base(impl)
         {
             _segment = Parser.FindSegment(SegmentIdentifier.Records);
-            Debug.Assert(_segment != null, "Records block missing in enumerator");
+            Debug.Assert(_segment != null, "Records block m issing in enumerator");
 
             Parser.BaseStream.Position = _segment.StartOffset;
         }
@@ -28,8 +28,10 @@ namespace DBClientFiles.NET.Parsing.Enumerators
             return Serializer.Deserialize(recordReader, Parser);
         }
 
-        internal override void ResetIterator()
+        public override void Reset()
         {
+            base.Reset();
+
             Parser.BaseStream.Position = _segment.StartOffset;
         }
     }

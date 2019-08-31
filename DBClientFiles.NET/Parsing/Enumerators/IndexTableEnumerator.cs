@@ -31,8 +31,10 @@ namespace DBClientFiles.NET.Parsing.Enumerators
             return instance;
         }
 
-        internal override void ResetIterator()
+        public override void Reset()
         {
+            base.Reset();
+
             _cursor = 0;
         }
 
