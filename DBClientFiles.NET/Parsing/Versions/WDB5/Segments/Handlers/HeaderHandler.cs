@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
@@ -6,13 +8,13 @@ using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDB5.Segments.Handlers
 {
-    internal sealed class HeaderHandler : AbstractHeaderHandler<Either<Header, OldHeader>>
+    internal sealed class HeaderHandler : AbstractHeaderHandler<Header>
     {
-        public override int RecordCount { get; }
-        public override int FieldCount { get; }
-        public override int RecordSize { get; }
+        public override int RecordCount => Structure.RecordCount;
+        public override int FieldCount => Structure.FieldCount;
+        public override int RecordSize => Structure.RecordSize;
 
-        public override int IndexColumn { get; }
+        public override int IndexColumn => Structure.IndexColumn;
 
         private SegmentReference _stringTableRef;
         private SegmentReference _indexTable;
@@ -33,73 +35,48 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5.Segments.Handlers
         public override ref readonly SegmentReference Pallet => throw new NotImplementedException();
         public override ref readonly SegmentReference ExtendedFieldInfo => throw new NotImplementedException();
 
-        public override int MaxIndex { get; }
-        public override int MinIndex { get; }
+        public override int MaxIndex => Structure.MinIndex;
+        public override int MinIndex => Structure.MaxIndex;
 
         public HeaderHandler(IBinaryStorageFile source) : base(source)
         {
-            // the old header (before 21737) has Build instead of LayoutHash.
-            // Thus the simple solution to check if a file uses the old or the new header
-            // is to check for the high bytes of that field - if any bit is set, it's a layout hash. 
-            if (IsRight)
-            {
-                _fieldInfoRef = new SegmentReference(true, Structure.Right.FieldCount * (2 + 2));
+            // Just give me static_assert god dammit
+            Debug.Assert(Unsafe.SizeOf<Header>() == 4 * 11 + 2 * 2, "umpf");
 
-                // String table and offset map are mutually exclusive.
-                _stringTableRef = new SegmentReference((Structure.Right.Flags & 0x01) == 0,
-                    Structure.Right.StringTableLength);
+            _fieldInfoRef = new SegmentReference(true, Structure.FieldCount * (2 + 2));
 
-                _offsetMap = new SegmentReference((Structure.Right.Flags & 0x01) != 0,
-                    (Structure.Right.MaxIndex - Structure.Right.MinIndex + 1) * (4 + 2),
-                    Structure.Right.StringTableLength);
-                _relationshipTableRef = new SegmentReference((Structure.Right.Flags & 0x02) != 0,
-                    (Structure.Right.MaxIndex - Structure.Right.MinIndex + 1) * 4);
-                _indexTable = new SegmentReference((Structure.Right.Flags & 0x04) != 0,
-                    Structure.Right.RecordCount * 4);
+            // String table and offset map are mutually exclusive.
+            _stringTableRef = new SegmentReference((Structure.Flags & 0x01) == 0,
+                Structure.StringTableLength);
 
-                _copyTableRef = new SegmentReference(Structure.Right.CopyTableLength != 0,
-                    Structure.Right.CopyTableLength / (4 + 4));
+            _offsetMap = new SegmentReference((Structure.Flags & 0x01) != 0,
+                (Structure.MaxIndex - Structure.MinIndex + 1) * (4 + 2),
+                Structure.StringTableLength);
+            _relationshipTableRef = new SegmentReference((Structure.Flags & 0x02) != 0,
+                (Structure.MaxIndex - Structure.MinIndex + 1) * 4);
+            _indexTable = new SegmentReference((Structure.Flags & 0x04) != 0,
+                Structure.RecordCount * 4);
 
-                RecordCount = Structure.Right.RecordCount;
-                FieldCount = Structure.Right.FieldCount;
-                RecordSize = Structure.Right.RecordSize;
-
-                MaxIndex = Structure.Right.MaxIndex;
-                MinIndex = Structure.Right.MinIndex;
-
-                IndexColumn = 0;
-            }
-            else
-            {
-                _fieldInfoRef = new SegmentReference(true, Structure.Left.FieldCount * (2 + 2));
-
-                // String table and offset map are mutually exclusive.
-                _stringTableRef = new SegmentReference((Structure.Left.Flags & 0x01) == 0,
-                    Structure.Left.StringTableLength);
-
-                _offsetMap = new SegmentReference((Structure.Left.Flags & 0x01) != 0,
-                    (Structure.Left.MaxIndex - Structure.Left.MinIndex + 1) * (4 + 2),
-                    Structure.Left.StringTableLength);
-                _relationshipTableRef = new SegmentReference((Structure.Left.Flags & 0x02) != 0,
-                    (Structure.Left.MaxIndex - Structure.Left.MinIndex + 1) * 4);
-                _indexTable = new SegmentReference((Structure.Left.Flags & 0x04) != 0,
-                    Structure.Left.RecordCount * 4);
-
-                _copyTableRef = new SegmentReference(Structure.Left.CopyTableLength != 0,
-                    Structure.Left.CopyTableLength / (4 + 4));
-
-                RecordCount = Structure.Left.RecordCount;
-                FieldCount = Structure.Left.FieldCount;
-                RecordSize = Structure.Left.RecordSize;
-
-                MaxIndex = Structure.Left.MaxIndex;
-                MinIndex = Structure.Left.MinIndex;
-
-                IndexColumn = Structure.Left.IndexColumn;
-            }
+            _copyTableRef = new SegmentReference(Structure.CopyTableLength != 0,
+                Structure.CopyTableLength / (4 + 4));
         }
+    }
 
-        public bool IsRight => (Structure.Right.Build & 0xFFFF0000) == 0;
+    internal readonly struct BuildOrTableHash
+    {
+        private readonly Either<int, int> _values;
+
+        public int Build => _values.Left;
+        public int TableHash => _values.Right;
+    }
+
+    internal readonly struct IndexOrFlags
+    {
+        private readonly Either<uint, (ushort Flags, short IndexColumn)> _values;
+
+        public uint FullFlags => _values.Left;
+        public short IndexColumn => _values.Right.IndexColumn;
+        public ushort PartialFlags => _values.Right.Flags;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -110,30 +87,27 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5.Segments.Handlers
         public readonly int FieldCount;
         public readonly int RecordSize;
         public readonly int StringTableLength;
-        public readonly uint TableHash;
+        private readonly BuildOrTableHash _buildOrTableHash;
         public readonly uint LayoutHash;
         public readonly int MinIndex;
         public readonly int MaxIndex;
         public readonly int Locale;
         public readonly int CopyTableLength;
-        public readonly ushort Flags;
-        public readonly short IndexColumn;
-    }
+        private readonly IndexOrFlags _indexOrFlags;
 
-    [StructLayout(LayoutKind.Sequential)]
-    internal readonly struct OldHeader
-    {
-        public readonly Signatures Signature;
-        public readonly int RecordCount;
-        public readonly int FieldCount;
-        public readonly int RecordSize;
-        public readonly int StringTableLength;
-        public readonly uint Build;
-        public readonly uint LayoutHash;
-        public readonly int MinIndex;
-        public readonly int MaxIndex;
-        public readonly int Locale;
-        public readonly int CopyTableLength;
-        public readonly uint Flags;
+        /// <summary>
+        /// the old header (before 21737) has Build instead of LayoutHash.
+        /// Thus the simple solution to check if a file uses the old or the new header
+        /// is to check for the high bytes of that field - if any bit is set, it's a layout hash. 
+        /// </summary>
+        public bool IsLegacyHeader => (_buildOrTableHash.Build & 0xFFFF0000) == 0;
+
+        public int IndexColumn => IsLegacyHeader
+            ? 0
+            : _indexOrFlags.IndexColumn;
+
+        public uint Flags => IsLegacyHeader
+            ? _indexOrFlags.FullFlags
+            : _indexOrFlags.PartialFlags;
     }
 }

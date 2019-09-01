@@ -15,22 +15,32 @@ namespace DBClientFiles.NET.Utils
         where R : struct
     {
         [FieldOffset(0)]
-        public readonly L Left;
-        [FieldOffset(0)]
-        public readonly R Right;
+        private readonly L _left;
 
-        public Either(L left)
+        [FieldOffset(0)]
+        private readonly R _right;
+
+        public L Left => _left;
+        public R Right => _right;
+
+
+        public static Either<L, R> FromRight(R right) => new Either<L, R>(right);
+        public static Either<L, R> FromLeft(L left) => new Either<L, R>(left);
+
+        private Either(L left)
         {
             Debug.Assert(Unsafe.SizeOf<L>() == Unsafe.SizeOf<R>(), "L and R must have the same size");
-            
-            Right = default;
-            Left = left;
+
+            _right = default;
+            _left = left;
         }
 
-        public Either(R right)
+        private Either(R right)
         {
-            Left = default;
-            Right = right;
+            Debug.Assert(Unsafe.SizeOf<L>() == Unsafe.SizeOf<R>(), "L and R must have the same size");
+
+            _left = default;
+            _right = right;
         }
     }
 }
