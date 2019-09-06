@@ -1,14 +1,14 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-
-using DBClientFiles.NET.Collections.Generic.Internal;
+using DBClientFiles.NET.Parsing;
+using DBClientFiles.NET.Parsing.Versions;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
     public sealed class StorageEnumerable<T> : IEnumerable<T>
     {
-        private Collection<T> _implementation;
+        private IBinaryStorageFile<T> _implementation;
 
         /// <summary>
         /// The options used to create this collection.
@@ -22,7 +22,7 @@ namespace DBClientFiles.NET.Collections.Generic
         /// <param name="dataStream">The stream of binary data to load from.</param>
         public StorageEnumerable(in StorageOptions options, Stream dataStream)
         {
-            _implementation = new Collection<T>(in options, dataStream);
+            _implementation = BinaryStorageFactory<T>.Process(in options, dataStream);
         }
 
         /// <summary>
@@ -30,20 +30,15 @@ namespace DBClientFiles.NET.Collections.Generic
         /// <see cref="StorageOptions.Default"/>.
         /// </summary>
         /// <param name="dataStream"></param>
-        public StorageEnumerable(Stream dataStream)
+        public StorageEnumerable(Stream dataStream) : this(in StorageOptions.Default, dataStream)
         {
-            _implementation = new Collection<T>(in StorageOptions.Default, dataStream);
         }
 
-        public IEnumerator<T> GetEnumerator()
-        {
-            return _implementation.GetEnumerator();
-        }
+        public IEnumerator<T> GetEnumerator() => _implementation.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator()
-            => GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        /// TODO: Provide random access in constant time (Technically disk access time)
+        /// TODO: Provide random access in constant time
         /// TODO: Optimize Skip and Take somehow
     }
 

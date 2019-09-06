@@ -2,7 +2,6 @@
 using DBClientFiles.NET.Parsing.Shared.Records;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
-using DBClientFiles.NET.Parsing.Versions.WDBC.Segments.Handlers;
 using DBClientFiles.NET.Utils.Extensions;
 using System;
 using System.Collections.Generic;
@@ -22,7 +21,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
         private Serializer<T> _serializer;
         private ISequentialRecordReader _recordReader;
 
-        public StorageFile(in StorageOptions options, Stream input) : base(in options, input)
+        public StorageFile(in StorageOptions options, in Header header, Stream input) : base(in options, new HeaderAccessor(in header), input)
         {
         }
 
@@ -38,23 +37,17 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
             if (step != ParsingStep.Segments)
                 return;
 
-            var headerInfo = new HeaderHandler(this);
             var stringBlockHandler = new StringBlockHandler();
 
             Head = new Segment {
-                Identifier = SegmentIdentifier.Header,
-                Length = Unsafe.SizeOf<Header>(),
-                Handler = headerInfo,
+                Identifier = SegmentIdentifier.Records,
+                Length = Header.RecordCount * Header.RecordSize,
 
-                Next = new Segment {
-                    Identifier = SegmentIdentifier.Records,
-                    Length = headerInfo.RecordCount * headerInfo.RecordSize,
-
-                    Next = new Segment {
-                        Identifier = SegmentIdentifier.StringBlock,
-                        Length = headerInfo.StringTable.Length,
-                        Handler = stringBlockHandler
-                    }
+                Next = new Segment
+                {
+                    Identifier = SegmentIdentifier.StringBlock,
+                    Length = Header.StringTable.Length,
+                    Handler = stringBlockHandler
                 }
             };
 

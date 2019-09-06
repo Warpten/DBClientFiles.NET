@@ -4,17 +4,19 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-
+using DBClientFiles.NET.Exceptions;
+using DBClientFiles.NET.Parsing.Shared.Headers;
 
 namespace DBClientFiles.NET.Parsing
 {
     using WDBC = Versions.WDBC;
     using WDB2 = Versions.WDB2;
     using WDB5 = Versions.WDB5;
+    using WDC1 = Versions.WDC1;
 
-    internal static class FileHeaderParser<T>
+    internal static class BinaryStorageFactory<T>
     {
-        public static IBinaryStorageFile<T> Process(Stream dataStream)
+        public static IBinaryStorageFile<T> Process(in StorageOptions options, Stream dataStream)
         {
             Span<byte> bytes = stackalloc byte[4];
             if (dataStream.Read(bytes) != 4)
@@ -24,17 +26,19 @@ namespace DBClientFiles.NET.Parsing
             switch (magicIdentifier)
             {
                 case Signatures.WDBC:
-                    return Process<WDBC.Segments.Handlers.Header>(dataStream);
+                    return Process<WDBC.Header>(in options, dataStream);
                 case Signatures.WDB2:
-                    return Process<WDB2.Segments.Handlers.Header>(dataStream);
+                    return Process<WDB2.Header>(in options, dataStream);
                 case Signatures.WDB5:
-                    return Process<WDB5.Segments.Handlers.Header>(dataStream);
+                    return Process<WDB5.Header>(in options, dataStream);
+                case Signatures.WDC1:
+                    return Process<WDC1.Header>(in options, dataStream);
                 default:
-                    throw new InvalidOperationException($"Unhandled file signature {magicIdentifier} ({(uint) magicIdentifier:X8})");
+                    throw new VersionNotSupportedException($"Unhandled file signature {magicIdentifier} ({(uint) magicIdentifier:X8})");
             }
         }
 
-        private static unsafe IBinaryStorageFile<T> Process<THeader>(Stream dataStream) where THeader : struct
+        private static unsafe IBinaryStorageFile<T> Process<THeader>(in StorageOptions options, Stream dataStream) where THeader : struct, IHeader
         {
             THeader header = default;
 
@@ -46,8 +50,7 @@ namespace DBClientFiles.NET.Parsing
 
             // Encapsulate a new stream in a wrapper where header offset is considered.
             var windowedStream = dataStream.Rebase(Unsafe.SizeOf<THeader>() + 4, true);
-
-            return null;
+            return header.MakeStorageFile<T>(in options, windowedStream);
         }
     }
 }

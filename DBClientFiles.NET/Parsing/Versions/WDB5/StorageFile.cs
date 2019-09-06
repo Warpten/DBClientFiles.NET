@@ -3,10 +3,8 @@ using DBClientFiles.NET.Parsing.Shared.Records;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions.WDB5.Binding;
-using DBClientFiles.NET.Parsing.Versions.WDB5.Segments.Handlers;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.CompilerServices;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDB5
 {
@@ -16,7 +14,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
 
         private Serializer<T> _serializer;
 
-        public StorageFile(in StorageOptions options, Stream input) : base(options, input)
+        public StorageFile(in StorageOptions options, in Header header, Stream input) : base(options, new HeaderAccessor(in header), input)
         {
         }
 
@@ -25,34 +23,25 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
             if (step != ParsingStep.Segments)
                 return;
 
-            var headerHandler = new HeaderHandler(this);
-
-            Head = new Segment {
-                Identifier = SegmentIdentifier.Header,
-                Length = Unsafe.SizeOf<Header>(),
-
-                Handler = headerHandler
-            };
-
-            var tail = Head.Next = new Segment {
+            var tail = Head = new Segment {
                 Identifier = SegmentIdentifier.FieldInfo,
-                Length = headerHandler.FieldCount * (2 + 2),
+                Length = Header.FieldCount * (2 + 2),
 
                 Handler = new FieldInfoHandler<MemberMetadata>()
             };
 
             tail = tail.Next = new Segment {
                 Identifier = SegmentIdentifier.Records,
-                Length = headerHandler.OffsetMap.Exists
-                    ? headerHandler.StringTable.Length - tail.EndOffset
-                    : headerHandler.RecordCount * headerHandler.RecordSize
+                Length = Header.OffsetMap.Exists
+                    ? Header.StringTable.Length - tail.EndOffset
+                    : Header.RecordCount * Header.RecordSize
             };
 
-            if (!headerHandler.OffsetMap.Exists)
+            if (!Header.OffsetMap.Exists)
             {
                 tail = tail.Next = new Segment {
                     Identifier = SegmentIdentifier.StringBlock,
-                    Length = headerHandler.StringTable.Length,
+                    Length = Header.StringTable.Length,
 
                     Handler = new StringBlockHandler()
                 };
@@ -61,36 +50,36 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
             {
                 tail = tail.Next = new Segment {
                     Identifier = SegmentIdentifier.OffsetMap,
-                    Length = (4 + 2) * (headerHandler.MaxIndex - headerHandler.MinIndex + 1),
+                    Length = (4 + 2) * (Header.MaxIndex - Header.MinIndex + 1),
 
                     Handler = new OffsetMapHandler()
                 };
             }
 
-            if (headerHandler.RelationshipTable.Exists)
+            if (Header.RelationshipTable.Exists)
             {
                 tail = tail.Next = new Segment {
                     // Legacy foreign table, apparently used by only WMOMinimapTexture (WDB3/4/5) @Barncastle
                     Identifier = SegmentIdentifier.RelationshipTable,
-                    Length = 4 * (headerHandler.MaxIndex - headerHandler.MinIndex + 1)
+                    Length = 4 * (Header.MaxIndex - Header.MinIndex + 1)
                 };
             }
 
-            if (headerHandler.IndexTable.Exists)
+            if (Header.IndexTable.Exists)
             {
                 tail = tail.Next = new Segment {
                     Identifier = SegmentIdentifier.IndexTable,
-                    Length = 4 * headerHandler.RecordCount,
+                    Length = 4 * Header.RecordCount,
 
                     Handler = new IndexTableHandler()
                 };
             }
 
-            if (headerHandler.CopyTable.Exists)
+            if (Header.CopyTable.Exists)
             {
                 tail.Next = new Segment {
                     Identifier = SegmentIdentifier.CopyTable,
-                    Length = headerHandler.CopyTable.Length,
+                    Length = Header.CopyTable.Length,
 
                     Handler = new CopyTableHandler()
                 };

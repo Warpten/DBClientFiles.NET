@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Parsing.Shared.Records;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
-using DBClientFiles.NET.Parsing.Versions.WDC1.Segments.Handlers;
 using DBClientFiles.NET.Parsing.Versions.WDC1.Binding;
 using System.Collections.Generic;
 using DBClientFiles.NET.Parsing.Enumerators;
@@ -16,7 +15,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
 
         private Serializer<T> _serializer;
 
-        public StorageFile(in StorageOptions options, Stream input) : base(in options, input)
+        public StorageFile(in StorageOptions options, in Header header, Stream input) : base(in options, new HeaderAccessor(in header), input)
         {
         }
 
@@ -24,16 +23,9 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
         {
             if (step != ParsingStep.Segments)
                 return;
-            
-            Head = new Segment {
-                Identifier = SegmentIdentifier.Header,
-                Length = Unsafe.SizeOf<Header>(),
-
-                Handler = new HeaderHandler(this)
-            };
-
+           
             var fieldInfoHandler = new FieldInfoHandler<MemberMetadata>();
-            var tail = Head.Next = new Segment {
+            var tail = Head = new Segment {
                 Identifier = SegmentIdentifier.FieldInfo,
                 Length = Header.FieldInfo.Length,
 
@@ -97,7 +89,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
                 // Handler = not the legacy one!
             };
 
-            tail = tail.Next = new Segment
+            tail.Next = new Segment
             {
                 Identifier = SegmentIdentifier.RelationshipTable,
                 Length = Header.RelationshipTable.Length
@@ -112,9 +104,11 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
 
         protected override IEnumerator<T> CreateEnumerator()
         {
+#pragma warning disable IDE0067 // Dispose objects before losing scope
             var enumerator = !Header.OffsetMap.Exists
                 ? (Enumerator<StorageFile<T>, T>) new RecordsEnumerator<StorageFile<T>, T>(this)
                 : (Enumerator<StorageFile<T>, T>) new OffsetMapEnumerator<StorageFile<T>, T>(this);
+#pragma warning restore IDE0067 // Dispose objects before losing scope
 
             return enumerator.WithIndexTable().WithCopyTable();
         }

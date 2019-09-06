@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using DBClientFiles.NET.Parsing.Reflection;
+using DBClientFiles.NET.Parsing.Shared.Headers;
 using DBClientFiles.NET.Parsing.Shared.Segments;
-using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 
 namespace DBClientFiles.NET.Parsing.Versions
 {
@@ -36,8 +36,6 @@ namespace DBClientFiles.NET.Parsing.Versions
         /// </summary>
         public Segment Head { get; protected set; }
 
-        public IHeaderHandler Header => (IHeaderHandler) Head.Handler;
-
         /// <summary>
         /// Options used for parsing the file.
         /// </summary>
@@ -45,14 +43,17 @@ namespace DBClientFiles.NET.Parsing.Versions
 
         public Stream DataStream { get; }
 
+        public IHeaderAccessor Header { get; }
+
         /// <summary>
         /// Create an instance of <see cref="BinaryStorageFile{TValue}"/>.
         /// </summary>
         /// <param name="options">The options to use for parsing.</param>
         /// <param name="input">The input stream.</param>
-        protected BinaryStorageFile(in StorageOptions options, Stream input)
+        protected BinaryStorageFile(in StorageOptions options, IHeaderAccessor headerAccessor, Stream input)
         {
             DataStream = input;
+            Header = headerAccessor;
 
             if (!input.CanSeek)
                 throw new ArgumentException("The stream provided to DBClientFiles.NET's collections has to be seekable!");

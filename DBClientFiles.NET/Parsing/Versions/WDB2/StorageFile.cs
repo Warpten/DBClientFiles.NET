@@ -1,12 +1,10 @@
 ﻿using DBClientFiles.NET.Parsing.Enumerators;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
-using DBClientFiles.NET.Parsing.Versions.WDB2.Segments.Handlers;
 using DBClientFiles.NET.Utils.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Parsing.Shared.Records;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDB2
@@ -18,7 +16,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB2
         private Serializer<T> _serializer;
         private ISequentialRecordReader _recordReader;
 
-        public StorageFile(in StorageOptions options, Stream input) : base(in options, input)
+        public StorageFile(in StorageOptions options, in Header header, Stream input) : base(in options, new HeaderAccessor(in header), input)
         {
         }
 
@@ -34,35 +32,34 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB2
             if (step != ParsingStep.Segments)
                 return;
 
-            var headerHandler = new HeaderHandler(this);
             var stringBlockHandler = new StringBlockHandler();
 
-            var tail = Head = new Segment {
-                Identifier = SegmentIdentifier.Header,
-                Length = Unsafe.SizeOf<Header>(),
-
-                Handler = headerHandler,
-            };
-
-            if (headerHandler.MaxIndex != 0)
+            if (Header.MaxIndex != 0)
             {
                 // This is not really an offset map but whatever, no handler is attached.
-                tail = Head.Next = new Segment {
+                Head = new Segment() {
                     Identifier = SegmentIdentifier.OffsetMap,
-                    Length = (4 + 2) * (Header.MaxIndex - Header.MinIndex + 1)
+                    Length = (4 + 2) * (Header.MaxIndex - Header.MinIndex + 1),
+
+                    Next = new Segment() {
+                        Identifier = SegmentIdentifier.Records,
+                        Length = Header.RecordCount * Header.RecordSize,
+                    }
+                };
+            }
+            else
+            {
+                Head = new Segment() {
+                    Identifier = SegmentIdentifier.Records,
+                    Length = Header.RecordCount * Header.RecordSize,
                 };
             }
 
-            tail.Next = new Segment {
-                Identifier = SegmentIdentifier.Records,
-                Length = headerHandler.RecordCount * headerHandler.RecordSize,
+            Head.Next = new Segment() {
+                Identifier = SegmentIdentifier.StringBlock,
+                Length = Header.StringTable.Length,
 
-                Next = new Segment {
-                    Identifier = SegmentIdentifier.StringBlock,
-                    Length = headerHandler.StringTable.Length,
-
-                    Handler = stringBlockHandler
-                }
+                Handler = stringBlockHandler
             };
 
             _recordReader = new AlignedSequentialRecordReader(stringBlockHandler);

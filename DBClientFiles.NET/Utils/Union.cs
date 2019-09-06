@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -9,38 +10,35 @@ namespace DBClientFiles.NET.Utils
     /// </summary>
     /// <typeparam name="L"></typeparam>
     /// <typeparam name="R"></typeparam>
-    [StructLayout(LayoutKind.Explicit)]
-    internal readonly struct Union<L, R>
+    internal readonly ref struct Union<L, R>
         where L : struct
         where R : struct
     {
-        [FieldOffset(0)]
-        private readonly L _left;
+        private readonly Span<byte> _data;
 
-        [FieldOffset(0)]
-        private readonly R _right;
-
-        public L Left => _left;
-        public R Right => _right;
-
+        public L Left => MemoryMarshal.Read<L>(_data);
+        public R Right => MemoryMarshal.Read<R>(_data);
 
         public static Union<L, R> FromRight(R right) => new Union<L, R>(right);
         public static Union<L, R> FromLeft(L left) => new Union<L, R>(left);
+
+        public static implicit operator Union<L, R>(L value) => FromLeft(value);
+        public static implicit operator Union<L, R>(R value) => FromRight(value);
 
         private Union(L left)
         {
             Debug.Assert(Unsafe.SizeOf<L>() == Unsafe.SizeOf<R>(), "L and R must have the same size");
 
-            _right = default;
-            _left = left;
+            _data = new byte[Unsafe.SizeOf<L>()];
+            MemoryMarshal.Write(_data, ref left);
         }
 
         private Union(R right)
         {
             Debug.Assert(Unsafe.SizeOf<L>() == Unsafe.SizeOf<R>(), "L and R must have the same size");
 
-            _left = default;
-            _right = right;
+            _data = new byte[Unsafe.SizeOf<L>()];
+            MemoryMarshal.Write(_data, ref right);
         }
     }
 }

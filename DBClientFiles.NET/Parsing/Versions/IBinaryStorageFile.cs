@@ -1,6 +1,6 @@
 ﻿using DBClientFiles.NET.Parsing.Reflection;
+using DBClientFiles.NET.Parsing.Shared.Headers;
 using DBClientFiles.NET.Parsing.Shared.Segments;
-using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -41,7 +41,7 @@ namespace DBClientFiles.NET.Parsing.Versions
         /// <returns></returns>
         Segment FindSegment(SegmentIdentifier identifier);
 
-        IHeaderHandler Header { get; }
+        IHeaderAccessor Header { get; }
     }
 
     internal interface IBinaryStorageFile<T> : IBinaryStorageFile, IEnumerable<T>
