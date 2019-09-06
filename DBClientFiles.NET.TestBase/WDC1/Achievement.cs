@@ -1,5 +1,4 @@
-﻿using DBClientFiles.NET.Attributes;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -19,7 +18,6 @@ namespace DBClientFiles.NET.Types.WDC1
         public int Faction { get; set; }
         public int Points { get; set; }
         public int MinimumCriteria { get; set; }
-        [Index]
         public int ID { get; set; }
         public int IconFileID { get; set; }
         public int CriteriaTreeID { get; set; }

@@ -1,13 +1,9 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace DBClientFiles.NET.Benchmark
 {
-    [MemoryDiagnoser]
     public abstract class AbstractBenchmark
     {
         protected MemoryStream File { get; private set; }

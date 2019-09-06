@@ -5,7 +5,6 @@ using DBClientFiles.NET.Parsing.Shared.Records;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions.WDC1.Binding;
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq.Expressions;
 

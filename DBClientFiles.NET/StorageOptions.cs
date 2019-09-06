@@ -11,6 +11,10 @@ namespace DBClientFiles.NET
 
         internal TypeTokenType TokenType => MemberType.ToTypeToken();
 
+        /// <summary>
+        /// If set to true, the strings found in a file will be interned in the CLR's own memory pool. These strings will never be released.
+        /// The default value is <code>false</code>.
+        /// </summary>
         public readonly bool InternStrings;
 
         /// <summary>
@@ -30,12 +34,13 @@ namespace DBClientFiles.NET
         public readonly bool CopyToMemory;
 
         /// <summary>
-        /// Defines wether or not the collection being created should allow being mutated.
+        /// Defines whether or not the collection being created should allow being mutated.
         /// </summary>
         public readonly bool ReadOnly;
 
-        private static StorageOptions _default = new StorageOptions(
-            memberType: MemberTypes.Property,
+        // ReSharper disable once InconsistentNaming
+        private static readonly StorageOptions _default = new StorageOptions(
+            MemberTypes.Property,
             internStrings: false,
             copyToMemory: false,
             ignoreSignedChecks: false,

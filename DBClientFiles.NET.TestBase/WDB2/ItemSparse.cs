@@ -7,6 +7,7 @@ namespace DBClientFiles.NET.Types.WDB2
 {
     public sealed class ItemSparse
     {
+        [Index]
         public uint Id { get; set; }
         public uint Quality { get; set; }
         public uint Flags { get; set; }
