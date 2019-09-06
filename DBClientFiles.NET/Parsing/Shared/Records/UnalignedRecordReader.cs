@@ -1,50 +1,42 @@
-﻿using DBClientFiles.NET.IO;
-using DBClientFiles.NET.Parsing.Shared.Segments;
+﻿using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions;
 using System;
+using System.Buffers;
 using System.Diagnostics;
-using System.IO;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace DBClientFiles.NET.Parsing.Shared.Records
 {
     internal unsafe class UnalignedRecordReader : IRecordReader
     {
-        private readonly IntPtr _recordData;
-        private int _bitCursor;
-        private IBinaryStorageFile _fileReader;
-        private int _recordSize;
+        private readonly IMemoryOwner<byte> _recordData;
+        private readonly IBinaryStorageFile _fileReader;
+        private readonly StringBlockHandler _stringBlock;
+        private readonly long _recordSize;
 
-        private bool _managePointer;
+        private Span<byte> Span => _recordData.Memory.Span;
 
-        public UnalignedRecordReader(IBinaryStorageFile fileReader, int recordSize)
+        public UnalignedRecordReader(IBinaryStorageFile fileReader, long recordSize)
         {
             _fileReader = fileReader;
             _recordSize = recordSize;
 
             // Allocating 7 extra bytes to guarantee we don't ever read out of our memory space
-            // _recordData = Marshal.AllocHGlobal(recordData.Length + 7);
-            _recordData = Marshal.AllocHGlobal(recordSize);
-            _managePointer = true;
-        }
+            _recordData = MemoryPool<byte>.Shared.Rent((int)(recordSize + 7));
 
-        public void LoadStream(Stream dataStream, int recordSize)
-        {
-            _bitCursor = 0;
-            using (var windowedStream = new WindowedStream(dataStream, recordSize))
-            using (var outputStream = new IO.UnmanagedMemoryStream(_recordData, recordSize))
-                windowedStream.CopyTo(outputStream, recordSize);
+            _stringBlock = _fileReader.FindSegment(SegmentIdentifier.StringBlock)?.Handler as StringBlockHandler;
+
+            // Read exactly what we need
+            fileReader.DataStream.Read(_recordData.Memory.Span.Slice(0, (int) recordSize));
         }
 
         public void Dispose()
         {
-            if (_managePointer)
-                Marshal.FreeHGlobal(_recordData);
+            _recordData.Dispose();
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T ReadImmediate<T>(int bitOffset, int bitCount) where T : unmanaged
         {
@@ -55,48 +47,31 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
 
             unsafe
             {
-                var longValue = ((*(ulong*)((byte*)_recordData + byteOffset)) << (64 - bitCount - (_bitCursor & 7))) >> (64 - bitCount);
-                _bitCursor += bitCount;
+                var dataPtr = (ulong*) Unsafe.AsPointer(ref Span[byteOffset]);
+
+                var longValue = (*dataPtr << (64 - bitCount - (bitOffset & 7))) >> (64 - bitCount);
                 return *(T*)&longValue;
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T Read<T>() where T : unmanaged
+        public string ReadString(int bitCursor, int bitCount)
         {
-            var value = ReadImmediate<T>(_bitCursor, Unsafe.SizeOf<T>() * 8);
-            _bitCursor += Unsafe.SizeOf<T>() * 8;
-            return value;
-        }
+            if (_stringBlock != null)
+                return _stringBlock[ReadImmediate<uint>(bitCursor, bitCount)];
 
-        public virtual string ReadString(int bitCursor, int bitCount)
-        {
-            var handler = _fileReader.FindSegment(SegmentIdentifier.StringBlock)?.Handler as StringBlockHandler;
-            var stringIdentifier = ReadImmediate<uint>(bitCursor, bitCount);
-            return handler[stringIdentifier];
-        }
+            Debug.Assert((bitCursor & 7) == 0);
 
-        public string ReadString()
-        {
-            var handler = _fileReader.FindSegment(SegmentIdentifier.StringBlock)?.Handler as StringBlockHandler;
-            var stringIdentifier = Read<uint>();
-            return handler[stringIdentifier];
-        }
-
-        public string ReadInlineString()
-        {
             var stringLength = 0;
-            var startOffset = _bitCursor >> 3;
+            var startOffset = bitCursor >> 3;
 
-            sbyte* recordData = (sbyte*)_recordData;
-            while (recordData[_bitCursor / 8] != 0)
+            sbyte* recordData = (sbyte*) Unsafe.AsPointer(ref Span[0]);
+            while (recordData[bitCursor / 8] != 0)
             {
-                _bitCursor += 8;
+                bitCursor += 8;
                 ++stringLength;
             }
 
-            var result = new string(recordData, 0, stringLength, Encoding.UTF8);
-            _bitCursor += 8;
+            var result = new string(recordData, 0, stringLength, _fileReader.Options.Encoding ?? Encoding.UTF8);
             return result;
         }
     }

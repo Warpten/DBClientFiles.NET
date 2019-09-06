@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Reflection;
 using DBClientFiles.NET.Parsing.Reflection;
-using DBClientFiles.NET.Parsing.Shared.Records;
 using DBClientFiles.NET.Parsing.Versions;
 using DBClientFiles.NET.Utils;
 using TypeToken = DBClientFiles.NET.Parsing.Reflection.TypeToken;
@@ -12,10 +11,10 @@ using TypeToken = DBClientFiles.NET.Parsing.Reflection.TypeToken;
 namespace DBClientFiles.NET.Parsing.Serialization
 {
     /// <summary>
-    /// An abstract implementation of the ISerializer interface.
+    /// An abstract implementation of a type serializer.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    internal abstract class StructuredSerializer<T> : ISerializer<T>
+    internal abstract class StructuredSerializer<T>
     {
         protected delegate void TypeCloner(in T source, out T target);
         protected delegate int TypeKeyGetter(in T source);
@@ -25,37 +24,37 @@ namespace DBClientFiles.NET.Parsing.Serialization
         private TypeKeyGetter _keyGetter;
         private TypeKeySetter _keySetter;
 
-        private StorageOptions _options;
-        public ref readonly StorageOptions Options => ref _options;
+        protected IBinaryStorageFile Storage { get; }
 
-        public TypeToken Type { get; protected set; }
+        public ref readonly StorageOptions Options => ref Storage.Options;
 
-        public virtual void Initialize(IBinaryStorageFile storage)
+        public TypeToken Type => Storage.Type;
+
+        protected StructuredSerializer(IBinaryStorageFile storage)
         {
-            _options = storage.Options;
-            Type = storage.Type;
-
-            SetIndexColumn(storage.Header.IndexColumn);
+            Storage = storage;
+            if (storage.Header.IndexTable.Exists)
+                SetIndexColumn(storage.Header.IndexColumn);
         }
 
         public void SetIndexColumn(int indexColumn)
         {
             var rootExpression = Expression.Parameter(typeof(T).MakeByRefType(), "model");
             
-            var tuple = Type.MakeMemberAccess(ref indexColumn, rootExpression, _options.TokenType);
+            var tuple = Type.MakeMemberAccess(ref indexColumn, rootExpression, Options.TokenType);
             if (tuple.memberToken == null)
                 throw new InvalidOperationException($"Invalid structure: Unable to find an index column.");
 
             ref var indexColumnMemberToken = ref tuple.memberToken;
             if (indexColumnMemberToken.TypeToken != typeof(int) && indexColumnMemberToken.TypeToken != typeof(uint))
-            {
                 throw new InvalidOperationException($"Invalid structure: {tuple.memberAccess} is expected to be the index, but its type doesn't match. Needs to be (u)int.");
-            }
             
             { /* key getter */
                 _keyGetter = Expression.Lambda<TypeKeyGetter>(
-                    // Box to int - unfortunate but necessary (?)
-                    Expression.ConvertChecked(tuple.memberAccess, typeof(int)),
+                    // Box to int if type mismatches
+                    tuple.memberAccess.Type == typeof(int)
+                        ? tuple.memberAccess
+                        : Expression.ConvertChecked(tuple.memberAccess, typeof(int)),
                     rootExpression).Compile();
             }
 
@@ -63,7 +62,11 @@ namespace DBClientFiles.NET.Parsing.Serialization
                 var paramValue = Expression.Parameter(typeof(int));
 
                 _keySetter = Expression.Lambda<TypeKeySetter>(
-                    Expression.Assign(tuple.memberAccess, Expression.ConvertChecked(paramValue, tuple.memberAccess.Type)
+                    Expression.Assign(tuple.memberAccess,
+                        // Box to target type if not int
+                        tuple.memberAccess.Type == typeof(int)
+                            ? tuple.memberAccess
+                            : Expression.ConvertChecked(paramValue, tuple.memberAccess.Type)
                 ), rootExpression, paramValue).Compile();
             }
         }
@@ -73,23 +76,21 @@ namespace DBClientFiles.NET.Parsing.Serialization
         /// </summary>
         /// <param name="instance"></param>
         /// <returns></returns>
-        public int GetRecordIndex(in T instance) => _keyGetter(in instance);
+        public int GetRecordKey(in T instance) => _keyGetter(in instance);
     
         /// <summary>
         /// Force-set the key of a record to the provided value.
         /// </summary>
         /// <param name="instance">The record instance to modify.</param>
         /// <param name="key">The new key value to set<</param>
-        public void SetRecordIndex(out T instance, int key) => _keySetter(out instance, key);
-
-        public abstract T Deserialize(IRecordReader recordReader, IParser<T> fileParser);
+        public void SetRecordKey(out T instance, int key) => _keySetter(out instance, key);
 
         /// <summary>
         /// Clone the provided instance.
         /// </summary>
         /// <param name="origin"></param>
-        /// <returns></returns>
-        public T Clone(in T origin)
+        /// <param name="clonedInstance"></param>
+        public void Clone(in T origin, out T clonedInstance)
         {
             if (_cloneMethod == null)
             {
@@ -116,8 +117,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
                 _cloneMethod = Expression.Lambda<TypeCloner>(bodyBlock, oldInstanceParam, newInstanceParam).Compile();
             }
 
-            _cloneMethod.Invoke(in origin, out var instance);
-            return instance;
+            _cloneMethod.Invoke(in origin, out clonedInstance);
         }
 
         private Expression CloneMember(MemberToken memberInfo, Expression oldMember, Expression newMember)

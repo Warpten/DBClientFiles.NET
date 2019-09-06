@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using DBClientFiles.NET.Parsing.Serialization;
 using DBClientFiles.NET.Parsing.Versions;
 
 namespace DBClientFiles.NET.Parsing.Enumerators
@@ -10,13 +9,10 @@ namespace DBClientFiles.NET.Parsing.Enumerators
     /// 
     /// This enumerator has no notion of special blocks it would need to handle.
     /// </summary>
-    internal abstract partial class Enumerator<TParser, TValue, TSerializer> : IEnumerator<TValue>, IEnumerator
-        where TSerializer : ISerializer<TValue>, new()
-        where TParser : BinaryFileParser<TValue, TSerializer>
+    internal abstract partial class Enumerator<TParser, TValue> : IEnumerator<TValue>, IEnumerator
+        where TParser : BinaryStorageFile<TValue>
     {
         internal TParser Parser { get; }
-
-        protected TSerializer Serializer => Parser.Serializer;
 
         public Enumerator(TParser owner)
         {
@@ -49,17 +45,17 @@ namespace DBClientFiles.NET.Parsing.Enumerators
 
         internal abstract TValue ObtainCurrent();
 
-        public virtual Enumerator<TParser, TValue, TSerializer> WithCopyTable()
+        public virtual Enumerator<TParser, TValue> WithCopyTable()
         {
             return Parser.Header.CopyTable.Exists
-                ? new CopyTableEnumerator<TParser, TValue, TSerializer>(this)
+                ? new CopyTableEnumerator<TParser, TValue>(this)
                 : this;
         }
 
-        public virtual Enumerator<TParser, TValue, TSerializer> WithIndexTable()
+        public virtual Enumerator<TParser, TValue> WithIndexTable()
         {
             return Parser.Header.IndexTable.Exists
-                ? new IndexTableEnumerator<TParser, TValue, TSerializer>(this)
+                ? new IndexTableEnumerator<TParser, TValue>(this)
                 : this;
         }
     }

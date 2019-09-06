@@ -8,7 +8,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments
         public unsafe override void Read(IBinaryStorageFile storageFile)
         {
             var byteSpan = MemoryMarshal.AsBytes(Span);
-            storageFile.BaseStream.Read(byteSpan);
+            storageFile.DataStream.Read(byteSpan);
         }
     }
 }

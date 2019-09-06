@@ -1,5 +1,4 @@
-﻿using DBClientFiles.NET.Parsing.Serialization;
-using DBClientFiles.NET.Parsing.Shared.Segments;
+﻿using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions;
 using System;
@@ -8,9 +7,8 @@ using System.Diagnostics;
 
 namespace DBClientFiles.NET.Parsing.Enumerators
 {
-    internal class CopyTableEnumerator<TParser, TValue, TSerializer> : DecoratingEnumerator<TParser, TValue, TSerializer>
-        where TSerializer : ISerializer<TValue>, new()
-        where TParser : BinaryFileParser<TValue, TSerializer>
+    internal class CopyTableEnumerator<TParser, TValue> : DecoratingEnumerator<TParser, TValue>
+        where TParser : BinaryStorageFile<TValue>
     {
         private readonly CopyTableHandler _blockHandler;
 
@@ -19,7 +17,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
         private TValue _currentInstance;
         private Func<bool, TValue> _instanceFactory { get; }
 
-        public CopyTableEnumerator(Enumerator<TParser, TValue, TSerializer> impl) : base(impl)
+        public CopyTableEnumerator(Enumerator<TParser, TValue> impl) : base(impl)
         {
             if (Parser.Header.CopyTable.Exists)
             {
@@ -42,7 +40,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
                     if (_currentCopyIndex == null)
                     {
                         // Prepare copy table
-                        if (_blockHandler.TryGetValue(Serializer.GetRecordIndex(in _currentInstance), out var copyKeys))
+                        if (_blockHandler.TryGetValue(Parser.GetRecordKey(in _currentInstance), out var copyKeys))
                             _currentCopyIndex = copyKeys.GetEnumerator();
 
                         return _currentInstance;
@@ -50,8 +48,8 @@ namespace DBClientFiles.NET.Parsing.Enumerators
                     else if (_currentCopyIndex.MoveNext())
                     {
                         // If the copy table is not done, clone and change index
-                        var copiedInstance = Serializer.Clone(in _currentInstance);
-                        Serializer.SetRecordIndex(out copiedInstance, _currentCopyIndex.Current);
+                        Parser.Clone(in _currentInstance, out var copiedInstance);
+                        Parser.SetRecordKey(out copiedInstance, _currentCopyIndex.Current);
 
                         return copiedInstance;
                     }
@@ -87,7 +85,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
             base.Reset();
         }
 
-        public override Enumerator<TParser, TValue, TSerializer> WithCopyTable()
+        public override Enumerator<TParser, TValue> WithCopyTable()
         {
             return this;
         }

@@ -31,7 +31,6 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments
                     Length = 0;
             }
         }
-
         public Segment Next {
             get => _nextSegment;
             set {
@@ -65,10 +64,10 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments
 
         public SegmentIdentifier Identifier { get; set; }
 
+        public ISegmentHandler Handler { get; set; }
+
         private Segment _nextSegment = null;
         private Segment _previousSegment = null;
-
-        public ISegmentHandler Handler { get; set; }
 
         public bool ReadSegment(IBinaryStorageFile parser)
         {

@@ -10,28 +10,14 @@ using DBClientFiles.NET.Parsing.Enumerators;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDC1
 {
-    internal sealed class Parser<T> : BinaryFileParser<T, Serializer<T>>
+    internal sealed class StorageFile<T> : BinaryStorageFile<T>
     {
         public override int RecordCount => Header.RecordCount;
 
-        private UnalignedRecordReader _recordReader;
+        private Serializer<T> _serializer;
 
-        public Parser(in StorageOptions options, Stream input) : base(in options, input)
+        public StorageFile(in StorageOptions options, Stream input) : base(in options, input)
         {
-        }
-
-        public override void Dispose()
-        {
-            _recordReader.Dispose();
-            _recordReader = null;
-
-            base.Dispose();
-        }
-
-        public override IRecordReader GetRecordReader(int recordSize)
-        {
-            _recordReader.LoadStream(BaseStream, recordSize);
-            return _recordReader;
         }
 
         public override void Before(ParsingStep step)
@@ -74,7 +60,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
                     Identifier = SegmentIdentifier.StringBlock,
                     Length = Header.StringTable.Length,
 
-                    Handler = new StringBlockHandler(Options.InternStrings)
+                    Handler = new StringBlockHandler()
                 };
             }
 
@@ -121,16 +107,28 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
         public override void After(ParsingStep step)
         {
             if (step == ParsingStep.Segments)
-                _recordReader = new UnalignedRecordReader(this, Header.RecordSize);
+                _serializer = new Serializer<T>(this);
         }
 
         protected override IEnumerator<T> CreateEnumerator()
         {
             var enumerator = !Header.OffsetMap.Exists
-                ? (Enumerator<Parser<T>, T, Serializer<T>>) new RecordsEnumerator<Parser<T>, T, Serializer<T>>(this)
-                : (Enumerator<Parser<T>, T, Serializer<T>>) new OffsetMapEnumerator<Parser<T>, T, Serializer<T>>(this);
+                ? (Enumerator<StorageFile<T>, T>) new RecordsEnumerator<StorageFile<T>, T>(this)
+                : (Enumerator<StorageFile<T>, T>) new OffsetMapEnumerator<StorageFile<T>, T>(this);
 
             return enumerator.WithIndexTable().WithCopyTable();
         }
+
+        public override T ObtainRecord(long offset, long length)
+        {
+            DataStream.Position = offset;
+
+            using (var recordReader = new UnalignedRecordReader(this, length))
+                return _serializer.Deserialize(recordReader);
+        }
+
+        internal override void Clone(in T source, out T clonedInstance) => _serializer.Clone(in source, out clonedInstance);
+        internal override int GetRecordKey(in T value) => _serializer.GetRecordKey(in value);
+        internal override void SetRecordKey(out T value, int recordKey) => _serializer.SetRecordKey(out value, recordKey);
     }
 }

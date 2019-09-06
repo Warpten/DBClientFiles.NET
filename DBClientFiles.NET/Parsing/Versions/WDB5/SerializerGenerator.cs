@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Parsing.Enums;
@@ -13,41 +14,38 @@ using DBClientFiles.NET.Parsing.Versions.WDB5.Binding;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDB5
 {
-    internal sealed class SerializerGenerator<T> : TypedSerializerGenerator<T, int>
+    internal sealed class SerializerGenerator<T> : TypedSerializerGenerator<T, SerializerGenerator<T>.MethodType, int>
     {
-        public delegate void MethodType(IRecordReader recordReader, Parser<T> fileParser, out T instance);
-        private MethodType _methodImpl;
+        public delegate void MethodType(IRecordReader recordReader, out T instance);
 
-        public MethodType Method
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                if (_methodImpl == null)
-                    _methodImpl = GenerateDeserializer<MethodType>();
-
-                Debug.Assert(_methodImpl != null, "failed to generate deserializer method");
-                return _methodImpl;
-            }
-        }
-
-        private IList<MemberMetadata> _memberMetadata;
+        private readonly IList<MemberMetadata> _memberMetadata;
 
         /// <summary>
         /// Stores the index column's position in the record. This field is set <b>iff</b> the index table exists.
         /// </summary>
-        private int? _indexColumn;
+        private readonly int? _indexColumn;
+
+        private ParameterExpression DataStream { get; } = Expression.Parameter(typeof(Stream), "dataStream");
+
+        private ParameterExpression RecordReader { get; } = Expression.Parameter(typeof(IRecordReader), "recordReader");
+
+        protected override ParameterExpression ProducedInstance { get; } = Expression.Parameter(typeof(T).MakeByRefType(), "instance");
 
         public SerializerGenerator(IBinaryStorageFile storage) : base(storage.Type, storage.Options.TokenType, 0)
         {
-            Parameters.Add(Expression.Parameter(typeof(IRecordReader), "recordReader"));
-            Parameters.Add(Expression.Parameter(typeof(Parser<T>), "fileParser"));
-            Parameters.Add(Expression.Parameter(typeof(T).MakeByRefType(), "instance"));
-
             _memberMetadata = storage.FindSegment(SegmentIdentifier.FieldInfo)?.Handler as FieldInfoHandler<MemberMetadata>;
 
             if (storage.Header.IndexTable.Exists)
                 _indexColumn = storage.Header.IndexColumn;
+        }
+
+        protected override Expression<MethodType> MakeLambda(Expression body)
+        {
+            return Expression.Lambda<MethodType>(body, new[] {
+                DataStream,
+                RecordReader,
+                ProducedInstance
+            });
         }
 
         public MemberMetadata GetMemberInfo(int callIndex)
@@ -79,9 +77,10 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
             return RELATIONSHIP_TABLE_ENTRY;
         }
 
-        private static MemberMetadata RELATIONSHIP_TABLE_ENTRY = new MemberMetadata();
-        static SerializerGenerator()
-        {
+        // ReSharper disable once StaticMemberInGenericType
+        // ReSharper disable once InconsistentNaming
+        private static readonly MemberMetadata RELATIONSHIP_TABLE_ENTRY = new MemberMetadata();
+        static SerializerGenerator() {
             RELATIONSHIP_TABLE_ENTRY.CompressionData.Type = MemberCompressionType.RelationshipData;
         }
 
@@ -100,7 +99,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
                         // This is used to parse values found in WMOMinimapTexture (@barncastle)
                         // Well ok fair it isn't yet but that's the plan
 
-                        // TODO: use Parameters[1] for this (because it lets us access blocks!)
+                        // TODO: use Parameters[1] for this (because it lets us use access blocks!)
                         break;
                     }
                 case MemberCompressionType.None:
@@ -124,8 +123,6 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
             throw new InvalidOperationException("Unsupported compression type");
         }
 
-        private Expression RecordReader => Parameters[0];
-
-        protected override Expression Instance => Parameters[1];
+        protected override Expression MakePrologue() => null;
     }
 }

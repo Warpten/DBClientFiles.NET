@@ -54,6 +54,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="IO\SegmentedMemoryStream.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.1" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.2" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />

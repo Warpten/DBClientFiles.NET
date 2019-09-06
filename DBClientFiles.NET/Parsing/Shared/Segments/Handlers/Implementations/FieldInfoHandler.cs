@@ -1,4 +1,4 @@
-﻿using DBClientFiles.NET.Parsing.Enums;
+using DBClientFiles.NET.Parsing.Enums;
 using DBClientFiles.NET.Parsing.Shared.Binding;
 using System;
 using System.IO;

@@ -17,16 +17,16 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
             if (startOffset == 0 || length == 0)
                 return;
 
-            Debug.Assert(reader.BaseStream.Position == startOffset, "Out-of-place parsing");
+            Debug.Assert(reader.DataStream.Position == startOffset, "Out-of-place parsing");
 
             int i = 0;
             Count = (int)(length / (sizeof(int) + sizeof(short)));
 
             _store = new Memory<(int, short)>(new (int, short)[Count]);
 
-            using (var streamReader = new BinaryReader(reader.BaseStream, Encoding.UTF8, true))
+            using (var streamReader = new BinaryReader(reader.DataStream, Encoding.UTF8, true))
             {
-                while (reader.BaseStream.Position < (startOffset + length))
+                while (reader.DataStream.Position < (startOffset + length))
                 {
                     var key = streamReader.ReadInt32();
                     var value = streamReader.ReadInt16();

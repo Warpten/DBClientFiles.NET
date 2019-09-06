@@ -8,21 +8,17 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
     {
         private SerializerGenerator<T> Generator { get; set; }
 
-        public override void Initialize(IBinaryStorageFile storage)
+        public Serializer(IBinaryStorageFile storage) : base(storage)
         {
-            base.Initialize(storage);
-
             Generator = new SerializerGenerator<T>(storage);
         }
 
-        public override T Deserialize(IRecordReader recordReader, IParser<T> fileParser)
+        public T Deserialize(IRecordReader recordReader, IBinaryStorageFile<T> fileParser)
         {
-            Debug.Assert(recordReader is Parser<T>, "cross call not allowed for WDB5 serializer");
+            Debug.Assert(fileParser is StorageFile<T>, "cross call not allowed for WDB5 serializer");
 
-            Generator.Method.Invoke(recordReader, (Parser<T>) fileParser, out var instance);
+            Generator.Method.Invoke(recordReader, out var instance);
             return instance;
         }
-
-        
     }
 }

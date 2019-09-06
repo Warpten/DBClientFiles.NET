@@ -19,15 +19,15 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers
             if (length == 0)
                 return;
 
-            Debug.Assert(reader.BaseStream.Position == startOffset, "Out-of-place parsing!");
+            Debug.Assert(reader.DataStream.Position == startOffset, "Out-of-place parsing!");
 
             Structures = new TStructure[length / Unsafe.SizeOf<TStructure>()];
 
             var i = 0;
             var itemBytes = ArrayPool<byte>.Shared.Rent(Unsafe.SizeOf<TStructure>());
-            while (reader.BaseStream.Position < startOffset + length)
+            while (reader.DataStream.Position < startOffset + length)
             {
-                reader.BaseStream.Read(itemBytes, 0, Unsafe.SizeOf<TStructure>());
+                reader.DataStream.Read(itemBytes, 0, Unsafe.SizeOf<TStructure>());
 
                 Structures[i] = MemoryMarshal.Read<TStructure>(itemBytes);
                 ++i;

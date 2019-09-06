@@ -1,5 +1,4 @@
-﻿using DBClientFiles.NET.Parsing.Versions;
-using System;
+using DBClientFiles.NET.Parsing.Versions;
 using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,35 +8,25 @@ using System.Text;
 
 namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
 {
-    internal sealed class StringBlockHandler : ISegmentHandler, IDictionary<long, String>
+    internal sealed class StringBlockHandler : ISegmentHandler, IDictionary<long, string>
     {
-        private Dictionary<long, string> _blockData = new Dictionary<long, string>();
-
-        private bool _internStrings;
-
-        public StringBlockHandler(bool internStrings)
-        {
-            _internStrings = internStrings;
-        }
+        private readonly Dictionary<long, string> _blockData = new Dictionary<long, string>();
 
         #region IBlockHandler
-        public SegmentIdentifier Identifier { get; } = SegmentIdentifier.StringBlock;
-
-        public unsafe void ReadSegment(IBinaryStorageFile reader, long startOffset, long length)
+        public void ReadSegment(IBinaryStorageFile reader, long startOffset, long length)
         {
             if (length <= 2)
                 return;
 
-            reader.BaseStream.Seek(startOffset, SeekOrigin.Begin);
+            reader.DataStream.Seek(startOffset, SeekOrigin.Begin);
 
             // Not ideal but this will do
             var byteBuffer = ArrayPool<byte>.Shared.Rent((int) length);
-            int actualLength = reader.BaseStream.Read(byteBuffer, 0, (int) length);
+            var actualLength = reader.DataStream.Read(byteBuffer, 0, (int) length);
 
             Debug.Assert(actualLength == length);
 
-            int cursor = 0;
-
+            var cursor = 0;
             while (cursor != length)
             {
                 var stringStart = cursor;
@@ -46,8 +35,8 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
 
                 if (cursor - stringStart > 1)
                 {
-                    var value = Encoding.UTF8.GetString(byteBuffer, stringStart, cursor - stringStart);
-                    if (_internStrings)
+                    var value = (reader.Options.Encoding ?? Encoding.UTF8).GetString(byteBuffer, stringStart, cursor - stringStart);
+                    if (reader.Options.InternStrings)
                         value = string.Intern(value);
 
                     _blockData[stringStart] = value;
@@ -78,11 +67,11 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
         public bool IsReadOnly => true;
 
         public void Add(long key, string value) => _blockData.Add(key, value);
-        public void Add(KeyValuePair<long, string> item) => ((IDictionary<long, String>)_blockData).Add(item);
+        public void Add(KeyValuePair<long, string> item) => ((IDictionary<long, string>)_blockData).Add(item);
 
         public void Clear() => _blockData.Clear();
 
-        public bool Contains(KeyValuePair<long, string> item) => ((IDictionary<long, String>)_blockData).Contains(item);
+        public bool Contains(KeyValuePair<long, string> item) => ((IDictionary<long, string>)_blockData).Contains(item);
         public bool ContainsKey(long key) => _blockData.ContainsKey(key);
 
         public void CopyTo(KeyValuePair<long, string>[] array, int arrayIndex) => ((IDictionary<long, string>)_blockData).CopyTo(array, arrayIndex);
@@ -92,12 +81,9 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
 
         public bool TryGetValue(long key, out string value) => _blockData.TryGetValue(key, out value);
 
-        public IEnumerator<KeyValuePair<long, string>> GetEnumerator() => ((IDictionary<long, string>)_blockData).GetEnumerator();
+        public IEnumerator<KeyValuePair<long, string>> GetEnumerator() => _blockData.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return ((IDictionary<long, string>)_blockData).GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_blockData).GetEnumerator();
         #endregion
     }
 }

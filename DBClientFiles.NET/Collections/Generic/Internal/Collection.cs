@@ -20,7 +20,7 @@ namespace DBClientFiles.NET.Collections.Generic.Internal
     /// <typeparam name="T"></typeparam>
     internal class Collection<T> : IEnumerable<T>
     {
-        private IParser<T> _implementation;
+        private IBinaryStorageFile<T> _implementation;
 
         public ref readonly StorageOptions Options => ref _implementation.Options;
 
@@ -42,17 +42,17 @@ namespace DBClientFiles.NET.Collections.Generic.Internal
             switch (identifier)
             {
                 case Signatures.WDBC:
-                    _implementation = new WDBC.Parser<T>(in options, dataStream);
+                    _implementation = new WDBC.StorageFile<T>(in options, dataStream);
                     break;
                 case Signatures.WDB2:
-                    _implementation = new WDB2.Parser<T>(in options, dataStream);
+                    _implementation = new WDB2.StorageFile<T>(in options, dataStream);
                     break;
                 case Signatures.WDB5:
-                    _implementation = new WDB5.Parser<T>(in options, dataStream);
+                    _implementation = new WDB5.StorageFile<T>(in options, dataStream);
                     break;
                 case Signatures.WDC1:
                 case Signatures.CLS1:
-                    _implementation = new WDC1.Parser<T>(in options, dataStream);
+                    _implementation = new WDC1.StorageFile<T>(in options, dataStream);
                     break;
                 default:
                     throw new VersionNotSupportedException(identifier);

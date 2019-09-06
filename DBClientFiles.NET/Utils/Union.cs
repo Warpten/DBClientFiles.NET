@@ -10,7 +10,7 @@ namespace DBClientFiles.NET.Utils
     /// <typeparam name="L"></typeparam>
     /// <typeparam name="R"></typeparam>
     [StructLayout(LayoutKind.Explicit)]
-    internal readonly struct Either<L, R>
+    internal readonly struct Union<L, R>
         where L : struct
         where R : struct
     {
@@ -24,10 +24,10 @@ namespace DBClientFiles.NET.Utils
         public R Right => _right;
 
 
-        public static Either<L, R> FromRight(R right) => new Either<L, R>(right);
-        public static Either<L, R> FromLeft(L left) => new Either<L, R>(left);
+        public static Union<L, R> FromRight(R right) => new Union<L, R>(right);
+        public static Union<L, R> FromLeft(L left) => new Union<L, R>(left);
 
-        private Either(L left)
+        private Union(L left)
         {
             Debug.Assert(Unsafe.SizeOf<L>() == Unsafe.SizeOf<R>(), "L and R must have the same size");
 
@@ -35,7 +35,7 @@ namespace DBClientFiles.NET.Utils
             _left = left;
         }
 
-        private Either(R right)
+        private Union(R right)
         {
             Debug.Assert(Unsafe.SizeOf<L>() == Unsafe.SizeOf<R>(), "L and R must have the same size");
 

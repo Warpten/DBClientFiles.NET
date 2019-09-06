@@ -6,26 +6,14 @@ using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions.WDC1.Binding;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq.Expressions;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDC1
 {
-    internal sealed class SerializerGenerator<T> : TypedSerializerGenerator<T, int>
+    internal sealed class SerializerGenerator<T> : TypedSerializerGenerator<T, SerializerGenerator<T>.MethodType, int>
     {
         public delegate void MethodType(IRecordReader recordReader, out T instance);
-        private MethodType _methodImpl;
-
-        public MethodType Method
-        {
-            get
-            {
-                if (_methodImpl == null)
-                    _methodImpl = GenerateDeserializer<MethodType>();
-
-                Debug.Assert(_methodImpl != null, "deserializer needed for WDC1");
-                return _methodImpl;
-            }
-        }
 
         private FieldInfoHandler<MemberMetadata> FieldInfoBlock { get; }
 
@@ -34,15 +22,28 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
         /// </summary>
         public int? IndexColumn { get; }
 
+        private ParameterExpression DataStream { get; } = Expression.Parameter(typeof(Stream), "dataStream");
+
+        private ParameterExpression RecordReader { get; } = Expression.Parameter(typeof(IRecordReader), "recordReader");
+
+        protected override ParameterExpression ProducedInstance { get; } = Expression.Parameter(typeof(T).MakeByRefType(), "instance");
+
+
         public SerializerGenerator(IBinaryStorageFile storage, FieldInfoHandler<MemberMetadata> fieldInfoBlock) : base(storage.Type, storage.Options.TokenType, 0)
         {
             FieldInfoBlock = fieldInfoBlock;
 
-            Parameters.Add(Expression.Parameter(typeof(IRecordReader), "recordReader"));
-            Parameters.Add(Expression.Parameter(typeof(T).MakeByRefType(), "instance"));
-
             if (storage.Header.IndexTable.Exists)
                 IndexColumn = storage.Header.IndexColumn;
+        }
+
+        protected override Expression<MethodType> MakeLambda(Expression body)
+        {
+            return Expression.Lambda<MethodType>(body, new[] {
+                DataStream,
+                RecordReader,
+                ProducedInstance
+            });
         }
 
         private MemberMetadata GetMemberInfo(int callIndex)
@@ -102,8 +103,6 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
             return null;
         }
 
-        private Expression RecordReader => Parameters[0];
-
-        protected override Expression Instance => Parameters[1];
+        protected override Expression MakePrologue() => null;
     }
 }

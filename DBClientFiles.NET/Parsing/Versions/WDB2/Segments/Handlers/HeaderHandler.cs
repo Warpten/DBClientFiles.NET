@@ -1,4 +1,4 @@
-﻿using DBClientFiles.NET.Parsing.Shared.Segments;
+using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using System.Runtime.InteropServices;
 

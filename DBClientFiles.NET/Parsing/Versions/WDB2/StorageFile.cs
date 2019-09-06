@@ -1,36 +1,32 @@
 ﻿using DBClientFiles.NET.Parsing.Enumerators;
-using DBClientFiles.NET.Parsing.Shared.Records;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions.WDB2.Segments.Handlers;
+using DBClientFiles.NET.Utils.Extensions;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
+using DBClientFiles.NET.Parsing.Shared.Records;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDB2
 {
-    internal sealed class Parser<T> : BinaryFileParser<T, Serializer<T>>
+    internal sealed class StorageFile<T> : BinaryStorageFile<T>
     {
         public override int RecordCount => Header.RecordCount;
 
-        private AlignedRecordReader _recordReader;
+        private Serializer<T> _serializer;
+        private ISequentialRecordReader _recordReader;
 
-        public Parser(in StorageOptions options, Stream input) : base(options, input)
+        public StorageFile(in StorageOptions options, Stream input) : base(in options, input)
         {
         }
 
         public override void Dispose()
         {
-            _recordReader.Dispose();
-            _recordReader = null;
-
             base.Dispose();
-        }
 
-        public override IRecordReader GetRecordReader(int recordSize)
-        {
-            _recordReader.LoadStream(BaseStream, recordSize);
-            return _recordReader;
+            _recordReader.Dispose();
         }
 
         public override void Before(ParsingStep step)
@@ -39,6 +35,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB2
                 return;
 
             var headerHandler = new HeaderHandler(this);
+            var stringBlockHandler = new StringBlockHandler();
 
             var tail = Head = new Segment {
                 Identifier = SegmentIdentifier.Header,
@@ -64,22 +61,34 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB2
                     Identifier = SegmentIdentifier.StringBlock,
                     Length = headerHandler.StringTable.Length,
 
-                    Handler = new StringBlockHandler(Options.InternStrings)
+                    Handler = stringBlockHandler
                 }
             };
+
+            _recordReader = new AlignedSequentialRecordReader(stringBlockHandler);
         }
 
-        public override void After(ParsingStep step)
-        {
+        public override void After(ParsingStep step) {
             if (step == ParsingStep.Segments)
-                _recordReader = new AlignedRecordReader(this, Header.RecordSize);
+                _serializer = new Serializer<T>(this);
         }
+
+        public override T ObtainRecord(long offset, long length)
+        {
+            DataStream.Position = offset;
+
+            return _serializer.Deserialize(DataStream.Limit(length, false), _recordReader);
+        }
+
+        internal override void Clone(in T source, out T clonedInstance) => throw new InvalidOperationException();
+        internal override int GetRecordKey(in T value) => throw new InvalidOperationException();
+        internal override void SetRecordKey(out T value, int recordKey) => throw new InvalidOperationException();
 
         protected override IEnumerator<T> CreateEnumerator()
         {
             return !Header.OffsetMap.Exists
-                ? (IEnumerator<T>) new RecordsEnumerator<Parser<T>, T, Serializer<T>>(this)
-                : (IEnumerator<T>) new OffsetMapEnumerator<Parser<T>, T, Serializer<T>>(this);
+                ? (IEnumerator<T>) new RecordsEnumerator<StorageFile<T>, T>(this)
+                : (IEnumerator<T>) new OffsetMapEnumerator<StorageFile<T>, T>(this);
         }
     }
 }

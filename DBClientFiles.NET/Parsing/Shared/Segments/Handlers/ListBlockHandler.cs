@@ -27,10 +27,10 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers
             if (length == 0)
                 return;
 
-            Debug.Assert(reader.BaseStream.Position == startOffset, "Out-of-place parsing!");
+            Debug.Assert(reader.DataStream.Position == startOffset, "Out-of-place parsing!");
 
-            using (var streamReader = new BinaryReader(reader.BaseStream, Encoding.UTF8, true))
-                while (reader.BaseStream.Position < (startOffset + length))
+            using (var streamReader = new BinaryReader(reader.DataStream, Encoding.UTF8, true))
+                while (reader.DataStream.Position < (startOffset + length))
                 {
                     var elementStore = ReadElement(streamReader);
                     if (elementStore != default)

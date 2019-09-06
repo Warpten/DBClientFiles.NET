@@ -1,69 +1,65 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Parsing.Reflection;
-using DBClientFiles.NET.Utils.Expressions.Extensions;
 
 namespace DBClientFiles.NET.Parsing.Serialization.Generators
 {
     /// <summary>
-    /// The base class in charge of generating deserialization methods for a given <see cref="{T}"/>.
+    /// The base class in charge of generating deserialization methods for a given <see cref="T"/>.
     /// </summary>
     /// <typeparam name="T">The record type for which a deserializer must be generated.</typeparam>
-    internal abstract class TypedSerializerGenerator<T> : SerializerGenerator
+    /// <typeparam name="TMethod"></typeparam>
+    internal abstract class TypedSerializerGenerator<T, TMethod> : SerializerGenerator where TMethod : Delegate
     {
-        public TypedSerializerGenerator(TypeToken root, TypeTokenType memberType) : base(root, memberType)
+        protected TypedSerializerGenerator(TypeToken root, TypeTokenType memberType) : base(root, memberType)
         {
             Debug.Assert(root == typeof(T));
         }
 
-        protected TMethod GenerateDeserializer<TMethod>() where TMethod : Delegate
+        private TMethod GenerateDeserializer()
         {
             var body = GenerateDeserializationMethodBody();
-            
-#if DEBUG && NETCOREAPP
-            // Meh
-            var header = string.Join(", ", Parameters.Select(p => string.Join(' ', p.Type.Name.Replace("`1", $"<{Instance.Type.Name}>"), p.Name)));
-            Console.WriteLine($"({header}) => ");
-            Console.Write(body.AsString());
-#endif
 
-            return Expression.Lambda<TMethod>(body, Parameters).Compile();
+            return MakeLambda(body).Compile();
         }
 
-        protected override TreeNode MakeRootNode()
+        private TMethod _methodImpl;
+
+        public TMethod Method
         {
-            return new TreeNode() {
-                AccessExpression = Instance,
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => _methodImpl ?? (_methodImpl = GenerateDeserializer());
+        }
+
+        protected abstract Expression<TMethod> MakeLambda(Expression body);
+
+        protected override TreeNode MakeRootNode()
+            => new TreeNode() {
+                AccessExpression = ProducedInstance,
                 MemberToken = null,
                 TypeToken = Root
             };
-        }
 
-        protected override sealed Expression MakeRootMemberAccess(MemberToken token)
-        {
-            return token.MakeAccess(Instance);
-        }
-
-        protected override sealed Expression MakeReturnExpression()
-        {
-            return Instance;
-        }
-
-        protected abstract Expression Instance { get; }
+        protected sealed override Expression MakeRootMemberAccess(MemberToken token) => token.MakeAccess(ProducedInstance);
+        
+        protected sealed override Expression MakeReturnExpression() => ProducedInstance;
+    
+        protected abstract ParameterExpression ProducedInstance { get; }
     }
 
     /// <summary>
     /// The base class in charge of generating deserialization methods for a given <see cref="{T}"/>.
     /// </summary>
     /// <typeparam name="T">The record type for which a deserializer must be generated.</typeparam>
+    /// <typeparam name="TMethod"></typeparam>
     /// <typeparam name="TGenerationState">A state object that is used when generating reader calls.</typeparam>
-    internal abstract class TypedSerializerGenerator<T, TGenerationState> : TypedSerializerGenerator<T>
+    internal abstract class TypedSerializerGenerator<T, TMethod, TGenerationState> : TypedSerializerGenerator<T, TMethod> where TMethod : Delegate
     {
         protected TGenerationState State { get; set; }
 
-        public TypedSerializerGenerator(TypeToken root, TypeTokenType memberType, TGenerationState state) : base(root, memberType)
+        protected TypedSerializerGenerator(TypeToken root, TypeTokenType memberType, TGenerationState state) : base(root, memberType)
         {
             Debug.Assert(root == typeof(T));
 

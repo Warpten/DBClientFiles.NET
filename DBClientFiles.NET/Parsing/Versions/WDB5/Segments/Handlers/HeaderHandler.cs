@@ -62,9 +62,10 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5.Segments.Handlers
         }
     }
 
+    // Yes this is dumb.
     internal readonly struct BuildOrTableHash
     {
-        private readonly Either<int, int> _values;
+        private readonly Union<int, int> _values;
 
         public int Build => _values.Left;
         public int TableHash => _values.Right;
@@ -72,7 +73,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5.Segments.Handlers
 
     internal readonly struct IndexOrFlags
     {
-        private readonly Either<uint, (ushort Flags, short IndexColumn)> _values;
+        private readonly Union<uint, (ushort Flags, short IndexColumn)> _values;
 
         public uint FullFlags => _values.Left;
         public short IndexColumn => _values.Right.IndexColumn;

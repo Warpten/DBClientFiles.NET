@@ -22,12 +22,12 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers
                 return;
 
             Debug.Assert(length == Unsafe.SizeOf<TStructure>(), "Invalid structure size");
-            Debug.Assert(reader.BaseStream.Position == startOffset, "Out-of-place parsing!");
+            Debug.Assert(reader.DataStream.Position == startOffset, "Out-of-place parsing!");
 
             var blockBytes = ArrayPool<byte>.Shared.Rent(Unsafe.SizeOf<TStructure>());
 
             // Size forced to ensure it's correct (Rent may return more)
-            reader.BaseStream.Read(blockBytes, 0, Unsafe.SizeOf<TStructure>());
+            reader.DataStream.Read(blockBytes, 0, Unsafe.SizeOf<TStructure>());
 
             Structure = MemoryMarshal.Read<TStructure>(blockBytes);
 

@@ -1,15 +1,13 @@
-﻿using DBClientFiles.NET.Parsing.Serialization;
-using DBClientFiles.NET.Parsing.Versions;
+﻿using DBClientFiles.NET.Parsing.Versions;
 
 namespace DBClientFiles.NET.Parsing.Enumerators
 {
-    internal class DecoratingEnumerator<TParser, TValue, TSerializer> : Enumerator<TParser, TValue, TSerializer>
-        where TSerializer : ISerializer<TValue>, new()
-        where TParser : BinaryFileParser<TValue, TSerializer>
+    internal class DecoratingEnumerator<TParser, TValue> : Enumerator<TParser, TValue>
+        where TParser : BinaryStorageFile<TValue>
     {
-        internal Enumerator<TParser, TValue, TSerializer> Implementation { get; }
+        internal Enumerator<TParser, TValue> Implementation { get; }
 
-        public DecoratingEnumerator(Enumerator<TParser, TValue, TSerializer> impl) : base(impl.Parser)
+        public DecoratingEnumerator(Enumerator<TParser, TValue> impl) : base(impl.Parser)
         {
             Implementation = impl;
         }
@@ -17,6 +15,8 @@ namespace DBClientFiles.NET.Parsing.Enumerators
         public override void Dispose()
         {
             Implementation.Dispose();
+
+            base.Dispose();
         }
 
         internal override TValue ObtainCurrent()

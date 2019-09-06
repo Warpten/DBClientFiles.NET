@@ -1,5 +1,6 @@
 ﻿using DBClientFiles.NET.Parsing.Serialization;
 using DBClientFiles.NET.Parsing.Shared.Records;
+using System.IO;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDB2
 {
@@ -8,22 +9,15 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB2
 
         private WDBC.SerializerGenerator<T> Generator { get; set; }
 
-        public Serializer() : base()
+        public Serializer(IBinaryStorageFile storage) : base(storage)
         {
-
-        }
-
-        public override void Initialize(IBinaryStorageFile storage)
-        {
-            base.Initialize(storage);
-
-            // Reuse the WDBC generator because there are literally no changes
+            // Reuse WDBC's generator because there are literally no changes
             Generator = new WDBC.SerializerGenerator<T>(storage.Type, storage.Options.TokenType);
         }
 
-        public override T Deserialize(IRecordReader recordReader, IParser<T> fileParser)
+        public T Deserialize(Stream dataStream, ISequentialRecordReader recordReader)
         {
-            Generator.Method.Invoke(recordReader, out var instance);
+            Generator.Method.Invoke(dataStream, recordReader, out var instance);
             return instance;
         }
     }

@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 
-namespace DBClientFiles.NET.Parsing.Versions.WDBC
+namespace DBClientFiles.NET.Parsing.Versions.WDBC.Segments.Handlers
 {
     internal sealed class HeaderHandler : AbstractHeaderHandler<Header>
     {
@@ -24,5 +25,20 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
         {
             _stringTableRef = new SegmentReference(Structure.StringTableLength != 0, Structure.StringTableLength);
         }
+    }
+
+    /// <summary>
+    /// Representation of a WDBC header.
+    ///
+    /// See <a href="http://www.wowdev.wiki/DBC">the wiki</a>.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    internal readonly struct Header
+    {
+        public readonly Signatures Signature;
+        public readonly int RecordCount;
+        public readonly int FieldCount;
+        public readonly int RecordSize;
+        public readonly int StringTableLength;
     }
 }

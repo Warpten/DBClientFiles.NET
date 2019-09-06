@@ -1,14 +1,12 @@
-﻿using DBClientFiles.NET.Parsing.Serialization;
-using DBClientFiles.NET.Parsing.Shared.Segments;
+﻿using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions;
 using System.Diagnostics;
 
 namespace DBClientFiles.NET.Parsing.Enumerators
 {
-    internal class OffsetMapEnumerator<TParser, TValue, TSerializer> : Enumerator<TParser, TValue, TSerializer>
-        where TSerializer : ISerializer<TValue>, new()
-        where TParser : BinaryFileParser<TValue, TSerializer>
+    internal class OffsetMapEnumerator<TParser, TValue> : Enumerator<TParser, TValue>
+        where TParser : BinaryStorageFile<TValue>
     {
         private OffsetMapHandler _blockHandler;
         private int _cursor;
@@ -27,10 +25,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
                 return default;
 
             var (offset, length) = _blockHandler[_cursor++];
-            Parser.BaseStream.Position = offset;
-
-            var recordReader = Parser.GetRecordReader(length);
-            return Serializer.Deserialize(recordReader, Parser);
+            return Parser.ObtainRecord(offset, length);
         }
 
         public override void Reset()

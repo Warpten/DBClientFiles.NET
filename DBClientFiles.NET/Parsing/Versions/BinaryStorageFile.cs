@@ -3,22 +3,18 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using DBClientFiles.NET.Parsing.Enumerators;
 using DBClientFiles.NET.Parsing.Reflection;
-using DBClientFiles.NET.Parsing.Serialization;
-using DBClientFiles.NET.Parsing.Shared.Records;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 
 namespace DBClientFiles.NET.Parsing.Versions
 {
     /// <summary>
-    /// A basic implementation of the <see cref="IParser"/> interface.
+    /// A basic implementation of the <see cref="IBinaryStorageFile{T}"/> interface.
     /// </summary>
     /// <typeparam name="TValue">The record type.</typeparam>
     /// <typeparam name="TSerializer"></typeparam>
-    internal abstract class BinaryFileParser<TValue, TSerializer> : IParser<TValue>
-        where TSerializer : ISerializer<TValue>, new()
+    internal abstract class BinaryStorageFile<TValue> : IBinaryStorageFile<TValue>
     {
         /// <summary>
         /// A representation of the type deserialized by this parser.
@@ -29,11 +25,6 @@ namespace DBClientFiles.NET.Parsing.Versions
         /// The options to use for parsing.
         /// </summary>
         public ref readonly StorageOptions Options => ref _options;
-
-        /// <summary>
-        /// The actual deserializer.
-        /// </summary>
-        public TSerializer Serializer { get; private set; }
 
         /// <summary>
         /// This is the total number of elements in the file.
@@ -50,27 +41,24 @@ namespace DBClientFiles.NET.Parsing.Versions
         /// <summary>
         /// Options used for parsing the file.
         /// </summary>
-        private StorageOptions _options;
+        private readonly StorageOptions _options;
 
-        public Stream BaseStream { get; }
+        public Stream DataStream { get; }
 
         /// <summary>
-        /// Create an instance of <see cref="BinaryFileParser{TValue, TSerializer}"/>.
+        /// Create an instance of <see cref="BinaryStorageFile{TValue}"/>.
         /// </summary>
         /// <param name="options">The options to use for parsing.</param>
         /// <param name="input">The input stream.</param>
-        /// <param name="leaveOpen">If <c>true</c>, the stream is left open once this object is disposed.</param>
-        public BinaryFileParser(in StorageOptions options, Stream input)
+        protected BinaryStorageFile(in StorageOptions options, Stream input)
         {
-            BaseStream = input;
+            DataStream = input;
 
             if (!input.CanSeek)
                 throw new ArgumentException("The stream provided to DBClientFiles.NET's collections has to be seekable!");
 
             Type = new TypeToken(typeof(TValue));
             _options = options;
-
-            // Serializer = new TSerializer();
         }
 
         public virtual void Dispose()
@@ -87,13 +75,13 @@ namespace DBClientFiles.NET.Parsing.Versions
             return blck;
         }
 
-        public T FindSegmentHandler<T>(SegmentIdentifier identifier)
+        public T FindSegmentHandler<T>(SegmentIdentifier identifier) where T : ISegmentHandler
         {
             var block = FindSegment(identifier);
             if (block == default(Segment))
                 return default;
 
-            Debug.Assert(typeof(T).IsAssignableFrom(block.Handler.GetType()), "Wrong type for block handler lookup");
+            Debug.Assert(block.Handler is T, "Wrong type for block handler lookup");
             return (T) block.Handler;
         }
 
@@ -109,33 +97,21 @@ namespace DBClientFiles.NET.Parsing.Versions
         /// <param name="step"></param>
         public abstract void After(ParsingStep step);
 
-        /// <summary>
-        /// Obtains an instance of <see cref="IRecordReader"/> used for record reading.
-        /// </summary>
-        /// <returns></returns>
-        public abstract IRecordReader GetRecordReader(int recordSize);
-
         public IEnumerator<TValue> GetEnumerator()
         {
-            BaseStream.Position = 0;
+            DataStream.Position = 0;
             Before(ParsingStep.Segments);
 
             var head = Head;
             while (head != null)
             {
                 if (!head.ReadSegment(this))
-                    BaseStream.Seek(head.Length, SeekOrigin.Current);
+                    DataStream.Seek(head.Length, SeekOrigin.Current);
 
                 head = head.Next;
             }
 
             After(ParsingStep.Segments);
-
-            // Segments have been processed, it's now time to initialize the deserializer.
-            // We don't have where TSerializer : new(BinaryFileParser<TValue, TSerializer>) yet so this is forced on us by the language.
-            // Serializer = New<TSerializer, BinaryFileParser<TValue, TSerializer>>.Instance(this);
-            Serializer = new TSerializer();
-            Serializer.Initialize(this);
 
             return CreateEnumerator();
         }
@@ -143,5 +119,18 @@ namespace DBClientFiles.NET.Parsing.Versions
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         protected abstract IEnumerator<TValue> CreateEnumerator();
+
+        /// <summary>
+        /// Tries to read an instance of <see cref="TValue"/> at the provided offset in the stream, and limiting reads to the length specified.
+        /// </summary>
+        /// <param name="offset"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        public abstract TValue ObtainRecord(long offset, long length);
+
+        internal abstract int GetRecordKey(in TValue value);
+        internal abstract void SetRecordKey(out TValue value, int recordKey);
+
+        internal abstract void Clone(in TValue source, out TValue clonedInstance);
     }
 }

@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using DBClientFiles.NET.Parsing.Reflection;
 
 namespace DBClientFiles.NET.Parsing.Serialization.Generators
@@ -13,7 +12,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         protected TypeToken Root { get; }
         private TypeTokenType MemberType { get; }
 
-        public SerializerGenerator(TypeToken root, TypeTokenType memberType)
+        protected SerializerGenerator(TypeToken root, TypeTokenType memberType)
         {
             Root = root;
             MemberType = memberType;
@@ -54,7 +53,12 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
             if (returnType != null)
                 expr = Expression.Block(expr, returnType);
 
-            // TODO: See if trying to optimize iterator usages in the generated code outweights the cost of optimizing
+            // Add prologue if needed (state setup for the function, mostly)
+            var prologue = MakePrologue();
+            if (prologue != null)
+                expr = Expression.Block(prologue, Expression.Empty(), expr);
+
+            // TODO: See if trying to optimize iterator usages in the generated code outweighs the cost of optimizing
             // (It probably doesn't) (except for large files question mark?)
             return expr;
         }
@@ -122,13 +126,14 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         /// <returns></returns>
         protected abstract Expression MakeRootMemberAccess(MemberToken token);
 
+        protected abstract Expression MakePrologue();
+
         /// <summary>
         /// Generates a deserialization call expression for the provided element of the tree.
         /// </summary>
+        /// <param name="typeToken"></param>
         /// <param name="memberToken"></param>
         /// <returns></returns>
         public abstract Expression GenerateExpressionReader(TypeToken typeToken, MemberToken memberToken);
-
-        protected List<ParameterExpression> Parameters { get; } = new List<ParameterExpression>();
     }
 }

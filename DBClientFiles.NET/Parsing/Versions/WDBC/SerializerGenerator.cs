@@ -1,44 +1,45 @@
-﻿using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
+﻿using System.IO;
+using System.Linq.Expressions;
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Parsing.Serialization.Generators;
 using DBClientFiles.NET.Parsing.Shared.Records;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDBC
 {
-    internal sealed class SerializerGenerator<T> : TypedSerializerGenerator<T>
+    internal sealed class SerializerGenerator<T> : TypedSerializerGenerator<T, SerializerGenerator<T>.MethodType>
     {
-        public delegate void MethodType(IRecordReader recordReader, out T instance);
-        private MethodType _methodImpl;
+        public delegate void MethodType(Stream dataStream, ISequentialRecordReader recordReader, out T instance);
 
-        public MethodType Method {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get  {
-                if (_methodImpl == null)
-                    _methodImpl = GenerateDeserializer<MethodType>();
+        private ParameterExpression DataStream { get; } = Expression.Parameter(typeof(Stream), "dataStream");
 
-                return _methodImpl;
-            }
-        }
+        private ParameterExpression RecordReader { get; } = Expression.Parameter(typeof(ISequentialRecordReader), "recordReader");
+
+        protected override ParameterExpression ProducedInstance { get; } = Expression.Parameter(typeof(T).MakeByRefType(), "instance");
 
         public SerializerGenerator(TypeToken root, TypeTokenType memberType) : base(root, memberType)
         {
-            Parameters.Add(Expression.Parameter(typeof(IRecordReader), "recordReader"));
-            Parameters.Add(Expression.Parameter(typeof(T).MakeByRefType(), "instance"));
         }
-    
+
+        protected override Expression<MethodType> MakeLambda(Expression body)
+        {
+            return Expression.Lambda<MethodType>(body, new[] {
+                DataStream,
+                RecordReader,
+                ProducedInstance
+            });
+        }
+
         public override Expression GenerateExpressionReader(TypeToken typeToken, MemberToken memberToken)
         {
             if (typeToken.IsPrimitive)
-                return Expression.Call(RecordReader, typeToken.MakeGenericMethod(_IRecordReader.Read));
-            else if (typeToken == typeof(string))    
-                return Expression.Call(RecordReader, _IRecordReader.ReadString);
-        
+                return Expression.Call(RecordReader, typeToken.MakeGenericMethod(_ISequentialRecordReader.Read), DataStream);
+
+            if (typeToken == typeof(string))
+                return Expression.Call(RecordReader, _ISequentialRecordReader.ReadString, DataStream);
+
             return null;
         }
 
-        private Expression RecordReader => Parameters[0];
-
-        protected override Expression Instance => Parameters[1];
+        protected override Expression MakePrologue() => null;
     }
 }

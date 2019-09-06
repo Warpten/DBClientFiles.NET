@@ -14,21 +14,14 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
 
         private SerializerGenerator<T> Generator { get; set; }
 
-        public Serializer() : base()
+        public Serializer(IBinaryStorageFile storage) : base(storage)
         {
-
-        }
-
-        public override void Initialize(IBinaryStorageFile storage)
-        {            
-            base.Initialize(storage);
-
             InfoBlock = storage.FindSegment(SegmentIdentifier.FieldInfo)?.Handler as FieldInfoHandler<MemberMetadata>;
 
             Generator = new SerializerGenerator<T>(storage, InfoBlock);
         }
 
-        public override T Deserialize(IRecordReader recordReader, IParser<T> fileParser)
+        public T Deserialize(IRecordReader recordReader)
         {
             Generator.Method.Invoke(recordReader, out var instance);
             return instance;
