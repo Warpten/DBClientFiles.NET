@@ -15,10 +15,20 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
         #region IBlockHandler
         public void ReadSegment(IBinaryStorageFile reader, long startOffset, long length)
         {
+            // Impossible for length to be lower than 2
+            // Consider this: length 2 has to be 00 ??
+            // But strings have to be null terminated thus data should be 00 ?? 00
+            // Which is 3 bytes.
+            // Above sligtly wrong, nothing prevents a 1-byte string block with 00 but in that case we already handle it
+            // by returning string.Empty if offset was not found in the block.
+            // This is based off the assumption that strings at offset 0 will always be the null string
+            // which it has to be for empty string blocks. For non-empty blocks,  let's just say blizzard's space saving
+            // track record isn't the best, and saving one byte by pointing the null string to the middle of any delimiter
+            // is something probably not worth the effort.
             if (length <= 2)
                 return;
 
-            reader.DataStream.Seek(startOffset, SeekOrigin.Begin);
+            reader.DataStream.Position = startOffset;
 
             // Not ideal but this will do
             var byteBuffer = ArrayPool<byte>.Shared.Rent((int) length);
@@ -26,7 +36,8 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
 
             Debug.Assert(actualLength == length);
 
-            var cursor = 0;
+            // We start at 1 because 0 is always 00, aka null string
+            var cursor = 1;
             while (cursor != length)
             {
                 var stringStart = cursor;
