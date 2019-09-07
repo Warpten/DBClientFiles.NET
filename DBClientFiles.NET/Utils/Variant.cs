@@ -11,70 +11,32 @@ namespace DBClientFiles.NET.Utils
     {
         private readonly ReadOnlySpan<byte> _data;
 
-        public long Int64
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => MemoryMarshal.Read<long>(_data);
-        }
-
-        public ulong UInt64
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => MemoryMarshal.Read<ulong>(_data);
-        }
-
-        public int Int32
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => MemoryMarshal.Read<int>(_data);
-        }
-
-        public uint UInt32
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => MemoryMarshal.Read<uint>(_data);
-        }
-
-        public short Int16
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => MemoryMarshal.Read<short>(_data);
-        }
-
-        public ushort UInt16
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => MemoryMarshal.Read<ushort>(_data);
-        }
-
-        public float Single
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => MemoryMarshal.Read<float>(_data);
-        }
-
-        public double Double
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => MemoryMarshal.Read<double>(_data);
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Cast<T>() where T : struct => MemoryMarshal.Read<T>(_data);
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private Variant(byte[] data) => _data = data;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private Variant(Span<byte> data) => _data = data;
+        private Variant(ReadOnlySpan<byte> data) => _data = data;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator Variant(byte[] data) => new Variant(data);
+        public static Variant From<U>(U value) where U : unmanaged => new Variant(MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref value, 1)));
+    }
+
+    internal struct Variant<T> where T : unmanaged
+    {
+        private T _data;
+
+        public T Value
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => _data;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator Variant(Span<byte> data) => new Variant(data);
+        public U Cast<U>() where U : struct => MemoryMarshal.Read<U>(MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref _data, 1)));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator ReadOnlySpan<byte>(Variant variant) => variant._data;
+        public static implicit operator Variant(Variant<T> variant) => Variant.From(variant._data);
+
+        public static implicit operator T(Variant<T> variant) => variant._data;
     }
 }

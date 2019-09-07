@@ -29,9 +29,9 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
         public override ref readonly SegmentReference CopyTable => ref _copyTableRef;
 
         // Blocks this file does not have
-        public override ref readonly SegmentReference Common => throw new NotImplementedException();
-        public override ref readonly SegmentReference Pallet => throw new NotImplementedException();
-        public override ref readonly SegmentReference ExtendedFieldInfo => throw new NotImplementedException();
+        public override ref readonly SegmentReference Common => ref SegmentReference.Missing;
+        public override ref readonly SegmentReference Pallet => ref SegmentReference.Missing;
+        public override ref readonly SegmentReference ExtendedFieldInfo => ref SegmentReference.Missing;
 
         public override int MaxIndex => Header.MinIndex;
         public override int MinIndex => Header.MaxIndex;
