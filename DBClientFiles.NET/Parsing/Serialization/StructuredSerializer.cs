@@ -5,7 +5,6 @@ using System.Linq.Expressions;
 using System.Reflection;
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Parsing.Versions;
-using DBClientFiles.NET.Utils;
 using TypeToken = DBClientFiles.NET.Parsing.Reflection.TypeToken;
 
 namespace DBClientFiles.NET.Parsing.Serialization

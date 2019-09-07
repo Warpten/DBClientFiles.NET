@@ -30,5 +30,10 @@ namespace DBClientFiles.NET.Parsing.Enumerators
 
             Implementation.Reset();
         }
+
+        public override void Skip(int skipCount) => Implementation.Skip(skipCount);
+    
+        public override TValue ElementAt(int index) => Implementation.ElementAt(index);
+        public override TValue ElementAtOrDefault(int index) => Implementation.ElementAtOrDefault(index);
     }
 }

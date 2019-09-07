@@ -3,7 +3,6 @@ using DBClientFiles.NET.Parsing.Shared.Records;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions.WDB5.Binding;
-using System.Collections.Generic;
 using System.IO;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDB5
@@ -94,7 +93,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
             _serializer = new Serializer<T>(this);
         }
 
-        protected override IEnumerator<T> CreateEnumerator()
+        protected override IRecordEnumerator<T> CreateEnumerator()
         {
             var enumerator = !Header.OffsetMap.Exists
                 ? (Enumerator<StorageFile<T>, T>) new RecordsEnumerator<StorageFile<T>, T>(this)

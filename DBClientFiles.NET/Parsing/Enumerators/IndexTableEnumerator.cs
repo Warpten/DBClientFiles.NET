@@ -1,4 +1,5 @@
-﻿using DBClientFiles.NET.Parsing.Shared.Segments;
+﻿using System.Collections.Generic;
+using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions;
 using System.Diagnostics;
@@ -21,7 +22,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
         internal override TValue ObtainCurrent()
         {
             var instance = base.ObtainCurrent();
-            if (instance == default)
+            if (EqualityComparer<TValue>.Default.Equals(instance, default))
                 return default;
 
             Parser.SetRecordKey(out instance, _blockHandler[_cursor]);

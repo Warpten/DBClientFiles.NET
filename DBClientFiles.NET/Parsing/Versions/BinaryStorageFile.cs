@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using DBClientFiles.NET.Parsing.Enumerators;
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Parsing.Shared.Headers;
 using DBClientFiles.NET.Parsing.Shared.Segments;
@@ -98,7 +97,7 @@ namespace DBClientFiles.NET.Parsing.Versions
         /// <param name="step"></param>
         public abstract void After(ParsingStep step);
 
-        public IEnumerator<TValue> GetEnumerator()
+        public IRecordEnumerator<TValue> GetEnumerator()
         {
             DataStream.Position = 0;
             Before(ParsingStep.Segments);
@@ -116,9 +115,7 @@ namespace DBClientFiles.NET.Parsing.Versions
             return CreateEnumerator();
         }
 
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-        protected abstract IEnumerator<TValue> CreateEnumerator();
+        protected abstract IRecordEnumerator<TValue> CreateEnumerator();
 
         /// <summary>
         /// Tries to read an instance of <see cref="TValue"/> at the provided offset in the stream, and limiting reads to the length specified.

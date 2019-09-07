@@ -10,21 +10,19 @@ namespace DBClientFiles.NET.Parsing.Enumerators
     internal class CopyTableEnumerator<TParser, TValue> : DecoratingEnumerator<TParser, TValue>
         where TParser : BinaryStorageFile<TValue>
     {
-        private readonly CopyTableHandler _blockHandler;
-
         private IEnumerator<int> _currentCopyIndex;
 
         private TValue _currentInstance;
-        private Func<bool, TValue> _instanceFactory { get; }
+        private Func<bool, TValue> InstanceFactory { get; }
 
         public CopyTableEnumerator(Enumerator<TParser, TValue> impl) : base(impl)
         {
             if (Parser.Header.CopyTable.Exists)
             {
-                _blockHandler = Parser.FindSegmentHandler<CopyTableHandler>(SegmentIdentifier.CopyTable);
-                Debug.Assert(_blockHandler != null, "Block handler missing for copy table");
+                var blockHandler = Parser.FindSegmentHandler<CopyTableHandler>(SegmentIdentifier.CopyTable);
+                Debug.Assert(blockHandler != null, "Block handler missing for copy table");
 
-                _instanceFactory = (bool forceReloadBase) =>
+                InstanceFactory = forceReloadBase =>
                 {
                     // Read an instance if one exists or if we're forced to
                     if (forceReloadBase || EqualityComparer<TValue>.Default.Equals(_currentInstance, default))
@@ -40,7 +38,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
                     if (_currentCopyIndex == null)
                     {
                         // Prepare copy table
-                        if (_blockHandler.TryGetValue(Parser.GetRecordKey(in _currentInstance), out var copyKeys))
+                        if (blockHandler.TryGetValue(Parser.GetRecordKey(in _currentInstance), out var copyKeys))
                             _currentCopyIndex = copyKeys.GetEnumerator();
 
                         return _currentInstance;
@@ -56,25 +54,24 @@ namespace DBClientFiles.NET.Parsing.Enumerators
                     else
                     {
                         // We were unable to move next in the copy table, which means we are done with the current record
-                        // and its copies. Resetup the copy table check.
+                        // and its copies. Re-setup the copy table check.
                         _currentCopyIndex = null;
                         
                         // Call ourselves again to initialize everything for the next record.
-                        _currentInstance = _instanceFactory(true);
+                        _currentInstance = InstanceFactory(true);
                         return _currentInstance;
                     }
                 };
             }
             else
             {
-                _instanceFactory = _ => base.ObtainCurrent();
-            } 
-
+                InstanceFactory = _ => base.ObtainCurrent();
+            }
         }
 
         internal override TValue ObtainCurrent()
         {
-            return _instanceFactory(false);
+            return InstanceFactory(false);
         }
 
         public override void Reset()

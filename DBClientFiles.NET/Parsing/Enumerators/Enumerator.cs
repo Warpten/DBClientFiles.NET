@@ -4,17 +4,26 @@ using DBClientFiles.NET.Parsing.Versions;
 
 namespace DBClientFiles.NET.Parsing.Enumerators
 {
+    internal interface IRecordEnumerator<T> : IEnumerator<T>
+    {
+        void Skip(int skipCount);
+
+        T ElementAt(int index);
+
+        T ElementAtOrDefault(int index);
+    }
+
     /// <summary>
     /// A base implementation of the enumerator used to read the records.
     /// 
     /// This enumerator has no notion of special blocks it would need to handle.
     /// </summary>
-    internal abstract partial class Enumerator<TParser, TValue> : IEnumerator<TValue>, IEnumerator
+    internal abstract class Enumerator<TParser, TValue> : IRecordEnumerator<TValue>
         where TParser : BinaryStorageFile<TValue>
     {
         internal TParser Parser { get; }
 
-        public Enumerator(TParser owner)
+        protected Enumerator(TParser owner)
         {
             Parser = owner;
             Current = default;
@@ -58,5 +67,9 @@ namespace DBClientFiles.NET.Parsing.Enumerators
                 ? new IndexTableEnumerator<TParser, TValue>(this)
                 : this;
         }
+
+        public abstract void Skip(int skipCount);
+        public abstract TValue ElementAt(int index);
+        public abstract TValue ElementAtOrDefault(int index);
     }
 }

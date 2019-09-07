@@ -1,4 +1,5 @@
-﻿using DBClientFiles.NET.Parsing.Shared.Segments;
+﻿using System;
+using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Versions;
 using System.Diagnostics;
 
@@ -30,6 +31,29 @@ namespace DBClientFiles.NET.Parsing.Enumerators
             base.Reset();
 
             Parser.DataStream.Position = _segment.StartOffset;
+        }
+
+        public override void Skip(int skipCount)
+        {
+            Parser.DataStream.Position += Parser.Header.RecordSize * skipCount;
+        }
+
+        public override TValue ElementAt(int index)
+        {
+            var offset = Parser.Header.RecordSize * index;
+            if (offset >= _segment.EndOffset)
+                throw new ArgumentOutOfRangeException(nameof(index));
+
+            return Parser.ObtainRecord(offset, Parser.Header.RecordSize);
+        }
+
+        public override TValue ElementAtOrDefault(int index)
+        {
+            var offset = Parser.Header.RecordSize * index;
+            if (offset >= _segment.EndOffset)
+                return default;
+
+            return Parser.ObtainRecord(offset, Parser.Header.RecordSize);
         }
     }
 }

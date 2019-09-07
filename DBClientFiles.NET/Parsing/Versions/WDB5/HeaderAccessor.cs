@@ -1,6 +1,5 @@
 ﻿using DBClientFiles.NET.Parsing.Shared.Headers;
 using DBClientFiles.NET.Parsing.Shared.Segments;
-using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using DBClientFiles.NET.Parsing;
 using DBClientFiles.NET.Parsing.Versions;
+using DBClientFiles.NET.Utils.Extensions;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
@@ -38,8 +39,20 @@ namespace DBClientFiles.NET.Collections.Generic
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        /// TODO: Provide random access in constant time
-        /// TODO: Optimize Skip somehow (avoid deserializing when skipping)
+        public IEnumerable<T> Skip(int amount)
+        {
+            var enumerator = _implementation.GetEnumerator();
+            enumerator.Skip(amount);
+            return enumerator.MakeEnumerable();
+        }
+
+        public T ElementAt(int amount)
+        {
+            using (var enumerator = _implementation.GetEnumerator())
+                return enumerator.ElementAt(amount);
+        }
+
+        // TODO: Provide random access in constant time
     }
 
 }

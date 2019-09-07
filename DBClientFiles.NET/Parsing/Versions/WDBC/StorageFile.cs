@@ -4,7 +4,6 @@ using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Utils.Extensions;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 
@@ -77,6 +76,6 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal override void Clone(in T source, out T clonedInstance) => throw new InvalidOperationException();
 
-        protected override IEnumerator<T> CreateEnumerator() => new RecordsEnumerator<StorageFile<T>, T>(this);
+        protected override IRecordEnumerator<T> CreateEnumerator() => new RecordsEnumerator<StorageFile<T>, T>(this);
     }
 }

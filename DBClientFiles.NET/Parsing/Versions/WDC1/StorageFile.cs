@@ -3,7 +3,6 @@ using DBClientFiles.NET.Parsing.Shared.Records;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions.WDC1.Binding;
-using System.Collections.Generic;
 using DBClientFiles.NET.Parsing.Enumerators;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDC1
@@ -101,7 +100,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
                 _serializer = new Serializer<T>(this);
         }
 
-        protected override IEnumerator<T> CreateEnumerator()
+        protected override IRecordEnumerator<T> CreateEnumerator()
         {
 #pragma warning disable IDE0067 // Dispose objects before losing scope
             var enumerator = !Header.OffsetMap.Exists

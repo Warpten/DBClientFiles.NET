@@ -1,6 +1,7 @@
 ﻿using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions;
+using System;
 using System.Diagnostics;
 
 namespace DBClientFiles.NET.Parsing.Enumerators
@@ -8,7 +9,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
     internal class OffsetMapEnumerator<TParser, TValue> : Enumerator<TParser, TValue>
         where TParser : BinaryStorageFile<TValue>
     {
-        private OffsetMapHandler _blockHandler;
+        private readonly OffsetMapHandler _blockHandler;
         private int _cursor;
 
         public OffsetMapEnumerator(TParser impl) : base(impl)
@@ -21,7 +22,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
 
         internal override TValue ObtainCurrent()
         {
-            if (_cursor == _blockHandler.Count)
+            if (_cursor >= _blockHandler.Count)
                 return default;
 
             var (offset, length) = _blockHandler[_cursor++];
@@ -33,6 +34,29 @@ namespace DBClientFiles.NET.Parsing.Enumerators
             base.Reset();
 
             _cursor = 0;
+        }
+
+        public override void Skip(int skipCount)
+        {
+            _cursor += skipCount;
+        }
+
+        public override TValue ElementAt(int index)
+        {
+            if (index >= _blockHandler.Count)
+                throw new ArgumentOutOfRangeException(nameof(index));
+
+            var (offset, length) = _blockHandler[index];
+            return Parser.ObtainRecord(offset, length);
+        }
+
+        public override TValue ElementAtOrDefault(int index)
+        {
+            if (index >= _blockHandler.Count)
+                return default;
+
+            var (offset, length) = _blockHandler[index];
+            return Parser.ObtainRecord(offset, length);
         }
     }
 }

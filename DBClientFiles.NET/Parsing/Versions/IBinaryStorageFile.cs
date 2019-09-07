@@ -1,8 +1,8 @@
-﻿using DBClientFiles.NET.Parsing.Reflection;
+﻿using DBClientFiles.NET.Parsing.Enumerators;
+using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Parsing.Shared.Headers;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using System;
-using System.Collections.Generic;
 using System.IO;
 
 namespace DBClientFiles.NET.Parsing.Versions
@@ -44,8 +44,8 @@ namespace DBClientFiles.NET.Parsing.Versions
         IHeaderAccessor Header { get; }
     }
 
-    internal interface IBinaryStorageFile<T> : IBinaryStorageFile, IEnumerable<T>
+    internal interface IBinaryStorageFile<T> : IBinaryStorageFile
     {
-
+        IRecordEnumerator<T> GetEnumerator();
     }
 }
