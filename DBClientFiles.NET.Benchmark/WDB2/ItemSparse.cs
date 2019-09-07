@@ -12,7 +12,7 @@ namespace DBClientFiles.NET.Benchmark.WDB2
 
         }
 
-        [Benchmark]
+        // [Benchmark]
         public StorageList<Types.WDB2.ItemSparse> ItemSparse_List()
         {
             File.Position = 0;
@@ -20,10 +20,10 @@ namespace DBClientFiles.NET.Benchmark.WDB2
         }
 
         [Benchmark]
-        public void ItemSparse_Take1()
+        public Types.WDB2.ItemSparse ItemSparse_First()
         {
             File.Position = 0;
-            new StorageEnumerable<Types.WDB2.ItemSparse>(StorageOptions.Default, File).Take(1).Consume(Consumer);
+            return new StorageEnumerable<Types.WDB2.ItemSparse>(StorageOptions.Default, File).First();
         }
     }
 }

@@ -1,16 +1,18 @@
 using DBClientFiles.NET.Parsing.Versions;
+using System;
 using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
 {
     internal sealed class StringBlockHandler : ISegmentHandler, IDictionary<long, string>
     {
-        private readonly Dictionary<long, string> _blockData = new Dictionary<long, string>();
+        private readonly Dictionary<long, string> _blockData = new Dictionary<long, string>(5000);
 
         #region IBlockHandler
         public void ReadSegment(IBinaryStorageFile reader, long startOffset, long length)
@@ -30,7 +32,63 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
 
             reader.DataStream.Position = startOffset;
 
-            // Not ideal but this will do
+            // Next target: Pray for C# 9 to expose null-terminated strings
+#if EXPERIMENTAL // This nets about 4% gain on string parsing alone (which is hardly a bottleneck, but still)
+            var internStrings = reader.Options.InternStrings;
+
+            // Requesting bytes aligned to int boundary
+            // Add an extra byte to ensure we never go out of bounds
+            var alignedLength = ((int) length + sizeof(int) - 1) & ~(sizeof(int) - 1);
+            var byteBuffer = ArrayPool<byte>.Shared.Rent(alignedLength);
+            Span<byte> byteSpan = new Span<byte>(byteBuffer, 0, alignedLength);
+
+            // Read exactly what is needed
+            reader.DataStream.Read(byteSpan.Slice(0, (int) length));
+            // Zero the trailing bytes because Rent does not guarantee that
+            // One is enough to ensure mask checking will fail
+            byteBuffer[length] = 0x00;
+
+            var stringOffset = 1L;
+            while (stringOffset < length)
+            {
+                var wordSpan = MemoryMarshal.Cast<byte, uint>(byteSpan.Slice((int) stringOffset));
+
+                var wordCursor = 0;
+                var mask = wordSpan[wordCursor];
+                while (((mask - 0x01010101) & ~mask & 0x80808080) == 0)
+                    mask = wordSpan[++wordCursor];
+
+                var trailingCount = 0;
+                if ((mask & 0x000000FF) != 0x00)
+                {
+                    ++trailingCount;
+                    if ((mask & 0x0000FF00) != 0x00)
+                    {
+                        ++trailingCount;
+                        if ((mask & 0x00FF0000) != 0x00)
+                            ++trailingCount;
+                    }
+                }
+
+                var strLength = (wordCursor * sizeof(int) + trailingCount);
+                if (strLength > 0)
+                {
+                    var value = (reader.Options.Encoding ?? Encoding.UTF8).GetString(byteBuffer, (int) stringOffset, strLength);
+                    if (internStrings)
+                        value = string.Intern(value);
+
+                    _blockData.Add(stringOffset, value);
+                    stringOffset += strLength + 1;
+                }
+                else
+                {
+                    ++stringOffset;
+                }
+            }
+
+            ArrayPool<byte>.Shared.Return(byteBuffer);
+
+#else
             var byteBuffer = ArrayPool<byte>.Shared.Rent((int) length);
             var actualLength = reader.DataStream.Read(byteBuffer, 0, (int) length);
 
@@ -57,6 +115,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
             }
 
             ArrayPool<byte>.Shared.Return(byteBuffer);
+#endif
         }
 
         public void WriteSegment<T, U>(T writer) where T : BinaryWriter, IWriter<U>
@@ -65,7 +124,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
         }
 #endregion
 
-        #region IDictionary<long, String>
+#region IDictionary<long, String>
         public string this[long key]
         {
             get => TryGetValue(key, out var value) ? value : string.Empty;
@@ -95,6 +154,6 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
         public IEnumerator<KeyValuePair<long, string>> GetEnumerator() => _blockData.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_blockData).GetEnumerator();
-        #endregion
+#endregion
     }
 }
