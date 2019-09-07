@@ -24,7 +24,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
         /// <br/>
         /// The important part is that it's either <c>(ushort Flags, short IndexColumn)</c> or <c>uint Flags</c>.
         /// </summary>
-        private readonly Variant<uint> _variant1;
+        private readonly Variant<(ushort Flags, short IndexColumn)> _variant1;
 
         /// <summary>
         /// WDB5 files before build 21737 were using <c>uint Build</c> instead of <c>uint LayoutHash</c>.
@@ -37,11 +37,11 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
 
         public int IndexColumn => IsLegacyHeader
             ? 0 // Assume first column
-            : _variant1.Cast<(ushort Flags, short IndexColumn)>().IndexColumn;
+            : _variant1.Value.IndexColumn;
 
         public uint Flags => IsLegacyHeader
-            ? _variant1.Value
-            : _variant1.Cast<(ushort Flags, short IndexColumn)>().Flags;
+            ? _variant1.Cast<uint>()
+            : _variant1.Value.Flags;
 
         public IBinaryStorageFile<T> MakeStorageFile<T>(in StorageOptions options, Stream dataStream)
             => new StorageFile<T>(in options, in this, dataStream);

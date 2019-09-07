@@ -5,9 +5,9 @@ using System.Runtime.InteropServices;
 namespace DBClientFiles.NET.Parsing.Versions.WDC1
 {
     /// <summary>
-    /// Representation of a WDBC header.
+    /// Representation of a WDC1 header.
     ///
-    /// See <a href="http://www.wowdev.wiki/DBC">the wiki</a>.
+    /// See <a href="http://www.wowdev.wiki/DB2">the wiki</a>.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     internal readonly struct Header : IHeader

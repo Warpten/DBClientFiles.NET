@@ -18,10 +18,10 @@ namespace DBClientFiles.NET.Utils
         private Variant(ReadOnlySpan<byte> data) => _data = data;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Variant From<U>(U value) where U : unmanaged => new Variant(MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref value, 1)));
+        public static Variant From<U>(U value) where U : struct => new Variant(MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref value, 1)));
     }
 
-    internal struct Variant<T> where T : unmanaged
+    internal struct Variant<T> where T : struct
     {
         private T _data;
 
