@@ -1,4 +1,5 @@
 ﻿using DBClientFiles.NET.Parsing.Enums;
+using System.Linq;
 
 namespace DBClientFiles.NET.Parsing.Shared.Binding
 {
@@ -11,6 +12,21 @@ namespace DBClientFiles.NET.Parsing.Shared.Binding
         // Default value stored as a byte blob
         public byte[] RawDefaultValue { get; internal set; }
 
-        public abstract ref CompressionData CompressionData { get; } 
+        public abstract ref CompressionData CompressionData { get; }
+        
+        /// <summary>
+        /// Offset of the field's value in the record segment.
+        /// </summary>
+        public int Offset { get; internal set; }
+
+        /// <summary>
+        /// Size of the field's value in the record segment.
+        /// </summary>
+        public int Size { get; internal set; }
+
+        public override string ToString()
+        {
+            return $"Offset: {Offset} Size: {Size} Cardinality: {Cardinality} Properties: {Properties} Compression: {{ {CompressionData} }} DefaultValue: {{ {string.Join(' ', RawDefaultValue.Select(b => b.ToString("X2")))} }}";
+        }
     }
 }

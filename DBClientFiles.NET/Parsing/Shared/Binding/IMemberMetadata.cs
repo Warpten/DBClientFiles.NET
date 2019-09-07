@@ -10,25 +10,18 @@ namespace DBClientFiles.NET.Parsing.Shared.Binding
         public MemberCompressionType Type { get; internal set; }
         
         /// <summary>
-        /// Offset of the field in the record.
+        /// Offset of the field data in its compression block.
         /// </summary>
-        public int Offset { get; internal set; }
+        public int DataOffset { get; internal set; }
 
         /// <summary>
-        /// Size of the field in the record.
+        /// Size of the field data in its compression block.
         /// </summary>
-        public int Size { get; internal set; }
-
-        /// <summary>
-        /// Size of the field's compressed data in the corresponding block.
-        /// </summary>
-        public int CompressedDataSize { get; internal set; }
-
-        public int CompressionDataOffset { get; internal set; }
+        public int DataSize { get; internal set; }
 
         public override string ToString()
         {
-            return $"Type: {Type} Offset: {Offset} Size: {Size}";
+            return $"Type: {Type} Offset: {DataOffset} Size: {DataSize}";
         }
     }
 

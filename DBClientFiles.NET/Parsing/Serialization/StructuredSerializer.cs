@@ -41,20 +41,20 @@ namespace DBClientFiles.NET.Parsing.Serialization
         {
             var rootExpression = Expression.Parameter(typeof(T).MakeByRefType(), "model");
             
-            var tuple = Type.MakeMemberAccess(ref indexColumn, rootExpression, Options.TokenType);
-            if (tuple.memberToken == null)
+            var (memberToken, memberAccess) = Type.MakeMemberAccess(ref indexColumn, rootExpression, Options.TokenType);
+            if (memberToken == null)
                 throw new InvalidOperationException($"Invalid structure: Unable to find an index column.");
 
-            ref var indexColumnMemberToken = ref tuple.memberToken;
+            ref var indexColumnMemberToken = ref memberToken;
             if (indexColumnMemberToken.TypeToken != typeof(int) && indexColumnMemberToken.TypeToken != typeof(uint))
-                throw new InvalidOperationException($"Invalid structure: {tuple.memberAccess} is expected to be the index, but its type doesn't match. Needs to be (u)int.");
+                throw new InvalidOperationException($"Invalid structure: {memberAccess} is expected to be the index, but its type doesn't match. Needs to be (u)int.");
             
             { /* key getter */
                 _keyGetter = Expression.Lambda<TypeKeyGetter>(
                     // Box to int if type mismatches
-                    tuple.memberAccess.Type == typeof(int)
-                        ? tuple.memberAccess
-                        : Expression.ConvertChecked(tuple.memberAccess, typeof(int)),
+                    memberAccess.Type == typeof(int)
+                        ? memberAccess
+                        : Expression.ConvertChecked(memberAccess, typeof(int)),
                     rootExpression).Compile();
             }
 
@@ -62,11 +62,11 @@ namespace DBClientFiles.NET.Parsing.Serialization
                 var paramValue = Expression.Parameter(typeof(int));
 
                 _keySetter = Expression.Lambda<TypeKeySetter>(
-                    Expression.Assign(tuple.memberAccess,
+                    Expression.Assign(memberAccess,
                         // Box to target type if not int
-                        tuple.memberAccess.Type == typeof(int)
-                            ? tuple.memberAccess
-                            : Expression.ConvertChecked(paramValue, tuple.memberAccess.Type)
+                        memberAccess.Type == typeof(int)
+                            ? memberAccess
+                            : Expression.ConvertChecked(paramValue, memberAccess.Type)
                 ), rootExpression, paramValue).Compile();
             }
         }
@@ -122,7 +122,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
 
         private Expression CloneMember(MemberToken memberInfo, Expression oldMember, Expression newMember)
         {
-            if (memberInfo.IsArray)
+            if (oldMember.Type.IsArray)
             {
                 var sizeVarExpr = Expression.Variable(typeof(int));
                 var lengthValue = Expression.MakeMemberAccess(oldMember,

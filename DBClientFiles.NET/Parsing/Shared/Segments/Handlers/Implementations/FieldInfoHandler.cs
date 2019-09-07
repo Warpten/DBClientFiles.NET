@@ -19,16 +19,16 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
             };
 
             instance.CompressionData.Type = MemberCompressionType.Immediate;
-            instance.CompressionData.Offset = bytePosition * 8;
-            instance.CompressionData.Size = 32 - collapsedBitCount;
+            instance.Offset = bytePosition * 8;
+            instance.Size = 32 - collapsedBitCount;
 
             if (_index > 0)
             {
                 var previousIndex = _index - 1;
                 T previousInstance = null;
-                while ((previousInstance == null || previousInstance.CompressionData.Size == 0) && previousIndex >= 0)
+                while ((previousInstance == null || previousInstance.Size == 0) && previousIndex >= 0)
                     previousInstance = this[previousIndex--];
-                previousInstance.Cardinality = (int) ((instance.CompressionData.Offset - previousInstance.CompressionData.Offset) / previousInstance.CompressionData.Size);
+                previousInstance.Cardinality = (int) ((instance.Offset - previousInstance.Offset) / previousInstance.Size);
             }
 
             ++_index;

@@ -106,14 +106,14 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
                     {
                         return Expression.Call(RecordReader,
                             typeToken.MakeGenericMethod(_IRecordReader.ReadImmediate),
-                            Expression.Constant(memberMetadata.CompressionData.Offset),
-                            Expression.Constant(memberMetadata.CompressionData.Size));
+                            Expression.Constant(memberMetadata.Offset),
+                            Expression.Constant(memberMetadata.Size));
                     }
                     else if (typeToken == typeof(string))
                         return Expression.Call(RecordReader,
                             _IRecordReader.ReadStringImmediate,
-                            Expression.Constant(memberMetadata.CompressionData.Offset),
-                            Expression.Constant(memberMetadata.CompressionData.Size));
+                            Expression.Constant(memberMetadata.Offset),
+                            Expression.Constant(memberMetadata.Size));
 
                     break;
             }
