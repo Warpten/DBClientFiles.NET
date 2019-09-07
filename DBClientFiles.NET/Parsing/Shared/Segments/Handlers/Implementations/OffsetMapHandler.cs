@@ -17,7 +17,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
             if (startOffset == 0 || length == 0)
                 return;
 
-            Debug.Assert(reader.DataStream.Position == startOffset, "Out-of-place parsing");
+            reader.DataStream.Position = startOffset;
 
             int i = 0;
             Count = (int)(length / (sizeof(int) + sizeof(short)));

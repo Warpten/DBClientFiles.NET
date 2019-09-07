@@ -19,7 +19,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers
             if (length == 0)
                 return;
 
-            Debug.Assert(reader.DataStream.Position == startOffset, "Out-of-place parsing!");
+            reader.DataStream.Position = startOffset;
 
             Structures = new TStructure[length / Unsafe.SizeOf<TStructure>()];
 

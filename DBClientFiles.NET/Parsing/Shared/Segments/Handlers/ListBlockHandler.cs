@@ -2,7 +2,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Text;
 
@@ -27,7 +26,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers
             if (length == 0)
                 return;
 
-            Debug.Assert(reader.DataStream.Position == startOffset, "Out-of-place parsing!");
+            reader.DataStream.Position = startOffset;
 
             using (var streamReader = new BinaryReader(reader.DataStream, Encoding.UTF8, true))
                 while (reader.DataStream.Position < (startOffset + length))

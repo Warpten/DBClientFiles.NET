@@ -106,9 +106,8 @@ namespace DBClientFiles.NET.Parsing.Versions
             var head = Head;
             while (head != null)
             {
-                if (!head.ReadSegment(this))
-                    DataStream.Seek(head.Length, SeekOrigin.Current);
-
+                // Each handler seeks when parsing
+                head.ReadSegment(this);
                 head = head.Next;
             }
 
