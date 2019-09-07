@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Parsing.Shared.Records;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;

@@ -8,7 +8,7 @@ namespace DBClientFiles.NET.Collections.Generic
 {
     public sealed class StorageEnumerable<T> : IEnumerable<T>
     {
-        private IBinaryStorageFile<T> _implementation;
+        private readonly IBinaryStorageFile<T> _implementation;
 
         /// <summary>
         /// The options used to create this collection.
@@ -16,7 +16,7 @@ namespace DBClientFiles.NET.Collections.Generic
         public ref readonly StorageOptions Options => ref _implementation.Options;
 
         /// <summary>
-        /// Constructs a collection, given options and a data stream.
+        /// Constructs a collection from the provided stream.
         /// </summary>
         /// <param name="options">The options used for loading.</param>
         /// <param name="dataStream">The stream of binary data to load from.</param>
@@ -39,7 +39,7 @@ namespace DBClientFiles.NET.Collections.Generic
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         /// TODO: Provide random access in constant time
-        /// TODO: Optimize Skip and Take somehow
+        /// TODO: Optimize Skip somehow (avoid deserializing when skipping)
     }
 
 }

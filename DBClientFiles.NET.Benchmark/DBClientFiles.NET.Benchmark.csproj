@@ -28,8 +28,4 @@
     <ProjectReference Include="..\DBClientFiles.NET\DBClientFiles.NET.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Attributes\" />
-  </ItemGroup>
-
 </Project>

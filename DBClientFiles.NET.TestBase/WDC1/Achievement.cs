@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace DBClientFiles.NET.Types.WDC1
+﻿namespace DBClientFiles.NET.Types.WDC1
 {
     public sealed class Achievement
     {

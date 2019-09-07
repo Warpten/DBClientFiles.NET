@@ -15,9 +15,9 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB2
             Generator = new WDBC.SerializerGenerator<T>(storage.Type, storage.Options.TokenType);
         }
 
-        public T Deserialize(Stream dataStream, ISequentialRecordReader recordReader)
+        public T Deserialize(Stream dataStream, in AlignedSequentialRecordReader recordReader)
         {
-            Generator.Method.Invoke(dataStream, recordReader, out var instance);
+            Generator.Method.Invoke(dataStream, in recordReader, out var instance);
             return instance;
         }
     }

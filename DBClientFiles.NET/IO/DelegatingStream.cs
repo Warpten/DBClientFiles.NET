@@ -50,10 +50,6 @@ namespace DBClientFiles.NET.IO
             => _implementation.BeginWrite(buffer, offset, count, callback, state);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override void Close()
-            => _implementation.Close();
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override void CopyTo(Stream destination, int bufferSize)
             => _implementation.CopyTo(destination, bufferSize);
 
@@ -120,6 +116,15 @@ namespace DBClientFiles.NET.IO
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override Task FlushAsync(CancellationToken cancellationToken)
             => _implementation.FlushAsync(cancellationToken);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override void Close()
+        {
+            if (_disposing)
+                _implementation.Close();
+
+            base.Close();
+        }
 
         protected override void Dispose(bool disposing)
         {

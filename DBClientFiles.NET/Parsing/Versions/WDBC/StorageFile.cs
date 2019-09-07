@@ -19,7 +19,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
         public override int RecordCount => Header.RecordCount;
 
         private Serializer<T> _serializer;
-        private ISequentialRecordReader _recordReader;
+        private AlignedSequentialRecordReader _recordReader;
 
         public StorageFile(in StorageOptions options, in Header header, Stream input) : base(in options, new HeaderAccessor(in header), input)
         {
@@ -66,7 +66,8 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
         {
             DataStream.Position = offset;
 
-            return _serializer.Deserialize(DataStream.Limit(length, false), _recordReader);
+            using (var recordStream = DataStream.Limit(length, false))
+                return _serializer.Deserialize(recordStream, in _recordReader);
         }
 
         internal override int GetRecordKey(in T value) => throw new InvalidOperationException();

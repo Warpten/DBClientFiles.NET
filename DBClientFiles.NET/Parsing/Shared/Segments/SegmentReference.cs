@@ -17,6 +17,7 @@
         {
         }
 
+
         private static SegmentReference _missing = new SegmentReference(false, 0);
         public static ref readonly SegmentReference Missing => ref _missing;
     }

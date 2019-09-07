@@ -8,11 +8,11 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
 {
     internal sealed class SerializerGenerator<T> : TypedSerializerGenerator<T, SerializerGenerator<T>.MethodType>
     {
-        public delegate void MethodType(Stream dataStream, ISequentialRecordReader recordReader, out T instance);
+        public delegate void MethodType(Stream dataStream, in AlignedSequentialRecordReader recordReader, out T instance);
 
         private ParameterExpression DataStream { get; } = Expression.Parameter(typeof(Stream), "dataStream");
 
-        private ParameterExpression RecordReader { get; } = Expression.Parameter(typeof(ISequentialRecordReader), "recordReader");
+        private ParameterExpression RecordReader { get; } = Expression.Parameter(typeof(AlignedSequentialRecordReader).MakeByRefType(), "recordReader");
 
         protected override ParameterExpression ProducedInstance { get; } = Expression.Parameter(typeof(T).MakeByRefType(), "instance");
 
@@ -32,14 +32,12 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
         public override Expression GenerateExpressionReader(TypeToken typeToken, MemberToken memberToken)
         {
             if (typeToken.IsPrimitive)
-                return Expression.Call(RecordReader, typeToken.MakeGenericMethod(_ISequentialRecordReader.Read), DataStream);
+                return Expression.Call(RecordReader, typeToken.MakeGenericMethod(AlignedSequentialRecordReader.Methods.Read), DataStream);
 
             if (typeToken == typeof(string))
-                return Expression.Call(RecordReader, _ISequentialRecordReader.ReadString, DataStream);
+                return Expression.Call(RecordReader, AlignedSequentialRecordReader.Methods.ReadString, DataStream);
 
             return null;
         }
-
-        protected override Expression MakePrologue() => null;
     }
 }

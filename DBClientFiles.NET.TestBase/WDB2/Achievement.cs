@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using DBClientFiles.NET.Attributes;
+﻿using DBClientFiles.NET.Attributes;
 
 namespace DBClientFiles.NET.Types.WDB2
 {

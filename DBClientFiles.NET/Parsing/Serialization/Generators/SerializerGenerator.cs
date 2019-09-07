@@ -53,11 +53,6 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
             if (returnType != null)
                 expr = Expression.Block(expr, returnType);
 
-            // Add prologue if needed (state setup for the function, mostly)
-            var prologue = MakePrologue();
-            if (prologue != null)
-                expr = Expression.Block(prologue, Expression.Empty(), expr);
-
             // TODO: See if trying to optimize iterator usages in the generated code outweighs the cost of optimizing
             // (It probably doesn't) (except for large files question mark?)
             return expr;
@@ -125,8 +120,6 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         /// <param name="token"></param>
         /// <returns></returns>
         protected abstract Expression MakeRootMemberAccess(MemberToken token);
-
-        protected abstract Expression MakePrologue();
 
         /// <summary>
         /// Generates a deserialization call expression for the provided element of the tree.

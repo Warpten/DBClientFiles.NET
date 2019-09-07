@@ -101,7 +101,5 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
 
             return null;
         }
-
-        protected override Expression MakePrologue() => null;
     }
 }

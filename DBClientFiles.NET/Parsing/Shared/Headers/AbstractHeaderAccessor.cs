@@ -23,6 +23,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Headers
         public virtual ref readonly SegmentReference ExtendedFieldInfo => ref SegmentReference.Missing;
         public virtual ref readonly SegmentReference RelationshipTable => ref SegmentReference.Missing;
 
+        // TODO: Remove this (not really needed tbf)
         protected T Header { get; }
 
         protected AbstractHeaderAccessor(in T instance)

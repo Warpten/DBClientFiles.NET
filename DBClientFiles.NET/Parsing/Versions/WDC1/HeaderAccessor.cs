@@ -1,8 +1,5 @@
 ﻿using DBClientFiles.NET.Parsing.Shared.Headers;
 using DBClientFiles.NET.Parsing.Shared.Segments;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDC1
 {

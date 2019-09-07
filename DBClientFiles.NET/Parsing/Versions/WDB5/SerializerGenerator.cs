@@ -120,7 +120,5 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
             
             throw new InvalidOperationException("Unsupported compression type");
         }
-
-        protected override Expression MakePrologue() => null;
     }
 }
