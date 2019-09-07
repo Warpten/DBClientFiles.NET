@@ -7,14 +7,8 @@ namespace DBClientFiles.NET.Utils.Expressions
     {
         public static ExpressionEqualityComparer Instance = new ExpressionEqualityComparer();
 
-        public bool Equals(Expression a, Expression b)
-        {
-            return new ExpressionComparison(a, b).AreEqual;
-        }
+        public bool Equals(Expression a, Expression b) => new ExpressionComparison(a, b).AreEqual;
 
-        public int GetHashCode(Expression expression)
-        {
-            return new HashCodeCalculator(expression).HashCode;
-        }
+        public int GetHashCode(Expression expression) => new HashCodeCalculator(expression).HashCode;
     }
 }

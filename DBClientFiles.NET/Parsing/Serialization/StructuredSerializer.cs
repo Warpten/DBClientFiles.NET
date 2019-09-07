@@ -100,7 +100,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
                 var newInstanceParam = Expression.Parameter(typeof(T).MakeByRefType());
 
                 var body = new List<Expression> {
-                    Expression.Assign(newInstanceParam, New<T>.Expression())
+                    Expression.Assign(newInstanceParam, Expression.New(typeof(T)))
                 };
 
                 foreach (var memberInfo in Type.Members)
@@ -154,7 +154,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
                 return Expression.Assign(newMember, oldMember);
 
             var block = new List<Expression>() {
-                Expression.Assign(newMember, New.Expression(newMember.Type))
+                Expression.Assign(newMember, Expression.New(newMember.Type))
             };
 
             foreach (var childInfo in typeInfo.Members)

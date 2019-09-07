@@ -6,15 +6,9 @@ namespace DBClientFiles.NET.Utils.Expressions
     {
         public int HashCode { get; private set; }
 
-        public HashCodeCalculator(Expression expression)
-        {
-            Visit(expression);
-        }
+        public HashCodeCalculator(Expression expression) => Visit(expression);
 
-        private void Add(int i)
-        {
-            HashCode = (HashCode * 37) ^ i;
-        }
+        private void Add(int i) => HashCode = (HashCode * 37) ^ i;
 
         public override Expression Visit(Expression expression)
         {
@@ -65,18 +59,24 @@ namespace DBClientFiles.NET.Utils.Expressions
 
         protected override Expression VisitBinary(BinaryExpression binary)
         {
-            if (binary.Method != null) Add(binary.Method.GetHashCode());
-            if (binary.IsLifted) Add(1);
-            if (binary.IsLiftedToNull) Add(1);
+            if (binary.Method != null)
+                Add(binary.Method.GetHashCode());
+            if (binary.IsLifted)
+                Add(1);
+            if (binary.IsLiftedToNull)
+                Add(1);
 
             return base.VisitBinary(binary);
         }
 
         protected override Expression VisitUnary(UnaryExpression unary)
         {
-            if (unary.Method != null) Add(unary.Method.GetHashCode());
-            if (unary.IsLifted) Add(1);
-            if (unary.IsLiftedToNull) Add(1);
+            if (unary.Method != null)
+                Add(unary.Method.GetHashCode());
+            if (unary.IsLifted)
+                Add(1);
+            if (unary.IsLiftedToNull)
+                Add(1);
 
             return base.VisitUnary(unary);
         }

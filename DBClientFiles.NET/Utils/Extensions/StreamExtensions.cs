@@ -41,7 +41,7 @@ namespace DBClientFiles.NET.Utils.Extensions
 
         public static string ReadCString(this Stream stream)
         {
-            var sb = new StringBuilder();
+            var sb = new StringBuilder(128);
             int @char;
             while ((@char = stream.ReadByte()) != '\0')
                 sb.Append((char) @char);
