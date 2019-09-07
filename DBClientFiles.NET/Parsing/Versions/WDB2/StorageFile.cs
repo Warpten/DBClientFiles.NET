@@ -44,6 +44,14 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB2
                     Next = new Segment() {
                         Identifier = SegmentIdentifier.Records,
                         Length = Header.RecordCount * Header.RecordSize,
+
+                        Next = new Segment()
+                        {
+                            Identifier = SegmentIdentifier.StringBlock,
+                            Length = Header.StringTable.Length,
+
+                            Handler = stringBlockHandler
+                        }
                     }
                 };
             }
@@ -52,15 +60,15 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB2
                 Head = new Segment() {
                     Identifier = SegmentIdentifier.Records,
                     Length = Header.RecordCount * Header.RecordSize,
+
+                    Next = new Segment() {
+                        Identifier = SegmentIdentifier.StringBlock,
+                        Length = Header.StringTable.Length,
+
+                        Handler = stringBlockHandler
+                    }
                 };
             }
-
-            Head.Next = new Segment() {
-                Identifier = SegmentIdentifier.StringBlock,
-                Length = Header.StringTable.Length,
-
-                Handler = stringBlockHandler
-            };
 
             _recordReader = new AlignedSequentialRecordReader(stringBlockHandler);
         }
