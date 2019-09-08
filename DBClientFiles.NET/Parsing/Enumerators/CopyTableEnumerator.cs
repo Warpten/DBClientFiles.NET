@@ -4,6 +4,7 @@ using DBClientFiles.NET.Parsing.Versions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace DBClientFiles.NET.Parsing.Enumerators
 {
@@ -15,12 +16,14 @@ namespace DBClientFiles.NET.Parsing.Enumerators
         private TValue _currentInstance;
         private Func<bool, TValue> InstanceFactory { get; }
 
+        private readonly CopyTableHandler _blockHandler;
+
         public CopyTableEnumerator(Enumerator<TParser, TValue> impl) : base(impl)
         {
             if (Parser.Header.CopyTable.Exists)
             {
-                var blockHandler = Parser.FindSegmentHandler<CopyTableHandler>(SegmentIdentifier.CopyTable);
-                Debug.Assert(blockHandler != null, "Block handler missing for copy table");
+                _blockHandler = Parser.FindSegmentHandler<CopyTableHandler>(SegmentIdentifier.CopyTable);
+                Debug.Assert(_blockHandler != null, "Block handler missing for copy table");
 
                 InstanceFactory = forceReloadBase =>
                 {
@@ -38,7 +41,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
                     if (_currentCopyIndex == null)
                     {
                         // Prepare copy table
-                        if (blockHandler.TryGetValue(Parser.GetRecordKey(in _currentInstance), out var copyKeys))
+                        if (_blockHandler.TryGetValue(Parser.GetRecordKey(in _currentInstance), out var copyKeys))
                             _currentCopyIndex = copyKeys.GetEnumerator();
 
                         return _currentInstance;
@@ -86,5 +89,19 @@ namespace DBClientFiles.NET.Parsing.Enumerators
         {
             return this;
         }
+
+        public override TValue Last()
+        {
+            var lastSource = base.Last();
+            if (_blockHandler != null && !_blockHandler.TryGetValue(Parser.GetRecordKey(in _currentInstance), out var copyKeys))
+            {
+                var lastCopyKey = copyKeys.Last();
+                Parser.SetRecordKey(out lastSource, lastCopyKey);
+            }
+
+            return lastSource;
+        }
+
+        // TODO: Optimize Skip and ElementAt(OrDefault)
     }
 }

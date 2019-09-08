@@ -58,5 +58,11 @@ namespace DBClientFiles.NET.Parsing.Enumerators
             var (offset, length) = _blockHandler[index];
             return Parser.ObtainRecord(offset, length);
         }
+
+        public override TValue Last()
+        {
+            var (offset, length) = _blockHandler[_blockHandler.Count - 1];
+            return Parser.ObtainRecord(offset, length);
+        }
     }
 }

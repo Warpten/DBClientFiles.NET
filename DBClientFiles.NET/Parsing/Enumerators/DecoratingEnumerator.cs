@@ -35,5 +35,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
     
         public override TValue ElementAt(int index) => Implementation.ElementAt(index);
         public override TValue ElementAtOrDefault(int index) => Implementation.ElementAtOrDefault(index);
+
+        public override TValue Last() => Implementation.Last();
     }
 }

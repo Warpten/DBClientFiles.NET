@@ -8,7 +8,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
     internal class RecordsEnumerator<TParser, TValue> : Enumerator<TParser, TValue>
         where TParser : BinaryStorageFile<TValue>
     {
-        private Segment _segment;
+        private readonly Segment _segment;
 
         public RecordsEnumerator(TParser impl) : base(impl)
         {
@@ -40,7 +40,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
 
         public override TValue ElementAt(int index)
         {
-            var offset = Parser.Header.RecordSize * index;
+            var offset = _segment.StartOffset + Parser.Header.RecordSize * index;
             if (offset >= _segment.EndOffset)
                 throw new ArgumentOutOfRangeException(nameof(index));
 
@@ -49,11 +49,16 @@ namespace DBClientFiles.NET.Parsing.Enumerators
 
         public override TValue ElementAtOrDefault(int index)
         {
-            var offset = Parser.Header.RecordSize * index;
+            var offset = _segment.StartOffset + Parser.Header.RecordSize * index;
             if (offset >= _segment.EndOffset)
                 return default;
 
             return Parser.ObtainRecord(offset, Parser.Header.RecordSize);
+        }
+
+        public override TValue Last()
+        {
+            return Parser.ObtainRecord(_segment.EndOffset - Parser.Header.RecordSize, Parser.Header.RecordSize);
         }
     }
 }

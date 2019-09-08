@@ -4,15 +4,6 @@ using DBClientFiles.NET.Parsing.Versions;
 
 namespace DBClientFiles.NET.Parsing.Enumerators
 {
-    internal interface IRecordEnumerator<T> : IEnumerator<T>
-    {
-        void Skip(int skipCount);
-
-        T ElementAt(int index);
-
-        T ElementAtOrDefault(int index);
-    }
-
     /// <summary>
     /// A base implementation of the enumerator used to read the records.
     /// 
@@ -71,5 +62,6 @@ namespace DBClientFiles.NET.Parsing.Enumerators
         public abstract void Skip(int skipCount);
         public abstract TValue ElementAt(int index);
         public abstract TValue ElementAtOrDefault(int index);
+        public abstract TValue Last();
     }
 }
