@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using DBClientFiles.NET.Parsing.Enums;
 using DBClientFiles.NET.Parsing.Shared.Binding;
+using DBClientFiles.NET.Utils;
+using DBClientFiles.NET.Utils.Extensions;
 
 namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
 {
@@ -10,24 +12,22 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
     {
         private int _index = 0;
 
-        private IList<T> _fields;
+        private readonly IList<T> _fields;
 
         public ExtendedFieldInfoHandler(IList<T> preparedFields)
         {
             _fields = preparedFields;
         }
 
-        protected override T ReadElement(BinaryReader reader)
+        protected override T ReadElement(Stream dataStream)
         {
             var currentField = _fields[_index];
             ++_index;
 
             // Offset, in bits, of the field in the record. *Can* be zero for fields outside of the record (index table, relationship table)
-            var fieldOffsetBits = reader.ReadUInt16();
             // Size, in bits, of the current member. For arrays, this is the entire size of the array, packed.
-            var fieldSizeBits = reader.ReadUInt16();
+            var (fieldOffsetBits, fieldSizeBits, additionalDataSize) = dataStream.Read<(ushort, ushort, int)>();
 
-            var additionalDataSize = reader.ReadInt32();
             currentField.CompressionData.DataSize = additionalDataSize;
 
             // Retrieve the size from field info (byte-boundary) if it was defined
@@ -36,7 +36,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
             currentField.Offset = fieldOffsetBits;
             currentField.Size = fieldSizeBits;
 
-            currentField.CompressionData.Type = (MemberCompressionType)reader.ReadInt32();
+            currentField.CompressionData.Type = (MemberCompressionType) dataStream.Read<int>();
 
             if (_index > 1)
             {
@@ -60,36 +60,33 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
             {
                 case MemberCompressionType.SignedImmediate:
                 case MemberCompressionType.Immediate:
-                    {
-                        _ = reader.ReadUInt32();
-                        _ = reader.ReadUInt32();
-                        var flags = reader.ReadUInt32();
-                        if ((flags & 0x01) != 0 || currentField.CompressionData.Type == MemberCompressionType.SignedImmediate)
-                            currentField.Properties |= MemberMetadataProperties.Signed;
-                        break;
-                    }
+                {
+                    var (_, _, flags) = dataStream.Read<(int, int, uint)>();
+                      
+                    if ((flags & 0x01) != 0 || currentField.CompressionData.Type == MemberCompressionType.SignedImmediate)
+                        currentField.Properties |= MemberMetadataProperties.Signed;
+                    break;
+                }
                 case MemberCompressionType.CommonData:
-                    {
-                        currentField.RawDefaultValue = reader.ReadBytes(4);
-                        _ = reader.ReadUInt32();
-                        _ = reader.ReadUInt32();
-                        break;
-                    }
+                {
+                    var (defaultValue, _, _) = dataStream.Read<(Variant<int>, int, int)>();
+
+                    currentField.DefaultValue = defaultValue;
+                    break;
+                }
                 case MemberCompressionType.BitpackedPalletArrayData:
                 case MemberCompressionType.BitpackedPalletData:
+                {
+                    var (_, _, arrayCount) = dataStream.Read<(int, int, int)>();
+                    if (currentField.CompressionData.Type == MemberCompressionType.BitpackedPalletArrayData)
                     {
-                        _ = reader.ReadUInt32();
-                        _ = reader.ReadUInt32();
-                        var arrayCount = reader.ReadInt32();
-                        if (currentField.CompressionData.Type == MemberCompressionType.BitpackedPalletArrayData)
-                        {
-                            currentField.Cardinality = arrayCount;
-                            currentField.Size /= arrayCount;
-                        }
-                        break;
+                        currentField.Cardinality = arrayCount;
+                        currentField.Size /= arrayCount;
                     }
+                    break;
+                }
                 default:
-                    reader.BaseStream.Seek(3 * 4, SeekOrigin.Current);
+                    dataStream.Position += 3 * sizeof(int);
                     break;
             }
 

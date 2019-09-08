@@ -8,7 +8,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers
 {
     internal abstract class DictionaryBlockHandler<TKey, TValue> : ISegmentHandler
     {
-        private Dictionary<TKey, TValue> _store = new Dictionary<TKey, TValue>();
+        private readonly Dictionary<TKey, TValue> _store = new Dictionary<TKey, TValue>();
 
         public void ReadSegment(IBinaryStorageFile reader, long startOffset, long length)
         {
@@ -17,12 +17,11 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers
 
             reader.DataStream.Position = startOffset;
 
-            using (var streamReader = new BinaryReader(reader.DataStream, Encoding.UTF8, true))
-                while (reader.DataStream.Position <= (startOffset + length))
-                    ReadPair(streamReader);
+            while (reader.DataStream.Position <= (startOffset + length))
+                ReadPair(reader.DataStream);
         }
 
-        protected virtual void ReadPair(BinaryReader reader)
+        protected virtual void ReadPair(Stream reader)
         {
             var key = ReadKey(reader);
             _store[key] = ReadValue(reader, key);
@@ -33,8 +32,8 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers
             throw new NotImplementedException();
         }
 
-        public abstract TKey ReadKey(BinaryReader reader);
-        public abstract TValue ReadValue(BinaryReader reader, TKey key);
+        protected abstract TKey ReadKey(Stream reader);
+        protected abstract TValue ReadValue(Stream reader, TKey key);
 
         public abstract void WriteKey(BinaryWriter writer, TKey key);
         public abstract void WriteValue(BinaryWriter writer, TValue value);

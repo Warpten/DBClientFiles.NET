@@ -37,7 +37,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
         public bool MoveNext()
         {
             Current = ObtainCurrent();
-            return Current != default;
+            return !EqualityComparer<TValue>.Default.Equals(Current, default);
         }
 
         public virtual void Reset()

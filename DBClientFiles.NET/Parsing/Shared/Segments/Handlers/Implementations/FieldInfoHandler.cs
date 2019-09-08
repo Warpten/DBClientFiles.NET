@@ -1,7 +1,9 @@
 using DBClientFiles.NET.Parsing.Enums;
 using DBClientFiles.NET.Parsing.Shared.Binding;
 using System;
+using System.Diagnostics;
 using System.IO;
+using DBClientFiles.NET.Utils.Extensions;
 
 namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
 {
@@ -9,10 +11,9 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
     {
         private int _index = 0;
 
-        protected override T ReadElement(BinaryReader reader)
+        protected override T ReadElement(Stream dataStream)
         {
-            var collapsedBitCount = reader.ReadInt16();
-            var bytePosition = reader.ReadUInt16();
+            var (collapsedBitCount, bytePosition) = dataStream.Read<(short, ushort)>();
 
             var instance = new T {
                 Cardinality = 1
@@ -28,6 +29,10 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
                 T previousInstance = null;
                 while ((previousInstance == null || previousInstance.Size == 0) && previousIndex >= 0)
                     previousInstance = this[previousIndex--];
+
+                // Should never happen
+                Debug.Assert(previousInstance != null);
+
                 previousInstance.Cardinality = (int) ((instance.Offset - previousInstance.Offset) / previousInstance.Size);
             }
 

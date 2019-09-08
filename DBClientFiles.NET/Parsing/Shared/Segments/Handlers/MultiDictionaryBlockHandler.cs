@@ -6,18 +6,18 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers
 {
     internal abstract class MultiDictionaryBlockHandler<TKey, TValue> : DictionaryBlockHandler<TKey, List<TValue>>
     {
-        protected sealed override void ReadPair(BinaryReader reader)
+        protected sealed override void ReadPair(Stream dataStream)
         {
-            var key = ReadKey(reader);
+            var key = ReadKey(dataStream);
             if (TryGetValue(key, out var value))
-                value.Add(ReadValueElement(reader));
+                value.Add(ReadValueElement(dataStream));
             else
-                Add(key, new List<TValue>() { ReadValueElement(reader) });
+                Add(key, new List<TValue>() { ReadValueElement(dataStream) });
         }
 
-        public abstract TValue ReadValueElement(BinaryReader reader);
+        protected abstract TValue ReadValueElement(Stream dataStream);
 
-        public sealed override List<TValue> ReadValue(BinaryReader reader, TKey key)
+        protected sealed override List<TValue> ReadValue(Stream dataStream, TKey key)
         {
             // Should not be called
             throw new InvalidOperationException();

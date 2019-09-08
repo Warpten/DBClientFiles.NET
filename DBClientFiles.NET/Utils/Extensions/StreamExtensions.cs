@@ -1,5 +1,8 @@
-﻿using DBClientFiles.NET.IO;
+﻿using System.Diagnostics;
+using DBClientFiles.NET.IO;
 using System.IO;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace DBClientFiles.NET.Utils.Extensions
@@ -22,7 +25,7 @@ namespace DBClientFiles.NET.Utils.Extensions
         /// <param name="stream"></param>
         /// <param name="disposing">Whether or not disposing of the returned stream also disposes the provided stream.</param>
         /// <returns></returns>
-        /// <remarks>This method will throw if the provided stream does not support seek operations. Use <see cref="Rebase(Stream, int, bool)"/> instead.</remarks>
+        /// <remarks>This method will throw if the provided stream does not support seek operations. Use <see cref="Rebase(Stream, long, bool)"/> instead.</remarks>
         public static Stream Rebase(this Stream stream, bool disposing = true)
             => Rebase(stream, stream.Position, disposing);
 
@@ -39,6 +42,18 @@ namespace DBClientFiles.NET.Utils.Extensions
         public static Stream Rebase(this Stream stream, long offset, bool disposing = true)
             => new OffsetStream(stream, offset, disposing);
 
+        public static Stream MakeSeekable(this Stream stream)
+        {
+            if (stream.CanSeek)
+                return stream;
+
+            var memoryStream = new MemoryStream();
+            stream.CopyTo(memoryStream, 0x8000);
+
+            memoryStream.Position = 0;
+            return memoryStream;
+        }
+
         public static string ReadCString(this Stream stream)
         {
             var sb = new StringBuilder(128);
@@ -47,6 +62,19 @@ namespace DBClientFiles.NET.Utils.Extensions
                 sb.Append((char) @char);
 
             return sb.ToString();
+        }
+
+        public static T Read<T>(this Stream dataStream) where T : struct
+        {
+            var value = default(T);
+            var span = MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref value, 1));
+#if DEBUG
+            Debug.Assert(Unsafe.SizeOf<T>() == dataStream.Read(span));
+#else
+            dataStream.Read(span);
+#endif
+
+            return value;
         }
     }
 }

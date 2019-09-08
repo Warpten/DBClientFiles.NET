@@ -1,19 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using DBClientFiles.NET.Utils.Extensions;
 
 namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
 {
     internal sealed class CopyTableHandler : MultiDictionaryBlockHandler<int, int>
     {
-        public override int ReadKey(BinaryReader reader)
-        {
-            return reader.ReadInt32();
-        }
+        protected override int ReadKey(Stream dataStream) => dataStream.Read<int>();
 
-        public override int ReadValueElement(BinaryReader reader)
-        {
-            return reader.ReadInt32();
-        }
+        protected override int ReadValueElement(Stream dataStream) => dataStream.Read<int>();
 
         public override void WriteKey(BinaryWriter writer, int key)
         {

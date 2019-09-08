@@ -1,25 +1,27 @@
-﻿using DBClientFiles.NET.Attributes;
-using DBClientFiles.NET.Collections.Generic;
-using DBClientFiles.NET.Types.WDC1;
+﻿using DBClientFiles.NET.Collections.Generic;
+using DBClientFiles.NET.Types.WDB2;
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 
 namespace DBClientFiles.NET.Runner
 {
-    class Program
+    public static class Program
     {
-        static unsafe void Main(string[] args)
+        public static void Main(string[] args)
         {
-            using (var fs = File.OpenRead(@"D:\Games\Achievement.25928.db2"))
+            using (var fs = File.OpenRead(@"D:\Games\World of Warcraft 4.3.4 - Akama\dbc\Item-sparse.db2"))
             {
-                var collection = new StorageList<Achievement>(StorageOptions.Default, fs);
-                for (var i = 0; i < 10; ++i)
-                    InspectObject(collection[i]);
+                var collection = new StorageEnumerable<ItemSparse>(StorageOptions.Default, fs).GetEnumerator();
+                ROOT_INSPECT(collection);
             }
+        }
 
-            Console.ReadKey();
+        private static void ROOT_INSPECT<T>(IEnumerator<T> enumerator)
+        {
+            enumerator.MoveNext();
+            InspectObject(enumerator.Current);
         }
 
         private static void InspectObject(object obj)
@@ -29,11 +31,11 @@ namespace DBClientFiles.NET.Runner
 
         private static void PrintValue(string prefix, object value)
         {
-            if (value.GetType() == typeof(string) || value.GetType().IsPrimitive)
+            if (value is string || value.GetType().IsPrimitive)
             {
-                if (value.GetType() == typeof(string))
+                if (value is string)
                     Console.WriteLine($@"{prefix.PadRight(50, ' ')}""{value}""");
-                else if (value.GetType() == typeof(int) || value.GetType() == typeof(uint))
+                else if (value is int || value is uint)
                     Console.WriteLine($"{prefix.PadRight(50, ' ')}{value} (0x{value:X8})");
                 else
                     Console.WriteLine($"{prefix.PadRight(50, ' ')}{value}");

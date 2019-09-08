@@ -1,5 +1,6 @@
 ﻿using DBClientFiles.NET.Parsing.Enums;
 using System.Linq;
+using DBClientFiles.NET.Utils;
 
 namespace DBClientFiles.NET.Parsing.Shared.Binding
 {
@@ -9,8 +10,9 @@ namespace DBClientFiles.NET.Parsing.Shared.Binding
         public abstract MemberMetadataProperties Properties { get; internal set; }
 
         public abstract T GetDefaultValue<T>() where T : unmanaged;
-        // Default value stored as a byte blob
-        public byte[] RawDefaultValue { get; internal set; }
+
+        // Stored as int because it nicely fits byte[4]
+        public Variant<int> DefaultValue { get; internal set; }
 
         public abstract ref CompressionData CompressionData { get; }
         
@@ -26,7 +28,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Binding
 
         public override string ToString()
         {
-            return $"Offset: {Offset} Size: {Size} Cardinality: {Cardinality} Properties: {Properties} Compression: {{ {CompressionData} }} DefaultValue: {{ {string.Join(' ', RawDefaultValue.Select(b => b.ToString("X2")))} }}";
+            return $"Offset: {Offset} Size: {Size} Cardinality: {Cardinality} Properties: {Properties} Compression: {{ {CompressionData} }} DefaultValue: {{ {DefaultValue.Value:X8} }}";
         }
     }
 }

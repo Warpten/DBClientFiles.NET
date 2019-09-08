@@ -12,7 +12,6 @@ namespace DBClientFiles.NET.Parsing.Versions
     /// A basic implementation of the <see cref="IBinaryStorageFile{T}"/> interface.
     /// </summary>
     /// <typeparam name="TValue">The record type.</typeparam>
-    /// <typeparam name="TSerializer"></typeparam>
     internal abstract class BinaryStorageFile<TValue> : IBinaryStorageFile<TValue>
     {
         /// <summary>
@@ -48,14 +47,14 @@ namespace DBClientFiles.NET.Parsing.Versions
         /// Create an instance of <see cref="BinaryStorageFile{TValue}"/>.
         /// </summary>
         /// <param name="options">The options to use for parsing.</param>
+        /// <param name="headerAccessor"></param>
         /// <param name="input">The input stream.</param>
         protected BinaryStorageFile(in StorageOptions options, IHeaderAccessor headerAccessor, Stream input)
         {
             DataStream = input;
             Header = headerAccessor;
 
-            if (!input.CanSeek)
-                throw new ArgumentException("The stream provided to DBClientFiles.NET's collections has to be seekable!");
+            Debug.Assert(input.CanSeek, "The stream provided to DBClientFiles.NET has to be seekable!");
 
             Type = new TypeToken(typeof(TValue));
             _options = options;

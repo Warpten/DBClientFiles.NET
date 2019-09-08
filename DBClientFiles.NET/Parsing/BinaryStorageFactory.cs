@@ -18,6 +18,8 @@ namespace DBClientFiles.NET.Parsing
     {
         public static unsafe IBinaryStorageFile<T> Process(in StorageOptions options, Stream dataStream)
         {
+            dataStream = dataStream.MakeSeekable();
+
             Signatures signature = default;
             Span<byte> bytes = MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref signature, 1));
             if (dataStream.Read(bytes) != 4)
@@ -48,7 +50,7 @@ namespace DBClientFiles.NET.Parsing
                 throw new InvalidOperationException($"Unable to read header from stream: {Unsafe.SizeOf<THeader>()} bytes expected, got only {readCount}.");
 
             // Encapsulate a new stream in a wrapper where header offset is considered.
-            var windowedStream = dataStream.Rebase(Unsafe.SizeOf<THeader>() + 4, true);
+            var windowedStream = dataStream.Rebase(true);
             return header.MakeStorageFile<T>(in options, windowedStream);
         }
     }

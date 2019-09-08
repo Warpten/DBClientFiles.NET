@@ -9,7 +9,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers
 {
     internal abstract class ListBlockHandler<TElement> : IList<TElement>, ISegmentHandler
     {
-        private List<TElement> _store;
+        private readonly List<TElement> _store;
         
         protected ListBlockHandler()
         {
@@ -28,13 +28,12 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers
 
             reader.DataStream.Position = startOffset;
 
-            using (var streamReader = new BinaryReader(reader.DataStream, Encoding.UTF8, true))
-                while (reader.DataStream.Position < (startOffset + length))
-                {
-                    var elementStore = ReadElement(streamReader);
-                    if (elementStore != default)
-                        _store.Add(elementStore);
-                }
+            while (reader.DataStream.Position < (startOffset + length))
+            {
+                var elementStore = ReadElement(reader.DataStream);
+                if (!EqualityComparer<TElement>.Default.Equals(elementStore, default))
+                    _store.Add(elementStore);
+            }
         }
 
         public void WriteSegment<T, U>(T reader) where T : BinaryWriter, IWriter<U>
@@ -42,7 +41,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers
             throw new NotImplementedException();
         }
 
-        protected abstract TElement ReadElement(BinaryReader reader);
+        protected abstract TElement ReadElement(Stream dataStream);
         protected abstract void WriteElement(BinaryWriter writer, in TElement element);
 
         #region IList<TElement> implementation
