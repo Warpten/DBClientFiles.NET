@@ -1,13 +1,14 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using DBClientFiles.NET.Collections.Generic.Internal;
 using DBClientFiles.NET.Parsing;
 using DBClientFiles.NET.Parsing.Versions;
 using DBClientFiles.NET.Utils.Extensions;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
-    public sealed class StorageEnumerable<T> : IEnumerable<T>
+    public sealed class StorageEnumerable<T> : IRecordEnumerable<T>
     {
         private readonly IBinaryStorageFile<T> _implementation;
 
@@ -35,24 +36,34 @@ namespace DBClientFiles.NET.Collections.Generic
         {
         }
 
+        public void Dispose()
+        {
+            _implementation.Dispose();
+        }
+
         public IEnumerator<T> GetEnumerator() => _implementation.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public IEnumerable<T> Skip(int amount)
-        {
-            var enumerator = _implementation.GetEnumerator();
-            enumerator.Skip(amount);
-            return enumerator.MakeEnumerable();
-        }
+        public IRecordEnumerable<T> Skip(int amount) => new SkippingStorageEnumerable<T>(this, amount);
 
-        public T ElementAt(int amount)
+        public T ElementAt(int offset)
         {
             using (var enumerator = _implementation.GetEnumerator())
-                return enumerator.ElementAt(amount);
+                return enumerator.ElementAt(offset);
         }
 
-        // TODO: Provide random access in constant time
+        public T ElementAtOrDefault(int offset)
+        {
+            using (var enumerator = _implementation.GetEnumerator())
+                return enumerator.ElementAtOrDefault(offset);
+        }
+
+        public T Last()
+        {
+            using (var enumerator = _implementation.GetEnumerator())
+                return enumerator.Last();
+        }
     }
 
 }

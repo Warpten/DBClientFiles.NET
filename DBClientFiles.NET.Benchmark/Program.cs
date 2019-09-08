@@ -1,5 +1,4 @@
-﻿using BenchmarkDotNet.Columns;
-using BenchmarkDotNet.Configs;
+﻿using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
 using System.Linq;
 using System.Reflection;
@@ -11,7 +10,8 @@ namespace DBClientFiles.NET.Benchmark
         public static void Main(string[] args)
         {
             var summaries = BenchmarkSwitcher.FromTypes(
-                Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(AbstractBenchmark).IsAssignableFrom(t) && t != typeof(AbstractBenchmark)).ToArray()
+                Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(AbstractBenchmark).IsAssignableFrom(t) && !t.IsAbstract).ToArray()
+                // new [] { typeof(WDBC.AchievementAllocationBenchmark) }
 #if DEBUG
             ).Run(args, new DebugInProcessConfig());
 #else
