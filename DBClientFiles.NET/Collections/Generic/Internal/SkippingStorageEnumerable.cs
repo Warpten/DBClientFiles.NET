@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 using DBClientFiles.NET.Parsing.Enumerators;
 
 namespace DBClientFiles.NET.Collections.Generic.Internal

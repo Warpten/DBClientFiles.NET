@@ -4,6 +4,7 @@ using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions.WDC1.Binding;
 using DBClientFiles.NET.Parsing.Enumerators;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDC1
 {
@@ -23,75 +24,22 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
                 return;
            
             var fieldInfoHandler = new FieldInfoHandler<MemberMetadata>();
-            var tail = Head = new Segment {
-                Identifier = SegmentIdentifier.FieldInfo,
-                Length = Header.FieldInfo.Length,
-
-                Handler = fieldInfoHandler
-            };
+            var tail = Head = new Segment(SegmentIdentifier.FieldInfo, Header.FieldInfo.Length, fieldInfoHandler);
 
             if (Header.OffsetMap.Exists)
-            {
-                tail = tail.Next = new Segment {
-                    Identifier = SegmentIdentifier.OffsetMap,
-                    Length = Header.OffsetMap.Length,
-
-                    Handler = new OffsetMapHandler()
-                };
-            }
+                tail = tail.Next = new Segment(SegmentIdentifier.OffsetMap, Header.OffsetMap.Length, new OffsetMapHandler());
             else
             {
-                tail = tail.Next = new Segment {
-                    Identifier = SegmentIdentifier.Records,
-                    Length = Header.RecordSize * Header.RecordCount,
-                };
-
-                tail = tail.Next = new Segment {
-                    Identifier = SegmentIdentifier.StringBlock,
-                    Length = Header.StringTable.Length,
-
-                    Handler = new StringBlockHandler()
-                };
+                tail = tail.Next = new Segment(SegmentIdentifier.Records, Header.RecordSize * Header.RecordCount);
+                tail = tail.Next = new Segment(SegmentIdentifier.StringBlock, Header.StringTable.Length, new StringBlockHandler());
             }
 
-            tail = tail.Next = new Segment {
-                Identifier = SegmentIdentifier.IndexTable,
-                Length = Header.IndexTable.Length,
-
-                Handler = new IndexTableHandler()
-            };
-
-            tail = tail.Next = new Segment {
-                Identifier = SegmentIdentifier.CopyTable,
-                Length = Header.CopyTable.Length,
-
-                Handler = new CopyTableHandler()
-            };
-
-            tail = tail.Next = new Segment {
-                Identifier = SegmentIdentifier.ExtendedFieldInfo,
-                Length = Header.ExtendedFieldInfo.Length,
-
-                Handler = new ExtendedFieldInfoHandler<MemberMetadata>(fieldInfoHandler)
-            };
-
-            tail = tail.Next = new Segment {
-                Identifier = SegmentIdentifier.PalletTable,
-                Length = Header.Pallet.Length
-            };
-
-            tail = tail.Next = new Segment {
-                Identifier = SegmentIdentifier.CommonDataTable,
-                Length = Header.Common.Length,
-
-                // Handler = not the legacy one!
-            };
-
-            tail.Next = new Segment
-            {
-                Identifier = SegmentIdentifier.RelationshipTable,
-                Length = Header.RelationshipTable.Length
-            };
+            tail = tail.Next = new Segment(SegmentIdentifier.IndexTable, Header.IndexTable.Length, new IndexTableHandler());
+            tail = tail.Next = new Segment(SegmentIdentifier.CopyTable, Header.CopyTable.Length, new CopyTableHandler());
+            tail = tail.Next = new Segment(SegmentIdentifier.ExtendedFieldInfo, Header.ExtendedFieldInfo.Length, new ExtendedFieldInfoHandler<MemberMetadata>(fieldInfoHandler));
+            tail = tail.Next = new Segment(SegmentIdentifier.PalletTable, Header.Pallet.Length);
+            tail = tail.Next = new Segment(SegmentIdentifier.CommonDataTable, Header.Common.Length);
+            tail.Next = new Segment(SegmentIdentifier.RelationshipTable, Header.RelationshipTable.Length);
         }
 
         public override void After(ParsingStep step)
@@ -100,13 +48,12 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
                 _serializer = new Serializer<T>(this);
         }
 
+        [SuppressMessage("Code Quality", "IDE0067:Dispose objects before losing scope", Justification = "False positive")]
         protected override IRecordEnumerator<T> CreateEnumerator()
         {
-#pragma warning disable IDE0067 // Dispose objects before losing scope
             var enumerator = !Header.OffsetMap.Exists
-                ? (Enumerator<StorageFile<T>, T>) new RecordsEnumerator<StorageFile<T>, T>(this)
-                : (Enumerator<StorageFile<T>, T>) new OffsetMapEnumerator<StorageFile<T>, T>(this);
-#pragma warning restore IDE0067 // Dispose objects before losing scope
+                ? (Enumerator<T>) new RecordsEnumerator<T>(this)
+                : (Enumerator<T>) new OffsetMapEnumerator<T>(this);
 
             return enumerator.WithIndexTable().WithCopyTable();
         }

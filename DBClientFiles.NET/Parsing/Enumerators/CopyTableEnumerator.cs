@@ -1,6 +1,5 @@
 ﻿using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
-using DBClientFiles.NET.Parsing.Versions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,8 +7,7 @@ using System.Linq;
 
 namespace DBClientFiles.NET.Parsing.Enumerators
 {
-    internal class CopyTableEnumerator<TParser, TValue> : DecoratingEnumerator<TParser, TValue>
-        where TParser : BinaryStorageFile<TValue>
+    internal class CopyTableEnumerator<TValue> : DecoratingEnumerator<TValue>
     {
         private IEnumerator<int> _currentCopyIndex;
 
@@ -18,7 +16,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
 
         private readonly CopyTableHandler _blockHandler;
 
-        public CopyTableEnumerator(Enumerator<TParser, TValue> impl) : base(impl)
+        public CopyTableEnumerator(Enumerator<TValue> impl) : base(impl)
         {
             if (Parser.Header.CopyTable.Exists)
             {
@@ -85,7 +83,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
             base.Reset();
         }
 
-        public override Enumerator<TParser, TValue> WithCopyTable()
+        public override Enumerator<TValue> WithCopyTable()
         {
             return this;
         }

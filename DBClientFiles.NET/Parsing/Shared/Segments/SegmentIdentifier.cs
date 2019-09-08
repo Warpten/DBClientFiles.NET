@@ -13,6 +13,8 @@
         PalletTable       = 0x00000100,
         RelationshipTable = 0x00000200,
 
+        Ignored           = 0x80000000,
+
 
         Records           = 0xFFFFFFFF,
     }

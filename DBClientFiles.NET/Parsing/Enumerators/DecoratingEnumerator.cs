@@ -1,13 +1,10 @@
-﻿using DBClientFiles.NET.Parsing.Versions;
-
-namespace DBClientFiles.NET.Parsing.Enumerators
+﻿namespace DBClientFiles.NET.Parsing.Enumerators
 {
-    internal class DecoratingEnumerator<TParser, TValue> : Enumerator<TParser, TValue>
-        where TParser : BinaryStorageFile<TValue>
+    internal class DecoratingEnumerator<TValue> : Enumerator<TValue>
     {
-        internal Enumerator<TParser, TValue> Implementation { get; }
+        internal Enumerator<TValue> Implementation { get; }
 
-        public DecoratingEnumerator(Enumerator<TParser, TValue> impl) : base(impl.Parser)
+        public DecoratingEnumerator(Enumerator<TValue> impl) : base(impl.Parser)
         {
             Implementation = impl;
         }

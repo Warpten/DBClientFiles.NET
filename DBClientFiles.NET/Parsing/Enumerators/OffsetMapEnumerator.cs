@@ -6,13 +6,12 @@ using System.Diagnostics;
 
 namespace DBClientFiles.NET.Parsing.Enumerators
 {
-    internal class OffsetMapEnumerator<TParser, TValue> : Enumerator<TParser, TValue>
-        where TParser : BinaryStorageFile<TValue>
+    internal class OffsetMapEnumerator<TValue> : Enumerator<TValue>
     {
         private readonly OffsetMapHandler _blockHandler;
         private int _cursor;
 
-        public OffsetMapEnumerator(TParser impl) : base(impl)
+        public OffsetMapEnumerator(BinaryStorageFile<TValue> impl) : base(impl)
         {
             _blockHandler = Parser.FindSegmentHandler<OffsetMapHandler>(SegmentIdentifier.OffsetMap);
             _cursor = 0;

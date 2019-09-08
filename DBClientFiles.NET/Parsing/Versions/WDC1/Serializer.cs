@@ -16,7 +16,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
 
         public Serializer(IBinaryStorageFile storage) : base(storage)
         {
-            InfoBlock = storage.FindSegment(SegmentIdentifier.FieldInfo)?.Handler as FieldInfoHandler<MemberMetadata>;
+            InfoBlock = storage.FindSegmentHandler<FieldInfoHandler<MemberMetadata>>(SegmentIdentifier.FieldInfo);
 
             Generator = new SerializerGenerator<T>(storage, InfoBlock);
         }

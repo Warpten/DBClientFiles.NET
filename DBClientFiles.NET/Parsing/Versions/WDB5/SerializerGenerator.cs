@@ -31,7 +31,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
 
         public SerializerGenerator(IBinaryStorageFile storage) : base(storage.Type, storage.Options.TokenType, 0)
         {
-            _memberMetadata = storage.FindSegment(SegmentIdentifier.FieldInfo)?.Handler as FieldInfoHandler<MemberMetadata>;
+            _memberMetadata = storage.FindSegmentHandler<FieldInfoHandler<MemberMetadata>>(SegmentIdentifier.FieldInfo);
 
             if (storage.Header.IndexTable.Exists)
                 _indexColumn = storage.Header.IndexColumn;
@@ -72,6 +72,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
                 }
             }
 
+            // if column wasn't found ignore.
             return RELATIONSHIP_TABLE_ENTRY;
         }
 

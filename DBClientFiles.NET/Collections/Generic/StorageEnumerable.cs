@@ -4,7 +4,6 @@ using System.IO;
 using DBClientFiles.NET.Collections.Generic.Internal;
 using DBClientFiles.NET.Parsing;
 using DBClientFiles.NET.Parsing.Versions;
-using DBClientFiles.NET.Utils.Extensions;
 
 namespace DBClientFiles.NET.Collections.Generic
 {

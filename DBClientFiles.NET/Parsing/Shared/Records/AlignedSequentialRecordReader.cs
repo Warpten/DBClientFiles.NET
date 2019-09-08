@@ -1,18 +1,16 @@
 ﻿using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
-using System;
+using DBClientFiles.NET.Utils.Extensions;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace DBClientFiles.NET.Parsing.Shared.Records
 {
     /// <summary>
-    /// An implementation of <see cref="ISequentialRecordReader"/>. The records
-    /// within these files always have the same sizes. It is only able of performing aligned sequential reads.
+    /// A stream reader able to only read non-packed sequential values.
     /// </summary>
-    internal unsafe readonly struct AlignedSequentialRecordReader
+    internal readonly struct AlignedSequentialRecordReader
     {
         public static class Methods
         {
@@ -31,21 +29,16 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
         {
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Read<T>(Stream stream) where T : struct
         {
-            var value = default(T);
-            var valueSpan = MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref value, 1));
-            var readCount = stream.Read(valueSpan);
-            if (readCount != Unsafe.SizeOf<T>())
-                throw new InvalidOperationException($"Unable to read {typeof(T).Name} from file, got {readCount} bytes, needed {Unsafe.SizeOf<T>()}.");
-
-            return value;
+            return stream.Read<T>();
         }
 
         public string ReadString(Stream stream)
         {
             if (_stringBlock != null)
-                return _stringBlock[Read<uint>(stream)];
+                return _stringBlock[stream.Read<uint>()];
 
             // This is going to be slow, but we hope it's not gonna be the hot path
             var sb = new StringBuilder(128);

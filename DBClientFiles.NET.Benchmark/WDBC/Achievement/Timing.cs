@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using System.Linq;
+﻿using System.Linq;
 using BenchmarkDotNet.Attributes;
 using DBClientFiles.NET.Collections.Generic;
 
@@ -12,18 +11,18 @@ namespace DBClientFiles.NET.Benchmark.WDBC.Achievement
 
         }
 
-        [Benchmark(Description = "WDBC.Achievement - First")]
-        public Types.WDBC.Achievement First()
-        {
-            File.Position = 0;
-            return new StorageEnumerable<Types.WDBC.Achievement>(StorageOptions.Default, File).First();
-        }
-
         [Benchmark(Description = "WDBC.Achievement - All")]
         public StorageList<Types.WDBC.Achievement> All()
         {
             File.Position = 0;
             return new StorageList<Types.WDBC.Achievement>(StorageOptions.Default, File);
+        }
+
+        [Benchmark(Description = "WDBC.Achievement - First")]
+        public Types.WDBC.Achievement First()
+        {
+            File.Position = 0;
+            return new StorageEnumerable<Types.WDBC.Achievement>(StorageOptions.Default, File).First();
         }
     }
 }

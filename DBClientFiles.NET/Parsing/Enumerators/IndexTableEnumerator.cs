@@ -1,18 +1,16 @@
 ﻿using System.Collections.Generic;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
-using DBClientFiles.NET.Parsing.Versions;
 using System.Diagnostics;
 
 namespace DBClientFiles.NET.Parsing.Enumerators
 {
-    internal class IndexTableEnumerator<TParser, TValue> : DecoratingEnumerator<TParser, TValue>
-        where TParser : BinaryStorageFile<TValue>
+    internal class IndexTableEnumerator<TValue> : DecoratingEnumerator<TValue>
     {
         private readonly IndexTableHandler _blockHandler;
         private int _cursor;
 
-        public IndexTableEnumerator(Enumerator<TParser, TValue> impl) : base(impl)
+        public IndexTableEnumerator(Enumerator<TValue> impl) : base(impl)
         {
             _blockHandler = Parser.FindSegmentHandler<IndexTableHandler>(SegmentIdentifier.IndexTable);
             Debug.Assert(_blockHandler != null, "Block handler missing for index table");
@@ -37,7 +35,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
             _cursor = 0;
         }
 
-        public override Enumerator<TParser, TValue> WithIndexTable()
+        public override Enumerator<TValue> WithIndexTable()
         {
             return this;
         }

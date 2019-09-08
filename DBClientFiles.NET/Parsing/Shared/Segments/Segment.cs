@@ -19,7 +19,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments
             }
         }
 
-        public long Length { get; set; }
+        public long Length { get; private set; }
         public long EndOffset => StartOffset + Length;
 
         public bool Exists
@@ -31,6 +31,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments
                     Length = 0;
             }
         }
+
         public Segment Next {
             get => _nextSegment;
             set {
@@ -62,9 +63,20 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments
             }
         }
 
-        public SegmentIdentifier Identifier { get; set; }
+        public Segment(SegmentIdentifier identifier, long length) : this(identifier, length, default)
+        {
+        }
 
-        public ISegmentHandler Handler { get; set; }
+        public Segment(SegmentIdentifier identifier, long length,  ISegmentHandler handler)
+        {
+            Length = length;
+            Identifier = identifier;
+            Handler = handler;
+        }
+
+        public SegmentIdentifier Identifier { get; }
+
+        public ISegmentHandler Handler { get; }
 
         private Segment _nextSegment = null;
         private Segment _previousSegment = null;

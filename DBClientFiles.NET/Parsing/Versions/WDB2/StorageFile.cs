@@ -35,37 +35,16 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB2
 
             if (Header.MaxIndex != 0)
             {
-                // This is not really an offset map but whatever, no handler is attached.
-                Head = new Segment() {
-                    Identifier = SegmentIdentifier.OffsetMap,
-                    Length = (4 + 2) * (Header.MaxIndex - Header.MinIndex + 1),
-
-                    Next = new Segment() {
-                        Identifier = SegmentIdentifier.Records,
-                        Length = Header.RecordCount * Header.RecordSize,
-
-                        Next = new Segment()
-                        {
-                            Identifier = SegmentIdentifier.StringBlock,
-                            Length = Header.StringTable.Length,
-
-                            Handler = stringBlockHandler
-                        }
+                Head = new Segment(SegmentIdentifier.Ignored, (4 + 2) * (Header.MaxIndex - Header.MinIndex + 1)) {
+                    Next = new Segment(SegmentIdentifier.Records, Header.RecordCount * Header.RecordSize) {
+                        Next = new Segment(SegmentIdentifier.StringBlock, Header.StringTable.Length, stringBlockHandler)
                     }
                 };
             }
             else
             {
-                Head = new Segment() {
-                    Identifier = SegmentIdentifier.Records,
-                    Length = Header.RecordCount * Header.RecordSize,
-
-                    Next = new Segment() {
-                        Identifier = SegmentIdentifier.StringBlock,
-                        Length = Header.StringTable.Length,
-
-                        Handler = stringBlockHandler
-                    }
+                Head = new Segment(SegmentIdentifier.Records, Header.RecordCount * Header.RecordSize) {
+                    Next = new Segment(SegmentIdentifier.StringBlock, Header.StringTable.Length, stringBlockHandler)
                 };
             }
 
@@ -92,8 +71,8 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB2
         protected override IRecordEnumerator<T> CreateEnumerator()
         {
             return !Header.OffsetMap.Exists
-                ? (IRecordEnumerator<T>) new RecordsEnumerator<StorageFile<T>, T>(this)
-                : (IRecordEnumerator<T>) new OffsetMapEnumerator<StorageFile<T>, T>(this);
+                ? (IRecordEnumerator<T>) new RecordsEnumerator<T>(this)
+                : (IRecordEnumerator<T>) new OffsetMapEnumerator<T>(this);
         }
     }
 }

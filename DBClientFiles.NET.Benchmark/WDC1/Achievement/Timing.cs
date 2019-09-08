@@ -1,13 +1,12 @@
 ﻿using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Engines;
 using DBClientFiles.NET.Collections.Generic;
 using System.Linq;
 
 namespace DBClientFiles.NET.Benchmark.WDC1
 {
-    public class Achievement : AbstractBenchmark
+    public class Timing : AbstractBenchmark
     {
-        public Achievement() : base(@"D:\Games\Achievement.25928.db2")
+        public Timing() : base(@"D:\Games\Achievement.25928.db2")
         {
 
         }

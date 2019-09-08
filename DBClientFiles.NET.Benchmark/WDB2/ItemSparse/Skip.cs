@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using BenchmarkDotNet.Attributes;
 using DBClientFiles.NET.Collections.Generic;
 
@@ -16,7 +14,7 @@ namespace DBClientFiles.NET.Benchmark.WDB2.ItemSparse
 
         [Params(5, 100, 500, 1000, 5000, 10000)] public int SkipCount;
 
-        [Benchmark(Description = "ItemSparse - Optimized Skip")]
+        [Benchmark(Description = "WDB2.ItemSparse - Optimized Skip")]
         public Types.WDB2.ItemSparse ItemSparse_OptimizedSkip()
         {
             File.Position = 0;
@@ -24,7 +22,7 @@ namespace DBClientFiles.NET.Benchmark.WDB2.ItemSparse
         }
 
 
-        [Benchmark(Description = "ItemSparse - LINQ Skip")]
+        [Benchmark(Description = "WDB2.ItemSparse - LINQ Skip")]
         public Types.WDB2.ItemSparse ItemSparse_RegularSkip()
         {
             File.Position = 0;

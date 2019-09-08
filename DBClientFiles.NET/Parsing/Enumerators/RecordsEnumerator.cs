@@ -5,12 +5,11 @@ using System.Diagnostics;
 
 namespace DBClientFiles.NET.Parsing.Enumerators
 {
-    internal class RecordsEnumerator<TParser, TValue> : Enumerator<TParser, TValue>
-        where TParser : BinaryStorageFile<TValue>
+    internal class RecordsEnumerator<TValue> : Enumerator<TValue>
     {
         private readonly Segment _segment;
 
-        public RecordsEnumerator(TParser impl) : base(impl)
+        public RecordsEnumerator(BinaryStorageFile<TValue> impl) : base(impl)
         {
             _segment = Parser.FindSegment(SegmentIdentifier.Records);
             Debug.Assert(_segment != null, "Records block missing in enumerator");

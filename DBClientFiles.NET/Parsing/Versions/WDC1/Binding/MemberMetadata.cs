@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using DBClientFiles.NET.Parsing.Enums;
+﻿using DBClientFiles.NET.Parsing.Enums;
 using DBClientFiles.NET.Parsing.Shared.Binding;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDC1.Binding

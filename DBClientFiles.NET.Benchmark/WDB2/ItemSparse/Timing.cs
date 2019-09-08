@@ -1,6 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
 using DBClientFiles.NET.Collections.Generic;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace DBClientFiles.NET.Benchmark.WDB2.ItemSparse
@@ -12,14 +11,14 @@ namespace DBClientFiles.NET.Benchmark.WDB2.ItemSparse
 
         }
 
-        [Benchmark]
-        public StorageList<Types.WDB2.ItemSparse> ItemSparse_List()
+        [Benchmark(Description = "WDB2.ItemSparse - All")]
+        public StorageList<Types.WDB2.ItemSparse> All()
         {
             File.Position = 0;
             return new StorageList<Types.WDB2.ItemSparse>(StorageOptions.Default, File);
         }
 
-        [Benchmark]
+        [Benchmark(Description = "WDB2.ItemSparse - First")]
         public Types.WDB2.ItemSparse ItemSparse_First()
         {
             File.Position = 0;

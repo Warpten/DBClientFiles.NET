@@ -38,16 +38,8 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
 
             var stringBlockHandler = new StringBlockHandler();
 
-            Head = new Segment {
-                Identifier = SegmentIdentifier.Records,
-                Length = Header.RecordCount * Header.RecordSize,
-
-                Next = new Segment
-                {
-                    Identifier = SegmentIdentifier.StringBlock,
-                    Length = Header.StringTable.Length,
-                    Handler = stringBlockHandler
-                }
+            Head = new Segment(SegmentIdentifier.Records, Header.RecordCount * Header.RecordSize) {
+                Next = new Segment(SegmentIdentifier.StringBlock, Header.StringTable.Length, stringBlockHandler)
             };
 
             _recordReader = new AlignedSequentialRecordReader(stringBlockHandler);
@@ -76,6 +68,6 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal override void Clone(in T source, out T clonedInstance) => throw new InvalidOperationException();
 
-        protected override IRecordEnumerator<T> CreateEnumerator() => new RecordsEnumerator<StorageFile<T>, T>(this);
+        protected override IRecordEnumerator<T> CreateEnumerator() => new RecordsEnumerator<T>(this);
     }
 }

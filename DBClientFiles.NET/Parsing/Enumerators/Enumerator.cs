@@ -9,12 +9,11 @@ namespace DBClientFiles.NET.Parsing.Enumerators
     /// 
     /// This enumerator has no notion of special blocks it would need to handle.
     /// </summary>
-    internal abstract class Enumerator<TParser, TValue> : IRecordEnumerator<TValue>
-        where TParser : BinaryStorageFile<TValue>
+    internal abstract class Enumerator<TValue> : IRecordEnumerator<TValue>
     {
-        internal TParser Parser { get; }
+        internal BinaryStorageFile<TValue> Parser { get; }
 
-        protected Enumerator(TParser owner)
+        protected Enumerator(BinaryStorageFile<TValue> owner)
         {
             Parser = owner;
             Current = default;
@@ -45,17 +44,17 @@ namespace DBClientFiles.NET.Parsing.Enumerators
 
         internal abstract TValue ObtainCurrent();
 
-        public virtual Enumerator<TParser, TValue> WithCopyTable()
+        public virtual Enumerator<TValue> WithCopyTable()
         {
             return Parser.Header.CopyTable.Exists
-                ? new CopyTableEnumerator<TParser, TValue>(this)
+                ? new CopyTableEnumerator<TValue>(this)
                 : this;
         }
 
-        public virtual Enumerator<TParser, TValue> WithIndexTable()
+        public virtual Enumerator<TValue> WithIndexTable()
         {
             return Parser.Header.IndexTable.Exists
-                ? new IndexTableEnumerator<TParser, TValue>(this)
+                ? new IndexTableEnumerator<TValue>(this)
                 : this;
         }
 

@@ -3,6 +3,7 @@ using DBClientFiles.NET.Parsing.Shared.Records;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions.WDB5.Binding;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDB5
@@ -22,67 +23,27 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
             if (step != ParsingStep.Segments)
                 return;
 
-            var tail = Head = new Segment {
-                Identifier = SegmentIdentifier.FieldInfo,
-                Length = Header.FieldCount * (2 + 2),
+            var tail = Head = new Segment(SegmentIdentifier.FieldInfo, Header.FieldCount * (2 + 2), new FieldInfoHandler<MemberMetadata>());
 
-                Handler = new FieldInfoHandler<MemberMetadata>()
-            };
-
-            tail = tail.Next = new Segment {
-                Identifier = SegmentIdentifier.Records,
-                Length = Header.OffsetMap.Exists
+            tail = tail.Next = new Segment(SegmentIdentifier.Records,
+                Header.OffsetMap.Exists
                     ? Header.StringTable.Length - tail.EndOffset
-                    : Header.RecordCount * Header.RecordSize
-            };
+                    : Header.RecordCount * Header.RecordSize);
 
             if (!Header.OffsetMap.Exists)
-            {
-                tail = tail.Next = new Segment {
-                    Identifier = SegmentIdentifier.StringBlock,
-                    Length = Header.StringTable.Length,
-
-                    Handler = new StringBlockHandler()
-                };
-            }
+                tail = tail.Next = new Segment(SegmentIdentifier.StringBlock, Header.StringTable.Length, new StringBlockHandler());
             else
-            {
-                tail = tail.Next = new Segment {
-                    Identifier = SegmentIdentifier.OffsetMap,
-                    Length = (4 + 2) * (Header.MaxIndex - Header.MinIndex + 1),
+                tail = tail.Next = new Segment(SegmentIdentifier.OffsetMap, (4 + 2) * (Header.MaxIndex - Header.MinIndex + 1), new OffsetMapHandler());
 
-                    Handler = new OffsetMapHandler()
-                };
-            }
-
+            // Legacy foreign table, apparently used by only WMOMinimapTexture (WDB3/4/5) @Barncastle
             if (Header.RelationshipTable.Exists)
-            {
-                tail = tail.Next = new Segment {
-                    // Legacy foreign table, apparently used by only WMOMinimapTexture (WDB3/4/5) @Barncastle
-                    Identifier = SegmentIdentifier.RelationshipTable,
-                    Length = 4 * (Header.MaxIndex - Header.MinIndex + 1)
-                };
-            }
+                tail = tail.Next = new Segment(SegmentIdentifier.RelationshipTable, 4 * (Header.MaxIndex - Header.MinIndex + 1));
 
             if (Header.IndexTable.Exists)
-            {
-                tail = tail.Next = new Segment {
-                    Identifier = SegmentIdentifier.IndexTable,
-                    Length = 4 * Header.RecordCount,
-
-                    Handler = new IndexTableHandler()
-                };
-            }
+                tail = tail.Next = new Segment(SegmentIdentifier.IndexTable, 4 * Header.RecordCount, new IndexTableHandler());
 
             if (Header.CopyTable.Exists)
-            {
-                tail.Next = new Segment {
-                    Identifier = SegmentIdentifier.CopyTable,
-                    Length = Header.CopyTable.Length,
-
-                    Handler = new CopyTableHandler()
-                };
-            }
+                tail.Next = new Segment(SegmentIdentifier.CopyTable, Header.CopyTable.Length, new CopyTableHandler());
         }
 
         public override void After(ParsingStep step)
@@ -93,11 +54,12 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
             _serializer = new Serializer<T>(this);
         }
 
+        [SuppressMessage("Code Quality", "IDE0067:Dispose objects before losing scope", Justification = "False positive - object is returned")]
         protected override IRecordEnumerator<T> CreateEnumerator()
         {
             var enumerator = !Header.OffsetMap.Exists
-                ? (Enumerator<StorageFile<T>, T>) new RecordsEnumerator<StorageFile<T>, T>(this)
-                : (Enumerator<StorageFile<T>, T>) new OffsetMapEnumerator<StorageFile<T>, T>(this);
+                ? (Enumerator<T>) new RecordsEnumerator<T>(this)
+                : (Enumerator<T>) new OffsetMapEnumerator<T>(this);
 
             return enumerator.WithIndexTable().WithCopyTable();
         }
