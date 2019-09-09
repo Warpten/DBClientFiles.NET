@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace DBClientFiles.NET.IO
 {
@@ -21,7 +22,11 @@ namespace DBClientFiles.NET.IO
         }
 
         public override long Position {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
             get => base.Position - Offset;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
             set => base.Position = value + Offset;
         }
 

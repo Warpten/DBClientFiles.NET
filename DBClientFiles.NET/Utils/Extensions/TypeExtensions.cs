@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Parsing.Reflection;
 
 namespace DBClientFiles.NET.Utils.Extensions
 {
     internal static class TypeExtensions
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool HasDefaultConstructor(this Type t)
         {
             return t.IsValueType || t.GetConstructor(Type.EmptyTypes) != null;

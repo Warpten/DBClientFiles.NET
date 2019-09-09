@@ -2,10 +2,7 @@
 using DBClientFiles.NET.Parsing.Shared.Headers;
 using DBClientFiles.NET.Parsing.Versions;
 using DBClientFiles.NET.Utils.Extensions;
-using System;
 using System.IO;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace DBClientFiles.NET.Parsing
 {
@@ -18,12 +15,7 @@ namespace DBClientFiles.NET.Parsing
     {
         public static unsafe IBinaryStorageFile<T> Process(in StorageOptions options, Stream dataStream)
         {
-            dataStream = dataStream.MakeSeekable();
-
-            Signatures signature = default;
-            Span<byte> bytes = MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref signature, 1));
-            if (dataStream.Read(bytes) != 4)
-                throw new InvalidOperationException("Unable to read dbc/db2 signature: stream too small");
+            Signatures signature = dataStream.Read<Signatures>();
 
             switch (signature)
             {
@@ -42,15 +34,10 @@ namespace DBClientFiles.NET.Parsing
 
         private static unsafe IBinaryStorageFile<T> Process<THeader>(in StorageOptions options, Stream dataStream) where THeader : struct, IHeader
         {
-            THeader header = default;
-            var headerBytes = MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref header, 1));
-
-            var readCount = dataStream.Read(headerBytes);
-            if (readCount != Unsafe.SizeOf<THeader>())
-                throw new InvalidOperationException($"Unable to read header from stream: {Unsafe.SizeOf<THeader>()} bytes expected, got only {readCount}.");
+            var header = dataStream.Read<THeader>();
 
             // Encapsulate a new stream in a wrapper where header offset is considered.
-            var windowedStream = dataStream.Rebase(true);
+            var windowedStream = dataStream.Rebase(true).MakeSeekable();
             return header.MakeStorageFile<T>(in options, windowedStream);
         }
     }

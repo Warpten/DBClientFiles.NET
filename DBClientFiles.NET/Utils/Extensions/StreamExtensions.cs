@@ -16,6 +16,7 @@ namespace DBClientFiles.NET.Utils.Extensions
         /// <param name="maxLength">The maximum length of the stream returned.</param>
         /// <param name="disposing">Whether or not disposing of the returned stream also disposes the provided stream.</param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Stream Limit(this Stream stream, long maxLength, bool disposing = true)
             => new LimitedStream(stream, maxLength, disposing);
 
@@ -26,6 +27,7 @@ namespace DBClientFiles.NET.Utils.Extensions
         /// <param name="disposing">Whether or not disposing of the returned stream also disposes the provided stream.</param>
         /// <returns></returns>
         /// <remarks>This method will throw if the provided stream does not support seek operations. Use <see cref="Rebase(Stream, long, bool)"/> instead.</remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Stream Rebase(this Stream stream, bool disposing = true)
             => Rebase(stream, stream.Position, disposing);
 
@@ -39,9 +41,12 @@ namespace DBClientFiles.NET.Utils.Extensions
         /// <param name="offset">What would usually be returned from <see cref="Stream.Position"/> if <see cref="Stream.CanSeek"/> returned <code>true</code>.</param>
         /// <param name="disposing">Whether or not disposing of the returned stream also disposes the provided stream.</param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static Stream Rebase(this Stream stream, long offset, bool disposing = true)
             => new OffsetStream(stream, offset, disposing);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Stream MakeSeekable(this Stream stream)
         {
             if (stream.CanSeek)
@@ -49,6 +54,8 @@ namespace DBClientFiles.NET.Utils.Extensions
 
             var memoryStream = new MemoryStream();
             stream.CopyTo(memoryStream, 0x8000);
+            // We took ownership of memory management, release the stream the user provided
+            stream.Dispose();
 
             memoryStream.Position = 0;
             return memoryStream;
@@ -69,7 +76,7 @@ namespace DBClientFiles.NET.Utils.Extensions
             var value = default(T);
             var span = MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref value, 1));
 #if DEBUG
-            Debug.Assert(Unsafe.SizeOf<T>() == dataStream.Read(span));
+            Debug.Assert(Unsafe.SizeOf<T>() == dataStream.Read(span), $"Unable to read {typeof(T).Name} from stream, stream too short");
 #else
             dataStream.Read(span);
 #endif
