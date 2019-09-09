@@ -1,8 +1,33 @@
-﻿using System.Linq.Expressions;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
 using DBClientFiles.NET.Parsing.Reflection;
 
 namespace DBClientFiles.NET.Parsing.Serialization.Generators
 {
+    internal class ParameterProvider
+    {
+        private Stack<ParameterExpression> _parameters;
+
+        private Type _type;
+
+        public ParameterProvider(Type parameterType)
+        {
+            _type = parameterType;
+            _parameters = new Stack<ParameterExpression>();
+        }
+
+        public ParameterExpression Rent()
+        {
+            if (!_parameters.TryPop(out var parameter))
+                parameter = Expression.Parameter(_type);
+
+            return parameter;
+        }
+
+        public void Return(ParameterExpression parameter) => _parameters.Push(parameter);
+    }
+
 
     /// <summary>
     /// Generates serialization methods for various objects.
@@ -12,11 +37,27 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         protected TypeToken Root { get; }
         private TypeTokenType MemberType { get; }
 
+        private Dictionary<Type, ParameterProvider> _variableProviders;
+
         protected SerializerGenerator(TypeToken root, TypeTokenType memberType)
         {
             Root = root;
             MemberType = memberType;
+
+            _variableProviders = new Dictionary<Type, ParameterProvider>();
         }
+
+        internal ParameterExpression RentVariable<T>()
+        {
+            var type = typeof(T);
+            if (!_variableProviders.TryGetValue(type, out var provider))
+                _variableProviders.Add(type, provider = new ParameterProvider(type));
+
+            return provider.Rent();
+        }
+
+        internal void ReturnVariable(ParameterExpression parameter)
+            => _variableProviders[parameter.Type].Return(parameter);
 
         /// <summary>
         /// Generates the method's body
@@ -46,9 +87,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
             // Emit candidate read calls.
             bodyParts.GenerateReadCalls(this);
 
-            bodyParts = bodyParts.TryUnroll();
-
-            var expr = bodyParts.ToExpression();
+            var expr = bodyParts.TryUnroll().ToExpression();
             var returnType = MakeReturnExpression();
             if (returnType != null)
                 expr = Expression.Block(expr, returnType);
@@ -66,7 +105,8 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         {
             if (parent.TypeToken.IsArray)
             {
-                var loopNode = new LoopTreeNode(parent);
+                var loopIterator = RentVariable<int>();
+                var loopNode = new LoopTreeNode(parent, loopIterator);
 
                 var elementTypeToken = parent.TypeToken.GetElementTypeToken();
                 foreach (var member in elementTypeToken.Members)
@@ -86,6 +126,8 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
                 }
 
                 parent.AddChild(loopNode);
+
+                ReturnVariable(loopIterator);
             }
             else
             {

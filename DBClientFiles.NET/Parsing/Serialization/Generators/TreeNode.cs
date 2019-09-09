@@ -79,6 +79,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         public virtual Expression ToExpression()
         {
             var blockBody = new List<Expression>();
+            var variables = new HashSet<ParameterExpression>();
 
             // AccessExpression is null on the root node (It's a dummy node)
             // ReadExpression.Count > 1 can only happen if we decided to roll a loop, in which case all elements are identical.
@@ -103,7 +104,17 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
             {
                 // Produce children if there are any
                 foreach (var child in Children)
-                    blockBody.Add(child.ToExpression());
+                {
+                    var subExpression = child.ToExpression();
+                    if (subExpression is BlockExpression subBlockExpression)
+                    {
+                        blockBody.AddRange(subBlockExpression.Expressions);
+                        foreach (var subBlockVariable in subBlockExpression.Variables)
+                            variables.Add(subBlockVariable);
+                    }
+                    else
+                        blockBody.Add(subExpression);
+                }
 
                 // Assert that there is at least one node in the block emitted.
                 if (blockBody.Count == 0)
@@ -115,10 +126,10 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
                 return Expression.Empty();
 
             // If there's only one expression, just return it.
-            if (blockBody.Count == 1)
+            if (blockBody.Count == 1 && variables.Count == 0)
                 return blockBody[0];
 
-            return Expression.Block(blockBody);
+            return Expression.Block(variables, blockBody);
         }
     }
 
@@ -141,7 +152,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         /// <summary>
         /// The iteration variable.
         /// </summary>
-        public Expression Iterator { get; } = Expression.Variable(typeof(int));
+        public ParameterExpression Iterator { get; }
 
         /// <summary>
         /// Max number of iterations.
@@ -156,8 +167,9 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         private Expression LoopCondition => Expression.LessThan(Iterator, Expression.Constant(IterationCount));
         private Expression IteratorInitializer => Expression.Assign(Iterator, Expression.Constant(InitialValue));
 
-        public LoopTreeNode(TreeNode parent) : base()
+        public LoopTreeNode(TreeNode parent, ParameterExpression iteratorVariable) : base()
         {
+            Iterator = iteratorVariable;
             Array = parent;
             
             InitialValue = 0;
@@ -204,7 +216,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
 
             var loopExitLabel = Expression.Label();
             var loopCode = Expression.Loop(Expression.IfThenElse(LoopCondition, Expression.Block(loopBody), Expression.Break(loopExitLabel)), loopExitLabel);
-            return Expression.Block(new[] { (ParameterExpression)Iterator }, IteratorInitializer, loopCode);
+            return Expression.Block(new[] { Iterator }, IteratorInitializer, loopCode);
         }
 
         public override void GenerateReadCalls(SerializerGenerator generator)
