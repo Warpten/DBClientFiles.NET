@@ -31,7 +31,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
             reader.DataStream.Position = startOffset;
 
             // Next target: Pray for C# 9 to expose null-terminated strings
-#if EXPERIMENTAL // This nets about 4% gain on string parsing alone (which is hardly a bottleneck, but still)
+#if EXPERIMENTAL_STRINGBLOCK // This nets about 4% gain on string parsing alone (which is hardly a bottleneck, but still)
             var internStrings = reader.Options.InternStrings;
 
             // Requesting bytes aligned to int boundary

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq.Expressions;
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Utils.Expressions;
@@ -79,8 +80,9 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         public virtual Expression ToExpression()
         {
             var blockBody = new List<Expression>();
+#if EXPERIMENTAL_GENERATOR
             var variables = new HashSet<ParameterExpression>();
-
+#endif
             // AccessExpression is null on the root node (It's a dummy node)
             // ReadExpression.Count > 1 can only happen if we decided to roll a loop, in which case all elements are identical.
             // ReadExpression.Count = 0 can happen if the type is a value type. Otherwise this is new T[...] or new T().
@@ -106,6 +108,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
                 foreach (var child in Children)
                 {
                     var subExpression = child.ToExpression();
+#if EXPERIMENTAL_GENERATOR
                     if (subExpression is BlockExpression subBlockExpression)
                     {
                         blockBody.AddRange(subBlockExpression.Expressions);
@@ -114,6 +117,9 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
                     }
                     else
                         blockBody.Add(subExpression);
+#else
+                    blockBody.Add(subExpression);
+#endif
                 }
 
                 // Assert that there is at least one node in the block emitted.
@@ -126,10 +132,17 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
                 return Expression.Empty();
 
             // If there's only one expression, just return it.
+#if EXPERIMENTAL_GENERATOR
             if (blockBody.Count == 1 && variables.Count == 0)
                 return blockBody[0];
 
             return Expression.Block(variables, blockBody);
+#else
+            if (blockBody.Count == 1)
+                return blockBody[0];
+
+            return Expression.Block(blockBody);
+#endif
         }
     }
 

@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq.Expressions;
 using DBClientFiles.NET.Parsing.Reflection;
 
 namespace DBClientFiles.NET.Parsing.Serialization.Generators
 {
+#if EXPERIMENTAL
     internal class ParameterProvider
     {
         private Stack<ParameterExpression> _parameters;
@@ -27,7 +29,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
 
         public void Return(ParameterExpression parameter) => _parameters.Push(parameter);
     }
-
+#endif
 
     /// <summary>
     /// Generates serialization methods for various objects.
@@ -37,16 +39,17 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         protected TypeToken Root { get; }
         private TypeTokenType MemberType { get; }
 
-        private Dictionary<Type, ParameterProvider> _variableProviders;
+#if EXPERIMENTAL_GENERATOR
+        private Dictionary<Type, ParameterProvider> _variableProviders = new Dictionary<Type, ParameterProvider>();
+#endif
 
         protected SerializerGenerator(TypeToken root, TypeTokenType memberType)
         {
             Root = root;
             MemberType = memberType;
-
-            _variableProviders = new Dictionary<Type, ParameterProvider>();
         }
 
+#if EXPERIMENTAL_GENERATOR
         internal ParameterExpression RentVariable<T>()
         {
             var type = typeof(T);
@@ -58,6 +61,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
 
         internal void ReturnVariable(ParameterExpression parameter)
             => _variableProviders[parameter.Type].Return(parameter);
+#endif
 
         /// <summary>
         /// Generates the method's body
@@ -105,8 +109,12 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         {
             if (parent.TypeToken.IsArray)
             {
+#if EXPERIMENTAL_GENERATOR
                 var loopIterator = RentVariable<int>();
                 var loopNode = new LoopTreeNode(parent, loopIterator);
+#else
+                var loopNode = new LoopTreeNode(parent, Expression.Parameter(typeof(int)));
+#endif
 
                 var elementTypeToken = parent.TypeToken.GetElementTypeToken();
                 foreach (var member in elementTypeToken.Members)
@@ -127,7 +135,9 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
 
                 parent.AddChild(loopNode);
 
+#if EXPERIMENTAL_GENERATOR
                 ReturnVariable(loopIterator);
+#endif
             }
             else
             {

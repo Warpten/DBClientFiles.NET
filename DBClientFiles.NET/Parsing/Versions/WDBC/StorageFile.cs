@@ -58,7 +58,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
             DataStream.Position = offset;
 
             using (var recordStream = DataStream.Limit(length, false))
-                return _serializer.Deserialize(recordStream, in _recordReader);
+                return _serializer.Deserialize(DataStream, in _recordReader);
         }
 
         internal override int GetRecordKey(in T value) => throw new InvalidOperationException();
