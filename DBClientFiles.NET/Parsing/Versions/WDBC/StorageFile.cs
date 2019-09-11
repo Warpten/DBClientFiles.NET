@@ -17,11 +17,12 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
     {
         public override int RecordCount => Header.RecordCount;
 
-        private Serializer<T> _serializer;
+        private RuntimeDeserializer<T> _serializer;
         private AlignedSequentialRecordReader _recordReader;
 
         public StorageFile(in StorageOptions options, in Header header, Stream input) : base(in options, new HeaderAccessor(in header), input)
         {
+            _serializer = new RuntimeDeserializer<T>(Type, Options.TokenType);
         }
 
         public override void Dispose()
@@ -47,10 +48,6 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
 
         public override void After(ParsingStep step)
         {
-            if (step != ParsingStep.Segments)
-                return;
-
-            _serializer = new Serializer<T>(this);
         }
 
         public override T ObtainRecord(long offset, long length)

@@ -1,5 +1,5 @@
 ﻿using DBClientFiles.NET.Collections.Generic;
-using DBClientFiles.NET.Types.WDB2;
+using DBClientFiles.NET.Types.WDBC;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -13,8 +13,8 @@ namespace DBClientFiles.NET.Runner
         [SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "Entry point")]
         public static void Main(string[] args)
         {
-            using (var fs = File.OpenRead(@"D:\Games\World of Warcraft 4.3.4 - Akama\dbc\Item-sparse.db2"))
-            using (var collection = new StorageEnumerable<ItemSparse>(StorageOptions.Default, fs))
+            using (var fs = File.OpenRead(@"D:\Games\World of Warcraft 3.3.5\dbc\Achievement.dbc"))
+            using (var collection = new StorageEnumerable<Achievement>(StorageOptions.Default, fs))
                 ROOT_INSPECT(collection);
         }
 

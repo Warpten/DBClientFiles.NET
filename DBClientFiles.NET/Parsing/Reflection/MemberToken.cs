@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace DBClientFiles.NET.Parsing.Reflection
 {
-    internal abstract class MemberToken : IMemberToken
+    internal abstract class MemberToken : IMemberToken, IEquatable<MemberToken>
     {
         public MemberInfo MemberInfo { get; }
         public abstract TypeTokenType MemberType { get; }
@@ -14,12 +14,6 @@ namespace DBClientFiles.NET.Parsing.Reflection
 
         public int Index { get; }
 
-        /// <summary>
-        /// If <see cref="MemberInfo"/> is an array, this is a <see cref="Reflection.TypeToken"/> for the array elements.
-        /// Otherwise, as expected.
-        ///
-        /// I'm not even sure that's true anymore.
-        /// </summary>
         public abstract TypeToken TypeToken { get; }
 
         /// <summary>
@@ -41,5 +35,10 @@ namespace DBClientFiles.NET.Parsing.Reflection
         public abstract T GetAttribute<T>() where T : Attribute;
 
         public abstract Expression MakeAccess(Expression parent);
+
+        public bool Equals(MemberToken other)
+        {
+            return other == this || other.MemberInfo == MemberInfo;
+        }
     }
 }
