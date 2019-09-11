@@ -1,12 +1,9 @@
-﻿using DBClientFiles.NET.Attributes;
-using DBClientFiles.NET.Parsing.Reflection;
+﻿using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Parsing.Serialization.Runtime;
 using DBClientFiles.NET.Parsing.Shared.Records;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDBC
 {

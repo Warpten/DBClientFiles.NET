@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Expr = System.Linq.Expressions.Expression;
-using System.Text;
 using System.Linq.Expressions;
 using DBClientFiles.NET.Utils.Expressions;
 using System.Runtime.CompilerServices;

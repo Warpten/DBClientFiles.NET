@@ -1,7 +1,5 @@
 ﻿using DBClientFiles.NET.Parsing.Shared.Headers;
 using DBClientFiles.NET.Parsing.Shared.Segments;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDB5
 {
