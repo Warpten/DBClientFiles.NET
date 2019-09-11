@@ -1,6 +1,6 @@
 ﻿using DBClientFiles.NET.Attributes;
 using DBClientFiles.NET.Parsing.Reflection;
-using DBClientFiles.NET.Parsing.Serialization.Method;
+using DBClientFiles.NET.Parsing.Serialization.Runtime;
 using DBClientFiles.NET.Parsing.Shared.Records;
 using System;
 using System.Collections.Generic;
@@ -22,24 +22,24 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
         private ParameterExpression RecordReader { get; }
         protected override ParameterExpression Instance { get; }
 
+        private Lazy<MethodType> _methodInitializer;
+        private MethodType Method => _methodInitializer.Value;
+
         public RuntimeDeserializer(TypeToken typeToken, TypeTokenType typeTokenType) : base(typeToken, typeTokenType)
         {
             DataStream = Expression.Parameter(typeof(Stream), "dataStream");
             RecordReader = Expression.Parameter(typeof(AlignedSequentialRecordReader).MakeByRefType(), "recordReader");
             Instance = Expression.Parameter(typeof(T).MakeByRefType(), "instance");
+
+            _methodInitializer = new Lazy<MethodType>(() => Expression.Lambda<MethodType>(CreateBody(),
+                DataStream,
+                RecordReader,
+                Instance
+            ).Compile());
         }
 
-        protected override IEnumerable<ParameterExpression> EnumerateParameters()
-        {
-            yield return DataStream;
-            yield return RecordReader;
-            yield return Instance;
-        }
 
-        protected override Expression CreateArrayInitializer(MemberToken memberToken)
-        {
-            return null;
-        }
+        protected override Expression CreateArrayInitializer(MemberToken memberToken) => null;
 
         protected override Expression CreateInstanceInitializer(TypeToken typeToken)
         {
@@ -52,14 +52,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
             return null;
         }
 
-        protected override int GetArraySize(MemberToken memberToken)
-        {
-            var attr = memberToken.GetAttribute<CardinalityAttribute>();
-            if (attr == null)
-                return 0;
-
-            return attr.SizeConst;
-        }
+        protected override int GetCardinality(MemberToken memberToken) => memberToken.Cardinality;
 
         public T Deserialize(Stream dataStream, in AlignedSequentialRecordReader recordReader)
         {

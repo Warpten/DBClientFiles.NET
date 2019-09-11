@@ -6,8 +6,9 @@ using Expr = System.Linq.Expressions.Expression;
 using System.Text;
 using System.Linq.Expressions;
 using DBClientFiles.NET.Utils.Expressions;
+using System.Runtime.CompilerServices;
 
-namespace DBClientFiles.NET.Parsing.Serialization.Method
+namespace DBClientFiles.NET.Parsing.Serialization.Runtime
 {
     internal abstract class MethodBlock : IEquatable<MethodBlock>
     {
@@ -19,14 +20,14 @@ namespace DBClientFiles.NET.Parsing.Serialization.Method
             public List<MethodBlock> Children { get; } = new List<MethodBlock>();
             public HashSet<ParameterExpression> Variables { get; } = new HashSet<ParameterExpression>();
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public override Expr ToExpression()
+                => Expr.Block(Variables, Children.Select(child => child.ToExpression()));
             public override bool Equals(MethodBlock other)
                 => other is Collection collectionOther ? Equals(collectionOther) : false;
 
             public bool Equals(Collection other)
                 => Variables.SequenceEqual(other.Variables) && Children.SequenceEqual(other.Children);
-
-            public override Expr ToExpression()
-                => Expr.Block(Variables, Children.Select(child => child.ToExpression()));
         }
 
         internal class Assignment : MethodBlock, IEquatable<Assignment>
@@ -40,6 +41,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Method
                 Right = right;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public override Expr ToExpression() => Expr.Assign(Left.ToExpression(), Right.ToExpression());
 
             public override bool Equals(MethodBlock other) 
@@ -58,6 +60,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Method
                 Array = array;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public override Expr ToExpression() => Expr.ArrayAccess(Array.ToExpression(), Index);
 
             public override bool Equals(MethodBlock other)
@@ -77,6 +80,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Method
                 Member = memberToken;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public override Expr ToExpression() => Expr.MakeMemberAccess(DeclaringInstance.ToExpression(), Member.MemberInfo);
 
             public override bool Equals(MethodBlock other)
@@ -88,13 +92,14 @@ namespace DBClientFiles.NET.Parsing.Serialization.Method
 
         internal class Expression : MethodBlock, IEquatable<Expression>
         {
-            private Expr _expression;
+            private readonly Expr _expression;
 
             public Expression(Expr expression) : base()
             {
                 _expression = expression;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public override Expr ToExpression() => _expression;
 
             public override bool Equals(MethodBlock other)
@@ -127,6 +132,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Method
             public override bool Equals(MethodBlock other)
                 => other is Loop loopOther ? Equals(loopOther) : false;
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool Equals(Loop other)
                 => Iterator.Equals(other.Iterator) && UpperBound.Equals(other.Iterator) && Body.Equals(other.Body);
         }

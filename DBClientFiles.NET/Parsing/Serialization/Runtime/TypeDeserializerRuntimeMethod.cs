@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace DBClientFiles.NET.Parsing.Serialization.Method
+namespace DBClientFiles.NET.Parsing.Serialization.Runtime
 {
-    internal abstract class TypeDeserializerRuntimeMethod<TDelegate, T> : RuntimeMethod<TDelegate> where TDelegate : Delegate
+    internal abstract class TypeDeserializerRuntimeMethod<TDelegate, T> where TDelegate : Delegate
     {
         protected virtual ParameterExpression Instance { get; }
 
@@ -32,7 +32,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Method
             Members = MemberProvider(typeToken);
         }
 
-        protected override Expression CreateBody()
+        protected Expression CreateBody()
         {
             var instanceBlock = Instance.ToMethodBlock();
 
@@ -44,13 +44,13 @@ namespace DBClientFiles.NET.Parsing.Serialization.Method
 
             methodBlock.Children.Add(instanceBlock);
 
-#if DEBUG
             var expr = methodBlock.ToExpression();
+#if DEBUG
             Console.WriteLine(expr.AsString());
-            return expr;
-#else
-            return methodBlock.ToExpression();
 #endif
+            ParameterProvider<int>.Instance.Clear();
+
+            return expr;
         }
 
         private void GenerateMemberBlock(MemberToken memberToken, MethodBlock declaringInstanceAccess, MethodBlock.Collection block)
@@ -91,7 +91,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Method
         {
             var elementTypeToken = memberToken.TypeToken.GetElementTypeToken();
 
-            var arraySize = GetArraySize(memberToken);
+            var arraySize = GetCardinality(memberToken);
             var arraySizeExpression = Expression.Constant(arraySize);
 
             // Give the generator a chance to create the array
@@ -157,6 +157,6 @@ namespace DBClientFiles.NET.Parsing.Serialization.Method
 
         protected abstract Expression CreateArrayInitializer(MemberToken memberToken);
         protected abstract Expression CreateInstanceInitializer(TypeToken typeToken);
-        protected abstract int GetArraySize(MemberToken memberToken);
+        protected abstract int GetCardinality(MemberToken memberToken);
     }
 }

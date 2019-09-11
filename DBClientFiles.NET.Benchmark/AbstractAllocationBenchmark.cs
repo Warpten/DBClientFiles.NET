@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using BenchmarkDotNet.Attributes;
 using DBClientFiles.NET.Collections.Generic;
 
@@ -15,6 +16,7 @@ namespace DBClientFiles.NET.Benchmark
         }
 
         [IterationSetup]
+        [SuppressMessage("Code Quality", "IDE0067:Dispose objects before losing scope", Justification = "Benchmark, irrelevant + FP")]
         public void IterationSetup()
         {
             File.Position = 0;

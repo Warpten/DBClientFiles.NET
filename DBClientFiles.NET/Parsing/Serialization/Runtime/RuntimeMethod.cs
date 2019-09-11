@@ -4,7 +4,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 
-namespace DBClientFiles.NET.Parsing.Serialization.Method
+namespace DBClientFiles.NET.Parsing.Serialization.Runtime
 {
     internal abstract class RuntimeMethod<T> where T : Delegate
     {
@@ -13,7 +13,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Method
             _methodGenerator = new Lazy<T>(() => Expression.Lambda<T>(CreateBody(), EnumerateParameters()).Compile());
         }
 
-        private Lazy<T> _methodGenerator;
+        private readonly Lazy<T> _methodGenerator;
 
         public T Method => _methodGenerator.Value;
 

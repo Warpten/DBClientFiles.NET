@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace DBClientFiles.NET.Parsing.Serialization.Method
+namespace DBClientFiles.NET.Parsing.Serialization.Runtime
 {
     internal class ParameterProvider
     {
-        private Stack<ParameterExpression> _parameters;
+        private readonly Stack<ParameterExpression> _parameters;
 
-        private Type _type;
+        private readonly Type _type;
 
         public ParameterProvider(Type parameterType)
         {
@@ -25,13 +25,17 @@ namespace DBClientFiles.NET.Parsing.Serialization.Method
             return parameter;
         }
 
+        public void Clear()
+        {
+            _parameters.Clear();
+        }
+
         public void Return(ParameterExpression parameter) => _parameters.Push(parameter);
     }
 
     internal class ParameterProvider<T> : ParameterProvider
     {
-        private static Lazy<ParameterProvider<T>> _lazy = new Lazy<ParameterProvider<T>>(() => new ParameterProvider<T>());
-        public static ParameterProvider<T> Instance => _lazy.Value;
+        public static ParameterProvider<T> Instance { get; } = new ParameterProvider<T>();
 
         private ParameterProvider() : base(typeof(T)) { }
     }
