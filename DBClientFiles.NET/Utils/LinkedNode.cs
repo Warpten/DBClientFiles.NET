@@ -1,4 +1,6 @@
-﻿namespace DBClientFiles.NET.Utils
+﻿using System.Runtime.CompilerServices;
+
+namespace DBClientFiles.NET.Utils
 {
     internal sealed class LinkedNode<T>
     {
@@ -42,6 +44,7 @@
 
     internal static class LinkedNodeExtensions
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static LinkedNode<T> AsLinkedNode<T>(this T node)
             => new LinkedNode<T>() {
                 Node = node

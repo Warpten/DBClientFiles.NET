@@ -5,11 +5,13 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
 {
     internal sealed class HeaderAccessor : AbstractHeaderAccessor<Header>
     {
-        public override int RecordCount => Header.RecordCount;
-        public override int FieldCount => Header.FieldCount;
-        public override int RecordSize => Header.RecordSize;
+        public override int RecordCount { get; }
+        public override int FieldCount { get; }
+        public override int RecordSize { get; }
+        public override int MaxIndex { get; }
+        public override int MinIndex { get; }
 
-        public override int IndexColumn => Header.IndexColumn;
+        public override int IndexColumn { get; }
 
         private readonly SegmentReference _copyTableRef;
         private readonly SegmentReference _commonDataRef;
@@ -31,25 +33,32 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
         public override ref readonly SegmentReference ExtendedFieldInfo => ref _extendedFieldInfoRef;
         public override ref readonly SegmentReference RelationshipTable => ref _relationshipTableRef;
 
-        public override int MaxIndex => Header.MaxIndex;
-        public override int MinIndex => Header.MinIndex;
 
-        public HeaderAccessor(in Header header) : base(header)
+        public HeaderAccessor(in Header header) : base()
         {
-            _copyTableRef = new SegmentReference(Header.CopyTableSize != 0, Header.CopyTableSize);
-            _palletDataRef = new SegmentReference(Header.PalletDataSize != 0, Header.PalletDataSize);
+            RecordCount = header.RecordCount;
+            RecordSize = header.RecordSize;
+            FieldCount = header.FieldCount;
 
-            _stringTableRef = new SegmentReference((Header.Flags & 0x01) == 0, Header.StringTableLength);
-            _offsetMapRef = new SegmentReference((Header.Flags & 0x01) != 0,
-                (Header.MaxIndex - Header.MinIndex + 1) * (4 + 2),
-                Header.OffsetMapOffset);
+            MinIndex = header.MinIndex;
+            MaxIndex = header.MaxIndex;
 
-            _indexTableRef = new SegmentReference(Header.IdListSize != 0, Header.IdListSize);
+            IndexColumn = header.IndexColumn;
 
-            _fieldInfoRef = new SegmentReference(true, Header.TotalFieldCount * (2 + 2));
-            _extendedFieldInfoRef = new SegmentReference(true, Header.FieldStorageInfoSize);
+            _copyTableRef = new SegmentReference(header.CopyTableSize != 0, header.CopyTableSize);
+            _palletDataRef = new SegmentReference(header.PalletDataSize != 0, header.PalletDataSize);
 
-            _relationshipTableRef = new SegmentReference(Header.RelationshipDataSize != 0, Header.RelationshipDataSize);
+            _stringTableRef = new SegmentReference((header.Flags & 0x01) == 0, header.StringTableLength);
+            _offsetMapRef = new SegmentReference((header.Flags & 0x01) != 0,
+                (header.MaxIndex - header.MinIndex + 1) * (4 + 2),
+                header.OffsetMapOffset);
+
+            _indexTableRef = new SegmentReference(header.IdListSize != 0, header.IdListSize);
+
+            _fieldInfoRef = new SegmentReference(true, header.TotalFieldCount * (2 + 2));
+            _extendedFieldInfoRef = new SegmentReference(true, header.FieldStorageInfoSize);
+
+            _relationshipTableRef = new SegmentReference(header.RelationshipDataSize != 0, header.RelationshipDataSize);
         }
     }
 }

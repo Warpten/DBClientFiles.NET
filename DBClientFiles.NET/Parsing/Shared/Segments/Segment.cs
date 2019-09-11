@@ -6,6 +6,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments
     /// <summary>
     /// A block represents a section of a file. See <see cref="SegmentIdentifier"/> for possible semantic meanings.
     /// </summary>
+    /// <remarks>While we have <see cref="LinkedNode{T}"/>, we chose to directly give this class links, to simplify code reading.</remarks>
     internal class Segment
     {
         public long StartOffset

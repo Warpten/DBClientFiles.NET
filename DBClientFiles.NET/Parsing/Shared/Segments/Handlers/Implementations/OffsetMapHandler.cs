@@ -23,8 +23,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
 
             while (reader.DataStream.Position < (startOffset + length))
             {
-                var key = reader.DataStream.Read<int>();
-                var value = reader.DataStream.Read<short>();
+                var (key, value) = reader.DataStream.Read<(int, short)>();
 
                 if (key == 0 || value == 0)
                 {

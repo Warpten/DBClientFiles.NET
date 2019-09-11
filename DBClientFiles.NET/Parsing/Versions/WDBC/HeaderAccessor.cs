@@ -6,9 +6,9 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
 {
     internal sealed class HeaderAccessor : AbstractHeaderAccessor<Header>
     {
-        public override int RecordCount => Header.RecordCount;
-        public override int FieldCount => Header.FieldCount;
-        public override int RecordSize => Header.RecordSize;
+        public override int RecordCount { get; }
+        public override int FieldCount { get; }
+        public override int RecordSize { get; }
 
         private readonly SegmentReference _stringTableRef;
 
@@ -18,12 +18,16 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
         public override int MaxIndex => throw new InvalidOperationException();
         public override int MinIndex => throw new InvalidOperationException();
 
-        // WDBC always hsa index as first column
+        // WDBC always has index as first column
         public override int IndexColumn { get; } = 0;
 
-        public HeaderAccessor(in Header header) : base(in header)
+        public HeaderAccessor(in Header header) : base()
         {
-            _stringTableRef = new SegmentReference(Header.StringTableLength != 0, Header.StringTableLength);
+            RecordCount = header.RecordCount;
+            RecordSize = header.RecordSize;
+            FieldCount = header.FieldCount;
+
+            _stringTableRef = new SegmentReference(header.StringTableLength != 0, header.StringTableLength);
         }
     }
 }

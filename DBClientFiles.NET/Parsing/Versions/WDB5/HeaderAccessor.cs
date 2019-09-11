@@ -7,11 +7,14 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
 {
     internal sealed class HeaderAccessor : AbstractHeaderAccessor<Header>
     {
-        public override int RecordCount => Header.RecordCount;
-        public override int FieldCount => Header.FieldCount;
-        public override int RecordSize => Header.RecordSize;
+        public override int RecordCount { get; }
+        public override int FieldCount { get; }
+        public override int RecordSize { get; }
+        public override int MaxIndex { get; }
+        public override int MinIndex { get; }
 
-        public override int IndexColumn => Header.IndexColumn;
+        public override int IndexColumn { get; } 
+
 
         private readonly SegmentReference _stringTableRef;
         private readonly SegmentReference _indexTable;
@@ -27,30 +30,31 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
         public override ref readonly SegmentReference RelationshipTable => ref _relationshipTableRef;
         public override ref readonly SegmentReference CopyTable => ref _copyTableRef;
 
-        public override int MaxIndex => Header.MinIndex;
-        public override int MinIndex => Header.MaxIndex;
 
-        public HeaderAccessor(in Header header) : base(in header)
+        public HeaderAccessor(in Header header) : base()
         {
-            // Just give me static_assert god dammit
-            Debug.Assert(Unsafe.SizeOf<Header>() == 4 * 11 + 2 * 2, "umpf");
+            RecordCount = header.RecordCount;
+            RecordSize = header.RecordSize;
+            FieldCount = header.FieldCount;
 
-            _fieldInfoRef = new SegmentReference(true, Header.FieldCount * (2 + 2));
+            MinIndex = header.MinIndex;
+            MaxIndex = header.MaxIndex;
+
+            IndexColumn = header.IndexColumn;
+
+            _fieldInfoRef = new SegmentReference(true, header.FieldCount * (2 + 2));
 
             // String table and offset map are mutually exclusive.
-            _stringTableRef = new SegmentReference((Header.Flags & 0x01) == 0,
-                Header.StringTableLength);
+            _stringTableRef = new SegmentReference((header.Flags & 0x01) == 0,
+                header.StringTableLength);
 
-            _offsetMap = new SegmentReference((Header.Flags & 0x01) != 0,
-                (Header.MaxIndex - Header.MinIndex + 1) * (4 + 2),
-                Header.StringTableLength);
-            _relationshipTableRef = new SegmentReference((Header.Flags & 0x02) != 0,
-                (Header.MaxIndex - Header.MinIndex + 1) * 4);
-            _indexTable = new SegmentReference((Header.Flags & 0x04) != 0,
-                Header.RecordCount * 4);
+            _offsetMap = new SegmentReference((header.Flags & 0x01) != 0,
+                (header.MaxIndex - header.MinIndex + 1) * (4 + 2),
+                header.StringTableLength);
 
-            _copyTableRef = new SegmentReference(Header.CopyTableLength != 0,
-                Header.CopyTableLength / (4 + 4));
+            _relationshipTableRef = new SegmentReference((header.Flags & 0x02) != 0, (header.MaxIndex - header.MinIndex + 1) * 4);
+            _indexTable           = new SegmentReference((header.Flags & 0x04) != 0, header.RecordCount * 4);
+            _copyTableRef         = new SegmentReference(header.CopyTableLength != 0, header.CopyTableLength / (4 + 4));
         }
     }
 }
