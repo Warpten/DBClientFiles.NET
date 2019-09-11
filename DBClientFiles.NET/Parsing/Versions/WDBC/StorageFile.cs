@@ -54,8 +54,11 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
         {
             DataStream.Position = offset;
 
+            var instance = default(T);
             using (var recordStream = DataStream.Limit(length, false))
-                return _serializer.Deserialize(DataStream, in _recordReader);
+                _serializer.Method(DataStream, in _recordReader, out instance);
+
+            return instance;
         }
 
         internal override int GetRecordKey(in T value) => throw new InvalidOperationException();

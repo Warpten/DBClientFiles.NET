@@ -1,15 +1,29 @@
-﻿using System.Linq.Expressions;
+﻿using System;
+using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 
 namespace DBClientFiles.NET.Utils.Expressions
 {
-    internal class HashCodeCalculator : ExpressionVisitor
+    internal class ExpressionHashCodeCalculator : ExpressionVisitor
     {
-        public int HashCode { get; private set; }
+        private int _hashCode;
 
-        public HashCodeCalculator(Expression expression) => Visit(expression);
+        private static Lazy<ExpressionHashCodeCalculator> _lazyInstance = new Lazy<ExpressionHashCodeCalculator>(() => new ExpressionHashCodeCalculator());
 
-        private void Add(int i) => HashCode = (HashCode * 37) ^ i;
+        public static ExpressionHashCodeCalculator Instance => _lazyInstance.Value;
 
+        private ExpressionHashCodeCalculator() { }
+
+        public int GetHashCode(Expression expression)
+        {
+            _hashCode = 0;
+            Visit(expression);
+            return _hashCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Add(int i) => _hashCode = (_hashCode * 37) ^ i;
+        
         public override Expression Visit(Expression expression)
         {
             if (expression == null)

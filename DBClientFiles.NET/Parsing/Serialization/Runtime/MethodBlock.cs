@@ -105,7 +105,8 @@ namespace DBClientFiles.NET.Parsing.Serialization.Runtime
             public override bool Equals(MethodBlock other)
                 => other is Expression exprOther ? Equals(exprOther) : false;
 
-            public bool Equals(Expression other) => ExpressionEqualityComparer.Instance.Equals(_expression, other._expression);
+            public bool Equals(Expression other)
+                => ExpressionEqualityComparer.Instance.Equals(_expression, other._expression);
         }
 
         internal class Loop : MethodBlock, IEquatable<Loop>
@@ -140,6 +141,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Runtime
 
     internal static class MethodBlockExtensions
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MethodBlock.Expression ToMethodBlock(this Expr expr) => new MethodBlock.Expression(expr);
     }
 }

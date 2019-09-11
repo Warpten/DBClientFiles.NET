@@ -9,6 +9,6 @@ namespace DBClientFiles.NET.Utils.Expressions
 
         public bool Equals(Expression a, Expression b) => new ExpressionComparison(a, b).AreEqual;
 
-        public int GetHashCode(Expression expression) => new HashCodeCalculator(expression).HashCode;
+        public int GetHashCode(Expression expression) => ExpressionHashCodeCalculator.Instance.GetHashCode(expression);
     }
 }

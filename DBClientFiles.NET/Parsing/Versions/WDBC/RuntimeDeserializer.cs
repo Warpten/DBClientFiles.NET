@@ -14,7 +14,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
     /// Generates a method capable of deserializing a given type at runtime from a WDBC stream.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    internal sealed class RuntimeDeserializer<T> : TypeDeserializerRuntimeMethod<RuntimeDeserializer<T>.MethodType, T>
+    internal sealed class RuntimeDeserializer<T> : AbstratctRuntimeDeserializer<T>
     {
         public delegate void MethodType(Stream dataStream, in AlignedSequentialRecordReader recordReader, out T instance);
 
@@ -23,7 +23,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
         protected override ParameterExpression Instance { get; }
 
         private Lazy<MethodType> _methodInitializer;
-        private MethodType Method => _methodInitializer.Value;
+        public MethodType Method => _methodInitializer.Value;
 
         public RuntimeDeserializer(TypeToken typeToken, TypeTokenType typeTokenType) : base(typeToken, typeTokenType)
         {
@@ -37,7 +37,6 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
                 Instance
             ).Compile());
         }
-
 
         protected override Expression CreateArrayInitializer(MemberToken memberToken) => null;
 
@@ -53,11 +52,5 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
         }
 
         protected override int GetCardinality(MemberToken memberToken) => memberToken.Cardinality;
-
-        public T Deserialize(Stream dataStream, in AlignedSequentialRecordReader recordReader)
-        {
-            Method.Invoke(dataStream, in recordReader, out var instance);
-            return instance;
-        }
     }
 }

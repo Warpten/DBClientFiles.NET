@@ -59,8 +59,11 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB2
         {
             DataStream.Position = offset;
 
+            var instance = default(T);
             using (var recordStream = DataStream.Limit(length, false))
-                return _serializer.Deserialize(recordStream, in _recordReader);
+                _serializer.Method(recordStream, in _recordReader, out instance);
+
+            return instance;
         }
 
         internal override void Clone(in T source, out T clonedInstance) => throw new InvalidOperationException();

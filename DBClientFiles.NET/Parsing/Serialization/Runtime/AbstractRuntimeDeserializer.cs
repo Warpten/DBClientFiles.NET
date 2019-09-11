@@ -3,11 +3,10 @@ using DBClientFiles.NET.Utils.Expressions.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace DBClientFiles.NET.Parsing.Serialization.Runtime
 {
-    internal abstract class TypeDeserializerRuntimeMethod<TDelegate, T> where TDelegate : Delegate
+    internal abstract class AbstratctRuntimeDeserializer<T>
     {
         protected virtual ParameterExpression Instance { get; }
 
@@ -15,7 +14,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Runtime
 
         private readonly Func<TypeToken, IEnumerable<MemberToken>> MemberProvider;
 
-        public TypeDeserializerRuntimeMethod(TypeToken typeToken, TypeTokenType typeTokenType) : base()
+        public AbstratctRuntimeDeserializer(TypeToken typeToken, TypeTokenType typeTokenType) : base()
         {
             switch (typeTokenType)
             {
@@ -58,13 +57,9 @@ namespace DBClientFiles.NET.Parsing.Serialization.Runtime
             var memberAccess = new MethodBlock.MemberAccess(declaringInstanceAccess, memberToken);
 
             if (memberToken.IsArray)
-            {
                 GenerateArrayMemberBlock(memberToken, memberAccess, block);
-            }
             else
-            {
                 GenerateValueMemberBlock(memberToken.TypeToken, memberAccess, block);
-            }
         }
 
         private void GenerateValueMemberBlock(TypeToken typeToken, MethodBlock memberAccess, MethodBlock.Collection block)

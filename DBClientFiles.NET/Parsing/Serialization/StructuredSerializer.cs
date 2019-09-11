@@ -40,11 +40,10 @@ namespace DBClientFiles.NET.Parsing.Serialization
         {
             var rootExpression = Expression.Parameter(typeof(T).MakeByRefType(), "model");
             
-            var (memberToken, memberAccess) = Type.MakeMemberAccess(ref indexColumn, rootExpression, Options.TokenType);
-            if (memberToken == null)
+            var (indexColumnMemberToken, memberAccess) = Type.MakeMemberAccess(ref indexColumn, rootExpression, Options.TokenType);
+            if (indexColumnMemberToken == null)
                 throw new InvalidOperationException($"Invalid structure: Unable to find an index column.");
 
-            ref var indexColumnMemberToken = ref memberToken;
             if (indexColumnMemberToken.TypeToken != typeof(int) && indexColumnMemberToken.TypeToken != typeof(uint))
                 throw new InvalidOperationException($"Invalid structure: {memberAccess} is expected to be the index, but its type doesn't match. Needs to be (u)int.");
             

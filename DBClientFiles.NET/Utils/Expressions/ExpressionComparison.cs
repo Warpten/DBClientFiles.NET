@@ -2,34 +2,36 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 
 namespace DBClientFiles.NET.Utils.Expressions
 {
     internal class ExpressionComparison : ExpressionVisitor
     {
-        private Queue<Expression> _candidates;
+        private IEnumerator<Expression> _candidates;
         private Expression _candidate;
 
         public bool AreEqual { get; private set; } = true;
 
         public ExpressionComparison(Expression a, Expression b)
         {
-            _candidates = new Queue<Expression>(new ExpressionEnumeration(b));
-
-            Visit(a);
-
-            if (_candidates.Count > 0)
+            _candidates = new ExpressionEnumeration(b).GetEnumerator();
+            if (!_candidates.MoveNext()) // Advance to first
                 Stop();
+            else
+            {
+                Visit(a);
+
+                if (_candidates.MoveNext())
+                    Stop();
+            }
         }
 
-        private Expression PeekCandidate()
-        {
-            if (_candidates.Count == 0)
-                return null;
-            return _candidates.Peek();
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private Expression PeekCandidate() => _candidates.Current;
 
-        private Expression PopCandidate() => _candidates.Dequeue();
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void PopCandidate() => _candidates.MoveNext();
 
         private bool CheckAreOfSameType(Expression candidate, Expression expression)
         {
@@ -43,6 +45,7 @@ namespace DBClientFiles.NET.Utils.Expressions
 
         private void Stop() => AreEqual = false;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private T CandidateFor<T>() where T : Expression => (T)_candidate;
 
         public override Expression Visit(Expression expression)
@@ -55,8 +58,11 @@ namespace DBClientFiles.NET.Utils.Expressions
 
             _candidate = PeekCandidate();
 
+            // If candidate is null, return
             if (!CheckNotNull(_candidate))
                 return expression;
+
+            // If candidate expression type msimatches, return
             if (!CheckAreOfSameType(_candidate, expression))
                 return expression;
 
