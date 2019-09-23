@@ -1,9 +1,9 @@
 ﻿using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Utils.Extensions;
+using System;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace DBClientFiles.NET.Parsing.Shared.Records
 {
@@ -28,25 +28,15 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
         public void Dispose()
         {
         }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T Read<T>(Stream stream) where T : struct => stream.Read<T>();
+
+        // Experiment....
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Read<T>(Stream stream, ref T value) where T : struct => stream.Read(ref value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T Read<T>(Stream stream) where T : struct
-        {
-            return stream.Read<T>();
-        }
-
-        public string ReadString(Stream stream)
-        {
-            if (_stringBlock != null)
-                return _stringBlock[stream.Read<uint>()];
-
-            // This is going to be slow, but we hope it's not gonna be the hot path
-            var sb = new StringBuilder(128);
-            int @char;
-            while ((@char = stream.ReadByte()) != '\0')
-                sb.Append((char)@char);
-
-            return sb.ToString();
-        }
+        public string ReadString(Stream stream) => _stringBlock[stream.Read<int>()];
     }
 }

@@ -11,10 +11,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1.Binding
         private CompressionData _compressionData;
         public override ref CompressionData CompressionData => ref _compressionData;
 
-        public override T GetDefaultValue<T>()
-        {
-            return DefaultValue.Cast<T>();
-        }
+        public override T GetDefaultValue<T>() => DefaultValue.Cast<T>();
 
         public override string ToString()
         {

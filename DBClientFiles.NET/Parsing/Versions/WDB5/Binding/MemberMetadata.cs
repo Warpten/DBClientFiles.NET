@@ -11,9 +11,6 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5.Binding
         private CompressionData _compressionData;
         public override ref CompressionData CompressionData => ref _compressionData;
 
-        public override T GetDefaultValue<T>()
-        {
-            return default;
-        }
+        public override T GetDefaultValue<T>() => default;
     }
 }

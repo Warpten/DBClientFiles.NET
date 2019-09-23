@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
+
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Utils.Expressions;
+
+using System.Linq.Expressions;
+using Expr = System.Linq.Expressions.Expression;
+
 
 namespace DBClientFiles.NET.Parsing.Serialization.Generators
 {
@@ -13,7 +17,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         /// 
         /// This is not necessarily a primitive.
         /// </summary>
-        public virtual Expression AccessExpression { get; set; }
+        public virtual Expr AccessExpression { get; set; }
 
         /// <summary>
         /// A <see cref="MemberToken"/>. This is always in sync with actual elements of the structure <b>except</b>
@@ -30,7 +34,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         /// <summary>
         /// A set of candidate expressions to be used when reading into the expression.
         /// </summary>
-        public List<Expression> ReadExpression { get; } = new List<Expression>();
+        public List<Expr> ReadExpression { get; } = new List<Expr>();
 
         /// <summary>
         /// Nodes that may be children of this node. Typically, substructure members.
@@ -76,9 +80,9 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
             }
         }
 
-        public virtual Expression ToExpression()
+        public virtual Expr ToExpression()
         {
-            var blockBody = new List<Expression>();
+            var blockBody = new List<Expr>();
 #if EXPERIMENTAL_GENERATOR
             var variables = new HashSet<ParameterExpression>();
 #endif
@@ -88,16 +92,16 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
             if (AccessExpression != null)
             {
                 if (ReadExpression.Count > 0)
-                    blockBody.Add(Expression.Assign(AccessExpression, ReadExpression[0]));
+                    blockBody.Add(Expr.Assign(AccessExpression, ReadExpression[0]));
                 else if (TypeToken.IsArray)
-                    blockBody.Add(Expression.Assign(AccessExpression,
-                        TypeToken.GetElementTypeToken().NewArrayBounds(Expression.Constant(MemberToken.Cardinality))));
+                    blockBody.Add(Expr.Assign(AccessExpression,
+                        TypeToken.GetElementTypeToken().NewArrayBounds(Expr.Constant(MemberToken.Cardinality))));
                 else if (TypeToken.IsClass)
                 {
                     if (!TypeToken.HasDefaultConstructor)
                         throw new InvalidOperationException("Missing default constructor for " + TypeToken.Name);
 
-                    blockBody.Add(Expression.Assign(AccessExpression, TypeToken.NewExpression()));
+                    blockBody.Add(Expr.Assign(AccessExpression, TypeToken.NewExpression()));
                 }
             }
 
@@ -128,7 +132,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
 
             // We allow empty blocks if there are no children for primitive types
             if (blockBody.Count == 0)
-                return Expression.Empty();
+                return Expr.Empty();
 
             // If there's only one expression, just return it.
 #if EXPERIMENTAL_GENERATOR
@@ -140,7 +144,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
             if (blockBody.Count == 1)
                 return blockBody[0];
 
-            return Expression.Block(blockBody);
+            return Expr.Block(blockBody);
 #endif
         }
     }
@@ -159,7 +163,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         /// <remarks>
         /// This is relevant only if the loop is not unrolled.
         /// </remarks>
-        public override Expression AccessExpression => Expression.ArrayAccess(Array.AccessExpression, Iterator);
+        public override Expr AccessExpression => Expr.ArrayAccess(Array.AccessExpression, Iterator);
 
         /// <summary>
         /// The iteration variable.
@@ -176,8 +180,8 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         /// </summary>
         public int InitialValue { get; }
 
-        private Expression LoopCondition => Expression.LessThan(Iterator, Expression.Constant(IterationCount));
-        private Expression IteratorInitializer => Expression.Assign(Iterator, Expression.Constant(InitialValue));
+        private Expr LoopCondition => Expr.LessThan(Iterator, Expr.Constant(IterationCount));
+        private Expr IteratorInitializer => Expr.Assign(Iterator, Expr.Constant(InitialValue));
 
         public LoopTreeNode(TreeNode parent, ParameterExpression iteratorVariable) : base()
         {
@@ -215,20 +219,20 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
             }
         }
 
-        public override Expression ToExpression()
+        public override Expr ToExpression()
         {
-            var loopBody = new List<Expression>();
+            var loopBody = new List<Expr>();
             if (ReadExpression.Count > 0)
-                loopBody.Add(Expression.Assign(AccessExpression, ReadExpression[0]));
+                loopBody.Add(Expr.Assign(AccessExpression, ReadExpression[0]));
 
             foreach (var child in Children)
                 loopBody.Add(child.ToExpression());
 
-            loopBody.Add(Expression.PreIncrementAssign(Iterator));
+            loopBody.Add(Expr.PreIncrementAssign(Iterator));
 
-            var loopExitLabel = Expression.Label();
-            var loopCode = Expression.Loop(Expression.IfThenElse(LoopCondition, Expression.Block(loopBody), Expression.Break(loopExitLabel)), loopExitLabel);
-            return Expression.Block(new[] { Iterator }, IteratorInitializer, loopCode);
+            var loopExitLabel = Expr.Label();
+            var loopCode = Expr.Loop(Expr.IfThenElse(LoopCondition, Expr.Block(loopBody), Expr.Break(loopExitLabel)), loopExitLabel);
+            return Expr.Block(new[] { Iterator }, IteratorInitializer, loopCode);
         }
 
         public override void GenerateReadCalls(SerializerGenerator generator)
@@ -250,14 +254,14 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
             };
 
             // Array initializer added now and only now
-            bodyExpression.ReadExpression.Add(bodyExpression.TypeToken.NewArrayBounds(Expression.Constant(IterationCount - InitialValue)));
+            bodyExpression.ReadExpression.Add(bodyExpression.TypeToken.NewArrayBounds(Expr.Constant(IterationCount - InitialValue)));
 
             // Create N blocks of body
             for (var i = 0; i < IterationCount - InitialValue; ++i)
             {
                 var invocationNode = new TreeNode() {
                     // Can't reuse this.AccessExpression because it's bound on the iterator.
-                    AccessExpression = Expression.ArrayAccess(Array.AccessExpression, Expression.Constant(i)),
+                    AccessExpression = Expr.ArrayAccess(Array.AccessExpression, Expr.Constant(i)),
                     MemberToken = Array.MemberToken,
                     TypeToken = Array.TypeToken.GetElementTypeToken()
                 };
@@ -270,7 +274,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
                 foreach (var childNode in Children)
                 {
                     var newChildNode = new TreeNode() {
-                        AccessExpression = Expression.MakeMemberAccess(invocationNode.AccessExpression, childNode.MemberToken.MemberInfo),
+                        AccessExpression = Expr.MakeMemberAccess(invocationNode.AccessExpression, childNode.MemberToken.MemberInfo),
                         MemberToken = childNode.MemberToken,
                         TypeToken = childNode.TypeToken
                     };

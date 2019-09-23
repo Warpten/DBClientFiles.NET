@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq.Expressions;
 using System.Reflection;
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Parsing.Versions;
 using TypeToken = DBClientFiles.NET.Parsing.Reflection.TypeToken;
+
+using System.Linq.Expressions;
+using Expr = System.Linq.Expressions.Expression;
 
 namespace DBClientFiles.NET.Parsing.Serialization
 {
@@ -38,7 +40,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
 
         public void SetIndexColumn(int indexColumn)
         {
-            var rootExpression = Expression.Parameter(typeof(T).MakeByRefType(), "model");
+            var rootExpression = Expr.Parameter(typeof(T).MakeByRefType(), "model");
             
             var (indexColumnMemberToken, memberAccess) = Type.MakeMemberAccess(ref indexColumn, rootExpression, Options.TokenType);
             if (indexColumnMemberToken == null)
@@ -48,23 +50,23 @@ namespace DBClientFiles.NET.Parsing.Serialization
                 throw new InvalidOperationException($"Invalid structure: {memberAccess} is expected to be the index, but its type doesn't match. Needs to be (u)int.");
             
             { /* key getter */
-                _keyGetter = Expression.Lambda<TypeKeyGetter>(
+                _keyGetter = Expr.Lambda<TypeKeyGetter>(
                     // Box to int if type mismatches
                     memberAccess.Type == typeof(int)
                         ? memberAccess
-                        : Expression.ConvertChecked(memberAccess, typeof(int)),
+                        : Expr.ConvertChecked(memberAccess, typeof(int)),
                     rootExpression).Compile();
             }
 
             { /* key setter */
-                var paramValue = Expression.Parameter(typeof(int));
+                var paramValue = Expr.Parameter(typeof(int));
 
-                _keySetter = Expression.Lambda<TypeKeySetter>(
-                    Expression.Assign(memberAccess,
+                _keySetter = Expr.Lambda<TypeKeySetter>(
+                    Expr.Assign(memberAccess,
                         // Box to target type if not int
                         memberAccess.Type == typeof(int)
                             ? memberAccess
-                            : Expression.ConvertChecked(paramValue, memberAccess.Type)
+                            : Expr.ConvertChecked(paramValue, memberAccess.Type)
                 ), rootExpression, paramValue).Compile();
             }
         }
@@ -94,11 +96,11 @@ namespace DBClientFiles.NET.Parsing.Serialization
             {
                 Debug.Assert(Options.MemberType == MemberTypes.Field || Options.MemberType == MemberTypes.Property);
 
-                var oldInstanceParam = Expression.Parameter(typeof(T).MakeByRefType());
-                var newInstanceParam = Expression.Parameter(typeof(T).MakeByRefType());
+                var oldInstanceParam = Expr.Parameter(typeof(T).MakeByRefType());
+                var newInstanceParam = Expr.Parameter(typeof(T).MakeByRefType());
 
-                var body = new List<Expression> {
-                    Expression.Assign(newInstanceParam, Expression.New(typeof(T)))
+                var body = new List<Expr> {
+                    Expr.Assign(newInstanceParam, Expr.New(typeof(T)))
                 };
 
                 foreach (var memberInfo in Type.Members)
@@ -111,37 +113,37 @@ namespace DBClientFiles.NET.Parsing.Serialization
 
                 body.Add(newInstanceParam);
 
-                var bodyBlock = Expression.Block(body);
-                _cloneMethod = Expression.Lambda<TypeCloner>(bodyBlock, oldInstanceParam, newInstanceParam).Compile();
+                var bodyBlock = Expr.Block(body);
+                _cloneMethod = Expr.Lambda<TypeCloner>(bodyBlock, oldInstanceParam, newInstanceParam).Compile();
             }
 
             _cloneMethod.Invoke(in origin, out clonedInstance);
         }
 
-        private Expression CloneMember(MemberToken memberInfo, Expression oldMember, Expression newMember)
+        private Expr CloneMember(MemberToken memberInfo, Expr oldMember, Expr newMember)
         {
             if (oldMember.Type.IsArray)
             {
-                var sizeVarExpr = Expression.Variable(typeof(int));
-                var lengthValue = Expression.MakeMemberAccess(oldMember,
+                var sizeVarExpr = Expr.Variable(typeof(int));
+                var lengthValue = Expr.MakeMemberAccess(oldMember,
                     oldMember.Type.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance));
                 var newArrayExpr = memberInfo.TypeToken.GetElementTypeToken().NewArrayBounds(sizeVarExpr);
 
-                var loopItr = Expression.Variable(typeof(int));
-                var loopCondition = Expression.LessThan(loopItr, sizeVarExpr);
-                var loopExitLabel = Expression.Label();
+                var loopItr = Expr.Variable(typeof(int));
+                var loopCondition = Expr.LessThan(loopItr, sizeVarExpr);
+                var loopExitLabel = Expr.Label();
 
-                return Expression.Block(new[] { loopItr, sizeVarExpr },
-                    Expression.Assign(sizeVarExpr, lengthValue),
-                    Expression.Assign(newMember, newArrayExpr),
-                    Expression.Assign(loopItr, Expression.Constant(0)),
-                    Expression.Loop(
-                        Expression.IfThenElse(loopCondition,
-                            Expression.Block(
-                                CloneMember(memberInfo, Expression.ArrayAccess(oldMember, loopItr), Expression.ArrayAccess(newMember, loopItr)),
-                                Expression.PreIncrementAssign(loopItr)
+                return Expr.Block(new[] { loopItr, sizeVarExpr },
+                    Expr.Assign(sizeVarExpr, lengthValue),
+                    Expr.Assign(newMember, newArrayExpr),
+                    Expr.Assign(loopItr, Expr.Constant(0)),
+                    Expr.Loop(
+                        Expr.IfThenElse(loopCondition,
+                            Expr.Block(
+                                CloneMember(memberInfo, Expr.ArrayAccess(oldMember, loopItr), Expr.ArrayAccess(newMember, loopItr)),
+                                Expr.PreIncrementAssign(loopItr)
                             ),
-                            Expression.Break(loopExitLabel)
+                            Expr.Break(loopExitLabel)
                         ), loopExitLabel));
             }
 
@@ -149,10 +151,10 @@ namespace DBClientFiles.NET.Parsing.Serialization
             var typeInfo = Type.GetChildToken(oldMember.Type);
 
             if (typeInfo == typeof(string) || typeInfo.IsPrimitive)
-                return Expression.Assign(newMember, oldMember);
+                return Expr.Assign(newMember, oldMember);
 
-            var block = new List<Expression>() {
-                Expression.Assign(newMember, Expression.New(newMember.Type))
+            var block = new List<Expr>() {
+                Expr.Assign(newMember, Expr.New(newMember.Type))
             };
 
             foreach (var childInfo in typeInfo.Members)
@@ -167,8 +169,8 @@ namespace DBClientFiles.NET.Parsing.Serialization
             }
 
             return block.Count == 1
-                ? (Expression)Expression.Assign(newMember, oldMember)
-                : (Expression)Expression.Block(block);
+                ? (Expr)Expr.Assign(newMember, oldMember)
+                : (Expr)Expr.Block(block);
         }
     }
 }

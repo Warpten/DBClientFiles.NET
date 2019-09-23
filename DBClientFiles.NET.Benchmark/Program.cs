@@ -11,7 +11,6 @@ namespace DBClientFiles.NET.Benchmark
         {
             var summaries = BenchmarkSwitcher.FromTypes(
                 Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(AbstractBenchmark).IsAssignableFrom(t) && !t.IsAbstract).ToArray()
-                // new [] { typeof(WDBC.AchievementAllocationBenchmark) }
 #if DEBUG
             ).Run(args, new DebugInProcessConfig());
 #else

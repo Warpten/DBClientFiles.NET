@@ -1,4 +1,5 @@
 ﻿using DBClientFiles.NET.Parsing.Enumerators;
+using DBClientFiles.NET.Parsing.Runtime.Serialization;
 using DBClientFiles.NET.Parsing.Shared.Records;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
@@ -17,7 +18,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
     {
         public override int RecordCount => Header.RecordCount;
 
-        private RuntimeDeserializer<T> _serializer;
+        private readonly RuntimeDeserializer<T> _serializer;
         private AlignedSequentialRecordReader _recordReader;
 
         public StorageFile(in StorageOptions options, in Header header, Stream input) : base(in options, new HeaderAccessor(in header), input)
@@ -25,25 +26,18 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
             _serializer = new RuntimeDeserializer<T>(Type, Options.TokenType);
         }
 
-        public override void Dispose()
-        {
-            base.Dispose();
-
-            _recordReader.Dispose();
-        }
-
         public override void Before(ParsingStep step)
         {
             if (step != ParsingStep.Segments)
                 return;
 
-            var stringBlockHandler = new StringBlockHandler();
+            var stringBlock = new StringBlockHandler();
 
             Head = new Segment(SegmentIdentifier.Records, Header.RecordCount * Header.RecordSize) {
-                Next = new Segment(SegmentIdentifier.StringBlock, Header.StringTable.Length, stringBlockHandler)
+                Next = new Segment(SegmentIdentifier.StringBlock, Header.StringTable.Length, stringBlock)
             };
 
-            _recordReader = new AlignedSequentialRecordReader(stringBlockHandler);
+            _recordReader = new AlignedSequentialRecordReader(stringBlock);
         }
 
         public override void After(ParsingStep step)
@@ -54,10 +48,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
         {
             DataStream.Position = offset;
 
-            var instance = default(T);
-            using (var recordStream = DataStream.Limit(length, false))
-                _serializer.Method(DataStream, in _recordReader, out instance);
-
+            _serializer.Method(DataStream, _recordReader, out var instance);
             return instance;
         }
 

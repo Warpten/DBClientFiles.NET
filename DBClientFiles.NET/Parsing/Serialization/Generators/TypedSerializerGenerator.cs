@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Parsing.Reflection;
+
+using System.Linq.Expressions;
+using Expr = System.Linq.Expressions.Expression;
 
 namespace DBClientFiles.NET.Parsing.Serialization.Generators
 {
@@ -42,9 +44,9 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
                 TypeToken = Root
             };
 
-        protected sealed override Expression MakeRootMemberAccess(MemberToken token) => token.MakeAccess(ProducedInstance);
+        protected sealed override Expr MakeRootMemberAccess(MemberToken token) => token.MakeAccess(ProducedInstance);
         
-        protected sealed override Expression MakeReturnExpression() => ProducedInstance;
+        protected sealed override Expr MakeReturnExpression() => ProducedInstance;
     
         protected abstract ParameterExpression ProducedInstance { get; }
     }

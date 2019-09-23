@@ -83,5 +83,15 @@ namespace DBClientFiles.NET.Utils.Extensions
 
             return value;
         }
+
+        public static void Read<T>(this Stream dataStream, ref T value) where T : struct
+        {
+            var span = MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref value, 1));
+#if DEBUG
+            Debug.Assert(Unsafe.SizeOf<T>() == dataStream.Read(span), $"Unable to read {typeof(T).Name} from stream, stream too short");
+#else
+            dataStream.Read(span);
+#endif
+        }
     }
 }

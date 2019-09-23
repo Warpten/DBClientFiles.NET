@@ -19,6 +19,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DBClientFiles.NET.UnitTests
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DBClientFiles.NET.Types", "DBClientFiles.NET.TestBase\DBClientFiles.NET.Types.csproj", "{FA0F3081-8326-4C59-BC85-48F9EB77A7F4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBClientFiles.NET.Expressions", "DBClientFiles.NET.Expressions\DBClientFiles.NET.Expressions.csproj", "{478919EA-5308-4C9E-BCF4-9F9B9B2162F4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -109,6 +111,22 @@ Global
 		{FA0F3081-8326-4C59-BC85-48F9EB77A7F4}.ReleaseUnitTests|Any CPU.Build.0 = Release|Any CPU
 		{FA0F3081-8326-4C59-BC85-48F9EB77A7F4}.ReleaseUnitTests|x64.ActiveCfg = Release|Any CPU
 		{FA0F3081-8326-4C59-BC85-48F9EB77A7F4}.ReleaseUnitTests|x64.Build.0 = Release|Any CPU
+		{478919EA-5308-4C9E-BCF4-9F9B9B2162F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{478919EA-5308-4C9E-BCF4-9F9B9B2162F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{478919EA-5308-4C9E-BCF4-9F9B9B2162F4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{478919EA-5308-4C9E-BCF4-9F9B9B2162F4}.Debug|x64.Build.0 = Debug|Any CPU
+		{478919EA-5308-4C9E-BCF4-9F9B9B2162F4}.DebugUnitTests|Any CPU.ActiveCfg = Debug|Any CPU
+		{478919EA-5308-4C9E-BCF4-9F9B9B2162F4}.DebugUnitTests|Any CPU.Build.0 = Debug|Any CPU
+		{478919EA-5308-4C9E-BCF4-9F9B9B2162F4}.DebugUnitTests|x64.ActiveCfg = Debug|Any CPU
+		{478919EA-5308-4C9E-BCF4-9F9B9B2162F4}.DebugUnitTests|x64.Build.0 = Debug|Any CPU
+		{478919EA-5308-4C9E-BCF4-9F9B9B2162F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{478919EA-5308-4C9E-BCF4-9F9B9B2162F4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{478919EA-5308-4C9E-BCF4-9F9B9B2162F4}.Release|x64.ActiveCfg = Release|Any CPU
+		{478919EA-5308-4C9E-BCF4-9F9B9B2162F4}.Release|x64.Build.0 = Release|Any CPU
+		{478919EA-5308-4C9E-BCF4-9F9B9B2162F4}.ReleaseUnitTests|Any CPU.ActiveCfg = Release|Any CPU
+		{478919EA-5308-4C9E-BCF4-9F9B9B2162F4}.ReleaseUnitTests|Any CPU.Build.0 = Release|Any CPU
+		{478919EA-5308-4C9E-BCF4-9F9B9B2162F4}.ReleaseUnitTests|x64.ActiveCfg = Release|Any CPU
+		{478919EA-5308-4C9E-BCF4-9F9B9B2162F4}.ReleaseUnitTests|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

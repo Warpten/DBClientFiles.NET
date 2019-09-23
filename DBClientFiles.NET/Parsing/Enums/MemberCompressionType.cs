@@ -10,6 +10,7 @@
         SignedImmediate,
 
         // Not an actual compression type, here for convenience
-        RelationshipData = 0xFFFFFFFF
+        RelationshipData = 0xFFFFFFFE,
+        Unknown = 0xFFFFFFFF,
     }
 }

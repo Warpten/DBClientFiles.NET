@@ -93,7 +93,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
             // fieldInfoSize == 0 means the field is outside the record (it's either a relationship column, or our index)
             // We don't bother forcing the calculation if arity was already specified in the field info.
             if (currentField.CompressionData.Type != MemberCompressionType.BitpackedPalletArrayData && fieldInfoSize != 0)
-                currentField.Cardinality = (int) (currentField.Size / fieldInfoSize);
+                currentField.Cardinality = currentField.Size / fieldInfoSize;
 
             return currentField;
         }

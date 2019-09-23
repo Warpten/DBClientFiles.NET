@@ -1,9 +1,10 @@
-﻿using System;
-using System.Linq.Expressions;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DBClientFiles.NET.Attributes;
+
+using System.Linq.Expressions;
+using Expr = System.Linq.Expressions.Expression;
 
 namespace DBClientFiles.NET.Parsing.Reflection
 {
@@ -43,23 +44,15 @@ namespace DBClientFiles.NET.Parsing.Reflection
 
         public override T GetAttribute<T>() => _memberInfo.GetCustomAttribute<T>();
 
-        public override Expression MakeChildAccess(IMemberToken token)
-        {
-            if (!TypeToken.HasChild(token))
-                throw new Exception("fixme");
-
-            return null;
-        }
-
         public override TypeTokenType MemberType => TypeTokenType.Field;
 
         public override bool IsReadOnly => _memberInfo.IsInitOnly;
         public override bool IsArray => _memberInfo.FieldType.IsArray;
         public override int Cardinality { get; }
 
-        public override Expression MakeAccess(Expression parent)
+        public override Expr MakeAccess(Expr parent)
         {
-            return Expression.MakeMemberAccess(parent, _memberInfo);
+            return Expr.MakeMemberAccess(parent, _memberInfo);
         }
     }
 }

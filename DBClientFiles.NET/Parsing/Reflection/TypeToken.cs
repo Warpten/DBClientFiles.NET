@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using DBClientFiles.NET.Utils.Extensions;
+
+using System.Linq.Expressions;
+using Expr = System.Linq.Expressions.Expression;
+
 
 namespace DBClientFiles.NET.Parsing.Reflection
 {
@@ -15,7 +18,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
         /// <summary>
         /// The underlying CLR <see cref="Type"/> representation of this type.
         /// </summary>
-        internal Type Type { get; }
+        private Type Type { get; }
 
         private Dictionary<Type, TypeToken> _declaredTypes;
         private List<MemberToken> _members;
@@ -106,14 +109,14 @@ namespace DBClientFiles.NET.Parsing.Reflection
             return Type.ToString();
         }
 
-        public (MemberToken memberToken, Expression memberAccess) MakeMemberAccess(ref int index, Expression accessExpression, TypeTokenType type)
+        public (MemberToken memberToken, Expression memberAccess) MakeMemberAccess(ref int index, Expr accessExpression, TypeTokenType type)
         {
             foreach (var memberInfo in _members)
             {
                 if (memberInfo.MemberType != type)
                     continue;
 
-                Expression memberAccessExpr = memberInfo.MakeAccess(accessExpression);
+                Expr memberAccessExpr = memberInfo.MakeAccess(accessExpression);
 
                 if (memberInfo.TypeToken.IsArray)
                 {
@@ -122,7 +125,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
 
                     for (var i = 0; i < memberInfo.Cardinality; ++i)
                     {
-                        Expression arrayAccessExpr = Expression.ArrayAccess(memberAccessExpr, Expression.Constant(i));
+                        Expr arrayAccessExpr = Expr.ArrayAccess(memberAccessExpr, Expression.Constant(i));
                         
                         var token = elementTypeToken.MakeMemberAccess(ref index, arrayAccessExpr, type);
 
@@ -195,12 +198,12 @@ namespace DBClientFiles.NET.Parsing.Reflection
         /// </summary>
         /// <param name="bounds"></param>
         /// <returns></returns>
-        public Expression NewArrayBounds(params Expression[] bounds) => Expression.NewArrayBounds(Type, bounds);
+        public Expression NewArrayBounds(params Expr[] bounds) => Expr.NewArrayBounds(Type, bounds);
 
         // Helper for above
-        public Expression NewArrayBounds(int bound) => Expression.NewArrayBounds(Type, Expression.Constant(bound));
+        public Expression NewArrayBounds(int bound) => Expr.NewArrayBounds(Type, Expression.Constant(bound));
 
-        public Expression NewExpression() => Expression.New(Type);
+        public Expression NewExpression() => Expr.New(Type);
 
         #endregion
 

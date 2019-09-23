@@ -1,33 +1,10 @@
-﻿using System.Linq.Expressions;
-using DBClientFiles.NET.Parsing.Reflection;
+﻿using DBClientFiles.NET.Parsing.Reflection;
+
+using System.Linq.Expressions;
+using Expr = System.Linq.Expressions.Expression;
 
 namespace DBClientFiles.NET.Parsing.Serialization.Generators
 {
-#if EXPERIMENTAL
-    internal class ParameterProvider
-    {
-        private Stack<ParameterExpression> _parameters;
-
-        private Type _type;
-
-        public ParameterProvider(Type parameterType)
-        {
-            _type = parameterType;
-            _parameters = new Stack<ParameterExpression>();
-        }
-
-        public ParameterExpression Rent()
-        {
-            if (!_parameters.TryPop(out var parameter))
-                parameter = Expression.Parameter(_type);
-
-            return parameter;
-        }
-
-        public void Return(ParameterExpression parameter) => _parameters.Push(parameter);
-    }
-#endif
-
     /// <summary>
     /// Generates serialization methods for various objects.
     /// </summary>
@@ -36,35 +13,17 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         protected TypeToken Root { get; }
         private TypeTokenType MemberType { get; }
 
-#if EXPERIMENTAL_GENERATOR
-        private Dictionary<Type, ParameterProvider> _variableProviders = new Dictionary<Type, ParameterProvider>();
-#endif
-
         protected SerializerGenerator(TypeToken root, TypeTokenType memberType)
         {
             Root = root;
             MemberType = memberType;
         }
 
-#if EXPERIMENTAL_GENERATOR
-        internal ParameterExpression RentVariable<T>()
-        {
-            var type = typeof(T);
-            if (!_variableProviders.TryGetValue(type, out var provider))
-                _variableProviders.Add(type, provider = new ParameterProvider(type));
-
-            return provider.Rent();
-        }
-
-        internal void ReturnVariable(ParameterExpression parameter)
-            => _variableProviders[parameter.Type].Return(parameter);
-#endif
-
         /// <summary>
         /// Generates the method's body
         /// </summary>
         /// <returns></returns>
-        protected Expression GenerateDeserializationMethodBody()
+        protected Expr GenerateDeserializationMethodBody()
         {
             // Generate a tree of BodyExpression.
             // We just populate the type token, the member info, and the access expressions
@@ -91,7 +50,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
             var expr = bodyParts.TryUnroll().ToExpression();
             var returnType = MakeReturnExpression();
             if (returnType != null)
-                expr = Expression.Block(expr, returnType);
+                expr = Expr.Block(expr, returnType);
 
             // TODO: See if trying to optimize iterator usages in the generated code outweighs the cost of optimizing
             // (It probably doesn't) (except for large files question mark?)
@@ -106,12 +65,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         {
             if (parent.TypeToken.IsArray)
             {
-#if EXPERIMENTAL_GENERATOR
-                var loopIterator = RentVariable<int>();
-                var loopNode = new LoopTreeNode(parent, loopIterator);
-#else
-                var loopNode = new LoopTreeNode(parent, Expression.Parameter(typeof(int)));
-#endif
+                var loopNode = new LoopTreeNode(parent, Expr.Parameter(typeof(int)));
 
                 var elementTypeToken = parent.TypeToken.GetElementTypeToken();
                 foreach (var member in elementTypeToken.Members)
@@ -131,10 +85,6 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
                 }
 
                 parent.AddChild(loopNode);
-
-#if EXPERIMENTAL_GENERATOR
-                ReturnVariable(loopIterator);
-#endif
             }
             else
             {
@@ -161,14 +111,14 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         /// Returns the final expression of the method's body.
         /// </summary>
         /// <returns></returns>
-        protected abstract Expression MakeReturnExpression();
+        protected abstract Expr MakeReturnExpression();
 
         /// <summary>
         /// Provides access to the given member token on the root structure that is being deserialized.
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        protected abstract Expression MakeRootMemberAccess(MemberToken token);
+        protected abstract Expr MakeRootMemberAccess(MemberToken token);
 
         /// <summary>
         /// Generates a deserialization call expression for the provided element of the tree.
@@ -176,6 +126,6 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         /// <param name="typeToken"></param>
         /// <param name="memberToken"></param>
         /// <returns></returns>
-        public abstract Expression GenerateExpressionReader(TypeToken typeToken, MemberToken memberToken);
+        public abstract Expr GenerateExpressionReader(TypeToken typeToken, MemberToken memberToken);
     }
 }

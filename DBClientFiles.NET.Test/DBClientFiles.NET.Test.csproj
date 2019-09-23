@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
 
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
@@ -11,7 +11,7 @@
 
     <Configurations>Debug;Release</Configurations>
     
-    <LangVersion>7.3</LangVersion>
+    <LangVersion>8.0</LangVersion>
     
     <ApplicationIcon />
     

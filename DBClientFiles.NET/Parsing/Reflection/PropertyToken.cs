@@ -1,8 +1,10 @@
 ﻿using System;
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Attributes;
+
+using System.Linq.Expressions;
+using Expr = System.Linq.Expressions.Expression;
 
 namespace DBClientFiles.NET.Parsing.Reflection
 {
@@ -45,12 +47,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
             return _propInfo.GetCustomAttribute<T>();
         }
 
-        public override Expression MakeChildAccess(IMemberToken token)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override Expression MakeAccess(Expression parent)
+        public override Expr MakeAccess(Expr parent)
         {
             if (parent.Type != DeclaringTypeToken)
                 throw new ArgumentException(nameof(parent));

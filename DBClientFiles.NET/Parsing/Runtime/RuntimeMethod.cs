@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 
-namespace DBClientFiles.NET.Parsing.Serialization.Runtime
+namespace DBClientFiles.NET.Parsing.Runtime
 {
     internal abstract class RuntimeMethod<T> where T : Delegate
     {

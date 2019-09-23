@@ -6,7 +6,9 @@ using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions.WDC1.Binding;
 using System;
 using System.IO;
+
 using System.Linq.Expressions;
+using Expr = System.Linq.Expressions.Expression;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDC1
 {
@@ -21,11 +23,11 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
         /// </summary>
         public int? IndexColumn { get; }
 
-        private ParameterExpression DataStream { get; } = Expression.Parameter(typeof(Stream), "dataStream");
+        private ParameterExpression DataStream { get; } = Expr.Parameter(typeof(Stream), "dataStream");
 
-        private ParameterExpression RecordReader { get; } = Expression.Parameter(typeof(IRecordReader), "recordReader");
+        private ParameterExpression RecordReader { get; } = Expr.Parameter(typeof(IRecordReader), "recordReader");
 
-        protected override ParameterExpression ProducedInstance { get; } = Expression.Parameter(typeof(T).MakeByRefType(), "instance");
+        protected override ParameterExpression ProducedInstance { get; } = Expr.Parameter(typeof(T).MakeByRefType(), "instance");
 
 
         public SerializerGenerator(IBinaryStorageFile storage, FieldInfoHandler<MemberMetadata> fieldInfoBlock) : base(storage.Type, storage.Options.TokenType, 0)
@@ -36,9 +38,9 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
                 IndexColumn = storage.Header.IndexColumn;
         }
 
-        protected override Expression<MethodType> MakeLambda(Expression body)
+        protected override Expression<MethodType> MakeLambda(Expr body)
         {
-            return Expression.Lambda<MethodType>(body, new[] {
+            return Expr.Lambda<MethodType>(body, new[] {
                 DataStream,
                 RecordReader,
                 ProducedInstance
@@ -71,7 +73,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
             throw new InvalidOperationException();
         }
 
-        public override Expression GenerateExpressionReader(TypeToken typeToken, MemberToken memberToken)
+        public override Expr GenerateExpressionReader(TypeToken typeToken, MemberToken memberToken)
         {
             // NOTE: This only works because the generator tries to unroll any loop instead of rolling them
             var memberMetadata = GetMemberInfo(State++);
@@ -85,16 +87,16 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
                 case MemberCompressionType.Immediate:
                     if (typeToken.IsPrimitive)
                     {
-                        return Expression.Call(RecordReader,
+                        return Expr.Call(RecordReader,
                             typeToken.MakeGenericMethod(_IRecordReader.ReadImmediate),
-                            Expression.Constant(memberMetadata.Offset),
-                            Expression.Constant(memberMetadata.Size));
+                            Expr.Constant(memberMetadata.Offset),
+                            Expr.Constant(memberMetadata.Size));
                     }
                     else if (typeToken == typeof(string))
-                        return Expression.Call(RecordReader,
+                        return Expr.Call(RecordReader,
                             _IRecordReader.ReadStringImmediate,
-                            Expression.Constant(memberMetadata.Offset),
-                            Expression.Constant(memberMetadata.Size));
+                            Expr.Constant(memberMetadata.Offset),
+                            Expr.Constant(memberMetadata.Size));
 
                     break;
             }

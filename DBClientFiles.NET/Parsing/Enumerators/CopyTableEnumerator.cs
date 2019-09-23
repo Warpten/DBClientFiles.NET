@@ -1,4 +1,5 @@
-﻿using DBClientFiles.NET.Parsing.Shared.Segments;
+﻿using DBClientFiles.NET.Parsing.Runtime.Serialization;
+using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using System;
 using System.Collections.Generic;
@@ -12,9 +13,11 @@ namespace DBClientFiles.NET.Parsing.Enumerators
         private IEnumerator<int> _currentCopyIndex;
 
         private TValue _currentInstance;
+
         private Func<bool, TValue> InstanceFactory { get; }
 
         private readonly CopyTableHandler _blockHandler;
+        private readonly RuntimeCloner<TValue> _cloningFactory;
 
         public CopyTableEnumerator(Enumerator<TValue> impl) : base(impl)
         {
@@ -22,6 +25,8 @@ namespace DBClientFiles.NET.Parsing.Enumerators
             {
                 _blockHandler = Parser.FindSegmentHandler<CopyTableHandler>(SegmentIdentifier.CopyTable);
                 Debug.Assert(_blockHandler != null, "Block handler missing for copy table");
+
+                _cloningFactory = new RuntimeCloner<TValue>(Parser.Type, Parser.Options.TokenType);
 
                 InstanceFactory = forceReloadBase =>
                 {
@@ -47,7 +52,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
                     else if (_currentCopyIndex.MoveNext())
                     {
                         // If the copy table is not done, clone and change index
-                        Parser.Clone(in _currentInstance, out var copiedInstance);
+                        _cloningFactory.Clone(in _currentInstance, out var copiedInstance);
                         Parser.SetRecordKey(out copiedInstance, _currentCopyIndex.Current);
 
                         return copiedInstance;

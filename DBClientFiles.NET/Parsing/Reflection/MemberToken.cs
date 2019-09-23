@@ -1,6 +1,9 @@
 ﻿using System;
-using System.Linq.Expressions;
 using System.Reflection;
+
+using System.Linq.Expressions;
+using Expr = System.Linq.Expressions.Expression;
+
 
 namespace DBClientFiles.NET.Parsing.Reflection
 {
@@ -30,11 +33,9 @@ namespace DBClientFiles.NET.Parsing.Reflection
 
         public abstract bool IsReadOnly { get; }
 
-        public abstract Expression MakeChildAccess(IMemberToken token);
-
         public abstract T GetAttribute<T>() where T : Attribute;
 
-        public abstract Expression MakeAccess(Expression parent);
+        public abstract Expr MakeAccess(Expression parent);
 
         public bool Equals(MemberToken other)
         {

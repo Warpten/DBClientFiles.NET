@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq.Expressions;
 using DBClientFiles.NET.Parsing.Enums;
 using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Parsing.Serialization.Generators;
@@ -9,6 +8,9 @@ using DBClientFiles.NET.Parsing.Shared.Records;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions.WDB5.Binding;
+
+using System.Linq.Expressions;
+using Expr = System.Linq.Expressions.Expression;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDB5
 {
@@ -23,11 +25,11 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
         /// </summary>
         private readonly int? _indexColumn;
 
-        private ParameterExpression DataStream { get; } = Expression.Parameter(typeof(Stream), "dataStream");
+        private ParameterExpression DataStream { get; } = Expr.Parameter(typeof(Stream), "dataStream");
 
-        private ParameterExpression RecordReader { get; } = Expression.Parameter(typeof(IRecordReader), "recordReader");
+        private ParameterExpression RecordReader { get; } = Expr.Parameter(typeof(IRecordReader), "recordReader");
 
-        protected override ParameterExpression ProducedInstance { get; } = Expression.Parameter(typeof(T).MakeByRefType(), "instance");
+        protected override ParameterExpression ProducedInstance { get; } = Expr.Parameter(typeof(T).MakeByRefType(), "instance");
 
         public SerializerGenerator(IBinaryStorageFile storage) : base(storage.Type, storage.Options.TokenType, 0)
         {
@@ -37,9 +39,9 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
                 _indexColumn = storage.Header.IndexColumn;
         }
 
-        protected override Expression<MethodType> MakeLambda(Expression body)
+        protected override Expression<MethodType> MakeLambda(Expr body)
         {
-            return Expression.Lambda<MethodType>(body, new[] {
+            return Expr.Lambda<MethodType>(body, new[] {
                 DataStream,
                 RecordReader,
                 ProducedInstance
@@ -80,12 +82,15 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
         // ReSharper disable once InconsistentNaming
         private static readonly MemberMetadata RELATIONSHIP_TABLE_ENTRY = new MemberMetadata();
         static SerializerGenerator() {
-            RELATIONSHIP_TABLE_ENTRY.CompressionData.Type = MemberCompressionType.RelationshipData;
+            RELATIONSHIP_TABLE_ENTRY.CompressionData.Type = MemberCompressionType.Unknown;
         }
 
-        public override Expression GenerateExpressionReader(TypeToken typeToken, MemberToken memberToken)
+        public override Expr GenerateExpressionReader(TypeToken typeToken, MemberToken memberToken)
         {
             // NOTE: This only works because the generator tries to unroll any loop instead of rolling them
+            // Ideally we just call GetMemberInfo with memberToken and we get back the correct metadata
+            // unfortunately because of how loops can happen to be (user decides int[2] but each integer is
+            // parsed differently), this isn't easily doable. I'm open to ideas.
             var memberMetadata = GetMemberInfo(State++);
             if (memberMetadata == null)
                 return null;
@@ -93,7 +98,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
             switch (memberMetadata.CompressionData.Type)
             {
                 // We have to use immediate readers because all the other ones assume sequential reads
-                case MemberCompressionType.RelationshipData:
+                case MemberCompressionType.Unknown:
                     {
                         // This is used to parse values found in WMOMinimapTexture (@barncastle)
                         // Well ok fair it isn't yet but that's the plan
@@ -105,16 +110,16 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
                 case MemberCompressionType.Immediate:
                     if (typeToken.IsPrimitive)
                     {
-                        return Expression.Call(RecordReader,
+                        return Expr.Call(RecordReader,
                             typeToken.MakeGenericMethod(_IRecordReader.ReadImmediate),
-                            Expression.Constant(memberMetadata.Offset),
-                            Expression.Constant(memberMetadata.Size));
+                            Expr.Constant(memberMetadata.Offset),
+                            Expr.Constant(memberMetadata.Size));
                     }
                     else if (typeToken == typeof(string))
-                        return Expression.Call(RecordReader,
+                        return Expr.Call(RecordReader,
                             _IRecordReader.ReadStringImmediate,
-                            Expression.Constant(memberMetadata.Offset),
-                            Expression.Constant(memberMetadata.Size));
+                            Expr.Constant(memberMetadata.Offset),
+                            Expr.Constant(memberMetadata.Size));
 
                     break;
             }

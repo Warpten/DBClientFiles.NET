@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.2</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.0</TargetFrameworks>
     <TrimUnusedDependencies>true</TrimUnusedDependencies>
 
     <DebugType>pdbonly</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <Configurations>Debug;Release;DebugUnitTests;ReleaseUnitTests</Configurations>
 
-    <LangVersion>7.3</LangVersion>
+    <LangVersion>8.0</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <Version>0.0.1</Version>
@@ -58,6 +58,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="FastExpressionCompiler" Version="2.0.0" />
+    <PackageReference Include="FastExpressionCompiler.LightExpression" Version="2.0.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.1" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.2" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
