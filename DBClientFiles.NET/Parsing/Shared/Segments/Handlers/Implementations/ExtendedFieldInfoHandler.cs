@@ -26,9 +26,13 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
 
             // Offset, in bits, of the field in the record. *Can* be zero for fields outside of the record (index table, relationship table)
             // Size, in bits, of the current member. For arrays, this is the entire size of the array, packed.
-            var (fieldOffsetBits, fieldSizeBits, additionalDataSize, compressionType) = dataStream.Read<(ushort, ushort, int, MemberCompressionType)>();
 
-            currentField.CompressionData.Type = compressionType;
+            // Read in two passes because clr code causes padding.
+            // https://github.com/dotnet/coreclr/issues/25422#issuecomment-505931086
+            var (fieldOffsetBits, fieldSizeBits) = dataStream.Read<(ushort, ushort)>();
+            var (additionalDataSize, compressionType) = dataStream.Read<(int, int)>();
+
+            currentField.CompressionData.Type = (MemberCompressionType) compressionType;
             currentField.CompressionData.DataSize = additionalDataSize;
 
             // Retrieve the size from field info (byte-boundary) if it was defined

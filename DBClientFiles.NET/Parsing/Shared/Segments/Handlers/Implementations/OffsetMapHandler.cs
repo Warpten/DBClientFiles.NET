@@ -23,7 +23,10 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
 
             while (reader.DataStream.Position < (startOffset + length))
             {
-                var (key, value) = reader.DataStream.Read<(int, short)>();
+                // Read in two passes because clr code causes padding.
+                // https://github.com/dotnet/coreclr/issues/25422#issuecomment-505931086
+                var key = reader.DataStream.Read<int>();
+                var value = reader.DataStream.Read<short>();
 
                 if (key == 0 || value == 0)
                 {
