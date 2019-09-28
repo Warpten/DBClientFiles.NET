@@ -11,8 +11,6 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB2
 {
     internal sealed class StorageFile<T> : BinaryStorageFile<T>
     {
-        public override int RecordCount => Header.RecordCount;
-
         // Reuse the WDBC deserializer because it hasn't changed.
         private readonly WDBC.RuntimeDeserializer<T> _serializer;
         private AlignedSequentialRecordReader _recordReader;
@@ -56,10 +54,6 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB2
             _serializer.Method(DataStream, _recordReader, out var instance);
             return instance;
         }
-
-        internal override void Clone(in T source, out T clonedInstance) => throw new InvalidOperationException();
-        internal override int GetRecordKey(in T value) => throw new InvalidOperationException();
-        internal override void SetRecordKey(out T value, int recordKey) => throw new InvalidOperationException();
 
         protected override IRecordEnumerator<T> CreateEnumerator()
         {

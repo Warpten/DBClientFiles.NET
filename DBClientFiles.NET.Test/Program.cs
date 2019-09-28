@@ -1,5 +1,5 @@
 ﻿using DBClientFiles.NET.Collections.Generic;
-using DBClientFiles.NET.Types.WDBC;
+using DBClientFiles.NET.Types.WDC1;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -13,7 +13,7 @@ namespace DBClientFiles.NET.Runner
         [SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "Entry point")]
         public static void Main(string[] args)
         {
-            using (var fs = File.OpenRead(@"D:\Games\World of Warcraft 3.3.5\dbc\Achievement.dbc"))
+            using (var fs = File.OpenRead(@"D:\Games\Achievement.WDC1.db2"))
             using (var collection = new StorageEnumerable<Achievement>(StorageOptions.Default, fs))
                 ROOT_INSPECT(collection);
         }

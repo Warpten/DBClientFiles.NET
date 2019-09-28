@@ -13,7 +13,6 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
 
         public override int IndexColumn { get; } 
 
-
         private readonly SegmentReference _stringTableRef;
         private readonly SegmentReference _indexTable;
         private readonly SegmentReference _offsetMap;

@@ -9,6 +9,7 @@ using System.Linq;
 namespace DBClientFiles.NET.Parsing.Enumerators
 {
     internal class CopyTableEnumerator<TValue> : DecoratingEnumerator<TValue>
+        where TValue : notnull
     {
         private IEnumerator<int> _currentCopyIndex;
 
@@ -18,9 +19,15 @@ namespace DBClientFiles.NET.Parsing.Enumerators
 
         private readonly CopyTableHandler _blockHandler;
         private readonly RuntimeCloner<TValue> _cloningFactory;
+        private readonly RecordKeyAccessor<TValue> _keyAccessor;
 
-        public CopyTableEnumerator(Enumerator<TValue> impl) : base(impl)
+        public CopyTableEnumerator(Enumerator<TValue> impl, RecordKeyAccessor<TValue> keyAccessor) : base(impl)
         {
+            _keyAccessor = keyAccessor;
+            _currentInstance = default;
+            _currentCopyIndex = default;
+            _blockHandler = default;
+
             if (Parser.Header.CopyTable.Exists)
             {
                 _blockHandler = Parser.FindSegmentHandler<CopyTableHandler>(SegmentIdentifier.CopyTable);
@@ -37,14 +44,14 @@ namespace DBClientFiles.NET.Parsing.Enumerators
 
                         // If we got default(TValue) from the underlying implementation we really are done
                         if (EqualityComparer<TValue>.Default.Equals(_currentInstance, default))
-                            return default;
+                            return default!;
                     }
 
                     // If no copy table is found, prefetch it, and return the instance that will be cloned
                     if (_currentCopyIndex == null)
                     {
                         // Prepare copy table
-                        if (_blockHandler.TryGetValue(Parser.GetRecordKey(in _currentInstance), out var copyKeys))
+                        if (_blockHandler.TryGetValue(_keyAccessor.GetRecordKey(in _currentInstance), out var copyKeys))
                             _currentCopyIndex = copyKeys.GetEnumerator();
 
                         return _currentInstance;
@@ -53,7 +60,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
                     {
                         // If the copy table is not done, clone and change index
                         _cloningFactory.Clone(in _currentInstance, out var copiedInstance);
-                        Parser.SetRecordKey(out copiedInstance, _currentCopyIndex.Current);
+                        _keyAccessor.SetRecordKey(out copiedInstance, _currentCopyIndex.Current);
 
                         return copiedInstance;
                     }
@@ -61,7 +68,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
                     {
                         // We were unable to move next in the copy table, which means we are done with the current record
                         // and its copies. Re-setup the copy table check.
-                        _currentCopyIndex = null;
+                        _currentCopyIndex = default!;
                         
                         // Call ourselves again to initialize everything for the next record.
                         _currentInstance = InstanceFactory(true);
@@ -82,8 +89,8 @@ namespace DBClientFiles.NET.Parsing.Enumerators
 
         public override void Reset()
         {
-            _currentInstance = default;
-            _currentCopyIndex = null;
+            _currentInstance = default!;
+            _currentCopyIndex = default!;
 
             base.Reset();
         }
@@ -96,10 +103,10 @@ namespace DBClientFiles.NET.Parsing.Enumerators
         public override TValue Last()
         {
             var lastSource = base.Last();
-            if (_blockHandler != null && !_blockHandler.TryGetValue(Parser.GetRecordKey(in _currentInstance), out var copyKeys))
+            if (_blockHandler != null && !_blockHandler.TryGetValue(_keyAccessor.GetRecordKey(in _currentInstance), out var copyKeys))
             {
                 var lastCopyKey = copyKeys.Last();
-                Parser.SetRecordKey(out lastSource, lastCopyKey);
+                _keyAccessor.SetRecordKey(out lastSource, lastCopyKey);
             }
 
             return lastSource;

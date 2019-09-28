@@ -74,14 +74,12 @@ namespace DBClientFiles.NET.Parsing.Reflection
                 if (child.MemberInfo == reflectionInfo)
                     return child;
 
-            return null;
+            return default;
         }
 
         public T GetAttribute<T>() where T : Attribute
-        {
-            return Type.GetCustomAttribute<T>();
-        }
-
+            => Type.GetCustomAttribute<T>();
+    
         public TypeToken GetChildToken(Type type)
         {
             if (_declaredTypes.TryGetValue(type, out var typeInfo))
@@ -96,7 +94,8 @@ namespace DBClientFiles.NET.Parsing.Reflection
             if (!Type.IsArray)
                 throw new InvalidOperationException("not an array");
 
-            return GetChildToken(Type.GetElementType());
+            var elementType = Type.GetElementType();
+            return GetChildToken(elementType);
         }
 
         public bool HasChild(IMemberToken child)
@@ -109,7 +108,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
             return Type.ToString();
         }
 
-        public (MemberToken memberToken, Expression memberAccess) MakeMemberAccess(ref int index, Expr accessExpression, TypeTokenType type)
+        public (MemberToken memberToken, Expr memberAccess) MakeMemberAccess(ref int index, Expr accessExpression, TypeTokenType type)
         {
             foreach (var memberInfo in _members)
             {
@@ -125,9 +124,12 @@ namespace DBClientFiles.NET.Parsing.Reflection
 
                     for (var i = 0; i < memberInfo.Cardinality; ++i)
                     {
-                        Expr arrayAccessExpr = Expr.ArrayAccess(memberAccessExpr, Expression.Constant(i));
-                        
+                        Expr arrayAccessExpr = Expr.ArrayAccess(memberAccessExpr, Expr.Constant(i));
+
+                        // False positive, array check thank you
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
                         var token = elementTypeToken.MakeMemberAccess(ref index, arrayAccessExpr, type);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
 
                         if (token.memberAccess != null)
                             return token;
@@ -178,6 +180,9 @@ namespace DBClientFiles.NET.Parsing.Reflection
 
         public override bool Equals(object obj)
         {
+            if (obj == null)
+                return false;
+
             if (obj is TypeToken typeToken)
                 return typeToken.Type == Type;
 
@@ -198,12 +203,12 @@ namespace DBClientFiles.NET.Parsing.Reflection
         /// </summary>
         /// <param name="bounds"></param>
         /// <returns></returns>
-        public Expression NewArrayBounds(params Expr[] bounds) => Expr.NewArrayBounds(Type, bounds);
+        public Expr NewArrayBounds(params Expr[] bounds) => Expr.NewArrayBounds(Type, bounds);
 
         // Helper for above
-        public Expression NewArrayBounds(int bound) => Expr.NewArrayBounds(Type, Expression.Constant(bound));
+        public Expr NewArrayBounds(int bound) => Expr.NewArrayBounds(Type, Expression.Constant(bound));
 
-        public Expression NewExpression() => Expr.New(Type);
+        public Expr NewExpression() => Expr.New(Type);
 
         #endregion
 

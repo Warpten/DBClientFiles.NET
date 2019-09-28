@@ -10,8 +10,6 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
 {
     internal sealed class StorageFile<T> : BinaryStorageFile<T>
     {
-        public override int RecordCount => Header.RecordCount;
-
         private Serializer<T> _serializer;
 
         public StorageFile(in StorageOptions options, in Header header, Stream input) : base(in options, new HeaderAccessor(in header), input)
@@ -65,9 +63,5 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
             using (var recordReader = new UnalignedRecordReader(this, length))
                 return _serializer.Deserialize(recordReader);
         }
-
-        internal override void Clone(in T source, out T clonedInstance) => _serializer.Clone(in source, out clonedInstance);
-        internal override int GetRecordKey(in T value) => _serializer.GetRecordKey(in value);
-        internal override void SetRecordKey(out T value, int recordKey) => _serializer.SetRecordKey(out value, recordKey);
     }
 }

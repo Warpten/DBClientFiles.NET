@@ -30,18 +30,12 @@ namespace DBClientFiles.NET.Parsing.Runtime.Serialization
         {
             _iteratorProvider = new ParameterProvider(typeof(int));
 
-            switch (typeTokenType)
+            MemberProvider = typeTokenType switch
             {
-                case TypeTokenType.Field:
-                    MemberProvider = t => t.Fields;
-                    break;
-                case TypeTokenType.Property:
-                    MemberProvider = t => t.Properties;
-                    break;
-                default:
-                    throw new InvalidOperationException();
-            }
-
+                TypeTokenType.Field => t => t.Fields,
+                TypeTokenType.Property => t => t.Properties,
+                _ => throw new InvalidOperationException(),
+            };
             Members = MemberProvider(typeToken);
         }
 
@@ -120,13 +114,16 @@ namespace DBClientFiles.NET.Parsing.Runtime.Serialization
             if (defaultArrayInitializer) // Otherwise just assign new T[N];
                 arrayInitializer = elementTypeToken.NewArrayBounds(arraySizeExpression).ToMethodBlock();
 
-            block.Children.Add(new Method.Assignment(memberAccess, arrayInitializer));
-            // If the generator provided a specialized initializer, exit now.
-            if (!defaultArrayInitializer)
-                return;
+            if (arrayInitializer != null)
+            {
+                block.Children.Add(new Method.Assignment(memberAccess, arrayInitializer));
+                // If the generator provided a specialized initializer, exit now.
+                if (!defaultArrayInitializer)
+                    return;
+            }
 
             var loopUnrollingNeeded = OnLoopGenerationStart(memberToken) != UnrollingMode.Never;
-            if (!loopUnrollingNeeded)
+            if (!loopUnrollingNeeded) // Fast path to reduce allocations
                 arraySize = 1;
 
             var elementAccesses = ArrayPool<Method.DelegatedArrayAccess>.Shared.Rent(arraySize);

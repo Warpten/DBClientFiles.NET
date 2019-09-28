@@ -69,7 +69,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         {
             foreach (var node in Children)
             {
-                if (node.TypeToken != null)
+                if (node.TypeToken != default!)
                 {
                     var reader = generator.GenerateExpressionReader(node.TypeToken, node.MemberToken);
                     if (reader != null)

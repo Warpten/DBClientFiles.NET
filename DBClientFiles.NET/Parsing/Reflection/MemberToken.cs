@@ -35,7 +35,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
 
         public abstract T GetAttribute<T>() where T : Attribute;
 
-        public abstract Expr MakeAccess(Expression parent);
+        public abstract Expr MakeAccess(Expr parent);
 
         public bool Equals(MemberToken other)
         {

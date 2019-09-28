@@ -8,18 +8,16 @@ namespace DBClientFiles.NET.Collections.Generic
 {
     public class StorageList<T> : IList<T>, IDisposable
     {
-        private IList<T> _impl;
-
-        private StorageOptions _options;
+        private readonly IList<T> _impl;
+        private readonly StorageOptions _options;
         public ref readonly StorageOptions Options => ref _options;
 
         public StorageList(in StorageOptions options, Stream dataStream)
         {
             _options = options;
 
-            var enumerable = new StorageEnumerable<T>(options, dataStream);
-
-            _impl = new List<T>(enumerable);
+            using (var enumerable = new StorageEnumerable<T>(options, dataStream))
+                _impl = new List<T>(enumerable);
         }
 
         public void Dispose()

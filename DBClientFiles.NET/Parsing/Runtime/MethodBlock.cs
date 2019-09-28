@@ -18,8 +18,6 @@ namespace DBClientFiles.NET.Parsing.Runtime
 
     internal static class Method
     {
-        private static readonly IMethodBlock[] NoBlocks = new IMethodBlock[0];
-
         internal class BlockCollection : IMethodBlock, IEquatable<BlockCollection>
         {
             public readonly List<IMethodBlock> Children = new List<IMethodBlock>();
@@ -174,7 +172,7 @@ namespace DBClientFiles.NET.Parsing.Runtime
             public DelegatedArrayAccess(IMethodBlock array)
             {
                 Array = array;
-                Index = default;
+                Index = default!;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

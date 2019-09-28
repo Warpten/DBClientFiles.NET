@@ -5,6 +5,7 @@ using System.IO;
 namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers
 {
     internal abstract class MultiDictionaryBlockHandler<TKey, TValue> : DictionaryBlockHandler<TKey, List<TValue>>
+        where TKey : notnull
     {
         protected sealed override void ReadPair(Stream dataStream)
         {

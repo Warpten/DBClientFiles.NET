@@ -24,11 +24,6 @@ namespace DBClientFiles.NET.Parsing.Versions
         public ref readonly StorageOptions Options => ref _options;
 
         /// <summary>
-        /// This is the total number of elements in the file.
-        /// </summary>
-        public abstract int RecordCount { get; }
-
-        /// <summary>
         /// The first block of the file (typically its header).
         /// </summary>
         public Segment Head { get; protected set; }
@@ -122,10 +117,5 @@ namespace DBClientFiles.NET.Parsing.Versions
         /// <param name="length"></param>
         /// <returns></returns>
         public abstract TValue ObtainRecord(long offset, long length);
-
-        internal abstract int GetRecordKey(in TValue value);
-        internal abstract void SetRecordKey(out TValue value, int recordKey);
-
-        internal abstract void Clone(in TValue source, out TValue clonedInstance);
     }
 }

@@ -2,9 +2,13 @@
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions;
 using System;
+using System.Buffers;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace DBClientFiles.NET.Parsing.Shared.Records
 {
@@ -12,74 +16,84 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
     /// An implementation of <see cref="IRecordReader"/> tailored for WDB5 and WDB6. The values it reads are always
     /// aligned to byte boundaries.
     /// </summary>
-    internal sealed unsafe class ByteAlignedRecordReader : IRecordReader
+    internal abstract class ByteAlignedRecordReader : IDisposable
     {
+        public static class Methods
+        {
+            public static readonly MethodInfo Read = typeof(ByteAlignedRecordReader).GetMethod("Read", new[] { typeof(int), typeof(int) });
+            public static readonly MethodInfo ReadString = typeof(ByteAlignedRecordReader).GetMethod("ReadString", new[] { typeof(int), typeof(int) });
+        }
+
         private byte[] _stagingBuffer;
 
-        private readonly StringBlockHandler _stringBlock;
-
-        public ByteAlignedRecordReader(IBinaryStorageFile fileReader, int recordSize)
+        protected ByteAlignedRecordReader()
         {
-            _stringBlock = fileReader.FindSegment(SegmentIdentifier.StringBlock)?.Handler as StringBlockHandler;
+        }
 
-            _stagingBuffer = new byte[recordSize + 8]; // Allocating 8 extra bytes for packed reads to make sure we don't start reading another process's memory out of bad luck
+        protected ByteAlignedRecordReader(int recordSize)
+        {
+            _stagingBuffer = ArrayPool<byte>.Shared.Rent(recordSize + 8);
         }
 
         public void Dispose()
         {
+            if (_stagingBuffer != null)
+                ArrayPool<byte>.Shared.Return(_stagingBuffer);
         }
 
         public void LoadStream(Stream dataStream, int recordSize)
         {
-            Debug.Assert(recordSize + 8 <= _stagingBuffer.Length, "The buffer of ByteAlignedRecordReader is expected to be able to contain every record");
+            // Realloc' up if need be
+            if (_stagingBuffer != null && _stagingBuffer.Length < recordSize)
+            {
+                ArrayPool<byte>.Shared.Return(_stagingBuffer);
+                _stagingBuffer = ArrayPool<byte>.Shared.Rent(recordSize + 8);
+            }
 
             dataStream.Read(_stagingBuffer, 0, recordSize);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T Read<T>() where T : unmanaged
-        {
-            throw new NotImplementedException();
-        }
-
-        public string ReadString()
-        {
-            throw new NotImplementedException();
-        }
-
-        public T ReadImmediate<T>(int bitOffset, int bitCount) where T : unmanaged
+        public T Read<T>(int bitOffset, int bitCount) where T : unmanaged
         {
             // Values here should always be aligned
-            Debug.Assert((bitCount & 7) == 0, "WDB5 and WDB6 values should always be aligned to 8-byte boundaries!");
+            Debug.Assert((bitCount & 7) == 0, "WDB5 and WDB6 values should always be aligned to 8-bit boundary!");
 
-            var byteOffset = bitOffset / 8;
-            var baseShift = 64 - bitCount;
-
-            var value = (*(ulong*) Unsafe.AsPointer(ref _stagingBuffer[byteOffset]) << (baseShift - (bitOffset & 7))) >> baseShift;
-            return *(T*)&value;
+            var longValue = Unsafe.As<byte, ulong>(ref _stagingBuffer[bitOffset / 8]);
+            longValue = (longValue << (64 - bitCount - (bitOffset % 8))) >> (64 - bitCount);
+            return Unsafe.As<ulong, T>(ref longValue);
         }
 
-        public string ReadString(int bitOffset, int bitCount)
-        {
-            throw new NotImplementedException();
-            /*
-            // Values here should always be aligned
-            Debug.Assert((bitCount & 7) == 0, "WDB5 and WDB6 values should always be aligned to 8-byte boundaries!");
+        public abstract string ReadString(int bitOffset, int bitCount);
 
-            if (_stringBlock == null)
+        public sealed class WithStringBlock : ByteAlignedRecordReader
+        {
+            private readonly StringBlockHandler _stringBlock;
+
+            public WithStringBlock(StringBlockHandler stringBlock, int recordSize) : base(recordSize)
+                => _stringBlock = stringBlock;
+        
+            public override string ReadString(int bitOffset, int bitCount)
+                => _stringBlock[Read<int>(bitOffset, bitCount)];
+        }
+
+        public sealed class InlinedStrings : ByteAlignedRecordReader
+        {
+            private readonly Encoding _encoding;
+
+            public InlinedStrings(IBinaryStorageFile fileReader) : base()
             {
-                var startCursor = (sbyte*)Unsafe.AsPointer(ref _stagingBuffer[_byteCursor]);
-                var endCursor = startCursor;
-                while (*endCursor != 0)
-                    ++endCursor;
-
-                _byteCursor += (int)(endCursor - startCursor);
-
-                return new string(startCursor, 0, (int)(endCursor - startCursor));
+                _encoding = fileReader.Options.Encoding ?? Encoding.UTF8;
             }
 
-            return _stringBlock[ReadImmediate<uint>(bitOffset, bitCount)];*/
-        }
+            public override unsafe string ReadString(int bitOffset, int bitCount)
+            {
+                var startCursor = (byte*) Unsafe.AsPointer(ref _stagingBuffer[bitOffset / 8]);
+                var stringLength = 0;
+                while (startCursor[stringLength] != 0)
+                    ++stringLength;
 
+                return _encoding.GetString(startCursor, stringLength);
+            }
+        }
     }
 }

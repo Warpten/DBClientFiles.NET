@@ -1,4 +1,5 @@
 ﻿using DBClientFiles.NET.Parsing.Enumerators;
+using DBClientFiles.NET.Parsing.Runtime.Serialization;
 using DBClientFiles.NET.Parsing.Shared.Records;
 using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
@@ -10,9 +11,8 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
 {
     internal sealed class StorageFile<T> : BinaryStorageFile<T>
     {
-        public override int RecordCount => Header.RecordCount + Header.CopyTable.Length / (2 * 4);
-
-        private Serializer<T> _serializer;
+        private RuntimeDeserializer<T> _serializer;
+        private ByteAlignedRecordReader _recordReader;
 
         public StorageFile(in StorageOptions options, in Header header, Stream input) : base(options, new HeaderAccessor(in header), input)
         {
@@ -51,10 +51,16 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
             if (step != ParsingStep.Segments)
                 return;
 
-            _serializer = new Serializer<T>(this);
+            _serializer = new RuntimeDeserializer<T>(this);
+
+            var stringBlock = FindSegmentHandler<StringBlockHandler>(SegmentIdentifier.StringBlock);
+            if (stringBlock != null)
+                _recordReader = new ByteAlignedRecordReader.WithStringBlock(stringBlock, Header.RecordSize);
+            else
+                _recordReader = new ByteAlignedRecordReader.InlinedStrings(this);
         }
 
-        [SuppressMessage("Code Quality", "IDE0067:Dispose objects before losing scope", Justification = "False positive - object is returned")]
+        [SuppressMessage("Code Quality", "IDE0067:Dispose objects before losing scope", Justification = "FP: Decorator pattern")]
         protected override IRecordEnumerator<T> CreateEnumerator()
         {
             var enumerator = !Header.OffsetMap.Exists
@@ -64,16 +70,13 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
             return enumerator.WithIndexTable().WithCopyTable();
         }
 
-        internal override int GetRecordKey(in T value) => _serializer.GetRecordKey(in value);
-        internal override void SetRecordKey(out T value, int recordKey) => _serializer.SetRecordKey(out value, recordKey);
-        internal override void Clone(in T source, out T clonedInstance) => _serializer.Clone(in source, out clonedInstance);
-
         public override T ObtainRecord(long offset, long length)
         {
             DataStream.Position = offset;
 
-            using (var recordReader = new ByteAlignedRecordReader(this, (int) length))
-                return _serializer.Deserialize(recordReader, this);
+            _recordReader.LoadStream(DataStream, (int) length);
+            _serializer.Method(in _recordReader, out var instance);
+            return instance;
         }
     }
 }

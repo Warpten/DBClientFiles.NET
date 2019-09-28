@@ -4,6 +4,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System;
 
 namespace DBClientFiles.NET.Utils.Extensions
 {
@@ -71,10 +72,10 @@ namespace DBClientFiles.NET.Utils.Extensions
             return sb.ToString();
         }
 
-        public static T Read<T>(this Stream dataStream) where T : struct
+        public static unsafe T Read<T>(this Stream dataStream) where T : struct
         {
             var value = default(T);
-            var span = MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref value, 1));
+            var span = new Span<byte>(Unsafe.AsPointer(ref value), Unsafe.SizeOf<T>());
 #if DEBUG
             Debug.Assert(Unsafe.SizeOf<T>() == dataStream.Read(span), $"Unable to read {typeof(T).Name} from stream, stream too short");
 #else

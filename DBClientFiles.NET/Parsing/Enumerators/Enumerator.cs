@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using DBClientFiles.NET.Parsing.Runtime.Serialization;
 using DBClientFiles.NET.Parsing.Versions;
 
 namespace DBClientFiles.NET.Parsing.Enumerators
@@ -13,10 +14,14 @@ namespace DBClientFiles.NET.Parsing.Enumerators
     {
         internal BinaryStorageFile<TValue> Parser { get; }
 
+        private RecordKeyAccessor<TValue> _keyAccessor;
+
         protected Enumerator(BinaryStorageFile<TValue> owner)
         {
             Parser = owner;
             Current = default;
+
+            _keyAccessor = new RecordKeyAccessor<TValue>(owner.Type, owner.Header.IndexColumn, owner.Options.TokenType);
         }
 
         #region IEnumerator
@@ -47,14 +52,14 @@ namespace DBClientFiles.NET.Parsing.Enumerators
         public virtual Enumerator<TValue> WithCopyTable()
         {
             return Parser.Header.CopyTable.Exists
-                ? new CopyTableEnumerator<TValue>(this)
+                ? new CopyTableEnumerator<TValue>(this, _keyAccessor)
                 : this;
         }
 
         public virtual Enumerator<TValue> WithIndexTable()
         {
             return Parser.Header.IndexTable.Exists
-                ? new IndexTableEnumerator<TValue>(this)
+                ? new IndexTableEnumerator<TValue>(this, _keyAccessor)
                 : this;
         }
 

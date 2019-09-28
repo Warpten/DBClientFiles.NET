@@ -12,11 +12,6 @@ namespace DBClientFiles.NET.Parsing.Versions
     /// </summary>
     internal interface IBinaryStorageFile : IDisposable
     {
-        /// <summary>
-        /// The total amount of records in the file.
-        /// </summary>
-        int RecordCount { get; }
-
         TypeToken Type { get; }
 
         Stream DataStream { get; }

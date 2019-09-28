@@ -1,12 +1,13 @@
 ﻿using DBClientFiles.NET.Parsing.Shared.Headers;
 using DBClientFiles.NET.Utils;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDB5
 {
-    [StructLayout(LayoutKind.Sequential)]
-    internal readonly struct Header : IHeader
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 44)]
+    internal struct Header : IHeader
     {
         public readonly int RecordCount;
         public readonly int FieldCount;
@@ -24,7 +25,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
         /// <br/>
         /// The important part is that it's either <c>(ushort Flags, short IndexColumn)</c> or <c>uint Flags</c>.
         /// </summary>
-        private readonly Variant<(ushort Flags, short IndexColumn)> _variant1;
+        private uint _variant1;
 
         /// <summary>
         /// WDB5 files before build 21737 were using <c>uint Build</c> instead of <c>uint LayoutHash</c>.
@@ -37,11 +38,11 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
 
         public int IndexColumn => IsLegacyHeader
             ? 0 // Assume first column
-            : _variant1.Value.IndexColumn;
+            : Unsafe.As<uint, (ushort Flags, ushort IndexColumn)>(ref _variant1).IndexColumn;
 
         public uint Flags => IsLegacyHeader
-            ? _variant1.Cast<uint>()
-            : _variant1.Value.Flags;
+            ? _variant1
+            : Unsafe.As<uint, (ushort Flags, ushort IndexColumn)>(ref _variant1).Flags;
 
         public IBinaryStorageFile<T> MakeStorageFile<T>(in StorageOptions options, Stream dataStream)
             => new StorageFile<T>(in options, in this, dataStream);

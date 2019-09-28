@@ -6,6 +6,7 @@ using System.IO;
 namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers
 {
     internal abstract class DictionaryBlockHandler<TKey, TValue> : ISegmentHandler
+        where TKey : notnull
     {
         private readonly Dictionary<TKey, TValue> _store = new Dictionary<TKey, TValue>();
 

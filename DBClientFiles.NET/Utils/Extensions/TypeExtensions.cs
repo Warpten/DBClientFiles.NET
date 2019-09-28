@@ -32,15 +32,13 @@ namespace DBClientFiles.NET.Utils.Extensions
 
         public static TypeTokenType ToTypeToken(this MemberTypes type)
         {
-            switch (type)
+            return type switch
             {
-                case MemberTypes.Field:
-                    return TypeTokenType.Field;
-                case MemberTypes.Property:
-                    return TypeTokenType.Property;
-            }
+                MemberTypes.Field => TypeTokenType.Field,
+                MemberTypes.Property => TypeTokenType.Property,
 
-            throw new ArgumentOutOfRangeException(nameof(type));
+                _ => throw new ArgumentOutOfRangeException(nameof(type)),
+            };
         }
     }
 }
