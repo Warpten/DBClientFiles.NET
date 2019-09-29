@@ -22,15 +22,16 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
         protected override T ReadElement(Stream dataStream)
         {
             var currentField = _fields[_index];
-            ++_index;
 
             // Offset, in bits, of the field in the record. *Can* be zero for fields outside of the record (index table, relationship table)
             // Size, in bits, of the current member. For arrays, this is the entire size of the array, packed.
 
-            // Read in two passes because clr code causes padding.
+            // Read one by one because the CLR adds padding (ValueTuple has LayoutKind.Auto)
             // https://github.com/dotnet/coreclr/issues/25422#issuecomment-505931086
-            var (fieldOffsetBits, fieldSizeBits) = dataStream.Read<(ushort, ushort)>();
-            var (additionalDataSize, compressionType) = dataStream.Read<(int, int)>();
+            var fieldOffsetBits = dataStream.Read<ushort>();
+            var fieldSizeBits = dataStream.Read<ushort>();
+            var additionalDataSize = dataStream.Read<int>();
+            var compressionType = dataStream.Read<int>();
 
             currentField.CompressionData.Type = (MemberCompressionType) compressionType;
             currentField.CompressionData.DataSize = additionalDataSize;
@@ -65,7 +66,10 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
                 case MemberCompressionType.SignedImmediate:
                 case MemberCompressionType.Immediate:
                 {
-                    var (_, _, flags) = dataStream.Read<(int, int, uint)>();
+                    // Read one by one because the CLR adds padding (ValueTuple has LayoutKind.Auto)
+                    // https://github.com/dotnet/coreclr/issues/25422#issuecomment-505931086
+                    dataStream.Position += 2 * sizeof(int);
+                    var flags = dataStream.Read<uint>();
                       
                     if ((flags & 0x01) != 0 || currentField.CompressionData.Type == MemberCompressionType.SignedImmediate)
                         currentField.Properties |= MemberMetadataProperties.Signed;
@@ -73,15 +77,16 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
                 }
                 case MemberCompressionType.CommonData:
                 {
-                    var (defaultValue, _, _) = dataStream.Read<(Variant<int>, int, int)>();
+                    var (defaultValue, _, _) = dataStream.Read<(int, int, int)>();
 
-                    currentField.DefaultValue = defaultValue;
+                    currentField.DefaultValue = (Variant<int>) defaultValue;
                     break;
                 }
                 case MemberCompressionType.BitpackedPalletArrayData:
                 case MemberCompressionType.BitpackedPalletData:
                 {
-                    var (_, _, arrayCount) = dataStream.Read<(int, int, int)>();
+                    dataStream.Position += 2 * sizeof(int);
+                    var arrayCount = dataStream.Read<int>();
                     if (currentField.CompressionData.Type == MemberCompressionType.BitpackedPalletArrayData)
                     {
                         currentField.Cardinality = arrayCount;
@@ -99,6 +104,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
             if (currentField.CompressionData.Type != MemberCompressionType.BitpackedPalletArrayData && fieldInfoSize != 0)
                 currentField.Cardinality = currentField.Size / fieldInfoSize;
 
+            ++_index;
             return currentField;
         }
 

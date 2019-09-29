@@ -13,7 +13,8 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
 
         protected override T ReadElement(Stream dataStream)
         {
-            var (collapsedBitCount, bytePosition) = dataStream.Read<(short, ushort)>();
+            var collapsedBitCount = dataStream.Read<short>();
+            var bytePosition = dataStream.Read<ushort>();
 
             var instance = new T {
                 Cardinality = 1

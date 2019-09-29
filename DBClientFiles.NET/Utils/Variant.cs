@@ -8,7 +8,14 @@ namespace DBClientFiles.NET.Utils
     {
         public T Value;
 
+        public Variant(T value)
+        {
+            Value = value;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public U Cast<U>() where U : struct => Unsafe.As<T, U>(ref Value);
+
+        public static explicit operator Variant<T>(T value) => new Variant<T>(value);
     }
 }
