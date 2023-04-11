@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks>net7.0</TargetFrameworks>
     <TrimUnusedDependencies>true</TrimUnusedDependencies>
 
     <DebugType>pdbonly</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <Configurations>Debug;Release;DebugUnitTests;ReleaseUnitTests</Configurations>
 
-    <LangVersion>8.0</LangVersion>
+    <LangVersion>11.0</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <TieredCompilation>false</TieredCompilation>
 
@@ -42,6 +42,12 @@
     <DefineConstants>DEBUG</DefineConstants>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="obj\**" />
+    <EmbeddedResource Remove="obj\**" />
+    <None Remove="obj\**" />
+  </ItemGroup>
+
   <!-- References -->
 
   <!--<ItemGroup Condition="'$(Configuration)'=='RelWithMemoryProfiling'">
@@ -55,13 +61,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="FastExpressionCompiler" Version="2.0.0" />
-    <PackageReference Include="FastExpressionCompiler.LightExpression" Version="2.0.0" />
-    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="1.1.46104" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.6.0" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.6.0" />
+    <PackageReference Include="FastExpressionCompiler" Version="3.3.4" />
+    <PackageReference Include="FastExpressionCompiler.LightExpression" Version="3.3.4" />
+    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="2.4.416101" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.7.0" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-    <PackageReference Include="System.Buffers" Version="4.5.0" />
+    <PackageReference Include="System.Buffers" Version="4.5.1" />
   </ItemGroup>
 
   <ItemGroup>
