@@ -1,16 +1,19 @@
 using DBClientFiles.NET.Parsing.Versions;
+using System;
 using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
 {
-    internal sealed class StringBlockHandler : ISegmentHandler, IDictionary<long, string>
+    internal sealed class StringBlockHandler : ISegmentHandler
     {
-        private readonly Dictionary<long, string> _blockData = new Dictionary<long, string>(5000);
+        private IMemoryOwner<byte> _blockData;
+        private Dictionary<long /* offset */, long /* length */> _pointers = new(1024);
 
         #region IBlockHandler
         public void ReadSegment(IBinaryStorageFile reader, long startOffset, long length)
@@ -28,34 +31,25 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
             if (length <= 2)
                 return;
 
+            _blockData = MemoryPool<byte>.Shared.Rent((int)length);
+
             reader.DataStream.Position = startOffset;
+            reader.DataStream.Read(_blockData.Memory.Span);
 
-            // Next target: Pray for C# 9 to expose null-terminated strings
-#if EXPERIMENTAL_STRINGBLOCK // This nets about 4% gain on string parsing alone (which is hardly a bottleneck, but still)
-            var internStrings = reader.Options.InternStrings;
-
-            // Requesting bytes aligned to int boundary
-            // Add an extra byte to ensure we never go out of bounds
-            var alignedLength = ((int) length + sizeof(int) - 1) & ~(sizeof(int) - 1);
-            var byteBuffer = ArrayPool<byte>.Shared.Rent(alignedLength);
-            Span<byte> byteSpan = new Span<byte>(byteBuffer, 0, alignedLength);
-
-            // Read exactly what is needed
-            reader.DataStream.Read(byteSpan.Slice(0, (int) length));
-            // Zero the trailing bytes because Rent does not guarantee that
-            // One is enough to ensure mask checking will fail
-            byteBuffer[length] = 0x00;
-
+            // Scan through the buffer, 4 bytes at a time, looking for null terminators
             var stringOffset = 1L;
             while (stringOffset < length)
             {
-                var wordSpan = MemoryMarshal.Cast<byte, uint>(byteSpan.Slice((int) stringOffset));
+                Span<uint> wordBuffer = MemoryMarshal.Cast<byte, uint>(_blockData.Memory.Span[(int) stringOffset..]);
 
                 var wordCursor = 0;
-                var mask = wordSpan[wordCursor];
-                while (((mask - 0x01010101) & ~mask & 0x80808080) == 0)
-                    mask = wordSpan[++wordCursor];
+                var mask = wordBuffer[wordCursor];
 
+                // Iterate until a zero byte is hit
+                while (((mask - 0x01010101) & ~mask & 0x80808080) == 0)
+                    mask = wordBuffer[++wordCursor];
+
+                // Identify the exact zero byte
                 var trailingCount = 0;
                 if ((mask & 0x000000FF) != 0x00)
                 {
@@ -68,90 +62,35 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
                     }
                 }
 
-                var strLength = (wordCursor * sizeof(int) + trailingCount);
-                if (strLength > 0)
+                // Compute actual string length and insert it
+                var stringLength = wordCursor * sizeof(uint) + trailingCount;
+                if (stringLength > 0)
                 {
-                    var value = (reader.Options.Encoding ?? Encoding.UTF8).GetString(byteBuffer, (int) stringOffset, strLength);
-                    if (internStrings)
-                        value = string.Intern(value);
+                    _pointers.Add(stringOffset, stringLength);
 
-                    _blockData.Add(stringOffset, value);
-                    stringOffset += strLength + 1;
+                    // Skip to the next string
+                    stringOffset += stringLength + 1;
                 }
                 else
-                {
-                    ++stringOffset;
-                }
+                    stringOffset += 1;
             }
 
-            ArrayPool<byte>.Shared.Return(byteBuffer);
-
-#else
-            var byteBuffer = ArrayPool<byte>.Shared.Rent((int) length);
-            var actualLength = reader.DataStream.Read(byteBuffer, 0, (int) length);
-
-            Debug.Assert(actualLength == length);
-
-            // We start at 1 because 0 is always 00, aka null string
-            var cursor = 1;
-            while (cursor != length)
-            {
-                var stringStart = cursor;
-                while (byteBuffer[cursor] != 0)
-                    ++cursor;
-
-                if (cursor - stringStart > 1)
-                {
-                    var value = (reader.Options.Encoding ?? Encoding.UTF8).GetString(byteBuffer, stringStart, cursor - stringStart);
-                    if (reader.Options.InternStrings)
-                        value = string.Intern(value);
-
-                    _blockData[stringStart] = value;
-                }
-
-                cursor += 1;
-            }
-
-            ArrayPool<byte>.Shared.Return(byteBuffer);
-#endif
         }
 
         public void WriteSegment<T, U>(T writer) where T : BinaryWriter, IWriter<U>
         {
 
         }
-#endregion
+        #endregion
 
-#region IDictionary<long, String>
-        public string this[long key]
+        public ReadOnlyMemory<byte> ReadUTF8(long offset)
         {
-            get => TryGetValue(key, out var value) ? value : string.Empty;
-            set => _blockData[key] = value;
+            if (_pointers.TryGetValue(offset, out var length))
+                return _blockData.Memory.Slice((int) offset, (int) length);
+
+            return Memory<byte>.Empty;
         }
 
-        public ICollection<long> Keys => _blockData.Keys;
-        public ICollection<string> Values => _blockData.Values;
-        public int Count => _blockData.Count;
-        public bool IsReadOnly => true;
-
-        public void Add(long key, string value) => _blockData.Add(key, value);
-        public void Add(KeyValuePair<long, string> item) => ((IDictionary<long, string>)_blockData).Add(item);
-
-        public void Clear() => _blockData.Clear();
-
-        public bool Contains(KeyValuePair<long, string> item) => ((IDictionary<long, string>)_blockData).Contains(item);
-        public bool ContainsKey(long key) => _blockData.ContainsKey(key);
-
-        public void CopyTo(KeyValuePair<long, string>[] array, int arrayIndex) => ((IDictionary<long, string>)_blockData).CopyTo(array, arrayIndex);
-
-        public bool Remove(long key) => _blockData.Remove(key);
-        public bool Remove(KeyValuePair<long, string> item) => ((IDictionary<long, string>)_blockData).Remove(item);
-
-        public bool TryGetValue(long key, out string value) => _blockData.TryGetValue(key, out value);
-
-        public IEnumerator<KeyValuePair<long, string>> GetEnumerator() => _blockData.GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)_blockData).GetEnumerator();
-#endregion
+        public string ReadString(long offset) => Encoding.UTF8.GetString(ReadUTF8(offset).Span);
     }
 }

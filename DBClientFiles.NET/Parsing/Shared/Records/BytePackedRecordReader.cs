@@ -22,6 +22,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
         {
             public static readonly MethodInfo Read = typeof(ByteAlignedRecordReader).GetMethod("Read", new[] { typeof(int), typeof(int) });
             public static readonly MethodInfo ReadString = typeof(ByteAlignedRecordReader).GetMethod("ReadString", new[] { typeof(int), typeof(int) });
+            public static readonly MethodInfo ReadUTF8 = typeof(ByteAlignedRecordReader).GetMethod("ReadUTF8", new[] { typeof(int), typeof(int) });
         }
 
         private byte[] _stagingBuffer;
@@ -64,6 +65,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
         }
 
         public abstract string ReadString(int bitOffset, int bitCount);
+        public abstract ReadOnlyMemory<byte> ReadUTF8(int bitOffset, int bitCount);
 
         public sealed class WithStringBlock : ByteAlignedRecordReader
         {
@@ -73,7 +75,10 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
                 => _stringBlock = stringBlock;
         
             public override string ReadString(int bitOffset, int bitCount)
-                => _stringBlock[Read<int>(bitOffset, bitCount)];
+                => _stringBlock.ReadString(Read<int>(bitOffset, bitCount));
+
+            public override ReadOnlyMemory<byte> ReadUTF8(int bitOffset, int bitCount)
+                => _stringBlock.ReadUTF8(Read<int>(bitOffset, bitCount));
         }
 
         public sealed class InlinedStrings : ByteAlignedRecordReader
@@ -93,6 +98,16 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
                     ++stringLength;
 
                 return _encoding.GetString(startCursor, stringLength);
+            }
+
+            public override unsafe ReadOnlyMemory<byte> ReadUTF8(int bitOffset, int bitCount)
+            {
+                var startCursor = (byte*) Unsafe.AsPointer(ref _stagingBuffer[bitOffset / 8]);
+                var stringLength = 0;
+                while (startCursor[stringLength] != 0)
+                    ++stringLength;
+
+                return new ReadOnlyMemory<byte>(_stagingBuffer, bitOffset / 8, stringLength);
             }
         }
     }

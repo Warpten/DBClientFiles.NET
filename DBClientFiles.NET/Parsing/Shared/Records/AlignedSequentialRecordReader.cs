@@ -16,6 +16,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
         {
             public static readonly MethodInfo Read = typeof(AlignedSequentialRecordReader).GetMethod("Read", new[] { typeof(Stream) });
             public static readonly MethodInfo ReadString = typeof(AlignedSequentialRecordReader).GetMethod("ReadString", new[] { typeof(Stream) });
+            public static readonly MethodInfo ReadUTF8 = typeof(AlignedSequentialRecordReader).GetMethod("ReadUTF8", new[] { typeof(Stream) });
         }
 
         private readonly StringBlockHandler _stringBlock;
@@ -36,7 +37,20 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Read<T>(Stream stream, ref T value) where T : struct => stream.Read(ref value);
 
+        /// <summary>
+        /// Reads an UTF-16 string from the buffer.
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public string ReadString(Stream stream) => _stringBlock[stream.Read<int>()];
+        public string ReadString(Stream stream) => _stringBlock.ReadString(stream.Read<int>());
+
+        /// <summary>
+        /// Reads a UTF-8 string from the buffer.
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ReadOnlyMemory<byte> ReadUTF8(Stream stream) => _stringBlock.ReadUTF8(stream.Read<int>());
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using DBClientFiles.NET.Parsing.Enums;
 using DBClientFiles.NET.Parsing.Reflection;
@@ -58,22 +59,30 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
             {
                 // We have to use immediate readers because all the other ones assume sequential reads
                 case MemberCompressionType.Unknown:
-                    {
-                        // This is used to parse values found in WMOMinimapTexture (@barncastle)
-                        // Well ok fair it isn't yet but that's the plan
+                {
+                    // This is used to parse values found in WMOMinimapTexture (@barncastle)
+                    // Well ok fair it isn't yet but that's the plan
 
-                        // TODO: use Parameters[1] for this (because it lets us use access blocks!)
-                        break;
-                    }
+                    // TODO: use Parameters[1] for this (because it lets us use access blocks!)
+                    break;
+                }
                 case MemberCompressionType.None:
                 case MemberCompressionType.Immediate:
-                    return new Method.Assignment(assignmentTarget,
-                        new Method.MethodCall(RecordReader,
-                            typeToken.IsPrimitive
-                                ? typeToken.MakeGenericMethod(ByteAlignedRecordReader.Methods.Read)
-                                : ByteAlignedRecordReader.Methods.ReadString,
-                            Expr.Constant(memberMetadata.Offset).ToMethodBlock(),
-                            Expr.Constant(memberMetadata.Size).ToMethodBlock()));
+                {
+                    if (typeToken.IsPrimitive)
+                        return new Method.Assignment(assignmentTarget,
+                            new Method.MethodCall(RecordReader, ByteAlignedRecordReader.Methods.Read));
+
+                    if (typeToken == typeof(string))
+                        return new Method.Assignment(assignmentTarget,
+                            new Method.MethodCall(RecordReader, ByteAlignedRecordReader.Methods.ReadString));
+
+                    if (typeToken == typeof(ReadOnlyMemory<byte>))
+                        return new Method.Assignment(assignmentTarget,
+                            new Method.MethodCall(RecordReader, ByteAlignedRecordReader.Methods.ReadUTF8));
+
+                    break;
+                }
             }
 
             return null;
@@ -95,7 +104,6 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
         {
             return UnrollingMode.Never;
         }
-
 
         public MemberMetadata GetMemberInfo(int callIndex)
         {
@@ -129,7 +137,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
 
         // ReSharper disable once StaticMemberInGenericType
         // ReSharper disable once InconsistentNaming
-        private static readonly MemberMetadata UNKNOWN = new MemberMetadata();
+        private static readonly MemberMetadata UNKNOWN = new();
         static RuntimeDeserializer()
         {
             UNKNOWN.CompressionData.Type = MemberCompressionType.Unknown;

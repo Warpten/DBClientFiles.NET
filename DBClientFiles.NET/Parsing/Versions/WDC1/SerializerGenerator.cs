@@ -85,20 +85,27 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
                 // We have to use immediate readers because all the other ones assume sequential reads
                 case MemberCompressionType.None:
                 case MemberCompressionType.Immediate:
+                {
                     if (typeToken.IsPrimitive)
-                    {
                         return Expr.Call(RecordReader,
                             typeToken.MakeGenericMethod(_IRecordReader.ReadImmediate),
                             Expr.Constant(memberMetadata.Offset),
                             Expr.Constant(memberMetadata.Size));
-                    }
-                    else if (typeToken == typeof(string))
+
+                    if (typeToken == typeof(string))
                         return Expr.Call(RecordReader,
                             _IRecordReader.ReadStringImmediate,
                             Expr.Constant(memberMetadata.Offset),
                             Expr.Constant(memberMetadata.Size));
 
+                    if (typeToken == typeof(ReadOnlyMemory<byte>))
+                        return Expr.Call(RecordReader,
+                            _IRecordReader.ReadUTF8Immediate,
+                            Expr.Constant(memberMetadata.Offset),
+                            Expr.Constant(memberMetadata.Size));
+
                     break;
+                }
             }
 
             return null;

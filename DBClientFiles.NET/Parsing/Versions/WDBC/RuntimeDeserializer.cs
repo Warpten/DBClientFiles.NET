@@ -48,6 +48,10 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
                 return new Method.Assignment(assignmentTarget,
                     new Method.MethodCall(RecordReader, AlignedSequentialRecordReader.Methods.ReadString, DataStream));
 
+            if (typeToken == typeof(ReadOnlyMemory<byte>))
+                return new Method.Assignment(assignmentTarget,
+                    new Method.MethodCall(RecordReader, AlignedSequentialRecordReader.Methods.ReadUTF8, DataStream));
+
             return null;
         }
 

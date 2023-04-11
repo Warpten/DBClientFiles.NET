@@ -11,12 +11,14 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
         T ReadImmediate<T>(int bitOffset, int bitCount) where T : unmanaged;
         
         string ReadString(int bitOffset, int bitCount);
+
+        ReadOnlyMemory<byte> ReadUTF8(int bitOffset, int bitCount);
     }
 
     internal static class _IRecordReader
     {
         public static readonly MethodInfo ReadImmediate = typeof(IRecordReader).GetMethod("ReadImmediate", new[] { typeof(int), typeof(int) });
-
         public static readonly MethodInfo ReadStringImmediate = typeof(IRecordReader).GetMethod("ReadString", new[] { typeof(int), typeof(int) });
+        public static readonly MethodInfo ReadUTF8Immediate = typeof(IRecordReader).GetMethod("ReadUTF8", new[] { typeof(int), typeof(int) });
     }
 }

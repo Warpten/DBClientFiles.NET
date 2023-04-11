@@ -3,6 +3,7 @@ using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions;
 using System;
 using System.Buffers;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -57,7 +58,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
         public string ReadString(int bitCursor, int bitCount)
         {
             if (_stringBlock != null)
-                return _stringBlock[ReadImmediate<uint>(bitCursor, bitCount)];
+                return _stringBlock.ReadString(ReadImmediate<uint>(bitCursor, bitCount));
 
             Debug.Assert((bitCursor & 7) == 0);
 
@@ -71,8 +72,27 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
                 ++stringLength;
             }
 
-            var result = new string(recordData, 0, stringLength, _fileReader.Options.Encoding ?? Encoding.UTF8);
-            return result;
+            return new string(recordData, 0, stringLength, _fileReader.Options.Encoding ?? Encoding.UTF8);
+        }
+
+        public ReadOnlyMemory<byte> ReadUTF8(int bitCursor, int bitCount)
+        {
+            if (_stringBlock != null)
+                return _stringBlock.ReadUTF8(ReadImmediate<int>(bitCursor, bitCount));
+
+            Debug.Assert((bitCursor & 7) == 0);
+
+            var stringLength = 0;
+            var startOffset = bitCursor >> 3;
+
+            sbyte* recordData = (sbyte*)Unsafe.AsPointer(ref Span[0]);
+            while (recordData[bitCursor / 8] != 0)
+            {
+                bitCursor += 8;
+                ++stringLength;
+            }
+
+            return Span[..stringLength].ToImmutableArray().AsMemory();
         }
     }
 }
