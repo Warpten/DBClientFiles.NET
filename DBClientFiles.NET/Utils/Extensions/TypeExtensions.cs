@@ -15,6 +15,9 @@ namespace DBClientFiles.NET.Utils.Extensions
 
         public static bool IsSigned(this Type t)
         {
+            if (t == typeof(long))
+                return true;
+
             if (t == typeof(int))
                 return true;
 

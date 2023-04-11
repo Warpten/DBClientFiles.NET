@@ -160,8 +160,8 @@ namespace DBClientFiles.NET.Parsing.Reflection
 
         public bool IsArray => Type.IsArray;
         public bool IsClass => Type.IsClass;
-
         public bool IsPrimitive => Type.IsPrimitive;
+        public bool IsSigned => Type.IsSigned();
 
         public string Name => Type.Name;
 

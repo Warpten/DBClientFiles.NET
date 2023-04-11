@@ -5,6 +5,7 @@ using DBClientFiles.NET.Parsing.Shared.Records;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions.WDC1.Binding;
 using System;
+using System.Diagnostics;
 using System.IO;
 
 using System.Linq.Expressions;
@@ -83,32 +84,52 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
             switch (memberMetadata.CompressionData.Type)
             {
                 // We have to use immediate readers because all the other ones assume sequential reads
+                case MemberCompressionType.SignedImmediate:
+                    Debug.Assert(typeToken.IsSigned);
+                    goto case MemberCompressionType.Immediate;
                 case MemberCompressionType.None:
                 case MemberCompressionType.Immediate:
                 {
                     if (typeToken.IsPrimitive)
                         return Expr.Call(RecordReader,
-                            typeToken.MakeGenericMethod(_IRecordReader.ReadImmediate),
+                            typeToken.MakeGenericMethod(IRecordReader.Methods.ReadImmediate),
                             Expr.Constant(memberMetadata.Offset),
                             Expr.Constant(memberMetadata.Size));
 
                     if (typeToken == typeof(string))
                         return Expr.Call(RecordReader,
-                            _IRecordReader.ReadStringImmediate,
+                            IRecordReader.Methods.ReadStringImmediate,
                             Expr.Constant(memberMetadata.Offset),
                             Expr.Constant(memberMetadata.Size));
 
                     if (typeToken == typeof(ReadOnlyMemory<byte>))
                         return Expr.Call(RecordReader,
-                            _IRecordReader.ReadUTF8Immediate,
+                            IRecordReader.Methods.ReadUTF8Immediate,
                             Expr.Constant(memberMetadata.Offset),
                             Expr.Constant(memberMetadata.Size));
 
                     break;
                 }
+                case MemberCompressionType.BitpackedPalletData:
+                    return Expr.Call(RecordReader, 
+                        typeToken.MakeGenericMethod(IRecordReader.Methods.ReadPallet), 
+                        Expr.Constant(memberMetadata.Offset), 
+                        Expr.Constant(memberMetadata.Size));
+                case MemberCompressionType.BitpackedPalletArrayData:
+                    return Expr.Call(RecordReader,
+                        typeToken.MakeGenericMethod(IRecordReader.Methods.ReadPalletArray),
+                        Expr.Constant(memberMetadata.Offset),
+                        Expr.Constant(memberMetadata.Size),
+                        Expr.Constant(memberMetadata.Cardinality));
+                case MemberCompressionType.CommonData:
+                    return Expr.Call(RecordReader,
+                        typeToken.MakeGenericMethod(IRecordReader.Methods.ReadCommon),
+                        Expr.Constant(memberMetadata.Offset),
+                        Expr.Constant(memberMetadata.Size),
+                        Expr.Constant(memberMetadata.DefaultValue.Value));
             }
 
-            return null;
+            return null;    
         }
     }
 }

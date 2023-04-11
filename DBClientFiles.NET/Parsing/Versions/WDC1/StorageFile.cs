@@ -5,12 +5,15 @@ using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions.WDC1.Binding;
 using DBClientFiles.NET.Parsing.Enumerators;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace DBClientFiles.NET.Parsing.Versions.WDC1
 {
     internal sealed class StorageFile<T> : BinaryStorageFile<T>
     {
         private Serializer<T> _serializer;
+        private StringBlockHandler _stringBlock = null;
+        private PalletBlockHandler _palletBlock = null;
 
         public StorageFile(in StorageOptions options, in Header header, Stream input) : base(in options, new HeaderAccessor(in header), input)
         {
@@ -29,13 +32,13 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
             else
             {
                 tail = tail.Next = new Segment(SegmentIdentifier.Records, Header.RecordSize * Header.RecordCount);
-                tail = tail.Next = new Segment(SegmentIdentifier.StringBlock, Header.StringTable.Length, new StringBlockHandler());
+                tail = tail.Next = new Segment(SegmentIdentifier.StringBlock, Header.StringTable.Length, _stringBlock = new StringBlockHandler());
             }
 
             tail = tail.Next = new Segment(SegmentIdentifier.IndexTable, Header.IndexTable.Length, new IndexTableHandler());
             tail = tail.Next = new Segment(SegmentIdentifier.CopyTable, Header.CopyTable.Length, new CopyTableHandler());
             tail = tail.Next = new Segment(SegmentIdentifier.ExtendedFieldInfo, Header.ExtendedFieldInfo.Length, new ExtendedFieldInfoHandler<MemberMetadata>(fieldInfoHandler));
-            tail = tail.Next = new Segment(SegmentIdentifier.PalletTable, Header.Pallet.Length);
+            tail = tail.Next = new Segment(SegmentIdentifier.PalletTable, Header.Pallet.Length, _palletBlock = new PalletBlockHandler());
             tail = tail.Next = new Segment(SegmentIdentifier.CommonDataTable, Header.Common.Length);
             tail.Next = new Segment(SegmentIdentifier.RelationshipTable, Header.RelationshipTable.Length);
         }
@@ -60,7 +63,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
         {
             DataStream.Position = offset;
 
-            using (var recordReader = new UnalignedRecordReader(this, length))
+            using (var recordReader = new UnalignedRecordReader(this, length, _stringBlock, _palletBlock))
                 return _serializer.Deserialize(recordReader);
         }
     }

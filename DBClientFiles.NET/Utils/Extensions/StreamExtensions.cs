@@ -1,10 +1,10 @@
-﻿using System.Diagnostics;
-using DBClientFiles.NET.IO;
+﻿using DBClientFiles.NET.IO;
+using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
-using System;
 
 namespace DBClientFiles.NET.Utils.Extensions
 {

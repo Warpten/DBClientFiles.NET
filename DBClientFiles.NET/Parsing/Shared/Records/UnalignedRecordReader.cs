@@ -1,6 +1,7 @@
 ﻿using DBClientFiles.NET.Parsing.Shared.Segments;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
 using DBClientFiles.NET.Parsing.Versions;
+using DBClientFiles.NET.Utils;
 using System;
 using System.Buffers;
 using System.Collections.Immutable;
@@ -15,11 +16,12 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
         private readonly IMemoryOwner<byte> _recordData;
         private readonly IBinaryStorageFile _fileReader;
         private readonly StringBlockHandler _stringBlock;
+        private readonly PalletBlockHandler _palletBlock;
         private readonly long _recordSize;
 
         private Span<byte> Span => _recordData.Memory.Span;
 
-        public UnalignedRecordReader(IBinaryStorageFile fileReader, long recordSize)
+        public UnalignedRecordReader(IBinaryStorageFile fileReader, long recordSize, StringBlockHandler stringBlock, PalletBlockHandler palletBlock)
         {
             _fileReader = fileReader;
             _recordSize = recordSize;
@@ -27,7 +29,8 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
             // Allocating 7 extra bytes to guarantee we don't ever read out of our memory space
             _recordData = MemoryPool<byte>.Shared.Rent((int)(recordSize + 7));
 
-            _stringBlock = _fileReader.FindSegment(SegmentIdentifier.StringBlock)?.Handler as StringBlockHandler;
+            _stringBlock = stringBlock;
+            _palletBlock = palletBlock;
 
             // Read exactly what we need
             fileReader.DataStream.Read(_recordData.Memory.Span.Slice(0, (int) recordSize));
@@ -38,7 +41,6 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
             _recordData.Dispose();
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T ReadImmediate<T>(int bitOffset, int bitCount) where T : unmanaged
         {
             var byteOffset = bitOffset / 8;
@@ -53,6 +55,26 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
                 var longValue = (*dataPtr << (64 - bitCount - (bitOffset & 7))) >> (64 - bitCount);
                 return *(T*)&longValue;
             }
+        }
+
+        public T ReadPallet<T>(int bitOffset, int bitCount) where T : struct
+        {
+            var palletIndex = ReadImmediate<int>(bitOffset, bitCount) * sizeof(int);
+
+            return _palletBlock.Read<T>(palletIndex);
+        }
+
+        public T ReadCommon<T>(int rawDefaultValue) where T : struct
+        {
+            var defaultValue = new Variant<int>(rawDefaultValue);
+            return _commonBlock.Read<T>(defaultValue);
+        }
+
+        public T[] ReadPalletArray<T>(int bitOffset, int bitCount, int arraySize) where T : struct
+        {
+            var palletIndex = ReadImmediate<int>(bitOffset, bitCount) * sizeof(int);
+
+            return _palletBlock.ReadArray<T>(palletIndex, arraySize);
         }
 
         public string ReadString(int bitCursor, int bitCount)

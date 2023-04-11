@@ -91,6 +91,12 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
             return Memory<byte>.Empty;
         }
 
-        public string ReadString(long offset) => Encoding.UTF8.GetString(ReadUTF8(offset).Span);
+        public string ReadString(long offset)
+        {
+            if (_pointers.TryGetValue(offset, out var length))
+                return Encoding.UTF8.GetString(_blockData.Memory.Slice((int) offset, (int) length).Span);
+
+            return string.Empty;
+        }
     }
 }
