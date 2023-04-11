@@ -13,6 +13,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
     {
         private Serializer<T> _serializer;
         private StringBlockHandler _stringBlock = null;
+        private CommonBlockHandler _commonBlock = null;
         private PalletBlockHandler _palletBlock = null;
 
         public StorageFile(in StorageOptions options, in Header header, Stream input) : base(in options, new HeaderAccessor(in header), input)
@@ -39,7 +40,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
             tail = tail.Next = new Segment(SegmentIdentifier.CopyTable, Header.CopyTable.Length, new CopyTableHandler());
             tail = tail.Next = new Segment(SegmentIdentifier.ExtendedFieldInfo, Header.ExtendedFieldInfo.Length, new ExtendedFieldInfoHandler<MemberMetadata>(fieldInfoHandler));
             tail = tail.Next = new Segment(SegmentIdentifier.PalletTable, Header.Pallet.Length, _palletBlock = new PalletBlockHandler());
-            tail = tail.Next = new Segment(SegmentIdentifier.CommonDataTable, Header.Common.Length);
+            tail = tail.Next = new Segment(SegmentIdentifier.CommonDataTable, Header.Common.Length, _commonBlock = new CommonBlockHandler(_stringBlock));
             tail.Next = new Segment(SegmentIdentifier.RelationshipTable, Header.RelationshipTable.Length);
         }
 
@@ -63,7 +64,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
         {
             DataStream.Position = offset;
 
-            using (var recordReader = new UnalignedRecordReader(this, length, _stringBlock, _palletBlock))
+            using (var recordReader = new UnalignedRecordReader(this, length, _stringBlock, _palletBlock, _commonBlock))
                 return _serializer.Deserialize(recordReader);
         }
     }

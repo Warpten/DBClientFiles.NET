@@ -35,13 +35,13 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
 
             currentField.CompressionData.Type = (MemberCompressionType) compressionType;
             currentField.CompressionData.DataSize = additionalDataSize;
+            currentField.CompressionData.Index = 0;
 
             // Retrieve the size from field info (byte-boundary) if it was defined
             // If *can* be zero for fields outside of the record (index table or relationship table)
             var fieldInfoSize = currentField.Size;
             currentField.Offset = fieldOffsetBits;
             currentField.Size = fieldSizeBits;
-
 
             if (_index > 1)
             {
@@ -59,6 +59,9 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
                 currentField.CompressionData.DataOffset = previousField != null
                     ? previousField.CompressionData.DataOffset + previousField.CompressionData.DataSize
                     : 0;
+
+                if (previousField != null)
+                    currentField.CompressionData.Index = previousField.CompressionData.Index + 1;
             }
 
             switch (currentField.CompressionData.Type)

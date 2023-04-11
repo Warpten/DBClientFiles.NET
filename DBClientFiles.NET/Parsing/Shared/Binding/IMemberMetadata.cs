@@ -19,9 +19,14 @@ namespace DBClientFiles.NET.Parsing.Shared.Binding
         /// </summary>
         public int DataSize { get; internal set; }
 
+        /// <summary>
+        /// Index of this field relative to other fields with the same compresssion.
+        /// </summary>
+        public int Index { get; internal set; }
+
         public override string ToString()
         {
-            return $"Type: {Type} Offset: {DataOffset} Size: {DataSize}";
+            return $"Type: {Type} Offset: {DataOffset} Size: {DataSize} Index in group: {Index}";
         }
     }
 

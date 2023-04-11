@@ -42,7 +42,7 @@ namespace DBClientFiles.NET.Parsing.Serialization
         {
             var rootExpression = Expr.Parameter(typeof(T).MakeByRefType(), "model");
             
-            var (indexColumnMemberToken, memberAccess) = Type.MakeMemberAccess(ref indexColumn, rootExpression, Options.TokenType);
+            var (indexColumnMemberToken, memberAccess) = Type.MakeMemberAccess(indexColumn, rootExpression, Options.TokenType);
             if (indexColumnMemberToken == null)
                 throw new InvalidOperationException($"Invalid structure: Unable to find an index column.");
 

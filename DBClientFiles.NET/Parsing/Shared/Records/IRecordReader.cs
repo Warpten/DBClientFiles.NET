@@ -58,9 +58,11 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
         /// Reads a value from the common block of a file.
         /// </summary>
         /// <typeparam name="T"></typeparam>
+        /// <param name="columnIndex">The index of the column being parsed; 0 being the first column in the common block.</param>
+        /// <param name="recordID">The ID of the record being parsed.</param>
         /// <param name="rawDefaultValue">The default value's raw representation.</param>
         /// <returns></returns>
-        T ReadCommon<T>(int rawDefaultValue) where T : struct;
+        T ReadCommon<T>(int columnIndex, int recordID, int rawDefaultValue) where T : struct;
 
         internal static class Methods
         {

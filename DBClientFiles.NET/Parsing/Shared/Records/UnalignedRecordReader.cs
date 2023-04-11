@@ -17,11 +17,12 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
         private readonly IBinaryStorageFile _fileReader;
         private readonly StringBlockHandler _stringBlock;
         private readonly PalletBlockHandler _palletBlock;
+        private readonly CommonBlockHandler _commonBlock;
         private readonly long _recordSize;
 
         private Span<byte> Span => _recordData.Memory.Span;
 
-        public UnalignedRecordReader(IBinaryStorageFile fileReader, long recordSize, StringBlockHandler stringBlock, PalletBlockHandler palletBlock)
+        public UnalignedRecordReader(IBinaryStorageFile fileReader, long recordSize, StringBlockHandler stringBlock, PalletBlockHandler palletBlock, CommonBlockHandler commonBlock)
         {
             _fileReader = fileReader;
             _recordSize = recordSize;
@@ -31,6 +32,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
 
             _stringBlock = stringBlock;
             _palletBlock = palletBlock;
+            _commonBlock = commonBlock;
 
             // Read exactly what we need
             fileReader.DataStream.Read(_recordData.Memory.Span.Slice(0, (int) recordSize));
@@ -64,10 +66,10 @@ namespace DBClientFiles.NET.Parsing.Shared.Records
             return _palletBlock.Read<T>(palletIndex);
         }
 
-        public T ReadCommon<T>(int rawDefaultValue) where T : struct
+        public T ReadCommon<T>(int columnIndex, int recordID, int rawDefaultValue) where T : struct
         {
             var defaultValue = new Variant<int>(rawDefaultValue);
-            return _commonBlock.Read<T>(defaultValue);
+            return _commonBlock.Read<T>(columnIndex, recordID, defaultValue);
         }
 
         public T[] ReadPalletArray<T>(int bitOffset, int bitCount, int arraySize) where T : struct

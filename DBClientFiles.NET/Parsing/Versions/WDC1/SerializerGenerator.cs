@@ -1,5 +1,6 @@
 ﻿using DBClientFiles.NET.Parsing.Enums;
 using DBClientFiles.NET.Parsing.Reflection;
+using DBClientFiles.NET.Parsing.Runtime.Serialization;
 using DBClientFiles.NET.Parsing.Serialization.Generators;
 using DBClientFiles.NET.Parsing.Shared.Records;
 using DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations;
@@ -17,6 +18,8 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
     {
         public delegate void MethodType(IRecordReader recordReader, out T instance);
 
+        private readonly RecordKeyAccessor<T> _keyAccessor;
+
         private FieldInfoHandler<MemberMetadata> FieldInfoBlock { get; }
 
         /// <summary>
@@ -30,10 +33,11 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
 
         protected override ParameterExpression ProducedInstance { get; } = Expr.Parameter(typeof(T).MakeByRefType(), "instance");
 
-
         public SerializerGenerator(IBinaryStorageFile storage, FieldInfoHandler<MemberMetadata> fieldInfoBlock) : base(storage.Type, storage.Options.TokenType, 0)
         {
             FieldInfoBlock = fieldInfoBlock;
+
+            _keyAccessor = new (storage.Type, storage.Header.IndexColumn, storage.Options.TokenType);
 
             if (storage.Header.IndexTable.Exists)
                 IndexColumn = storage.Header.IndexColumn;
@@ -124,8 +128,8 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
                 case MemberCompressionType.CommonData:
                     return Expr.Call(RecordReader,
                         typeToken.MakeGenericMethod(IRecordReader.Methods.ReadCommon),
-                        Expr.Constant(memberMetadata.Offset),
-                        Expr.Constant(memberMetadata.Size),
+                        Expr.Constant(memberMetadata.CompressionData.Index),
+                        _keyAccessor.AccessIndex(ProducedInstance),
                         Expr.Constant(memberMetadata.DefaultValue.Value));
             }
 

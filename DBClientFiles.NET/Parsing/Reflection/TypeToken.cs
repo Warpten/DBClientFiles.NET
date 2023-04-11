@@ -108,7 +108,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
             return Type.ToString();
         }
 
-        public (MemberToken memberToken, Expr memberAccess) MakeMemberAccess(ref int index, Expr accessExpression, TypeTokenType type)
+        public (MemberToken memberToken, Expr memberAccess) MakeMemberAccess(int index, Expr accessExpression, TypeTokenType type)
         {
             foreach (var memberInfo in _members)
             {
@@ -128,7 +128,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
 
                         // False positive, array check thank you
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-                        var token = elementTypeToken.MakeMemberAccess(ref index, arrayAccessExpr, type);
+                        var token = elementTypeToken.MakeMemberAccess(index, arrayAccessExpr, type);
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
 
                         if (token.memberAccess != null)
@@ -139,7 +139,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
                 }
                 else if (memberInfo.TypeToken.Members.Any(m => m.MemberType == type))
                 {
-                    var childToken = memberInfo.TypeToken.MakeMemberAccess(ref index, memberAccessExpr, type);
+                    var childToken = memberInfo.TypeToken.MakeMemberAccess(index, memberAccessExpr, type);
                     if (childToken.memberAccess != null)
                         return childToken;
                 

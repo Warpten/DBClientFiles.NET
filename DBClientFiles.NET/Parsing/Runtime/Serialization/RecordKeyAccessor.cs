@@ -16,11 +16,19 @@ namespace DBClientFiles.NET.Parsing.Runtime.Serialization
         public TypeKeyGetter GetRecordKey => _keyGetter.Value;
         public TypeKeySetter SetRecordKey => _keySetter.Value;
 
+        private readonly TypeToken _recordTypeToken;
+        private readonly TypeTokenType _indexMemberTypeTokenType;
+        private readonly int _indexColumn;
+
         public RecordKeyAccessor(TypeToken type, int indexColumn, TypeTokenType tokenType)
         {
+            _recordTypeToken = type;
+            _indexMemberTypeTokenType = tokenType;
+            _indexColumn = indexColumn;
+
             var rootExpression = Expr.Parameter(typeof(T).MakeByRefType(), "instance");
 
-            var (indexColumnMemberToken, memberAccess) = type.MakeMemberAccess(ref indexColumn, rootExpression, tokenType);
+            var (indexColumnMemberToken, memberAccess) = MakeAccess(rootExpression);
             if (indexColumnMemberToken == null)
                 throw new InvalidOperationException($"Invalid structure: Unable to find an index column.");
 
@@ -52,5 +60,13 @@ namespace DBClientFiles.NET.Parsing.Runtime.Serialization
                 });
             }
         }
-}
+
+        private (MemberToken memberToken, Expr memberAccess) MakeAccess(Expr instance)
+        {
+            var (token, access) = _recordTypeToken.MakeMemberAccess(_indexColumn, instance, _indexMemberTypeTokenType);
+            return (token, access);
+        }
+
+        public Expr AccessIndex(Expr instance) => MakeAccess(instance).memberAccess;
+    }
 }
