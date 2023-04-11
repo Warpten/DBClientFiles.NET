@@ -39,7 +39,7 @@ namespace DBClientFiles.NET
         public readonly bool ReadOnly;
 
         // ReSharper disable once InconsistentNaming
-        private static readonly StorageOptions _default = new StorageOptions(
+        private static readonly StorageOptions _default = new (
             MemberTypes.Property,
             internStrings: false,
             copyToMemory: false,

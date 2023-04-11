@@ -32,13 +32,13 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
         public TMethod Method
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => _methodImpl ?? (_methodImpl = GenerateDeserializer());
+            get => _methodImpl ??= GenerateDeserializer();
         }
 
         protected abstract Expression<TMethod> MakeLambda(Expression body);
 
         protected override TreeNode MakeRootNode()
-            => new TreeNode() {
+            => new () {
                 AccessExpression = ProducedInstance,
                 MemberToken = null,
                 TypeToken = Root

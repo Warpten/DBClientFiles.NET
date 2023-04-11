@@ -16,6 +16,6 @@ namespace DBClientFiles.NET.Utils
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public U Cast<U>() where U : struct => Unsafe.As<T, U>(ref Value);
 
-        public static explicit operator Variant<T>(T value) => new Variant<T>(value);
+        public static explicit operator Variant<T>(T value) => new (value);
     }
 }

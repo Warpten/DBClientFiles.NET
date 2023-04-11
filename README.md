@@ -16,7 +16,7 @@ A blazing-fast DBC & DB2 reader for World of Warcraft's serialized database form
 
 |Signature|WDBC|WDB2|WDB3|WDB4|WDB5|WDB6|WDC1|WDC2|
 |--|--|--|--|--|--|--|--|--|
-|Read|:heavy_check_mark:|:heavy_check_mark:|:x:|:x:|:x:|:x:|:x:|:x:|
+|Read|:heavy_check_mark:|:heavy_check_mark:|:x:|:x:|❓|:x:|❓|:x:|
 |Write|:x:|:x:|:x:|:x:|:x:|:x:|:x:|:x:|
 
 :heavy_check_mark: Verified and tested.
