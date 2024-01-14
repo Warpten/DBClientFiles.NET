@@ -14,8 +14,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
         private IEnumerator<int> _currentCopyIndex;
 
         private TValue _currentInstance;
-
-        private Func<bool, TValue> InstanceFactory { get; }
+        private readonly Func<bool, TValue> _instanceFactory;
 
         private readonly CopyTableHandler _blockHandler;
         private readonly RuntimeCloner<TValue> _cloningFactory;
@@ -35,7 +34,7 @@ namespace DBClientFiles.NET.Parsing.Enumerators
 
                 _cloningFactory = new RuntimeCloner<TValue>(Parser.Type, Parser.Options.TokenType);
 
-                InstanceFactory = forceReloadBase =>
+                _instanceFactory = forceReloadBase =>
                 {
                     // Read an instance if one exists or if we're forced to
                     if (forceReloadBase || EqualityComparer<TValue>.Default.Equals(_currentInstance, default))
@@ -71,26 +70,26 @@ namespace DBClientFiles.NET.Parsing.Enumerators
                         _currentCopyIndex = default!;
                         
                         // Call ourselves again to initialize everything for the next record.
-                        _currentInstance = InstanceFactory(true);
+                        _currentInstance = _instanceFactory(true);
                         return _currentInstance;
                     }
                 };
             }
             else
             {
-                InstanceFactory = _ => base.ObtainCurrent();
+                _instanceFactory = _ => base.ObtainCurrent();
             }
         }
 
         internal override TValue ObtainCurrent()
         {
-            return InstanceFactory(false);
+            return _instanceFactory(false);
         }
 
         public override void Reset()
         {
-            _currentInstance = default!;
-            _currentCopyIndex = default!;
+            _currentInstance = default;
+            _currentCopyIndex = default;
 
             base.Reset();
         }

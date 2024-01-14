@@ -21,7 +21,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDBC
         private readonly Lazy<MethodType> _methodInitializer;
         public MethodType Method => _methodInitializer.Value;
 
-        public RuntimeDeserializer(TypeToken typeToken, TypeTokenType typeTokenType) : base(typeToken, typeTokenType)
+        public RuntimeDeserializer(TypeToken typeToken, TypeTokenKind typeTokenType) : base(typeToken, typeTokenType)
         {
             DataStream = new Method.Parameter(typeof(Stream), "dataStream");
             RecordReader = new Method.Parameter(typeof(AlignedSequentialRecordReader).MakeByRefType(), "recordReader");

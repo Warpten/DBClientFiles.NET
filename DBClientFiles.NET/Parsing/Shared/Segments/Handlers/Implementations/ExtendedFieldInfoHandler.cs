@@ -26,12 +26,8 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
             // Offset, in bits, of the field in the record. *Can* be zero for fields outside of the record (index table, relationship table)
             // Size, in bits, of the current member. For arrays, this is the entire size of the array, packed.
 
-            // Read one by one because the CLR adds padding (ValueTuple has LayoutKind.Auto)
             // https://github.com/dotnet/coreclr/issues/25422#issuecomment-505931086
-            var fieldOffsetBits = dataStream.Read<ushort>();
-            var fieldSizeBits = dataStream.Read<ushort>();
-            var additionalDataSize = dataStream.Read<int>();
-            var compressionType = dataStream.Read<int>();
+            var (fieldOffsetBits, fieldSizeBits, additionalDataSize, compressionType) = dataStream.Read<(ushort, ushort, int, int)>();
 
             currentField.CompressionData.Type = (MemberCompressionType) compressionType;
             currentField.CompressionData.DataSize = additionalDataSize;
@@ -46,7 +42,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
             if (_index > 1)
             {
                 // Find the last field with the same compression group
-                T previousField = null;
+                var previousField = default(T);
                 for (var i = _index - 1; i >= 0; --i)
                 {
                     if (_fields[i].CompressionData.Type.GetCompressionGroup() == currentField.CompressionData.Type.GetCompressionGroup())
@@ -56,7 +52,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
                     }
                 }
 
-                currentField.CompressionData.DataOffset = previousField != null
+                currentField.CompressionData.DataOffset = previousField != default
                     ? previousField.CompressionData.DataOffset + previousField.CompressionData.DataSize
                     : 0;
 
@@ -69,8 +65,6 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
                 case MemberCompressionType.SignedImmediate:
                 case MemberCompressionType.Immediate:
                 {
-                    // Read one by one because the CLR adds padding (ValueTuple has LayoutKind.Auto)
-                    // https://github.com/dotnet/coreclr/issues/25422#issuecomment-505931086
                     dataStream.Position += 2 * sizeof(int);
                     var flags = dataStream.Read<uint>();
                       
@@ -88,8 +82,7 @@ namespace DBClientFiles.NET.Parsing.Shared.Segments.Handlers.Implementations
                 case MemberCompressionType.BitpackedPalletArrayData:
                 case MemberCompressionType.BitpackedPalletData:
                 {
-                    dataStream.Position += 2 * sizeof(int);
-                    var arrayCount = dataStream.Read<int>();
+                    var (_, _, arrayCount) = dataStream.Read<(int, int, int)>();
                     if (currentField.CompressionData.Type == MemberCompressionType.BitpackedPalletArrayData)
                     {
                         currentField.Cardinality = arrayCount;

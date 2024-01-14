@@ -44,7 +44,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
 
         public override T GetAttribute<T>() => _memberInfo.GetCustomAttribute<T>();
 
-        public override TypeTokenType MemberType => TypeTokenType.Field;
+        public override TypeTokenKind MemberType => TypeTokenKind.Field;
 
         public override bool IsReadOnly => _memberInfo.IsInitOnly;
         public override bool IsArray => _memberInfo.FieldType.IsArray;

@@ -5,6 +5,11 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+<<<<<<< HEAD
+=======
+using System.Linq;
+using System;
+>>>>>>> 1c58d47 (What is all this? I'm not sure, so let's commit it.)
 
 namespace DBClientFiles.NET.Utils.Extensions
 {
@@ -76,7 +81,11 @@ namespace DBClientFiles.NET.Utils.Extensions
         {
             var value = default(T);
             var span = new Span<byte>(Unsafe.AsPointer(ref value), Unsafe.SizeOf<T>());
+
 #if DEBUG
+            if (typeof(T).IsValueTuple())
+                Debug.Assert(typeof(T).GenericTypeArguments.Aggregate(0, (s, t) => s + t.Size()) == Unsafe.SizeOf<T>());
+
             Debug.Assert(Unsafe.SizeOf<T>() == dataStream.Read(span), $"Unable to read {typeof(T).Name} from stream, stream too short");
 #else
             dataStream.Read(span);

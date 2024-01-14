@@ -27,9 +27,8 @@ namespace DBClientFiles.NET.Parsing.Versions.WDC1
         /// </summary>
         public int? IndexColumn { get; }
 
-        private ParameterExpression DataStream { get; } = Expr.Parameter(typeof(Stream), "dataStream");
-
-        private ParameterExpression RecordReader { get; } = Expr.Parameter(typeof(IRecordReader), "recordReader");
+        private ParameterExpression DataStream = Expr.Parameter(typeof(Stream), "dataStream");
+        private ParameterExpression RecordReader = Expr.Parameter(typeof(IRecordReader), "recordReader");
 
         protected override ParameterExpression ProducedInstance { get; } = Expr.Parameter(typeof(T).MakeByRefType(), "instance");
 

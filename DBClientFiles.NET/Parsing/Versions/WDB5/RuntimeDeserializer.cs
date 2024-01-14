@@ -20,7 +20,7 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
     {
         public delegate void MethodType(in ByteAlignedRecordReader recordReader, out T instance);
 
-        private IMethodBlock RecordReader { get; }
+        private IExpression RecordReader { get; }
 
         private readonly Lazy<MethodType> _methodInitializer;
         public MethodType Method => _methodInitializer.Value;
@@ -46,9 +46,9 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
                 _indexColumn = storage.Header.IndexColumn;
         }
 
-        protected override IMethodBlock CreateArrayInitializer(MemberToken memberToken, IMethodBlock assignmentTarget) => null;
+        protected override IExpression CreateArrayInitializer(MemberToken memberToken, IExpression assignmentTarget) => null;
 
-        protected override IMethodBlock CreateInstanceInitializer(TypeToken typeToken, IMethodBlock assignmentTarget)
+        protected override IExpression CreateInstanceInitializer(TypeToken typeToken, IExpression assignmentTarget)
         {
             var memberMetadata = GetMemberInfo(_callIndex);
             ++_callIndex;
@@ -138,6 +138,10 @@ namespace DBClientFiles.NET.Parsing.Versions.WDB5
         // ReSharper disable once StaticMemberInGenericType
         // ReSharper disable once InconsistentNaming
         private static readonly MemberMetadata UNKNOWN = new();
+<<<<<<< HEAD
+=======
+
+>>>>>>> 1c58d47 (What is all this? I'm not sure, so let's commit it.)
         static RuntimeDeserializer()
         {
             UNKNOWN.CompressionData.Type = MemberCompressionType.Unknown;

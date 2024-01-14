@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using DBClientFiles.NET.Parsing.Reflection;
+
+using InlineIL;
 
 namespace DBClientFiles.NET.Utils.Extensions
 {
@@ -33,15 +36,42 @@ namespace DBClientFiles.NET.Utils.Extensions
             return false;
         }
 
-        public static TypeTokenType ToTypeToken(this MemberTypes type)
+        public static TypeTokenKind ToTypeToken(this MemberTypes type)
         {
             return type switch
             {
-                MemberTypes.Field => TypeTokenType.Field,
-                MemberTypes.Property => TypeTokenType.Property,
+                MemberTypes.Field => TypeTokenKind.Field,
+                MemberTypes.Property => TypeTokenKind.Property,
 
                 _ => throw new ArgumentOutOfRangeException(nameof(type)),
             };
+        }
+
+        /// <summary>
+        /// Returns the size of this type, assuming it's a value type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int Size(this Type type)
+        {
+            Debug.Assert(type.IsValueType);
+
+            IL.Emit.Sizeof(TypeRef.Type(type));
+            return IL.Return<int>();
+        }
+
+        /// <summary>
+        /// Determines wether this type represents a value tuple.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static bool IsValueTuple(this Type type)
+        {
+            if (!type.IsGenericType || !type.IsValueType)
+                return false;
+
+            return type.GetGenericTypeDefinition().FullName.StartsWith("System.ValueTuple");
         }
     }
 }

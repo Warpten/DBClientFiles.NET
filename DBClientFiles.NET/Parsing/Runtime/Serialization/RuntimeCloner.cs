@@ -18,7 +18,7 @@ namespace DBClientFiles.NET.Parsing.Runtime.Serialization
         private readonly CloningMethod _cloneMethod;
         private readonly ParameterProvider _iteratorProvider;
 
-        public RuntimeCloner(TypeToken typeToken, TypeTokenType tokenType)
+        public RuntimeCloner(TypeToken typeToken, TypeTokenKind tokenType)
         {
             _iteratorProvider = new ParameterProvider(typeof(int));
             _cloneMethod = null; // Keep compiler happy
@@ -48,12 +48,12 @@ namespace DBClientFiles.NET.Parsing.Runtime.Serialization
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Clone(in T source, out T target) => _cloneMethod.Invoke(in source, out target);
 
-        private Expression CloneMember(TypeToken memberToken, Expression oldMember, Expression newMember, TypeTokenType tokenType)
+        private Expression CloneMember(TypeToken memberToken, Expression oldMember, Expression newMember, TypeTokenKind tokenType)
         {
             if (oldMember.Type.IsArray)
             {
                 var loopItrBlk = _iteratorProvider.Rent();
-                var loopItr = loopItrBlk.Expression;
+                var loopItr = loopItrBlk._expression;
 
                 var lengthValue = Expression.MakeMemberAccess(oldMember,
                     oldMember.Type.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance));

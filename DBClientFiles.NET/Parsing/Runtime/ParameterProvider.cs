@@ -6,6 +6,9 @@ using Expr = System.Linq.Expressions.Expression;
 
 namespace DBClientFiles.NET.Parsing.Runtime
 {
+    /// <summary>
+    /// This class allows to rent and return parameters used in a method.
+    /// </summary>
     internal class ParameterProvider
     {
         private readonly Stack<Method.Parameter> _parameters;

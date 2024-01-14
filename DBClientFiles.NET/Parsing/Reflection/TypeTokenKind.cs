@@ -1,6 +1,6 @@
 ﻿namespace DBClientFiles.NET.Parsing.Reflection
 {
-    internal enum TypeTokenType
+    internal enum TypeTokenKind
     {
         Field,
         Property,

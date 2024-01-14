@@ -6,7 +6,7 @@ using System.IO;
 
 namespace DBClientFiles.NET.Collections.Generic
 {
-    public class StorageList<T> : IList<T>, IDisposable
+    public sealed class StorageList<T> : IList<T>, IDisposable
     {
         private readonly IList<T> _impl;
         private readonly StorageOptions _options;

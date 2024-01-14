@@ -15,7 +15,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
     /// <typeparam name="TMethod"></typeparam>
     internal abstract class TypedSerializerGenerator<T, TMethod> : SerializerGenerator where TMethod : Delegate
     {
-        protected TypedSerializerGenerator(TypeToken root, TypeTokenType memberType) : base(root, memberType)
+        protected TypedSerializerGenerator(TypeToken root, TypeTokenKind memberType) : base(root, memberType)
         {
             Debug.Assert(root == typeof(T));
         }
@@ -61,7 +61,7 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
     {
         protected TGenerationState State { get; set; }
 
-        protected TypedSerializerGenerator(TypeToken root, TypeTokenType memberType, TGenerationState state) : base(root, memberType)
+        protected TypedSerializerGenerator(TypeToken root, TypeTokenKind memberType, TGenerationState state) : base(root, memberType)
         {
             Debug.Assert(root == typeof(T));
 

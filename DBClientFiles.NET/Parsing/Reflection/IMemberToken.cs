@@ -4,7 +4,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
 {
     internal interface IMemberToken
     {
-        TypeTokenType MemberType { get; }
+        TypeTokenKind MemberType { get; }
 
         bool IsArray { get; }
         bool IsReadOnly { get; }

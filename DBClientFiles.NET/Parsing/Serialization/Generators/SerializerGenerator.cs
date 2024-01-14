@@ -11,9 +11,9 @@ namespace DBClientFiles.NET.Parsing.Serialization.Generators
     internal abstract class SerializerGenerator
     {
         protected TypeToken Root { get; }
-        private TypeTokenType MemberType { get; }
+        private TypeTokenKind MemberType { get; }
 
-        protected SerializerGenerator(TypeToken root, TypeTokenType memberType)
+        protected SerializerGenerator(TypeToken root, TypeTokenKind memberType)
         {
             Root = root;
             MemberType = memberType;

@@ -1,6 +1,7 @@
 ﻿using DBClientFiles.NET.Parsing.Reflection;
 using DBClientFiles.NET.Utils.Expressions;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -11,207 +12,192 @@ using Expr = System.Linq.Expressions.Expression;
 
 namespace DBClientFiles.NET.Parsing.Runtime
 {
-    internal interface IMethodBlock : IEquatable<IMethodBlock>
-    {
+    public interface IExpression {
         Expr ToExpression();
+    }
+
+    /// <summary>
+    /// A wrapper around <see cref="Expr">Expression Tree expressions</see>.
+    /// </summary>
+    public interface IExpression<T> : IExpression where T : IExpression<T> {
     }
 
     internal static class Method
     {
-        internal class BlockCollection : IMethodBlock, IEquatable<BlockCollection>
+        /// <summary>
+        /// Describes a collection of execution blocks in a method.
+        /// </summary>
+        internal class BlockCollection : IExpression<BlockCollection>
         {
-            public readonly List<IMethodBlock> Children = new List<IMethodBlock>();
-            public readonly HashSet<Parameter> Variables = new HashSet<Parameter>();
+            public readonly List<IExpression> Children = new();
+            public readonly HashSet<Parameter> Variables = new();
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Expr ToExpression()
                 => Expr.Block(Variables.Select(v => v.Expression), Children.Select(child => child.ToExpression()));
-
-            public bool Equals(IMethodBlock other)
-                => other is BlockCollection collectionOther && Equals(collectionOther);
-
-            public bool Equals(BlockCollection other)
-                => Variables.SequenceEqual(other.Variables) && Children.SequenceEqual(other.Children);
         }
 
-        internal class Parameter : IMethodBlock, IEquatable<Parameter>
+        /// <summary>
+        /// Describes a parameter to a method.
+        /// </summary>
+        internal class Parameter : IExpression<Parameter>
         {
-            internal readonly ParameterExpression Expression;
+            public readonly ParameterExpression Expression;
 
-            public Parameter(Type parameterType)
-            {
+            /// <summary>
+            /// Creates a new parameter of the given type.
+            /// </summary>
+            /// <param name="parameterType">The type of the parameter.</param>
+            public Parameter(Type parameterType) {
                 Expression = Expr.Parameter(parameterType);
             }
-            public Parameter(Type parameterType, string name)
-            {
+
+            /// <summary>
+            /// Creates a new parameter with the given type and name.
+            /// </summary>
+            /// <param name="parameterType">The type of the parameter.</param>
+            /// <param name="name">The name of the parameter.</param>
+            public Parameter(Type parameterType, string name) {
                 Expression = Expr.Parameter(parameterType, name);
             }
-
-            public bool Equals(IMethodBlock other)
-                => other is Parameter paramOther && Equals(paramOther);
-
-            public bool Equals(Parameter other)
-                => other.Expression == Expression;
 
             public Expr ToExpression() => Expression;
         }
 
-        internal class Assignment : IMethodBlock, IEquatable<Assignment>
-        {
-            private readonly IMethodBlock Left;
-            private readonly IMethodBlock Right;
+        public static Parameter NewParameter(Type parameterType, string parameterName) => new(parameterType, parameterName);
+        public static Parameter NewParameter<T>(string parameterName) => NewParameter(typeof(T), parameterName);
+        public static Parameter NewParameter(Type parameterType) => new(parameterType);
+        public static Parameter NewParameter<T>() => NewParameter(typeof(T));
 
-            public Assignment(IMethodBlock left, IMethodBlock right)
+        internal class Assignment : IExpression<Assignment>
+        {
+            private readonly IExpression _left;
+            private readonly IExpression _right;
+
+            /// <summary>
+            /// Creates a new expression of the following form:
+            /// <code>left = right</code>
+            /// </summary>
+            /// <param name="left">The left expression</param>
+            /// <param name="right">The right expression</param>
+            public Assignment(IExpression left, IExpression right)
             {
-                Left = left;
-                Right = right;
+                _left = left;
+                _right = right;
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public Expr ToExpression() => Expr.Assign(Left.ToExpression(), Right.ToExpression());
-
-            public bool Equals(IMethodBlock other) 
-                => other is Assignment assignmentOther && Equals(assignmentOther);
-
-            public bool Equals(Assignment other) => Left.Equals(other.Left) && Right.Equals(other.Right);
+            public Expr ToExpression() => Expr.Assign(_left.ToExpression(), _right.ToExpression());
         }
 
-        internal class ArrayAccess : IMethodBlock, IEquatable<ArrayAccess>
+        /// <summary>
+        /// Describes an array subscript expression (A[I]).
+        /// </summary>
+        internal class ArrayAccess : IExpression<ArrayAccess>
         {
-            private readonly IMethodBlock Array;
-            private readonly IMethodBlock Index;
+            private readonly IExpression Array;
+            public IExpression? Index;
 
-            public ArrayAccess(IMethodBlock array, IMethodBlock index)
+            /// <summary>
+            /// Creates a new expression of the following form:
+            /// <code>array[index]</code>
+            /// </summary>
+            /// <param name="array">An expression corresponding to the array being indexed.</param>
+            /// <param name="index">An expression corresponding to the index used.</param>
+            public ArrayAccess(IExpression array, IExpression? index = default)
             {
                 Array = array;
                 Index = index;
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public Expr ToExpression() => Expr.ArrayAccess(Array.ToExpression(), Index.ToExpression());
-
-            public bool Equals(IMethodBlock other)
-                => other is ArrayAccess arrayAccessOther && Equals(arrayAccessOther);
-
-            public bool Equals(ArrayAccess other) => Array.Equals(other.Array) && Index.Equals(other.Index);
+            public Expr ToExpression()
+                => Expr.ArrayAccess(Array.ToExpression(), Index.ToExpression());
         }
 
-        internal class ArrayIndex : IMethodBlock, IEquatable<ArrayIndex>
+        internal class ArrayIndex : IExpression<ArrayIndex>
         {
-            private readonly IMethodBlock Array;
-            private readonly IMethodBlock Index;
+            private readonly IExpression Array;
+            private readonly IExpression Index;
 
-            public ArrayIndex(IMethodBlock array, IMethodBlock index)
+            public ArrayIndex(IExpression array, IExpression index)
             {
                 Array = array;
                 Index = index;
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Expr ToExpression() => Expr.ArrayIndex(Array.ToExpression(), Index.ToExpression());
-
-            public bool Equals(IMethodBlock other)
-                => other is ArrayIndex arrayAccessOther && Equals(arrayAccessOther);
-
-            public bool Equals(ArrayIndex other) => Array.Equals(other.Array) && Index.Equals(other.Index);
         }
 
-        internal struct Convert : IMethodBlock, IEquatable<Convert>
+        internal class Convert : IExpression<Convert>
         {
-            private readonly IMethodBlock Instance;
+            private readonly IExpression Instance;
             private readonly Type Type;
 
-            public Convert(IMethodBlock instance, Type type)
+            /// <summary>
+            /// Constructs a new expression of the following form:
+            /// <code>(type) instance</code>
+            /// </summary>
+            /// <param name="instance">An expression being converted</param>
+            /// <param name="type">The type to which the given <see cref="instance"/> is being cast to.</param>
+            public Convert(IExpression instance, Type type)
             {
                 Instance = instance;
                 Type = type;
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Expr ToExpression()
                 => Expr.Convert(Instance.ToExpression(), Type);
-
-            public bool Equals(IMethodBlock other)
-                => other is Convert convertOther && Equals(convertOther);
-
-            public bool Equals(Convert other)
-                => Instance.Equals(other.Instance) && Type.Equals(other.Type);
         }
 
-        internal class Property : IMethodBlock, IEquatable<Property>
+        internal class Property : IExpression<Property>
         {
-            private readonly IMethodBlock Instance;
+            private readonly IExpression Instance;
             private readonly PropertyInfo PropertyInfo;
-            private readonly IMethodBlock[] Arguments;
+            private readonly IExpression[] Arguments;
 
-            public Property(IMethodBlock instance, PropertyInfo propertyInfo, params IMethodBlock[] arguments)
+            public Property(IExpression instance, PropertyInfo propertyInfo, params IExpression[] arguments)
             {
                 Instance = instance;
                 PropertyInfo = propertyInfo;
                 Arguments = arguments;
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Expr ToExpression()
                 => Expr.Property(Instance.ToExpression(), PropertyInfo, Arguments.Select(a => a.ToExpression()).ToArray());
 
-            public bool Equals(IMethodBlock other)
-                => other is Property propertyOther && Equals(propertyOther);
-
-            public bool Equals(Property other)
-                => Instance.Equals(other.Instance) && PropertyInfo.Equals(other.PropertyInfo) && Arguments.SequenceEqual(other.Arguments);
-
         }
 
-        internal class DelegatedArrayAccess : IMethodBlock, IEquatable<DelegatedArrayAccess>
+        /// <summary>
+        /// Describes a member access expression (A.B).
+        /// </summary>
+        internal class MemberAccess : IExpression<MemberAccess>
         {
-            private readonly IMethodBlock Array;
-
-            public IMethodBlock Index;
-
-            public DelegatedArrayAccess(IMethodBlock array)
-            {
-                Array = array;
-                Index = default!;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public Expr ToExpression() => Expr.ArrayAccess(Array.ToExpression(), Index.ToExpression());
-
-            public bool Equals(IMethodBlock other)
-                => other is DelegatedArrayAccess delegatedArrayAccessOther && Equals(delegatedArrayAccessOther);
-
-            public bool Equals(DelegatedArrayAccess other) => Array.Equals(other.Array);
-        }
-
-        internal class MemberAccess : IMethodBlock, IEquatable<MemberAccess>
-        {
-            private readonly IMethodBlock DeclaringInstance;
+            private readonly IExpression DeclaringInstance;
             private readonly MemberToken Member;
 
-            public MemberAccess(IMethodBlock declaringInstance, MemberToken memberToken)
+            public MemberAccess(IExpression declaringInstance, MemberToken memberToken)
             {
                 DeclaringInstance = declaringInstance;
                 Member = memberToken;
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Expr ToExpression() => Expr.MakeMemberAccess(DeclaringInstance.ToExpression(), Member.MemberInfo);
-
-            public bool Equals(IMethodBlock other)
-                => other is MemberAccess memberAccessOther && Equals(memberAccessOther);
-
-            public bool Equals(MemberAccess other)
-                => DeclaringInstance.Equals(other.DeclaringInstance) && Member.Equals(other.Member);
         }
 
-        internal class Loop : IMethodBlock, IEquatable<Loop>
+        /// <summary>
+        /// Describes a loop expression of the following form.
+        /// </summary>
+        /// <example>
+        /// while (Iterator < UpperBound) {
+        ///     Body;
+        ///     ++Iterator;
+        /// }</example>
+        internal class Loop : IExpression<Loop>
         {
-            private readonly IMethodBlock Iterator;
-            private readonly IMethodBlock UpperBound;
-            private readonly IMethodBlock Body;
+            private readonly IExpression Iterator;
+            private readonly IExpression UpperBound;
+            private readonly IExpression Body;
 
-            public Loop(IMethodBlock iterator, IMethodBlock upperBound, IMethodBlock body)
+            public Loop(IExpression iterator, IExpression upperBound, IExpression body)
             {
                 Iterator = iterator;
                 UpperBound = upperBound;
@@ -223,77 +209,86 @@ namespace DBClientFiles.NET.Parsing.Runtime
                 var exitLabel = Expr.Label();
                 var loopBody = Expr.Block(Body.ToExpression(), Expr.PreIncrementAssign(Iterator.ToExpression()));
 
-                return Expr.Loop(Expr.IfThenElse(Expr.LessThan(Iterator.ToExpression(), UpperBound.ToExpression()), loopBody, Expr.Break(exitLabel)), exitLabel);
+                return Expr.Loop(
+                    Expr.IfThenElse(
+                        Expr.LessThan(Iterator.ToExpression(), UpperBound.ToExpression()),
+                        loopBody,
+                        Expr.Break(exitLabel)),
+                    exitLabel);
             }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool Equals(IMethodBlock other)
-                => other is Loop loopOther && Equals(loopOther);
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool Equals(Loop other)
-                => Iterator.Equals(other.Iterator) && UpperBound.Equals(other.Iterator) && Body.Equals(other.Body);
         }
 
-        internal class MethodCall : IMethodBlock, IEquatable<MethodCall>
+        /// <summary>
+        /// Describes a method call expression of the following forms:
+        /// <ul>
+        ///     <li><code>InvocationTarget.Method(Parameters...)</code> in the case of a member method.</li>
+        ///     <li><code>typeof(InvocationTarget).Method(Parameters...)</code> in the case of a static method.</li>
+        /// </ul>
+        /// </summary>
+        internal class MethodCall : IExpression<MethodCall>
         {
-            private readonly IMethodBlock InvocationTarget;
-            private readonly MethodInfo Method;
-            private readonly IMethodBlock[] Parameters;
+            private readonly IExpression _invocationTarget;
+            private readonly MethodInfo _method;
+            private readonly IExpression[] _parameters;
 
-            public MethodCall(IMethodBlock invocationTarget, MethodInfo method, params IMethodBlock[] parameters)
+            /// <summary>
+            /// Creates a new instance of a method call expression on a static method with the given parameters.
+            /// The generated expression will be <code>method(parameters...)</code>
+            /// </summary>
+            /// <param name="method">The method being called.</param>
+            /// <param name="parameters">Parameters to the method call.</param>
+            public MethodCall(MethodInfo method, params IExpression[] parameters)
             {
-                Debug.Assert((invocationTarget == null) == method.IsStatic);
+                Debug.Assert(method.IsStatic);
 
-                InvocationTarget = invocationTarget;
-                Method = method;
-                Parameters = parameters;
+                _invocationTarget = default;
+                _method = method;
+                _parameters = parameters;
+            }
+
+            /// <summary>
+            /// Creates a new instance of a method call expression on a member method with the given parameters.
+            /// The generated expression will be <code>invocationTarget.method(parameters...)</code>
+            /// </summary>
+            /// <param name="invocationTarget">The object on which a method is being called.</param>
+            /// <param name="method">The method being called.</param>
+            /// <param name="parameters">Parameters to the method call.</param>
+            public MethodCall(IExpression invocationTarget, MethodInfo method, params IExpression[] parameters)
+            {
+                // TODO: Assert that the type of the object pointed at by invocationTarget matches method.DeclaringType.
+
+                Debug.Assert(invocationTarget != default && !method.IsStatic);
+
+                _invocationTarget = invocationTarget;
+                _method = method;
+                _parameters = parameters;
             }
 
             public Expr ToExpression()
             {
-                if (Method.IsStatic)
-                    return Expr.Call(Method, Parameters.Select(p => p.ToExpression()));
+                if (_method.IsStatic)
+                    return Expr.Call(_method, _parameters.Select(p => p.ToExpression()));
 
-                return Expr.Call(InvocationTarget.ToExpression(), Method, Parameters.Select(p => p.ToExpression()));
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool Equals(IMethodBlock other) 
-                => other is MethodCall methodCallOther && Equals(methodCallOther);
-
-            public bool Equals(MethodCall other)
-            {
-                if (InvocationTarget != null)
-                {
-                    if (!InvocationTarget.Equals(other.InvocationTarget))
-                        return false;
-                }
-
-                if (!Method.Equals(other.Method))
-                    return false;
-
-                return Parameters.SequenceEqual(other.Parameters);
+                return Expr.Call(_invocationTarget.ToExpression(), _method, _parameters.Select(p => p.ToExpression()));
             }
         }
 
-        internal class Empty : IMethodBlock, IEquatable<Empty>
+        /// <summary>
+        /// An empty expression. This does effectively nothing.
+        /// </summary>
+        internal struct Empty : IExpression<Empty>
         {
-            public bool Equals(IMethodBlock other) 
+            public bool Equals(IExpression other) 
                 => other is Empty emptyOther && Equals(emptyOther);
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Expr ToExpression() => DefaultExpr;
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool Equals(Empty other) => true;
-
             private static readonly DefaultExpression DefaultExpr = Expr.Empty();
-
             public static Empty Instance;
         }
 
-        internal class Expression : IMethodBlock, IEquatable<Expression>
+        internal class Expression : IExpression<Expression>
         {
             private readonly Expr _expression;
 
@@ -304,21 +299,15 @@ namespace DBClientFiles.NET.Parsing.Runtime
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Expr ToExpression() => _expression;
-
-            public bool Equals(IMethodBlock other)
-                => other is Expression exprOther && Equals(exprOther);
-
-            public bool Equals(Expression other)
-                => ExpressionEqualityComparer.Instance.Equals(_expression, other._expression);
         }
     }
 
-    internal class Method<T> : IMethodBlock, IEquatable<Method<T>> where T : Delegate
+    internal class Method<T> : IExpression<Method<T>> where T : Delegate
     {
-        private readonly IMethodBlock[] Parameters;
-        private readonly IMethodBlock Body;
+        private readonly IExpression[] Parameters;
+        private readonly IExpression Body;
 
-        public Method(IMethodBlock body, params IMethodBlock[] parameters)
+        public Method(IExpression body, params IExpression[] parameters)
         {
             Body = body;
             Parameters = parameters;
@@ -331,12 +320,6 @@ namespace DBClientFiles.NET.Parsing.Runtime
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Expr ToExpression() => ToLambdaExpression();
 
-        public bool Equals(IMethodBlock other)
-            => other is Method<T> exprOther && Equals(exprOther);
-
-        public bool Equals(Method<T> other)
-            => Parameters.SequenceEqual(other.Parameters) && Body.Equals(other.Body);
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Compile() => (T)ToLambdaExpression().Compile();
     }
@@ -344,6 +327,6 @@ namespace DBClientFiles.NET.Parsing.Runtime
     internal static class MethodBlockExtensions
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Method.Expression ToMethodBlock(this Expr expr) => new Method.Expression(expr);
+        public static Method.Expression ToMethodBlock(this Expr expr) => new(expr);
     }
 }

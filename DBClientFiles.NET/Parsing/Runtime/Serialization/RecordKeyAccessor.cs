@@ -16,11 +16,15 @@ namespace DBClientFiles.NET.Parsing.Runtime.Serialization
         public TypeKeyGetter GetRecordKey => _keyGetter.Value;
         public TypeKeySetter SetRecordKey => _keySetter.Value;
 
+<<<<<<< HEAD
         private readonly TypeToken _recordTypeToken;
         private readonly TypeTokenType _indexMemberTypeTokenType;
         private readonly int _indexColumn;
 
         public RecordKeyAccessor(TypeToken type, int indexColumn, TypeTokenType tokenType)
+=======
+        public RecordKeyAccessor(TypeToken type, int indexColumn, TypeTokenKind tokenType)
+>>>>>>> 1c58d47 (What is all this? I'm not sure, so let's commit it.)
         {
             _recordTypeToken = type;
             _indexMemberTypeTokenType = tokenType;

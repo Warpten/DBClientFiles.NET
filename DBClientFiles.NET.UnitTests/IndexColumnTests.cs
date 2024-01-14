@@ -51,7 +51,7 @@ namespace DBClientFiles.NET.UnitTests
             var typeToken = new TypeToken(typeof(SuperNestedType));
             Expression root = Expression.Variable(typeof(SuperNestedType));
             var idx = 9;
-            var member = typeToken.GetMemberByIndex(ref idx, ref root, TypeTokenType.Property);
+            var member = typeToken.GetMemberByIndex(ref idx, ref root, TypeTokenKind.Property);
 
             var dummyFile = new DummyFile<SuperNestedType>(3);
 

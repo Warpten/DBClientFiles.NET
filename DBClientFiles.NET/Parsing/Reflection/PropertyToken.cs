@@ -40,7 +40,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
         public override bool IsArray => _propInfo.PropertyType.IsArray;
         public override int Cardinality { get; }
 
-        public override TypeTokenType MemberType => TypeTokenType.Property;
+        public override TypeTokenKind MemberType => TypeTokenKind.Property;
 
         public override T GetAttribute<T>()
         {

@@ -9,7 +9,7 @@ namespace DBClientFiles.NET
     {
         public readonly MemberTypes MemberType;
 
-        internal TypeTokenType TokenType => MemberType.ToTypeToken();
+        internal TypeTokenKind TokenType => MemberType.ToTypeToken();
 
         /// <summary>
         /// If set to true, the strings found in a file will be interned in the CLR's own memory pool. These strings will never be released.

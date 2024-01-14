@@ -18,7 +18,7 @@ namespace DBClientFiles.NET.Parsing.Reflection
         /// <summary>
         /// The underlying CLR <see cref="Type"/> representation of this type.
         /// </summary>
-        private Type Type { get; }
+        public Type Type { get; }
 
         private Dictionary<Type, TypeToken> _declaredTypes;
         private List<MemberToken> _members;
@@ -27,10 +27,10 @@ namespace DBClientFiles.NET.Parsing.Reflection
         public IList<MemberToken> Members => _members;
 
         public IEnumerable<MemberToken> Fields
-            => Members.Where(m => m.MemberType == TypeTokenType.Field);
+            => Members.Where(m => m.MemberType == TypeTokenKind.Field);
 
         public IEnumerable<MemberToken> Properties
-            => Members.Where(m => m.MemberType == TypeTokenType.Property);
+            => Members.Where(m => m.MemberType == TypeTokenKind.Property);
 
         public TypeToken(Type type)
         {
@@ -108,7 +108,11 @@ namespace DBClientFiles.NET.Parsing.Reflection
             return Type.ToString();
         }
 
+<<<<<<< HEAD
         public (MemberToken memberToken, Expr memberAccess) MakeMemberAccess(int index, Expr accessExpression, TypeTokenType type)
+=======
+        public (MemberToken memberToken, Expr memberAccess) MakeMemberAccess(ref int index, Expr accessExpression, TypeTokenKind type)
+>>>>>>> 1c58d47 (What is all this? I'm not sure, so let's commit it.)
         {
             foreach (var memberInfo in _members)
             {
