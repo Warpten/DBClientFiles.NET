@@ -14,9 +14,9 @@
 
     <Version>0.0.1</Version>
     <FileVersion>0.0.1</FileVersion>
-    <Authors>Vincent Piquet</Authors>
+    <Authors>Warpten</Authors>
     <Description>High-performance DBC/DB2 file reader.</Description>
-    <Copyright>Copyright (c) 2018 Vincent Piquet</Copyright>
+    <Copyright>Copyright (c) 2018-2022 Warpten</Copyright>
 
     <PackageId>DBClientFiles.NET</PackageId>
     <PackageVersion>0.0.1</PackageVersion>
@@ -35,7 +35,6 @@
     <!-- Optimize unless debug -->
     <Optimize>true</Optimize>
     <Optimize Condition="'$(Configuration)' == 'DebugUnitTests'">false</Optimize>
-
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Debug' Or '$(Configuration)' == 'DebugUnitTests'">
@@ -57,6 +56,7 @@
   </ItemGroup>-->
 
   <ItemGroup>
+<<<<<<< HEAD
     <Compile Remove="IO\SegmentedMemoryStream.cs" />
   </ItemGroup>
 
@@ -64,6 +64,9 @@
     <PackageReference Include="FastExpressionCompiler" Version="3.3.4" />
     <PackageReference Include="FastExpressionCompiler.LightExpression" Version="3.3.4" />
     <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="2.4.416101" />
+=======
+    <PackageReference Include="InlineIL.Fody" Version="1.7.2" />
+>>>>>>> f32cfb9 (Target .NET 7 & C# 11)
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.7.0" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />

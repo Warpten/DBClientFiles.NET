@@ -23,10 +23,9 @@ namespace DBClientFiles.NET.IO
 
         public override long Position {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-
             get => base.Position - Offset;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set => base.Position = value + Offset;
         }
 
